@@ -31,12 +31,11 @@
 
 #### 선택
 
-- `media` (사진 최대 3장, 영상 1개)
+- `media` (사진 최대 3장)
 - `mood` (5단계 체크, 이모지/이미지 기반 UI)
 - `location`, `level`, `instructor`
-- `class_review`
 - `bar_order`, `center_order`
-- `new_learned`, `feedback`, `did_well`, `improve_next`
+- `did_well`, `improve_next`
 
 ### Record CRUD 동작
 
@@ -51,8 +50,7 @@
 
 - 저장 위치: Supabase Storage
 - 용량 제한
-  - 이미지: 16MB/장
-  - 영상: 48MB/개
+  - 이미지: 20MB/장
 - 업로드 방식: 업로드 완료 후 URL 저장
 
 ### 일별 타임라인 UI

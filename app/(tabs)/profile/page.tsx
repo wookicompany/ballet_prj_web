@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabaseClient";
+import { Settings } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -21,6 +25,7 @@ function toMinutes(time: string) {
 export default function ProfilePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
@@ -28,7 +33,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) {
-        router.replace("/login");
+        openLoginSheet();
         return;
       }
 
@@ -63,6 +68,21 @@ export default function ProfilePage() {
     fetchProfile();
   }, [user, router]);
 
+  if (!user) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+          <p className="text-sm text-[#17171c]/70">
+            로그인하면 프로필을 볼 수 있어요.
+          </p>
+          <Button type="button" onClick={openLoginSheet}>
+            로그인할게요
+          </Button>
+        </main>
+      </MobileContainer>
+    );
+  }
+
   if (!profile) {
     return (
       <MobileContainer>
@@ -81,13 +101,16 @@ export default function ProfilePage() {
       <main className="px-4 pb-10 pt-8">
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-lg font-semibold">프로필</h1>
-          <button
+          <Button
             type="button"
-            className="text-sm text-[#17171c]/70"
+            variant="ghost"
+            size="icon-sm"
+            className="text-[#17171c]/70"
             onClick={() => router.push("/profile/edit")}
+            aria-label="프로필 설정"
           >
-            설정
-          </button>
+            <Settings className="h-5 w-5" />
+          </Button>
         </header>
 
         <section className="mb-6 flex items-center gap-4">
@@ -109,16 +132,20 @@ export default function ProfilePage() {
         </section>
 
         <section className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-black/5 p-4">
-            <p className="text-xs text-[#17171c]/60">총 기록 개수</p>
-            <p className="text-lg font-semibold">{recordCount}개</p>
-          </div>
-          <div className="rounded-lg border border-black/5 p-4">
-            <p className="text-xs text-[#17171c]/60">누적 발레 시간</p>
-            <p className="text-lg font-semibold">
-              {hours}시간 {minutes}분
-            </p>
-          </div>
+          <Card className="border-black/5 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-[#17171c]/60">총 기록 개수</p>
+              <p className="text-lg font-semibold">{recordCount}개</p>
+            </CardContent>
+          </Card>
+          <Card className="border-black/5 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-[#17171c]/60">누적 발레 시간</p>
+              <p className="text-lg font-semibold">
+                {hours}시간 {minutes}분
+              </p>
+            </CardContent>
+          </Card>
         </section>
       </main>
     </MobileContainer>

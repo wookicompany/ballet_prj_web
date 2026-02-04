@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
+import { ChevronLeft } from "lucide-react";
 
 type RecordItem = {
   id: string;
@@ -52,24 +54,30 @@ export default function DayPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-[#17171c]">
-      <header className="flex items-center justify-between px-4 py-4">
-        <button
+      <header className="flex items-center justify-between px-4 pt-6">
+        <Button
           type="button"
-          className="text-sm text-[#17171c]/70"
+          variant="ghost"
+          size="icon-sm"
+          className="text-[#17171c]/70"
           onClick={() => router.push("/calendar")}
+          aria-label="캘린더로 이동"
         >
-          뒤로
-        </button>
-        <h1 className="text-base font-semibold">{dateStr}</h1>
-        <div className="w-10" />
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="text-center">
+          <p className="text-xs text-[#17171c]/60">일별 타임라인</p>
+          <h1 className="text-base font-semibold">{dateStr}</h1>
+        </div>
+        <div className="w-9" />
       </header>
 
-      <section className="flex-1 overflow-y-auto px-4 py-6">
+      <section className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
         <div className="relative h-[1440px]">
           {hourLabels.map((hour) => (
             <div
               key={hour}
-              className="absolute left-0 flex h-10 w-full items-start px-2 text-[11px] text-[#17171c]/50"
+              className="absolute left-0 flex h-10 w-full items-start px-1 text-[11px] text-[#17171c]/45"
               style={{ top: `${hour * 60}px` }}
             >
               {String(hour).padStart(2, "0")}:00
@@ -81,10 +89,10 @@ export default function DayPage() {
             const height = Math.max(end - start, 10);
 
             return (
-              <button
+              <Button
                 key={record.id}
                 type="button"
-                className="absolute left-14 right-3 rounded-md bg-[#17171c] px-3 py-2 text-left text-xs text-white shadow"
+                className="absolute left-12 right-2 h-auto items-start rounded-xl bg-[#17171c] px-3 py-2 text-left text-xs text-white shadow-md"
                 style={{ top: `${start}px`, height: `${height}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
@@ -94,7 +102,7 @@ export default function DayPage() {
                 <div className="line-clamp-2 text-[11px] text-white/80">
                   {record.content}
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>

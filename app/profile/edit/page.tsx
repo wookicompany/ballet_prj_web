@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabaseClient";
+import { ChevronLeft, Paperclip } from "lucide-react";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
@@ -97,81 +102,101 @@ export default function ProfileEditPage() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-10 pt-6">
+      <main className="px-4 pb-12 pt-6">
         <header className="mb-6 flex items-center justify-between">
-          <button
+          <Button
             type="button"
-            className="text-sm text-[#17171c]/70"
+            variant="ghost"
+            size="icon-sm"
+            className="text-[#17171c]/70"
             onClick={() => router.back()}
+            aria-label="뒤로"
           >
-            뒤로
-          </button>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
           <h1 className="text-base font-semibold">프로필 설정</h1>
-          <div className="w-10" />
+          <div className="w-9" />
         </header>
 
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm">프로필 이미지</p>
-            <div className="mt-2 flex items-center gap-3">
-              <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="프로필 이미지"
-                    className="h-full w-full object-cover"
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <Label className="text-xs text-[#17171c]/60">프로필 이미지</Label>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="프로필 이미지"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : null}
+                </div>
+                <Label className="flex items-center gap-2 rounded-md border border-dashed border-black/10 px-3 py-2 text-xs text-[#17171c]/70">
+                  이미지 선택
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file && file.size <= MAX_IMAGE_SIZE) {
+                        setImageFile(file);
+                        setAvatarUrl(URL.createObjectURL(file));
+                      } else {
+                        setImageFile(null);
+                      }
+                    }}
                   />
-                ) : null}
+                  <Paperclip className="h-4 w-4" />
+                </Label>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                className="text-sm"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file && file.size <= MAX_IMAGE_SIZE) {
-                    setImageFile(file);
-                    setAvatarUrl(URL.createObjectURL(file));
-                  } else {
-                    setImageFile(null);
-                  }
-                }}
+            </div>
+            <div>
+              <Label className="text-xs text-[#17171c]/60">
+                닉네임 (최대 12자)
+              </Label>
+              <Input
+                type="text"
+                className="mt-2"
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                maxLength={12}
               />
             </div>
-          </div>
-          <label className="block text-sm">
-            닉네임 (최대 12자)
-            <input
-              type="text"
-              className="mt-2 w-full rounded-md border border-black/10 p-2"
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
-              maxLength={12}
-            />
-          </label>
+          </section>
+
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
-          <button
+
+          <Button
             type="button"
-            className="w-full rounded-md bg-[#17171c] py-3 text-sm font-semibold text-white"
+            className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             onClick={handleSave}
             disabled={saving}
           >
             {saving ? "저장 중..." : "저장하기"}
-          </button>
-          <button
-            type="button"
-            className="w-full rounded-md border border-black/10 py-3 text-sm font-semibold text-[#17171c]"
-            onClick={signOut}
-          >
-            로그아웃
-          </button>
-          <button
-            type="button"
-            className="w-full rounded-md border border-red-500 py-3 text-sm font-semibold text-red-500"
-            onClick={handleDeleteAccount}
-          >
-            회원탈퇴
-          </button>
+          </Button>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={signOut}
+            >
+              로그아웃
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              onClick={handleDeleteAccount}
+            >
+              회원탈퇴
+            </Button>
+          </div>
         </div>
       </main>
     </MobileContainer>

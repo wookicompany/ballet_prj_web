@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 const MOODS = ["😔", "🙁", "😐", "🙂", "😄"];
 
 export default function MoodSelector({
@@ -16,10 +18,12 @@ export default function MoodSelector({
         const isActive = value === moodValue;
 
         return (
-          <button
+          <Button
             key={emoji}
             type="button"
-            className={`flex h-9 w-9 items-center justify-center rounded-full border text-lg ${
+            variant="outline"
+            size="icon"
+            className={`h-9 w-9 rounded-full text-lg ${
               isActive
                 ? "border-[#17171c] bg-[#17171c]/5"
                 : "border-black/10"
@@ -27,7 +31,7 @@ export default function MoodSelector({
             onClick={() => onChange(moodValue)}
           >
             {emoji}
-          </button>
+          </Button>
         );
       })}
     </div>

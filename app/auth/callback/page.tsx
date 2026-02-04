@@ -15,7 +15,9 @@ export default function AuthCallbackPage() {
         await supabase.auth.exchangeCodeForSession(window.location.href);
 
       if (exchangeError) {
-        setError("로그인 처리 중 오류가 발생했습니다.");
+        setError(
+          `로그인 처리 중 오류가 발생했습니다. (${exchangeError.message})`
+        );
         return;
       }
 

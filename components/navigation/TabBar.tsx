@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Calendar, User } from "lucide-react";
 
@@ -10,6 +11,7 @@ export default function TabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
 
   const isCalendar = pathname.startsWith("/calendar");
   const isProfile = pathname.startsWith("/profile");
@@ -35,7 +37,7 @@ export default function TabBar() {
           }`}
           onClick={() => {
             if (!user) {
-              router.push("/login");
+              openLoginSheet();
               return;
             }
             router.push("/profile");

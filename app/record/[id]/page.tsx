@@ -5,7 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabaseClient";
+import { ChevronLeft, Pencil } from "lucide-react";
 
 type RecordDetail = {
   id: string;
@@ -17,11 +21,8 @@ type RecordDetail = {
   location: string | null;
   level: string | null;
   instructor: string | null;
-  class_review: string | null;
   bar_order: string | null;
   center_order: string | null;
-  new_learned: string | null;
-  feedback: string | null;
   did_well: string | null;
   improve_next: string | null;
 };
@@ -38,20 +39,21 @@ export default function RecordDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
 
   useEffect(() => {
     const fetchRecord = async () => {
       if (!user) {
-        router.replace("/login");
+        openLoginSheet();
         return;
       }
 
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,class_review,bar_order,center_order,new_learned,feedback,did_well,improve_next"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -71,6 +73,21 @@ export default function RecordDetailPage() {
 
     fetchRecord();
   }, [params.id, user, router]);
+
+  if (!user) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+          <p className="text-sm text-[#17171c]/70">
+            로그인하면 기록을 확인할 수 있어요.
+          </p>
+          <Button type="button" onClick={openLoginSheet}>
+            로그인할게요
+          </Button>
+        </main>
+      </MobileContainer>
+    );
+  }
 
   if (!record) {
     return (
@@ -100,21 +117,27 @@ export default function RecordDetailPage() {
     <MobileContainer>
       <main className="px-4 pb-10 pt-6">
         <header className="mb-6 flex items-center justify-between">
-          <button
+          <Button
             type="button"
-            className="text-sm text-[#17171c]/70"
+            variant="ghost"
+            size="icon-sm"
+            className="text-[#17171c]/70"
             onClick={() => router.back()}
+            aria-label="뒤로"
           >
-            뒤로
-          </button>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
           <h1 className="text-base font-semibold">기록 상세</h1>
-          <button
+          <Button
             type="button"
-            className="text-sm text-[#17171c]/70"
+            variant="ghost"
+            size="icon-sm"
+            className="text-[#17171c]/70"
             onClick={() => router.push(`/record/${record.id}/edit`)}
+            aria-label="기록 수정"
           >
-            수정
-          </button>
+            <Pencil className="h-4 w-4" />
+          </Button>
         </header>
 
         <div className="space-y-4 text-sm">
@@ -152,14 +175,6 @@ export default function RecordDetailPage() {
               <p>{record.instructor}</p>
             </div>
           ) : null}
-          {record.class_review ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">
-                오늘 수업 어땠는지?
-              </p>
-              <p>{record.class_review}</p>
-            </div>
-          ) : null}
           {record.bar_order ? (
             <div>
               <p className="mb-1 text-xs text-[#17171c]/60">바 순서</p>
@@ -170,22 +185,6 @@ export default function RecordDetailPage() {
             <div>
               <p className="mb-1 text-xs text-[#17171c]/60">센터 순서</p>
               <p>{record.center_order}</p>
-            </div>
-          ) : null}
-          {record.new_learned ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">
-                오늘 새롭게 배운 것
-              </p>
-              <p>{record.new_learned}</p>
-            </div>
-          ) : null}
-          {record.feedback ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">
-                수업에서 받은 피드백
-              </p>
-              <p>{record.feedback}</p>
             </div>
           ) : null}
           {record.did_well ? (
@@ -227,13 +226,15 @@ export default function RecordDetailPage() {
               </div>
             </div>
           ) : null}
-          <button
+          <Separator />
+          <Button
             type="button"
-            className="w-full rounded-md border border-red-500 py-2 text-sm font-semibold text-red-500"
+            variant="destructive"
+            className="w-full"
             onClick={handleDelete}
           >
             삭제
-          </button>
+          </Button>
         </div>
       </main>
     </MobileContainer>
