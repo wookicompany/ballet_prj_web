@@ -21,7 +21,7 @@ export default function TabBar() {
       <div className="grid h-14 grid-cols-2">
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-[11px] ${
+          className={`h-full flex-col gap-1 rounded-none text-[11px] hover:bg-transparent active:bg-transparent ${
             isCalendar ? "font-semibold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/calendar")}
@@ -32,7 +32,7 @@ export default function TabBar() {
         </Button>
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-[11px] ${
+          className={`h-full flex-col gap-1 rounded-none text-[11px] hover:bg-transparent active:bg-transparent ${
             isProfile ? "font-semibold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => {
