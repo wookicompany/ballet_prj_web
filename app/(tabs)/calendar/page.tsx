@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Settings } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
 
 function formatDate(date: Date) {
@@ -26,10 +27,13 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => ({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
   }));
+  const [weekStartMonday, setWeekStartMonday] = useState(false);
+  const [highlightWeekend, setHighlightWeekend] = useState(false);
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
@@ -66,6 +70,30 @@ export default function CalendarPage() {
     fetchCounts();
   }, [user, start, end]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const weekStart = window.localStorage.getItem("calendarWeekStartMonday");
+    const weekendColor = window.localStorage.getItem("calendarHighlightWeekend");
+    if (weekStart !== null) {
+      setWeekStartMonday(weekStart === "true");
+    }
+    if (weekendColor !== null) {
+      setHighlightWeekend(weekendColor === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "calendarWeekStartMonday",
+      String(weekStartMonday)
+    );
+    window.localStorage.setItem(
+      "calendarHighlightWeekend",
+      String(highlightWeekend)
+    );
+  }, [weekStartMonday, highlightWeekend]);
+
   const monthLabel = `${currentDate.getFullYear()}년 ${
     currentDate.getMonth() + 1
   }월`;
@@ -101,10 +129,17 @@ export default function CalendarPage() {
     return () => window.clearTimeout(frame);
   }, [monthSheetOpen, monthDraft.year, monthDraft.month]);
 
+  const weekLabels = useMemo(() => {
+    return weekStartMonday
+      ? ["월", "화", "수", "목", "금", "토", "일"]
+      : ["일", "월", "화", "수", "목", "금", "토"];
+  }, [weekStartMonday]);
+
   const cells = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
+    const startDay = new Date(year, month, 1).getDay();
+    const firstDay = weekStartMonday ? (startDay + 6) % 7 : startDay;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const result: Array<{ date: Date | null; day: number | null }> = [];
@@ -120,7 +155,7 @@ export default function CalendarPage() {
       }
     }
     return result;
-  }, [currentDate]);
+  }, [currentDate, weekStartMonday]);
 
   return (
     <main className="flex min-h-[calc(100vh-56px)] flex-col px-4 pb-6 pt-6">
@@ -143,7 +178,35 @@ export default function CalendarPage() {
             <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
           </Button>
         </div>
+        <Button
+          variant="ghost"
+          className="h-10 w-10 p-0 text-[#17171c]/70"
+          aria-label="캘린더 설정"
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Settings className="h-6 w-6" />
+        </Button>
       </header>
+
+      <section className="grid grid-cols-7 gap-2 pb-2 text-center text-xs text-[#17171c]/60">
+        {weekLabels.map((day, index) => {
+          const isWeekend =
+            index === (weekStartMonday ? 5 : 0) || index === 6;
+          const weekendClass = highlightWeekend
+            ? index === (weekStartMonday ? 5 : 0)
+              ? "text-red-500"
+              : "text-blue-600"
+            : "";
+          return (
+            <span
+              key={day}
+              className={`py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
+            >
+            {day}
+            </span>
+          );
+        })}
+      </section>
 
       <section className="grid flex-1 grid-cols-7 gap-2 auto-rows-fr">
         {cells.map((cell, index) => {
@@ -151,6 +214,18 @@ export default function CalendarPage() {
           const dateStr = cell.date ? formatDate(cell.date) : "";
           const count = recordCounts[dateStr] ?? 0;
           const isToday = dateStr === todayStr;
+          const weekendIndex = cell.date
+            ? weekStartMonday
+              ? (cell.date.getDay() + 6) % 7
+              : cell.date.getDay()
+            : null;
+          const isWeekend =
+            weekendIndex === (weekStartMonday ? 5 : 0) || weekendIndex === 6;
+          const weekendClass = highlightWeekend
+            ? weekendIndex === (weekStartMonday ? 5 : 0)
+              ? "text-red-500"
+              : "text-blue-600"
+            : "";
 
           return (
             <Button
@@ -168,7 +243,11 @@ export default function CalendarPage() {
             >
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                  isToday ? "bg-[#ff273d] text-white" : "text-[#17171c]"
+                  isToday
+                    ? "bg-[#ff273d] text-white"
+                    : highlightWeekend && isWeekend
+                      ? weekendClass
+                      : "text-[#17171c]"
                 }`}
               >
                 {cell.day ?? ""}
@@ -248,6 +327,27 @@ export default function CalendarPage() {
           >
             적용하기
           </Button>
+        </div>
+      </BottomSheet>
+      <BottomSheet
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        title="캘린더 설정"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3">
+            <p className="text-sm font-medium text-[#17171c]">
+              월요일로 주간 시작
+            </p>
+            <Switch checked={weekStartMonday} onCheckedChange={setWeekStartMonday} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3">
+            <p className="text-sm font-medium text-[#17171c]">주말 색 표시</p>
+            <Switch
+              checked={highlightWeekend}
+              onCheckedChange={setHighlightWeekend}
+            />
+          </div>
         </div>
       </BottomSheet>
     </main>
