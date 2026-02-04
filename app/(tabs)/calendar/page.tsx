@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
@@ -23,6 +25,11 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
+  const [monthSheetOpen, setMonthSheetOpen] = useState(false);
+  const [monthDraft, setMonthDraft] = useState(() => ({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+  }));
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
@@ -63,6 +70,36 @@ export default function CalendarPage() {
     currentDate.getMonth() + 1
   }월`;
   const todayStr = formatDate(new Date());
+  const yearOptions = useMemo(() => {
+    const currentYear = currentDate.getFullYear();
+    const startYear = 2025;
+    const endYear = currentYear + 5;
+    return Array.from({ length: endYear - startYear + 1 }, (_, index) => {
+      return startYear + index;
+    });
+  }, [currentDate]);
+  const monthOptions = useMemo(
+    () => Array.from({ length: 12 }, (_, index) => index + 1),
+    []
+  );
+  const yearButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const monthButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    if (!monthSheetOpen) return;
+
+    const handleScroll = () => {
+      yearButtonRefs.current[monthDraft.year]?.scrollIntoView({
+        block: "center",
+      });
+      monthButtonRefs.current[monthDraft.month]?.scrollIntoView({
+        block: "center",
+      });
+    };
+
+    const frame = window.setTimeout(handleScroll, 0);
+    return () => window.clearTimeout(frame);
+  }, [monthSheetOpen, monthDraft.year, monthDraft.month]);
 
   const cells = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -88,35 +125,22 @@ export default function CalendarPage() {
   return (
     <main className="flex min-h-[calc(100vh-56px)] flex-col px-4 pb-6 pt-6">
       <header className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xl font-semibold">{monthLabel}</p>
-        </div>
         <div className="flex items-center gap-2">
+          <p className="text-xl font-semibold">{monthLabel}</p>
           <Button
             variant="ghost"
             size="icon-sm"
             className="text-[#17171c]/70"
-            onClick={() =>
-              setCurrentDate(
-                (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
-              )
-            }
-            aria-label="이전 달"
+            aria-label="연월 선택"
+            onClick={() => {
+              setMonthDraft({
+                year: currentDate.getFullYear(),
+                month: currentDate.getMonth() + 1,
+              });
+              setMonthSheetOpen(true);
+            }}
           >
-            &lt;
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-[#17171c]/70"
-            onClick={() =>
-              setCurrentDate(
-                (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
-              )
-            }
-            aria-label="다음 달"
-          >
-            &gt;
+            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
           </Button>
         </div>
       </header>
@@ -163,6 +187,69 @@ export default function CalendarPage() {
           );
         })}
       </section>
+      <BottomSheet
+        open={monthSheetOpen}
+        onOpenChange={setMonthSheetOpen}
+        title="연월을 선택해 주세요"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            {yearOptions.map((year) => (
+              <Button
+                key={`calendar-year-${year}`}
+                ref={(node) => {
+                  yearButtonRefs.current[year] = node;
+                }}
+                type="button"
+                variant={monthDraft.year === year ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() =>
+                  setMonthDraft((prev) => ({
+                    ...prev,
+                    year,
+                  }))
+                }
+              >
+                {year}년
+              </Button>
+            ))}
+          </div>
+          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            {monthOptions.map((month) => (
+              <Button
+                key={`calendar-month-${month}`}
+                ref={(node) => {
+                  monthButtonRefs.current[month] = node;
+                }}
+                type="button"
+                variant={monthDraft.month === month ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() =>
+                  setMonthDraft((prev) => ({
+                    ...prev,
+                    month,
+                  }))
+                }
+              >
+                {String(month).padStart(2, "0")}월
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4">
+          <Button
+            className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            onClick={() => {
+              setCurrentDate(
+                new Date(monthDraft.year, monthDraft.month - 1, 1)
+              );
+              setMonthSheetOpen(false);
+            }}
+          >
+            적용하기
+          </Button>
+        </div>
+      </BottomSheet>
     </main>
   );
 }
