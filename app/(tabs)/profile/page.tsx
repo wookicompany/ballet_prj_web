@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -107,6 +107,8 @@ export default function ProfilePage() {
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
+  const displayName = profile.nickname ?? "마이발레";
+  const initial = displayName.trim().charAt(0) || "마";
 
   return (
     <MobileContainer>
@@ -118,46 +120,56 @@ export default function ProfilePage() {
             variant="ghost"
             size="icon-sm"
             className="text-[#17171c]/70"
-            onClick={() => router.push("/profile/edit")}
-            aria-label="프로필 설정"
+            onClick={() => router.push("/profile/menu")}
+            aria-label="더보기"
           >
-            <Settings className="h-5 w-5" />
+            <Menu className="h-5 w-5" />
           </Button>
         </header>
 
-        <section className="mb-6 flex items-center gap-4">
-          <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt="프로필 이미지"
-                className="h-full w-full object-cover"
-              />
-            ) : null}
+        <section className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="프로필 이미지"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-[#17171c]/70">
+                  {initial}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-semibold">{displayName}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-base font-semibold">
-              {profile.nickname ?? "마이발레"}
-            </p>
-            <p className="text-xs text-[#17171c]/60">{user?.email ?? ""}</p>
-          </div>
-        </section>
 
-        <section className="grid grid-cols-2 gap-3">
-          <Card className="border-black/5 shadow-none">
-            <CardContent className="p-4">
-              <p className="text-xs text-[#17171c]/60">총 기록 개수</p>
-              <p className="text-lg font-semibold">{recordCount}개</p>
-            </CardContent>
-          </Card>
-          <Card className="border-black/5 shadow-none">
-            <CardContent className="p-4">
-              <p className="text-xs text-[#17171c]/60">누적 발레 시간</p>
-              <p className="text-lg font-semibold">
+          <div className="mt-4 flex items-center gap-6 text-left text-xs text-[#17171c]/70">
+            <span>
+              총 발레 횟수{" "}
+              <span className="font-semibold text-[#17171c]">
+                {recordCount}회
+              </span>
+            </span>
+            <span>
+              총 발레 시간{" "}
+              <span className="font-semibold text-[#17171c]">
                 {hours}시간 {minutes}분
-              </p>
-            </CardContent>
-          </Card>
+              </span>
+            </span>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 w-full"
+            onClick={() => router.push("/profile/edit")}
+          >
+            프로필 편집
+          </Button>
         </section>
       </main>
     </MobileContainer>

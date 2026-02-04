@@ -8,17 +8,16 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Paperclip } from "lucide-react";
+import { Camera, ChevronLeft, User } from "lucide-react";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const [nickname, setNickname] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -88,20 +87,6 @@ export default function ProfileEditPage() {
     router.replace("/profile");
   };
 
-  const handleDeleteAccount = async () => {
-    if (!user || loading) return;
-    const confirmed = window.confirm(
-      "회원탈퇴 시 모든 기록이 삭제됩니다. 진행할까요?"
-    );
-    if (!confirmed) return;
-
-    await supabase.from("record_media").delete().eq("user_id", user.id);
-    await supabase.from("records").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
-    await signOut();
-    router.replace("/login");
-  };
-
   if (loading) {
     return (
       <MobileContainer>
@@ -114,7 +99,7 @@ export default function ProfileEditPage() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-12 pt-6">
+      <main className="px-4 pb-16 pt-6">
         <header className="mb-6 flex items-center justify-between">
           <Button
             type="button"
@@ -131,51 +116,52 @@ export default function ProfileEditPage() {
         </header>
 
         <div className="space-y-6">
-          <section className="space-y-4">
-            <div>
-              <Label className="text-xs text-[#17171c]/60">프로필 이미지</Label>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="프로필 이미지"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : null}
-                </div>
-                <Label className="flex items-center gap-2 rounded-md border border-dashed border-black/10 px-3 py-2 text-xs text-[#17171c]/70">
-                  이미지 선택
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file && file.size <= MAX_IMAGE_SIZE) {
-                        setImageFile(file);
-                        setAvatarUrl(URL.createObjectURL(file));
-                      } else {
-                        setImageFile(null);
-                      }
-                    }}
+          <section className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="프로필 이미지"
+                    className="h-full w-full object-cover"
                   />
-                  <Paperclip className="h-4 w-4" />
-                </Label>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[#17171c]/40">
+                    <User className="h-8 w-8" />
+                  </div>
+                )}
               </div>
-            </div>
-            <div>
-              <Label className="text-xs text-[#17171c]/60">
-                닉네임 (최대 12자)
+              <Label className="absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white text-[#17171c]/60 shadow-sm">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file && file.size <= MAX_IMAGE_SIZE) {
+                      setImageFile(file);
+                      setAvatarUrl(URL.createObjectURL(file));
+                    } else {
+                      setImageFile(null);
+                    }
+                  }}
+                />
+                <Camera className="h-4 w-4" />
               </Label>
-              <Input
-                type="text"
-                className="mt-2"
-                value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
-                maxLength={12}
-              />
             </div>
+          </section>
+
+          <section className="space-y-2">
+            <Label className="text-xs text-[#17171c]/60">닉네임</Label>
+            <Input
+              type="text"
+              value={nickname}
+              onChange={(event) => setNickname(event.target.value)}
+              maxLength={12}
+            />
+            <p className="text-[11px] text-[#17171c]/40">
+              {nickname.length}/12
+            </p>
           </section>
 
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
@@ -188,27 +174,6 @@ export default function ProfileEditPage() {
           >
             {saving ? "저장 중..." : "저장하기"}
           </Button>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={signOut}
-            >
-              로그아웃
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              className="w-full"
-              onClick={handleDeleteAccount}
-            >
-              회원탈퇴
-            </Button>
-          </div>
         </div>
       </main>
     </MobileContainer>

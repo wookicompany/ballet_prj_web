@@ -21,6 +21,17 @@ import BottomSheet from "@/components/sheets/BottomSheet";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
+const ORDER_TAGS = [
+  "그랑 바뜨망",
+  "롱드잠 아떼르",
+  "롱드잠 앙레르",
+  "아다지오",
+  "제떼",
+  "탄듀",
+  "프라페",
+  "플리에",
+  "퐁듀",
+];
 
 type FormState = {
   record_date: string;
@@ -46,6 +57,8 @@ export default function RecordNewPage() {
   const [images, setImages] = useState<File[]>([]);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
+  const [barOrderTags, setBarOrderTags] = useState<string[]>([]);
+  const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
@@ -158,6 +171,8 @@ export default function RecordNewPage() {
       .insert({
         user_id: user.id,
         ...form,
+        bar_order: showBarOrder ? barOrderTags.join(", ") : "",
+        center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
       })
       .select("id, record_date")
       .single();
@@ -329,7 +344,9 @@ export default function RecordNewPage() {
                     setStartSheetOpen(true);
                   }}
                 >
-                  {form.start_time ? `${startHour}:${startMinute}` : "시간 선택"}
+                  {form.start_time
+                    ? `${startHour}시 ${startMinute}분`
+                    : "시간 선택"}
                 </Button>
               </div>
               <div>
@@ -343,7 +360,9 @@ export default function RecordNewPage() {
                     setEndSheetOpen(true);
                   }}
                 >
-                  {form.end_time ? `${endHour}:${endMinute}` : "시간 선택"}
+                  {form.end_time
+                    ? `${endHour}시 ${endMinute}분`
+                    : "시간 선택"}
                 </Button>
               </div>
             </div>
@@ -416,7 +435,9 @@ export default function RecordNewPage() {
               </div>
             </div>
             <div>
-              <Label className="text-xs text-[#17171c]/60">오늘 잘한 것</Label>
+              <Label className="text-xs text-[#17171c]/60">
+                오늘 잘했던 점을 남겨볼까요?
+              </Label>
               <Textarea
                 className="mt-2"
                 rows={3}
@@ -428,7 +449,7 @@ export default function RecordNewPage() {
             </div>
             <div>
               <Label className="text-xs text-[#17171c]/60">
-                다음에 더 신경 써야 하는 것
+                다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
                 className="mt-2"
@@ -446,7 +467,13 @@ export default function RecordNewPage() {
               <Checkbox
                 id="bar-order-options"
                 checked={showBarOrder}
-                onCheckedChange={(checked) => setShowBarOrder(!!checked)}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowBarOrder(next);
+                  if (!next) {
+                    setBarOrderTags([]);
+                  }
+                }}
               />
               <Label
                 htmlFor="bar-order-options"
@@ -456,26 +483,77 @@ export default function RecordNewPage() {
               </Label>
             </div>
             {showBarOrder ? (
-              <div>
+              <div className="space-y-3">
                 <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.bar_order}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      bar_order: event.target.value,
-                    }))
-                  }
-                />
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
+                  {barOrderTags.length === 0 ? (
+                    <p className="text-[11px] text-[#17171c]/40">
+                      선택된 순서가 여기 표시돼요.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {barOrderTags.map((tag, index) => (
+                        <div
+                          key={`bar-selected-${tag}-${index}`}
+                          className="flex items-center gap-2"
+                        >
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 rounded-full px-2 text-xs"
+                            onClick={() =>
+                              setBarOrderTags((prev) =>
+                                prev.filter((_, idx) => idx !== index)
+                              )
+                            }
+                          >
+                            {tag}
+                          </Button>
+                          {index < barOrderTags.length - 1 ? (
+                            <span className="text-xs text-[#17171c]/40">&gt;</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {ORDER_TAGS.map((tag) => {
+                    const selected = barOrderTags.includes(tag);
+                    return (
+                      <Button
+                        key={`bar-tag-${tag}`}
+                        type="button"
+                        variant={selected ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 rounded-full px-3 text-xs"
+                        onClick={() =>
+                          setBarOrderTags((prev) =>
+                            selected
+                              ? prev.filter((value) => value !== tag)
+                              : [...prev, tag]
+                          )
+                        }
+                      >
+                        {tag}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             ) : null}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="center-order-options"
                 checked={showCenterOrder}
-                onCheckedChange={(checked) => setShowCenterOrder(!!checked)}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowCenterOrder(next);
+                  if (!next) {
+                    setCenterOrderTags([]);
+                  }
+                }}
               />
               <Label
                 htmlFor="center-order-options"
@@ -485,21 +563,66 @@ export default function RecordNewPage() {
               </Label>
             </div>
             {showCenterOrder ? (
-              <div>
+              <div className="space-y-3">
                 <Label className="text-xs text-[#17171c]/60">
                   센터(center) 순서
                 </Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.center_order}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      center_order: event.target.value,
-                    }))
-                  }
-                />
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
+                  {centerOrderTags.length === 0 ? (
+                    <p className="text-[11px] text-[#17171c]/40">
+                      선택된 순서가 여기 표시돼요.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {centerOrderTags.map((tag, index) => (
+                        <div
+                          key={`center-selected-${tag}-${index}`}
+                          className="flex items-center gap-2"
+                        >
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 rounded-full px-2 text-xs"
+                            onClick={() =>
+                              setCenterOrderTags((prev) =>
+                                prev.filter((_, idx) => idx !== index)
+                              )
+                            }
+                          >
+                            {tag}
+                          </Button>
+                          {index < centerOrderTags.length - 1 ? (
+                            <span className="text-xs text-[#17171c]/40">&gt;</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {ORDER_TAGS.map((tag) => {
+                    const selected = centerOrderTags.includes(tag);
+                    return (
+                      <Button
+                        key={`center-tag-${tag}`}
+                        type="button"
+                        variant={selected ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 rounded-full px-3 text-xs"
+                        onClick={() =>
+                          setCenterOrderTags((prev) =>
+                            selected
+                              ? prev.filter((value) => value !== tag)
+                              : [...prev, tag]
+                          )
+                        }
+                      >
+                        {tag}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             ) : null}
           </section>
