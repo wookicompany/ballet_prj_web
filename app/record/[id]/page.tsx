@@ -38,13 +38,14 @@ const MOODS = ["😔", "🙁", "😐", "🙂", "😄"];
 export default function RecordDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
 
   useEffect(() => {
     const fetchRecord = async () => {
+      if (loading) return;
       if (!user) {
         openLoginSheet();
         return;
@@ -72,7 +73,11 @@ export default function RecordDetailPage() {
     };
 
     fetchRecord();
-  }, [params.id, user, router]);
+  }, [params.id, user, router, loading, openLoginSheet]);
+
+  if (loading) {
+    return null;
+  }
 
   if (!user) {
     return (

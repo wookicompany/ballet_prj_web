@@ -24,7 +24,7 @@ function toMinutes(time: string) {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
@@ -32,6 +32,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (loading) return;
       if (!user) {
         openLoginSheet();
         return;
@@ -66,7 +67,11 @@ export default function ProfilePage() {
     };
 
     fetchProfile();
-  }, [user, router]);
+  }, [user, router, loading, openLoginSheet]);
+
+  if (loading) {
+    return null;
+  }
 
   if (!user) {
     return (

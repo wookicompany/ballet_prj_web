@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { CalendarDays, ChevronLeft, Plus } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
@@ -38,12 +39,13 @@ type FormState = {
 
 export default function RecordNewPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
-  const [showOrders, setShowOrders] = useState(false);
+  const [showBarOrder, setShowBarOrder] = useState(false);
+  const [showCenterOrder, setShowCenterOrder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
@@ -90,10 +92,11 @@ export default function RecordNewPage() {
   }, []);
 
   useEffect(() => {
+    if (loading) return;
     if (!user) {
       openLoginSheet();
     }
-  }, [user, openLoginSheet]);
+  }, [user, loading, openLoginSheet]);
 
   const mediaItems = useMemo(() => {
     const items: Array<{
@@ -202,6 +205,16 @@ export default function RecordNewPage() {
 
     router.replace(`/record/${recordId}`);
   };
+
+  if (loading) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
+  }
 
   if (!user) {
     return (
@@ -431,49 +444,62 @@ export default function RecordNewPage() {
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
-                id="order-options"
-                checked={showOrders}
-                onCheckedChange={(checked) => setShowOrders(!!checked)}
+                id="bar-order-options"
+                checked={showBarOrder}
+                onCheckedChange={(checked) => setShowBarOrder(!!checked)}
               />
               <Label
-                htmlFor="order-options"
+                htmlFor="bar-order-options"
                 className="text-xs text-[#17171c]/70"
               >
-                바/센터 순서 입력
+                바 순서 입력
               </Label>
             </div>
-            {showOrders ? (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
-                  <Input
-                    type="text"
-                    className="mt-2"
-                    value={form.bar_order}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        bar_order: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">
-                    센터(center) 순서
-                  </Label>
-                  <Input
-                    type="text"
-                    className="mt-2"
-                    value={form.center_order}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        center_order: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
+            {showBarOrder ? (
+              <div>
+                <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
+                <Input
+                  type="text"
+                  className="mt-2"
+                  value={form.bar_order}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      bar_order: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="center-order-options"
+                checked={showCenterOrder}
+                onCheckedChange={(checked) => setShowCenterOrder(!!checked)}
+              />
+              <Label
+                htmlFor="center-order-options"
+                className="text-xs text-[#17171c]/70"
+              >
+                센터 순서 입력
+              </Label>
+            </div>
+            {showCenterOrder ? (
+              <div>
+                <Label className="text-xs text-[#17171c]/60">
+                  센터(center) 순서
+                </Label>
+                <Input
+                  type="text"
+                  className="mt-2"
+                  value={form.center_order}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      center_order: event.target.value,
+                    }))
+                  }
+                />
               </div>
             ) : null}
           </section>

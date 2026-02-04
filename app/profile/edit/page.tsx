@@ -17,7 +17,7 @@ const BUCKET = "record-media";
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [nickname, setNickname] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -26,6 +26,7 @@ export default function ProfileEditPage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (loading) return;
       if (!user) {
         router.replace("/login");
         return;
@@ -43,10 +44,10 @@ export default function ProfileEditPage() {
     };
 
     fetchProfile();
-  }, [user, router]);
+  }, [user, router, loading]);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || loading) return;
     if (nickname.length > 12) {
       setError("닉네임은 최대 12자까지 가능합니다.");
       return;
@@ -87,7 +88,7 @@ export default function ProfileEditPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user) return;
+    if (!user || loading) return;
     const confirmed = window.confirm(
       "회원탈퇴 시 모든 기록이 삭제됩니다. 진행할까요?"
     );
@@ -99,6 +100,10 @@ export default function ProfileEditPage() {
     await signOut();
     router.replace("/login");
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <MobileContainer>
