@@ -130,8 +130,8 @@ export default function RecordEditPage() {
     setError(null);
     if (!user) return;
 
-    if (!form.record_date || !form.start_time || !form.end_time || !form.content) {
-      setError("필수 항목을 모두 입력해 주세요.");
+    if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
+      setError("날짜와 시간, 감정 상태는 꼭 입력해 주세요.");
       return;
     }
     if (form.end_time < form.start_time) {
@@ -275,7 +275,7 @@ export default function RecordEditPage() {
           <div className="w-9" />
         </header>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <section className="space-y-3">
             <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
             <div className="grid grid-cols-4 gap-2">
@@ -319,18 +319,7 @@ export default function RecordEditPage() {
           <Separator />
 
           <section className="space-y-4">
-            <div>
-              <Label className="text-xs text-[#17171c]/60">감정 상태</Label>
-              <div className="mt-2">
-                <MoodSelector
-                  value={form.mood}
-                  onChange={(next) =>
-                    setForm((prev) => ({ ...prev, mood: next }))
-                  }
-                />
-              </div>
-            </div>
-            <div>
+            <div className="pt-0.5">
               <Label className="text-xs text-[#17171c]/60">날짜</Label>
               <Button
                 type="button"
@@ -354,7 +343,7 @@ export default function RecordEditPage() {
                   : "날짜 선택"}
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <Label className="text-xs text-[#17171c]/60">시작 시간</Label>
                 <Button
@@ -384,9 +373,22 @@ export default function RecordEditPage() {
                 </Button>
               </div>
             </div>
-            <div>
+            <div className="pt-2">
               <Label className="text-xs text-[#17171c]/60">
                 오늘 발레는 어땠나요?
+              </Label>
+              <div className="mt-2">
+                <MoodSelector
+                  value={form.mood}
+                  onChange={(next) =>
+                    setForm((prev) => ({ ...prev, mood: next }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="pt-2">
+              <Label className="text-xs text-[#17171c]/60">
+                오늘 발레를 글로 남겨보아요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px]"
