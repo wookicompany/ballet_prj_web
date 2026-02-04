@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Pencil } from "lucide-react";
 
@@ -76,7 +77,13 @@ export default function RecordDetailPage() {
   }, [params.id, user, router, loading, openLoginSheet]);
 
   if (loading) {
-    return null;
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
   }
 
   if (!user) {
@@ -98,7 +105,7 @@ export default function RecordDetailPage() {
     return (
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-[#17171c]/70">기록을 불러오는 중...</p>
+          <Spinner size="lg" />
         </main>
       </MobileContainer>
     );

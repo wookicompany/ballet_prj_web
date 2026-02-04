@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
 import { CalendarDays, ChevronLeft, Plus } from "lucide-react";
@@ -39,12 +40,12 @@ type FormState = {
 export default function RecordEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recordLoading, setRecordLoading] = useState(true);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +90,7 @@ export default function RecordEditPage() {
 
   useEffect(() => {
     const fetchRecord = async () => {
-      if (loading) return;
+      if (authLoading) return;
       if (!user) {
         openLoginSheet();
         return;
@@ -123,15 +124,15 @@ export default function RecordEditPage() {
         setShowBarOrder(!!data.bar_order);
         setShowCenterOrder(!!data.center_order);
       }
-      setLoading(false);
+      setRecordLoading(false);
     };
 
     fetchRecord();
-  }, [params.id, user, router, loading, openLoginSheet]);
+  }, [params.id, user, router, authLoading, openLoginSheet]);
 
   const handleSubmit = async () => {
     setError(null);
-    if (!user) return;
+    if (!user || authLoading) return;
 
     if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
       setError("날짜와 시간, 감정 상태는 꼭 입력해 주세요.");
@@ -235,8 +236,14 @@ export default function RecordEditPage() {
   const endHour = form.end_time ? form.end_time.split(":")[0] : "00";
   const endMinute = form.end_time ? form.end_time.split(":")[1] : "00";
 
-  if (loading) {
-    return null;
+  if (authLoading) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
   }
 
   if (!user) {
@@ -254,11 +261,11 @@ export default function RecordEditPage() {
     );
   }
 
-  if (loading) {
+  if (recordLoading) {
     return (
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-[#17171c]/70">기록을 불러오는 중...</p>
+          <Spinner size="lg" />
         </main>
       </MobileContainer>
     );

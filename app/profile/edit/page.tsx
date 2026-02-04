@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Paperclip } from "lucide-react";
 
@@ -102,7 +103,13 @@ export default function ProfileEditPage() {
   };
 
   if (loading) {
-    return null;
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
   }
 
   return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabaseClient";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -66,9 +67,11 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <p className="text-sm text-[#17171c]">
-        {error ?? "로그인 처리 중입니다..."}
-      </p>
+      {error ? (
+        <p className="text-sm text-[#17171c]">{error}</p>
+      ) : (
+        <Spinner size="lg" />
+      )}
     </main>
   );
 }

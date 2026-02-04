@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { Settings } from "lucide-react";
 
@@ -70,7 +71,13 @@ export default function ProfilePage() {
   }, [user, router, loading, openLoginSheet]);
 
   if (loading) {
-    return null;
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
   }
 
   if (!user) {
@@ -92,7 +99,7 @@ export default function ProfilePage() {
     return (
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-[#17171c]/70">프로필 로딩 중...</p>
+          <Spinner size="lg" />
         </main>
       </MobileContainer>
     );
