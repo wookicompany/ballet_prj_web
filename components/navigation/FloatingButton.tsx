@@ -22,7 +22,7 @@ export default function FloatingButton() {
     <Button
       type="button"
       size="icon-lg"
-      className="fixed bottom-20 right-1/2 z-20 translate-x-[190px] rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+      className="fixed bottom-[72px] right-4 z-20 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
       aria-label="기록 생성"
       onClick={() => {
         if (!user) {
@@ -32,7 +32,7 @@ export default function FloatingButton() {
         router.push("/record/new");
       }}
     >
-      <span className="relative top-[1px] text-[28px] leading-none">+</span>
+      <span className="text-[28px] leading-none">+</span>
     </Button>
   );
 }

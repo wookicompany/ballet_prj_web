@@ -158,8 +158,8 @@ export default function CalendarPage() {
   }, [currentDate, weekStartMonday]);
 
   return (
-    <main className="flex min-h-[calc(100vh-56px)] flex-col px-4 pb-6 pt-6">
-      <header className="mb-4 flex items-center justify-between">
+    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-6">
+      <header className="mb-4 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <p className="text-xl font-semibold">{monthLabel}</p>
           <Button
@@ -188,7 +188,7 @@ export default function CalendarPage() {
         </Button>
       </header>
 
-      <section className="grid grid-cols-7 gap-2 pb-2 text-center text-xs text-[#17171c]/60">
+      <section className="grid grid-cols-7 gap-0 pb-2 text-center text-xs text-[#17171c]/60">
         {weekLabels.map((day, index) => {
           const isWeekend =
             index === (weekStartMonday ? 5 : 0) || index === 6;
@@ -200,15 +200,16 @@ export default function CalendarPage() {
           return (
             <span
               key={day}
-              className={`py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
+              className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
             >
-            {day}
+              {day}
             </span>
           );
         })}
       </section>
+      <div className="h-px w-full bg-black/5" />
 
-      <section className="grid flex-1 grid-cols-7 gap-2 auto-rows-fr">
+      <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
         {cells.map((cell, index) => {
           const isEmpty = !cell.date;
           const dateStr = cell.date ? formatDate(cell.date) : "";
@@ -232,7 +233,7 @@ export default function CalendarPage() {
               key={`${index}-${dateStr}`}
               type="button"
               variant="outline"
-              className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-lg border-transparent bg-transparent p-1 text-sm hover:bg-black/5 ${
+              className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 ${
                 isEmpty ? "opacity-40" : ""
               }`}
               disabled={isEmpty}
