@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 
-const MOODS = ["😔", "🙁", "😐", "🙂", "😄"];
+const MOODS = [1, 2, 3, 4, 5];
 
 export default function MoodSelector({
   value,
@@ -13,24 +13,27 @@ export default function MoodSelector({
 }) {
   return (
     <div className="flex gap-2">
-      {MOODS.map((emoji, index) => {
-        const moodValue = index + 1;
+      {MOODS.map((moodValue) => {
         const isActive = value === moodValue;
 
         return (
           <Button
-            key={emoji}
+            key={`mood-${moodValue}`}
             type="button"
             variant="outline"
             size="icon"
-            className={`h-9 w-9 rounded-full text-lg ${
+            className={`h-[58px] w-[58px] rounded-full p-0 ${
               isActive
                 ? "border-[#17171c] bg-[#17171c]/5"
                 : "border-black/10"
             }`}
             onClick={() => onChange(moodValue)}
           >
-            {emoji}
+            <img
+              src={`/mood/cat-${moodValue}.svg`}
+              alt={`기분 ${moodValue}단계`}
+              className="h-10 w-10"
+            />
           </Button>
         );
       })}

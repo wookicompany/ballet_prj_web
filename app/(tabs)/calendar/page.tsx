@@ -26,6 +26,7 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
+  const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => ({
@@ -44,12 +45,13 @@ export default function CalendarPage() {
     const fetchCounts = async () => {
       if (!user) {
         setRecordCounts({});
+        setMoodAverages({});
         return;
       }
 
       const { data, error } = await supabase
         .from("records")
-        .select("record_date")
+        .select("record_date,mood")
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .gte("record_date", formatDate(start))
@@ -57,14 +59,30 @@ export default function CalendarPage() {
 
       if (error || !data) {
         setRecordCounts({});
+        setMoodAverages({});
         return;
       }
 
       const counts: Record<string, number> = {};
+      const moodTotals: Record<string, number> = {};
+      const moodCounts: Record<string, number> = {};
       data.forEach((record) => {
         counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
+        if (record.mood) {
+          moodTotals[record.record_date] =
+            (moodTotals[record.record_date] ?? 0) + record.mood;
+          moodCounts[record.record_date] =
+            (moodCounts[record.record_date] ?? 0) + 1;
+        }
       });
       setRecordCounts(counts);
+      const averages: Record<string, number> = {};
+      Object.keys(moodTotals).forEach((date) => {
+        const avg = moodTotals[date] / (moodCounts[date] ?? 1);
+        const rounded = Math.round(avg);
+        averages[date] = Math.min(5, Math.max(1, rounded));
+      });
+      setMoodAverages(averages);
     };
 
     fetchCounts();
@@ -214,6 +232,7 @@ export default function CalendarPage() {
           const isEmpty = !cell.date;
           const dateStr = cell.date ? formatDate(cell.date) : "";
           const count = recordCounts[dateStr] ?? 0;
+          const moodValue = moodAverages[dateStr];
           const isToday = dateStr === todayStr;
           const weekendIndex = cell.date
             ? weekStartMonday
@@ -233,7 +252,7 @@ export default function CalendarPage() {
               key={`${index}-${dateStr}`}
               type="button"
               variant="outline"
-              className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 ${
+              className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 overflow-visible ${
                 isEmpty ? "opacity-40" : ""
               }`}
               disabled={isEmpty}
@@ -242,26 +261,39 @@ export default function CalendarPage() {
                 router.push(`/day/${dateStr}`);
               }}
             >
-              <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                  isToday
-                    ? "bg-[#ff273d] text-white"
-                    : highlightWeekend && isWeekend
-                      ? weekendClass
-                      : "text-[#17171c]"
-                }`}
-              >
-                {cell.day ?? ""}
-              </span>
-              {count > 0 ? (
-                <div className="relative h-3 w-3">
-                  <span className="absolute inset-0 rounded-full bg-[#17171c]" />
-                  {count >= 2 ? (
-                    <Badge className="absolute -right-3 -top-2 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-[10px] text-white">
-                      {count}
-                    </Badge>
-                  ) : null}
-                </div>
+              <div className="flex w-full items-start justify-center">
+                <span
+                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    isToday
+                      ? "bg-[#ff273d] text-white"
+                      : highlightWeekend && isWeekend
+                        ? weekendClass
+                        : "text-[#17171c]"
+                  }`}
+                >
+                  {cell.day ?? ""}
+                </span>
+              </div>
+              <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
+                {moodValue ? (
+                  <div className="relative h-full w-full overflow-visible">
+                    <img
+                      src={`/mood/cat-${moodValue}.svg`}
+                      alt={`기분 ${moodValue}단계`}
+                      className="h-full w-full max-h-[52px] object-contain"
+                    />
+                    {count >= 2 ? (
+                      <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-[11px] text-white">
+                        {count}
+                      </Badge>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {!moodValue && count >= 2 ? (
+                <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-[10px] text-white">
+                  {count}
+                </Badge>
               ) : null}
             </Button>
           );

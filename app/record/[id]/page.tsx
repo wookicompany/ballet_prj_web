@@ -6,11 +6,12 @@ import { useParams, useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { ChevronLeft, Menu } from "lucide-react";
 
 type RecordDetail = {
   id: string;
@@ -43,6 +44,7 @@ export default function RecordDetailPage() {
   const { openLoginSheet } = useLoginSheet();
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchRecord = async () => {
@@ -145,10 +147,10 @@ export default function RecordDetailPage() {
             variant="ghost"
             size="icon-sm"
             className="text-[#17171c]/70"
-            onClick={() => router.push(`/record/${record.id}/edit`)}
-            aria-label="기록 수정"
+            onClick={() => setMenuOpen(true)}
+            aria-label="기록 메뉴"
           >
-            <Pencil className="h-4 w-4" />
+            <Menu className="h-5 w-5" />
           </Button>
         </header>
 
@@ -238,16 +240,37 @@ export default function RecordDetailPage() {
               </div>
             </div>
           ) : null}
-          <Separator />
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full"
-            onClick={handleDelete}
-          >
-            삭제
-          </Button>
         </div>
+        <BottomSheet
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          title="기록 메뉴"
+        >
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setMenuOpen(false);
+                router.push(`/record/${record.id}/edit`);
+              }}
+            >
+              편집
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              onClick={() => {
+                setMenuOpen(false);
+                handleDelete();
+              }}
+            >
+              삭제
+            </Button>
+          </div>
+        </BottomSheet>
       </main>
     </MobileContainer>
   );
