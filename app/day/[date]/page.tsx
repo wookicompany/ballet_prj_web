@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft } from "lucide-react";
@@ -25,6 +26,7 @@ export default function DayPage() {
   const router = useRouter();
   const params = useParams<{ date: string }>();
   const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [mediaByRecord, setMediaByRecord] = useState<
     Record<string, { url: string | null; count: number }>
@@ -221,32 +223,34 @@ export default function DayPage() {
                 style={{ top: `${top}px`, height: `${clampedHeight}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
-                <div className="flex h-full items-center gap-3">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-black/5">
-                    {media?.url ? (
-                      <img
-                        src={media.url}
-                        alt="기록 미디어"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : null}
-                    {media?.count ? (
-                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#17171c] px-1 text-[10px] font-semibold text-white">
-                        {media.count}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="min-w-0 flex-1 text-left">
-                    <p className="line-clamp-2 text-[12px] font-semibold text-[#17171c]">
-                      {record.content || "오늘의 발레를 한줄로 남겨보아요."}
-                    </p>
-                  </div>
+                <div className="flex h-full w-full items-center justify-between gap-3">
                   {record.mood ? (
                     <img
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
                       className="h-10 w-10 shrink-0"
                     />
+                  ) : (
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-black/5" />
+                  )}
+                  <div className="min-w-0 flex-1 text-center">
+                    <p className="line-clamp-2 text-[12px] font-semibold text-[#17171c]">
+                      {record.content || "오늘의 발레를 한줄로 남겨보아요."}
+                    </p>
+                  </div>
+                  {media?.url ? (
+                    <div className="relative h-12 w-12 shrink-0 rounded-xl bg-black/5">
+                      <img
+                        src={media.url}
+                        alt="기록 미디어"
+                        className="h-full w-full rounded-xl object-cover"
+                      />
+                      {media.count > 1 ? (
+                        <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#17171c] px-1 text-[10px] font-semibold text-white">
+                          {media.count}
+                        </span>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               </Button>
@@ -254,6 +258,21 @@ export default function DayPage() {
           })}
         </div>
       </section>
+      <Button
+        type="button"
+        size="icon-lg"
+        className="fixed bottom-6 right-4 z-20 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+        aria-label="기록 등록"
+        onClick={() => {
+          if (!user) {
+            openLoginSheet();
+            return;
+          }
+          router.push("/record/new");
+        }}
+      >
+        <span className="text-[28px] leading-none">+</span>
+      </Button>
     </main>
   );
 }

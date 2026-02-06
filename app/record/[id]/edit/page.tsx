@@ -615,11 +615,17 @@ export default function RecordEditPage() {
               </div>
             </div>
             <div className="pt-2">
-              <Label className="text-xs text-[#17171c]/60">
-                오늘의 발레를 한줄로 남겨보아요.
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-[#17171c]/60">
+                  오늘의 발레를 한줄로 남겨보아요.
+                </Label>
+                <span className="text-[11px] text-[#17171c]/50">
+                  {form.content.length}/12
+                </span>
+              </div>
               <Input
                 className="mt-2 text-sm"
+                maxLength={12}
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
@@ -928,7 +934,7 @@ export default function RecordEditPage() {
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
           <Button
             type="button"
-            className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             disabled={saving}
             onClick={handleSubmit}
           >

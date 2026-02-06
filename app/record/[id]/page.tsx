@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -44,6 +44,29 @@ const formatTimeLabel = (time: string) => {
   return `${hour}시 ${minute}분`;
 };
 
+const calculateDuration = (start: string, end: string) => {
+  const [sh, sm] = start.split(":").map((value) => Number(value));
+  const [eh, em] = end.split(":").map((value) => Number(value));
+  const startMinutes = sh * 60 + sm;
+  const endMinutes = eh * 60 + em;
+  const diff = Math.max(endMinutes - startMinutes, 0);
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
+  return { hours, minutes };
+};
+
+const formatDateTimeLine = (dateStr: string, start: string, end: string) => {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = Number.isNaN(date.getTime())
+    ? ""
+    : `(${weekdays[date.getDay()]})`;
+  const duration = calculateDuration(start, end);
+  return `${dateStr}${weekday} ${formatTimeLabel(start)} - ${formatTimeLabel(
+    end
+  )} (총 ${duration.hours}시간 ${duration.minutes}분)`;
+};
+
 const parseOrderTags = (value: string | null) =>
   value
     ? value
@@ -60,6 +83,8 @@ export default function RecordDetailPage() {
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const mediaScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchRecord = async () => {
@@ -88,6 +113,7 @@ export default function RecordDetailPage() {
         .eq("user_id", user.id);
 
       setMedia((mediaData as MediaItem[]) ?? []);
+      setActiveMediaIndex(0);
     };
 
     fetchRecord();
@@ -184,11 +210,24 @@ export default function RecordDetailPage() {
         <div className="space-y-8">
           {media.length > 0 ? (
             <section className="space-y-3">
-              <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
+              <div
+                ref={mediaScrollRef}
+                className="no-scrollbar flex snap-x snap-mandatory gap-0 overflow-x-auto pb-1"
+                onScroll={() => {
+                  const container = mediaScrollRef.current;
+                  if (!container) return;
+                  const width = container.clientWidth;
+                  if (!width) return;
+                  const nextIndex = Math.round(container.scrollLeft / width);
+                  setActiveMediaIndex((prev) =>
+                    prev === nextIndex ? prev : nextIndex
+                  );
+                }}
+              >
                 {media.map((item) => (
                   <div
                     key={item.id}
-                    className="w-full shrink-0 snap-center overflow-hidden rounded-2xl border border-black/10 bg-black/5"
+                    className="min-w-full shrink-0 snap-center snap-always overflow-hidden rounded-2xl border border-black/10 bg-black/5"
                   >
                     <AspectRatio ratio={1}>
                       {item.media_type === "video" ? (
@@ -209,31 +248,31 @@ export default function RecordDetailPage() {
                   </div>
                 ))}
               </div>
+              {media.length > 1 ? (
+                <div className="flex items-center justify-center gap-1.5">
+                  {media.map((item, index) => (
+                    <span
+                      key={`media-dot-${item.id}`}
+                      className={`h-1.5 w-1.5 rounded-full transition ${
+                        index === activeMediaIndex
+                          ? "bg-[#17171c]"
+                          : "bg-black/15"
+                      }`}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </section>
           ) : null}
 
-          <Separator />
-
           <section className="space-y-4">
-            <div className="pt-0">
-              <Label className="text-xs text-[#17171c]/60">날짜</Label>
-              <div className="mt-2 w-full text-sm text-[#17171c]">
-                {record.record_date}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div>
-                <Label className="text-xs text-[#17171c]/60">시작 시간</Label>
-                <div className="mt-2 w-full text-sm text-[#17171c]">
-                  {formatTimeLabel(record.start_time)}
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-[#17171c]/60">종료 시간</Label>
-                <div className="mt-2 w-full text-sm text-[#17171c]">
-                  {formatTimeLabel(record.end_time)}
-                </div>
-              </div>
+            <Label className="text-xs text-[#17171c]/60">날짜와 시간</Label>
+            <div className="pt-0 text-sm font-medium text-[#17171c]">
+              {formatDateTimeLine(
+                record.record_date,
+                record.start_time,
+                record.end_time
+              )}
             </div>
             {record.mood ? (
               <div className="pt-2">
@@ -380,7 +419,7 @@ export default function RecordDetailPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="h-12 w-full"
               onClick={() => {
                 setMenuOpen(false);
                 router.push(`/record/${record.id}/edit`);
@@ -391,7 +430,7 @@ export default function RecordDetailPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full text-red-500 hover:text-red-500"
+              className="h-12 w-full text-red-500 hover:text-red-500"
               onClick={() => {
                 setMenuOpen(false);
                 handleDelete();
