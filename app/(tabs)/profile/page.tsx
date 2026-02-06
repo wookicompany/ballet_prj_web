@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { Menu } from "lucide-react";
+import { Menu, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -108,7 +108,6 @@ export default function ProfilePage() {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   const displayName = profile.nickname ?? "마이발레";
-  const initial = displayName.trim().charAt(0) || "마";
 
   return (
     <MobileContainer>
@@ -137,8 +136,8 @@ export default function ProfilePage() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-[#17171c]/70">
-                  {initial}
+                <div className="flex h-full w-full items-center justify-center text-[#17171c]/60">
+                  <User className="h-7 w-7" />
                 </div>
               )}
             </div>

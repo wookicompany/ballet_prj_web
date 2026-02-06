@@ -7,7 +7,13 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, ChevronRight, LogOut, UserX } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  MessageCircle,
+  UserX,
+} from "lucide-react";
 
 export default function ProfileMenuPage() {
   const router = useRouter();
@@ -60,6 +66,22 @@ export default function ProfileMenuPage() {
           <h1 className="text-base font-semibold">더보기</h1>
           <div className="w-9" />
         </header>
+
+        <section className="rounded-xl border border-black/5 bg-white">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <MessageCircle className="h-5 w-5 text-[#17171c]/70" />
+              문의하기
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+        </section>
+
+        <div className="my-6 h-px w-full bg-black/5" />
 
         <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
           <Button

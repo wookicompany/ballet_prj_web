@@ -523,12 +523,12 @@ export default function RecordNewPage() {
                   오늘의 발레를 한줄로 남겨보아요.
                 </Label>
                 <span className="text-[11px] text-[#17171c]/50">
-                  {form.content.length}/12
+                  {form.content.length}/16
                 </span>
               </div>
               <Input
                 className="mt-2 text-sm"
-                maxLength={12}
+                maxLength={16}
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
