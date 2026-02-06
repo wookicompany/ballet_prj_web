@@ -16,7 +16,7 @@ export default function ProfileMenuPage() {
   const handleLogout = async () => {
     if (!user || loading) return;
     await signOut();
-    router.replace("/login");
+    router.replace("/calendar");
   };
 
   const handleDeleteAccount = async () => {
@@ -30,7 +30,7 @@ export default function ProfileMenuPage() {
     await supabase.from("records").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
     await signOut();
-    router.replace("/login");
+    router.replace("/calendar");
   };
 
   if (loading) {

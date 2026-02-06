@@ -8,7 +8,6 @@
 
 - 기본 진입 경로: `/calendar`
 - 라우트 네이밍
-  - `/login`
   - `/calendar`
   - `/day/[date]`
   - `/record/new`

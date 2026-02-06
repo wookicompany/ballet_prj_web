@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ const BUCKET = "record-media";
 export default function ProfileEditPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [nickname, setNickname] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -28,7 +30,7 @@ export default function ProfileEditPage() {
     const fetchProfile = async () => {
       if (loading) return;
       if (!user) {
-        router.replace("/login");
+        openLoginSheet();
         return;
       }
       const { data } = await supabase
@@ -44,7 +46,7 @@ export default function ProfileEditPage() {
     };
 
     fetchProfile();
-  }, [user, router, loading]);
+  }, [user, loading, openLoginSheet]);
 
   const handleSave = async () => {
     if (!user || loading) return;
@@ -92,6 +94,25 @@ export default function ProfileEditPage() {
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
           <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
+  }
+
+  if (!user) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+          <p className="text-sm text-[#17171c]/70">
+            로그인이 필요한 화면이에요.
+          </p>
+          <Button
+            type="button"
+            className="bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            onClick={openLoginSheet}
+          >
+            로그인하고 계속하기
+          </Button>
         </main>
       </MobileContainer>
     );
