@@ -25,14 +25,17 @@ export default function BottomSheet({
   description,
   children,
 }: BottomSheetProps) {
+  const resolvedDescription =
+    description ?? "선택 항목을 확인해 주세요.";
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
-          {description ? (
-            <DrawerDescription>{description}</DrawerDescription>
-          ) : null}
+          <DrawerDescription className={description ? undefined : "sr-only"}>
+            {resolvedDescription}
+          </DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-6">{children}</div>
       </DrawerContent>

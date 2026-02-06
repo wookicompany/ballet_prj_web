@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -13,6 +13,7 @@ type RecordItem = {
   start_time: string;
   end_time: string;
   content: string;
+  mood: number | null;
 };
 
 function toMinutes(time: string) {
@@ -25,8 +26,21 @@ export default function DayPage() {
   const params = useParams<{ date: string }>();
   const { user } = useAuth();
   const [records, setRecords] = useState<RecordItem[]>([]);
+  const [mediaByRecord, setMediaByRecord] = useState<
+    Record<string, { url: string | null; count: number }>
+  >({});
+  const dayStripRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   const dateStr = params.date;
+  const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
+  const todayKey = useMemo(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -36,21 +50,98 @@ export default function DayPage() {
       }
       const { data } = await supabase
         .from("records")
-        .select("id,start_time,end_time,content")
+        .select("id,start_time,end_time,content,mood")
         .eq("user_id", user.id)
         .eq("record_date", dateStr)
         .is("deleted_at", null)
         .order("start_time");
 
-      setRecords((data as RecordItem[]) ?? []);
+      const nextRecords = (data as RecordItem[]) ?? [];
+      setRecords(nextRecords);
+
+      if (nextRecords.length === 0) {
+        setMediaByRecord({});
+        return;
+      }
+
+      const recordIds = nextRecords.map((record) => record.id);
+      const { data: mediaData } = await supabase
+        .from("record_media")
+        .select("record_id,url,created_at")
+        .in("record_id", recordIds)
+        .order("created_at", { ascending: true });
+
+      const nextMedia: Record<string, { url: string | null; count: number }> = {};
+      (mediaData ?? []).forEach((item) => {
+        const recordId = item.record_id as string;
+        if (!nextMedia[recordId]) {
+          nextMedia[recordId] = { url: item.url as string, count: 1 };
+          return;
+        }
+        nextMedia[recordId].count += 1;
+      });
+      setMediaByRecord(nextMedia);
     };
 
     fetchRecords();
   }, [user, dateStr]);
 
   const hourLabels = useMemo(() => {
-    return Array.from({ length: 24 }, (_, idx) => idx);
+    return Array.from({ length: 18 }, (_, idx) => idx + 6);
   }, []);
+
+  const [nowMinutes, setNowMinutes] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (dateStr !== todayKey) {
+      setNowMinutes(null);
+      return;
+    }
+    const updateNow = () => {
+      const now = new Date();
+      setNowMinutes(now.getHours() * 60 + now.getMinutes());
+    };
+    updateNow();
+    const interval = window.setInterval(updateNow, 60 * 1000);
+    return () => window.clearInterval(interval);
+  }, [dateStr, todayKey]);
+
+  useEffect(() => {
+    const container = timelineRef.current;
+    if (!container) return;
+    if (dateStr !== todayKey || nowMinutes === null) {
+      container.scrollTop = 0;
+      return;
+    }
+    const startMinutes = 6 * 60;
+    const visibleMinutes = Math.max(nowMinutes - startMinutes, 0);
+    const targetTop = visibleMinutes - container.clientHeight / 3;
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    const clamped = Math.min(Math.max(targetTop, 0), Math.max(maxScroll, 0));
+    const scrollNow = () => {
+      container.scrollTo({ top: clamped, behavior: "auto" });
+    };
+    requestAnimationFrame(scrollNow);
+    window.setTimeout(scrollNow, 120);
+  }, [dateStr, todayKey, nowMinutes, records.length]);
+
+  const dayStrip = useMemo(() => {
+    const base = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(base.getTime())) return [];
+    return Array.from({ length: 7 }, (_, idx) => {
+      const offset = idx - 3;
+      const nextDate = new Date(base);
+      nextDate.setDate(base.getDate() + offset);
+      const yyyy = nextDate.getFullYear();
+      const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
+      const dd = String(nextDate.getDate()).padStart(2, "0");
+      return {
+        key: `${yyyy}-${mm}-${dd}`,
+        day: weekDays[nextDate.getDay()],
+        date: String(nextDate.getDate()),
+      };
+    });
+  }, [dateStr, weekDays]);
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-[#17171c]">
@@ -66,41 +157,97 @@ export default function DayPage() {
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="text-center">
-          <p className="text-xs text-[#17171c]/60">일별 타임라인</p>
           <h1 className="text-base font-semibold">{dateStr}</h1>
         </div>
         <div className="w-9" />
       </header>
 
-      <section className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
-        <div className="relative h-[1440px]">
+      <section className="pt-4">
+        <div className="flex items-center justify-between px-4 pb-1">
+          {dayStrip.map((item) => {
+            const isActive = item.key === dateStr;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => router.push(`/day/${item.key}`)}
+                className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition ${
+                  isActive
+                    ? "bg-black/5 text-[#17171c] shadow-sm"
+                    : "text-[#17171c]/60"
+                }`}
+              >
+                <span className="text-[11px]">{item.day}</span>
+                <span className="text-sm font-semibold">{item.date}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section
+        ref={timelineRef}
+        className="flex-1 overflow-y-auto px-4 pb-6 pt-4"
+      >
+        <div className="relative h-[1080px]">
           {hourLabels.map((hour) => (
             <div
               key={hour}
               className="absolute left-0 flex h-10 w-full items-start px-1 text-[11px] text-[#17171c]/45"
-              style={{ top: `${hour * 60}px` }}
+              style={{ top: `${(hour - 6) * 60}px` }}
             >
               {String(hour).padStart(2, "0")}:00
             </div>
           ))}
+          {nowMinutes !== null && nowMinutes >= 6 * 60 ? (
+            <div
+              className="absolute left-0 right-0 h-px bg-[#ff273d]"
+              style={{ top: `${nowMinutes - 6 * 60}px` }}
+            />
+          ) : null}
           {records.map((record) => {
             const start = toMinutes(record.start_time);
             const end = toMinutes(record.end_time);
             const height = Math.max(end - start, 10);
+            const top = Math.max(start - 6 * 60, 0);
+            const clampedHeight = Math.min(height, 1080 - top);
+            const media = mediaByRecord[record.id];
 
             return (
               <Button
                 key={record.id}
                 type="button"
-                className="absolute left-12 right-2 h-auto items-start rounded-xl bg-[#17171c] px-3 py-2 text-left text-xs text-white shadow-md"
-                style={{ top: `${start}px`, height: `${height}px` }}
+                className="absolute left-12 right-2 h-auto rounded-2xl border border-black/5 bg-white px-3 py-2 text-left text-xs text-[#17171c] shadow-sm"
+                style={{ top: `${top}px`, height: `${clampedHeight}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
-                <div className="font-semibold">
-                  {record.start_time.slice(0, 5)} - {record.end_time.slice(0, 5)}
-                </div>
-                <div className="line-clamp-2 text-[11px] text-white/80">
-                  {record.content}
+                <div className="flex h-full items-center gap-3">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-black/5">
+                    {media?.url ? (
+                      <img
+                        src={media.url}
+                        alt="기록 미디어"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                    {media?.count ? (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#17171c] px-1 text-[10px] font-semibold text-white">
+                        {media.count}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="line-clamp-2 text-[12px] font-semibold text-[#17171c]">
+                      {record.content || "오늘의 발레를 한줄로 남겨보아요."}
+                    </p>
+                  </div>
+                  {record.mood ? (
+                    <img
+                      src={`/mood/cat-${record.mood}.svg`}
+                      alt="오늘 발레 기분"
+                      className="h-10 w-10 shrink-0"
+                    />
+                  ) : null}
                 </div>
               </Button>
             );

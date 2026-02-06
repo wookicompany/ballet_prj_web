@@ -33,6 +33,14 @@ const ORDER_TAGS = [
   "퐁듀",
 ];
 
+const getSafeFileName = (file: File) => {
+  const fallbackExt = file.type?.split("/")[1] || "jpg";
+  const match = file.name.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = match ? match[1].toLowerCase() : fallbackExt;
+  const seed = Math.random().toString(36).slice(2, 10);
+  return `${Date.now()}-${seed}.${ext}`;
+};
+
 type FormState = {
   record_date: string;
   start_time: string;
@@ -57,12 +65,21 @@ export default function RecordNewPage() {
   const [images, setImages] = useState<File[]>([]);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
+  const [showLevelInstructor, setShowLevelInstructor] = useState(false);
   const [barOrderTags, setBarOrderTags] = useState<string[]>([]);
   const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
   const [endSheetOpen, setEndSheetOpen] = useState(false);
+  const yearListRef = useRef<HTMLDivElement>(null);
+  const monthListRef = useRef<HTMLDivElement>(null);
+  const dayListRef = useRef<HTMLDivElement>(null);
+  const startHourListRef = useRef<HTMLDivElement>(null);
+  const startMinuteListRef = useRef<HTMLDivElement>(null);
+  const endHourListRef = useRef<HTMLDivElement>(null);
+  const endMinuteListRef = useRef<HTMLDivElement>(null);
   const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
   const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
   const [dateDraft, setDateDraft] = useState({
@@ -70,8 +87,11 @@ export default function RecordNewPage() {
     month: new Date().getMonth() + 1,
     day: new Date().getDate(),
   });
+  const [locationName, setLocationName] = useState("");
+  const [locationBase, setLocationBase] = useState("");
+  const [locationDetail, setLocationDetail] = useState("");
   const hours = useMemo(
-    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
+    () => Array.from({ length: 18 }, (_, idx) => String(idx + 6).padStart(2, "0")),
     []
   );
   const minutes = useMemo(
@@ -102,6 +122,38 @@ export default function RecordNewPage() {
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
     setForm((prev) => ({ ...prev, record_date: today }));
+  }, []);
+
+  useEffect(() => {
+    if (!dateSheetOpen) return;
+
+    const scrollToCenter = (container: HTMLDivElement | null, value: string) => {
+      if (!container) return;
+      const target = container.querySelector<HTMLButtonElement>(
+        `button[data-value="${value}"]`
+      );
+      if (!target) return;
+      target.scrollIntoView({ block: "center", inline: "center" });
+    };
+
+    const frame = requestAnimationFrame(() => {
+      scrollToCenter(yearListRef.current, String(dateDraft.year));
+      scrollToCenter(monthListRef.current, String(dateDraft.month).padStart(2, "0"));
+      scrollToCenter(dayListRef.current, String(dateDraft.day).padStart(2, "0"));
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [dateSheetOpen, dateDraft.year, dateDraft.month, dateDraft.day]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (document.getElementById("kakao-postcode-script")) return;
+    const script = document.createElement("script");
+    script.id = "kakao-postcode-script";
+    script.src =
+      "//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+    script.async = true;
+    document.body.appendChild(script);
   }, []);
 
   useEffect(() => {
@@ -151,10 +203,64 @@ export default function RecordNewPage() {
     setImages((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const handleSearchAddress = () => {
+    if (typeof window === "undefined") return;
+    const kakao = (window as typeof window & { kakao?: any }).kakao;
+    if (!kakao?.Postcode) {
+      setError("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    new kakao.Postcode({
+      oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => {
+        const address = data.roadAddress || data.jibunAddress || "";
+        setLocationBase(address);
+        setLocationDetail("");
+      },
+    }).open();
+  };
+
   const startHour = form.start_time ? form.start_time.split(":")[0] : "00";
   const startMinute = form.start_time ? form.start_time.split(":")[1] : "00";
   const endHour = form.end_time ? form.end_time.split(":")[0] : "00";
   const endMinute = form.end_time ? form.end_time.split(":")[1] : "00";
+  const getClampedNowTime = () => {
+    const now = new Date();
+    const hourValue = Math.max(now.getHours(), 6);
+    const minuteValue = now.getMinutes();
+    return {
+      hour: String(hourValue).padStart(2, "0"),
+      minute: String(minuteValue).padStart(2, "0"),
+    };
+  };
+
+  useEffect(() => {
+    if (!startSheetOpen) return;
+    requestAnimationFrame(() => {
+      const hourTarget = startHourListRef.current?.querySelector(
+        `[data-value="${startDraft.hour}"]`
+      );
+      const minuteTarget = startMinuteListRef.current?.querySelector(
+        `[data-value="${startDraft.minute}"]`
+      );
+      hourTarget?.scrollIntoView({ block: "center" });
+      minuteTarget?.scrollIntoView({ block: "center" });
+    });
+  }, [startSheetOpen, startDraft]);
+
+  useEffect(() => {
+    if (!endSheetOpen) return;
+    requestAnimationFrame(() => {
+      const hourTarget = endHourListRef.current?.querySelector(
+        `[data-value="${endDraft.hour}"]`
+      );
+      const minuteTarget = endMinuteListRef.current?.querySelector(
+        `[data-value="${endDraft.minute}"]`
+      );
+      hourTarget?.scrollIntoView({ block: "center" });
+      minuteTarget?.scrollIntoView({ block: "center" });
+    });
+  }, [endSheetOpen, endDraft]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -169,12 +275,22 @@ export default function RecordNewPage() {
       return;
     }
 
+    const resolvedLocation = showLocation
+      ? [locationName, locationBase, locationDetail]
+          .filter(Boolean)
+          .join(" ")
+          .trim()
+      : "";
+
     setSaving(true);
     const { data, error: insertError } = await supabase
       .from("records")
       .insert({
         user_id: user.id,
         ...form,
+        location: resolvedLocation,
+        level: showLevelInstructor ? form.level : "",
+        instructor: showLevelInstructor ? form.instructor : "",
         bar_order: showBarOrder ? barOrderTags.join(", ") : "",
         center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
       })
@@ -198,7 +314,7 @@ export default function RecordNewPage() {
       uploads.push({
         file,
         media_type: "image",
-        path: `${user.id}/${recordId}/${Date.now()}-${file.name}`,
+        path: `${user.id}/${recordId}/${getSafeFileName(file)}`,
       });
     });
     for (const upload of uploads) {
@@ -349,7 +465,10 @@ export default function RecordNewPage() {
                   variant="outline"
                   className="mt-2 w-full justify-start text-left font-normal"
                   onClick={() => {
-                    setStartDraft({ hour: startHour, minute: startMinute });
+                    const nextDraft = form.start_time
+                      ? { hour: startHour, minute: startMinute }
+                      : getClampedNowTime();
+                    setStartDraft(nextDraft);
                     setStartSheetOpen(true);
                   }}
                 >
@@ -365,7 +484,10 @@ export default function RecordNewPage() {
                   variant="outline"
                   className="mt-2 w-full justify-start text-left font-normal"
                   onClick={() => {
-                    setEndDraft({ hour: endHour, minute: endMinute });
+                    const nextDraft = form.end_time
+                      ? { hour: endHour, minute: endMinute }
+                      : getClampedNowTime();
+                    setEndDraft(nextDraft);
                     setEndSheetOpen(true);
                   }}
                 >
@@ -390,10 +512,10 @@ export default function RecordNewPage() {
             </div>
             <div className="pt-2">
               <Label className="text-xs text-[#17171c]/60">
-                오늘 발레를 글로 남겨보아요.
+                오늘의 발레를 한줄로 남겨보아요.
               </Label>
-              <Textarea
-                className="mt-2 min-h-[120px]"
+              <Input
+                className="mt-2 text-sm"
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
@@ -406,49 +528,11 @@ export default function RecordNewPage() {
 
           <section className="space-y-4">
             <div>
-              <Label className="text-xs text-[#17171c]/60">장소</Label>
-              <Input
-                type="text"
-                className="mt-2"
-                value={form.location}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, location: event.target.value }))
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.level}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, level: event.target.value }))
-                  }
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-[#17171c]/60">강사</Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.instructor}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      instructor: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div>
               <Label className="text-xs text-[#17171c]/60">
                 오늘 잘했던 점을 남겨볼까요?
               </Label>
               <Textarea
-                className="mt-2"
+                className="mt-2 text-sm"
                 rows={3}
                 value={form.did_well}
                 onChange={(event) =>
@@ -461,7 +545,7 @@ export default function RecordNewPage() {
                 다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
-                className="mt-2"
+                className="mt-2 text-sm"
                 rows={3}
                 value={form.improve_next}
                 onChange={(event) =>
@@ -634,6 +718,107 @@ export default function RecordNewPage() {
                 </div>
               </div>
             ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="location-options"
+                checked={showLocation}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLocation(next);
+                  if (!next) {
+                    setLocationName("");
+                    setLocationBase("");
+                    setLocationDetail("");
+                    setForm((prev) => ({ ...prev, location: "" }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="location-options"
+                className="text-xs text-[#17171c]/70"
+              >
+                장소 입력
+              </Label>
+            </div>
+            {showLocation ? (
+              <div className="space-y-2">
+                <Label className="text-xs text-[#17171c]/60">장소</Label>
+                <Input
+                  type="text"
+                  className="text-sm placeholder:text-xs"
+                  placeholder="장소 이름을 입력해 주세요"
+                  value={locationName}
+                  onChange={(event) => setLocationName(event.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left text-[11px] font-normal"
+                  onClick={handleSearchAddress}
+                >
+                  {locationBase || "주소 검색하기"}
+                </Button>
+                <Input
+                  type="text"
+                  className="text-sm placeholder:text-xs"
+                  placeholder="상세 주소를 입력해 주세요 (선택사항)"
+                  value={locationDetail}
+                  onChange={(event) => setLocationDetail(event.target.value)}
+                />
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="level-instructor-options"
+                checked={showLevelInstructor}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLevelInstructor(next);
+                  if (!next) {
+                    setForm((prev) => ({
+                      ...prev,
+                      level: "",
+                      instructor: "",
+                    }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="level-instructor-options"
+                className="text-xs text-[#17171c]/70"
+              >
+                레벨 &amp; 강사 입력
+              </Label>
+            </div>
+            {showLevelInstructor ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                  <Input
+                    type="text"
+                    className="mt-2"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, level: event.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">강사</Label>
+                  <Input
+                    type="text"
+                    className="mt-2"
+                    value={form.instructor}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        instructor: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
@@ -652,10 +837,14 @@ export default function RecordNewPage() {
           title="날짜를 선택해 주세요"
         >
           <div className="grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={yearListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {years.map((year) => (
                 <Button
                   key={`year-${year}`}
+                  data-value={String(year)}
                   type="button"
                   variant={dateDraft.year === year ? "default" : "ghost"}
                   className="w-full justify-start"
@@ -665,34 +854,48 @@ export default function RecordNewPage() {
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
-              {months.map((month) => (
-                <Button
-                  key={`month-${month}`}
-                  type="button"
-                  variant={dateDraft.month === month ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setDateDraft((prev) => ({ ...prev, month }))}
-                >
-                  {String(month).padStart(2, "0")}월
-                </Button>
-              ))}
+            <div
+              ref={monthListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
+              {months.map((month) => {
+                const value = String(month).padStart(2, "0");
+                return (
+                  <Button
+                    key={`month-${month}`}
+                    data-value={value}
+                    type="button"
+                    variant={dateDraft.month === month ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setDateDraft((prev) => ({ ...prev, month }))}
+                  >
+                    {value}월
+                  </Button>
+                );
+              })}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={dayListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {Array.from(
                 { length: new Date(dateDraft.year, dateDraft.month, 0).getDate() },
                 (_, idx) => idx + 1
-              ).map((day) => (
-                <Button
-                  key={`day-${day}`}
-                  type="button"
-                  variant={dateDraft.day === day ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setDateDraft((prev) => ({ ...prev, day }))}
-                >
-                  {String(day).padStart(2, "0")}일
-                </Button>
-              ))}
+              ).map((day) => {
+                const value = String(day).padStart(2, "0");
+                return (
+                  <Button
+                    key={`day-${day}`}
+                    data-value={value}
+                    type="button"
+                    variant={dateDraft.day === day ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setDateDraft((prev) => ({ ...prev, day }))}
+                  >
+                    {value}일
+                  </Button>
+                );
+              })}
             </div>
           </div>
           <div className="mt-4">
@@ -719,26 +922,34 @@ export default function RecordNewPage() {
           title="시작 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={startHourListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {hours.map((hour) => (
                 <Button
                   key={`start-drawer-hour-${hour}`}
                   type="button"
                   variant={startDraft.hour === hour ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={hour}
                   onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
                 >
                   {hour}시
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={startMinuteListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {minutes.map((minute) => (
                 <Button
                   key={`start-drawer-min-${minute}`}
                   type="button"
                   variant={startDraft.minute === minute ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={minute}
                   onClick={() => setStartDraft((prev) => ({ ...prev, minute }))}
                 >
                   {minute}분
@@ -768,26 +979,34 @@ export default function RecordNewPage() {
           title="종료 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={endHourListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {hours.map((hour) => (
                 <Button
                   key={`end-drawer-hour-${hour}`}
                   type="button"
                   variant={endDraft.hour === hour ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={hour}
                   onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
                 >
                   {hour}시
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={endMinuteListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {minutes.map((minute) => (
                 <Button
                   key={`end-drawer-min-${minute}`}
                   type="button"
                   variant={endDraft.minute === minute ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={minute}
                   onClick={() => setEndDraft((prev) => ({ ...prev, minute }))}
                 >
                   {minute}분

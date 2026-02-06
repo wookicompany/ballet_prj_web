@@ -12,7 +12,7 @@ export default function MoodSelector({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className="flex gap-2">
+    <div className="grid w-full grid-cols-5 gap-2">
       {MOODS.map((moodValue) => {
         const isActive = value === moodValue;
 
@@ -21,8 +21,7 @@ export default function MoodSelector({
             key={`mood-${moodValue}`}
             type="button"
             variant="outline"
-            size="icon"
-            className={`h-[58px] w-[58px] rounded-full p-0 ${
+            className={`h-auto w-full aspect-square rounded-full p-2 ${
               isActive
                 ? "border-[#17171c] bg-[#17171c]/5"
                 : "border-black/10"
@@ -32,7 +31,7 @@ export default function MoodSelector({
             <img
               src={`/mood/cat-${moodValue}.svg`}
               alt={`기분 ${moodValue}단계`}
-              className="h-10 w-10"
+              className="h-full w-full object-contain"
             />
           </Button>
         );

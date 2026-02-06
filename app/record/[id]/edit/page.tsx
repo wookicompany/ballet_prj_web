@@ -33,6 +33,14 @@ const ORDER_TAGS = [
   "퐁듀",
 ];
 
+const getSafeFileName = (file: File) => {
+  const fallbackExt = file.type?.split("/")[1] || "jpg";
+  const match = file.name.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = match ? match[1].toLowerCase() : fallbackExt;
+  const seed = Math.random().toString(36).slice(2, 10);
+  return `${Date.now()}-${seed}.${ext}`;
+};
+
 type FormState = {
   record_date: string;
   start_time: string;
@@ -65,6 +73,10 @@ export default function RecordEditPage() {
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
   const [endSheetOpen, setEndSheetOpen] = useState(false);
+  const startHourListRef = useRef<HTMLDivElement>(null);
+  const startMinuteListRef = useRef<HTMLDivElement>(null);
+  const endHourListRef = useRef<HTMLDivElement>(null);
+  const endMinuteListRef = useRef<HTMLDivElement>(null);
   const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
   const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
   const [dateDraft, setDateDraft] = useState({
@@ -73,7 +85,7 @@ export default function RecordEditPage() {
     day: new Date().getDate(),
   });
   const hours = useMemo(
-    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
+    () => Array.from({ length: 18 }, (_, idx) => String(idx + 6).padStart(2, "0")),
     []
   );
   const minutes = useMemo(
@@ -85,6 +97,34 @@ export default function RecordEditPage() {
     return Array.from({ length: 6 }, (_, idx) => currentYear - 2 + idx);
   }, []);
   const months = useMemo(() => Array.from({ length: 12 }, (_, idx) => idx + 1), []);
+
+  useEffect(() => {
+    if (!startSheetOpen) return;
+    requestAnimationFrame(() => {
+      const hourTarget = startHourListRef.current?.querySelector(
+        `[data-value="${startDraft.hour}"]`
+      );
+      const minuteTarget = startMinuteListRef.current?.querySelector(
+        `[data-value="${startDraft.minute}"]`
+      );
+      hourTarget?.scrollIntoView({ block: "center" });
+      minuteTarget?.scrollIntoView({ block: "center" });
+    });
+  }, [startSheetOpen, startDraft]);
+
+  useEffect(() => {
+    if (!endSheetOpen) return;
+    requestAnimationFrame(() => {
+      const hourTarget = endHourListRef.current?.querySelector(
+        `[data-value="${endDraft.hour}"]`
+      );
+      const minuteTarget = endMinuteListRef.current?.querySelector(
+        `[data-value="${endDraft.minute}"]`
+      );
+      hourTarget?.scrollIntoView({ block: "center" });
+      minuteTarget?.scrollIntoView({ block: "center" });
+    });
+  }, [endSheetOpen, endDraft]);
 
   const [form, setForm] = useState<FormState>({
     record_date: "",
@@ -194,7 +234,7 @@ export default function RecordEditPage() {
       uploads.push({
         file,
         media_type: "image",
-        path: `${user.id}/${params.id}/${Date.now()}-${file.name}`,
+        path: `${user.id}/${params.id}/${getSafeFileName(file)}`,
       });
     });
     for (const upload of uploads) {
@@ -761,26 +801,34 @@ export default function RecordEditPage() {
           title="시작 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={startHourListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {hours.map((hour) => (
                 <Button
                   key={`start-drawer-hour-${hour}`}
                   type="button"
                   variant={startDraft.hour === hour ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={hour}
                   onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
                 >
                   {hour}시
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={startMinuteListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {minutes.map((minute) => (
                 <Button
                   key={`start-drawer-min-${minute}`}
                   type="button"
                   variant={startDraft.minute === minute ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={minute}
                   onClick={() => setStartDraft((prev) => ({ ...prev, minute }))}
                 >
                   {minute}분
@@ -810,26 +858,34 @@ export default function RecordEditPage() {
           title="종료 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={endHourListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {hours.map((hour) => (
                 <Button
                   key={`end-drawer-hour-${hour}`}
                   type="button"
                   variant={endDraft.hour === hour ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={hour}
                   onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
                 >
                   {hour}시
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={endMinuteListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {minutes.map((minute) => (
                 <Button
                   key={`end-drawer-min-${minute}`}
                   type="button"
                   variant={endDraft.minute === minute ? "default" : "ghost"}
                   className="w-full justify-start"
+                  data-value={minute}
                   onClick={() => setEndDraft((prev) => ({ ...prev, minute }))}
                 >
                   {minute}분

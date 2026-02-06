@@ -8,8 +8,11 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Menu } from "lucide-react";
 
@@ -35,7 +38,18 @@ type MediaItem = {
   url: string;
 };
 
-const MOODS = ["😔", "🙁", "😐", "🙂", "😄"];
+const formatTimeLabel = (time: string) => {
+  const [hour, minute] = time.split(":");
+  return `${hour}시 ${minute}분`;
+};
+
+const parseOrderTags = (value: string | null) =>
+  value
+    ? value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    : [];
 
 export default function RecordDetailPage() {
   const router = useRouter();
@@ -127,6 +141,9 @@ export default function RecordDetailPage() {
     router.replace(`/day/${record.record_date}`);
   };
 
+  const barOrderTags = parseOrderTags(record.bar_order);
+  const centerOrderTags = parseOrderTags(record.center_order);
+
   return (
     <MobileContainer>
       <main className="px-4 pb-10 pt-6">
@@ -154,77 +171,17 @@ export default function RecordDetailPage() {
           </Button>
         </header>
 
-        <div className="space-y-4 text-sm">
-          <div className="rounded-lg border border-black/5 p-3">
-            <p className="font-semibold">
-              {record.start_time.slice(0, 5)} - {record.end_time.slice(0, 5)}
-            </p>
-            <p className="text-[#17171c]/70">{record.record_date}</p>
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-[#17171c]/60">기록 내용</p>
-            <p>{record.content}</p>
-          </div>
-          {record.mood ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">감정 상태</p>
-              <p className="text-lg">{MOODS[record.mood - 1]}</p>
-            </div>
-          ) : null}
-          {record.location ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">장소</p>
-              <p>{record.location}</p>
-            </div>
-          ) : null}
-          {record.level ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">레벨</p>
-              <p>{record.level}</p>
-            </div>
-          ) : null}
-          {record.instructor ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">강사</p>
-              <p>{record.instructor}</p>
-            </div>
-          ) : null}
-          {record.bar_order ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">바 순서</p>
-              <p>{record.bar_order}</p>
-            </div>
-          ) : null}
-          {record.center_order ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">센터 순서</p>
-              <p>{record.center_order}</p>
-            </div>
-          ) : null}
-          {record.did_well ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">오늘 잘한 것</p>
-              <p>{record.did_well}</p>
-            </div>
-          ) : null}
-          {record.improve_next ? (
-            <div>
-              <p className="mb-1 text-xs text-[#17171c]/60">
-                다음에 더 신경 써야 하는 것
-              </p>
-              <p>{record.improve_next}</p>
-            </div>
-          ) : null}
+        <div className="space-y-8">
           {media.length > 0 ? (
-            <div>
-              <p className="mb-2 text-xs text-[#17171c]/60">미디어</p>
-              <div className="grid grid-cols-2 gap-2">
+            <section className="space-y-3">
+              <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
+              <div className="grid grid-cols-4 gap-2">
                 {media.map((item) =>
                   item.media_type === "video" ? (
                     <video
                       key={item.id}
                       controls
-                      className="w-full rounded-md"
+                      className="aspect-square w-full rounded-lg border border-black/10 bg-black/5 object-cover"
                     >
                       <source src={item.url} />
                     </video>
@@ -232,19 +189,166 @@ export default function RecordDetailPage() {
                     <img
                       key={item.id}
                       src={item.url}
-                      alt="record media"
-                      className="w-full rounded-md object-cover"
+                      alt="업로드 사진"
+                      className="aspect-square w-full rounded-lg border border-black/10 bg-black/5 object-cover"
                     />
                   )
                 )}
               </div>
-            </div>
+            </section>
           ) : null}
+
+          <Separator />
+
+          <section className="space-y-4">
+            <div className="pt-0">
+              <Label className="text-xs text-[#17171c]/60">날짜</Label>
+              <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                {record.record_date}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div>
+                <Label className="text-xs text-[#17171c]/60">시작 시간</Label>
+                <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                  {formatTimeLabel(record.start_time)}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-[#17171c]/60">종료 시간</Label>
+                <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                  {formatTimeLabel(record.end_time)}
+                </div>
+              </div>
+            </div>
+            {record.mood ? (
+              <div className="pt-2">
+                <Label className="text-xs text-[#17171c]/60">
+                  오늘 발레는 어땠나요?
+                </Label>
+                <div className="mt-2 grid w-full grid-cols-5 gap-2">
+                  <div className="aspect-square w-full rounded-full border border-black/10 bg-[#17171c]/5 p-3">
+                    <img
+                      src={`/mood/cat-${record.mood}.svg`}
+                      alt={`기분 ${record.mood}단계`}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <div className="pt-2">
+              <Label className="text-xs text-[#17171c]/60">
+                오늘의 발레를 한줄로 남겨보아요.
+              </Label>
+              <Input
+                className="mt-2"
+                value={record.content}
+                readOnly
+              />
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-4">
+            {record.location ? (
+              <div>
+                <Label className="text-xs text-[#17171c]/60">장소</Label>
+                <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                  {record.location}
+                </div>
+              </div>
+            ) : null}
+            <div className="grid grid-cols-2 gap-3">
+              {record.level ? (
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                  <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                    {record.level}
+                  </div>
+                </div>
+              ) : null}
+              {record.instructor ? (
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">강사</Label>
+                  <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                    {record.instructor}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div>
+              <Label className="text-xs text-[#17171c]/60">
+                오늘 잘했던 점을 남겨볼까요?
+              </Label>
+              <Textarea
+                className="mt-2"
+                rows={3}
+                value={record.did_well ?? ""}
+                readOnly
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-[#17171c]/60">
+                다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
+              </Label>
+              <Textarea
+                className="mt-2"
+                rows={3}
+                value={record.improve_next ?? ""}
+                readOnly
+              />
+            </div>
+            {barOrderTags.length > 0 ? (
+              <div className="space-y-2">
+                <Label className="text-xs text-[#17171c]/60">
+                  바(bar) 순서
+                </Label>
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-white p-2">
+                  {barOrderTags.map((tag, index) => (
+                    <div
+                      key={`bar-order-${tag}-${index}`}
+                      className="flex items-center gap-2"
+                    >
+                      <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                        {tag}
+                      </span>
+                      {index < barOrderTags.length - 1 ? (
+                        <span className="text-xs text-[#17171c]/40">&gt;</span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {centerOrderTags.length > 0 ? (
+              <div className="space-y-2">
+                <Label className="text-xs text-[#17171c]/60">
+                  센터(center) 순서
+                </Label>
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-white p-2">
+                  {centerOrderTags.map((tag, index) => (
+                    <div
+                      key={`center-order-${tag}-${index}`}
+                      className="flex items-center gap-2"
+                    >
+                      <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                        {tag}
+                      </span>
+                      {index < centerOrderTags.length - 1 ? (
+                        <span className="text-xs text-[#17171c]/40">&gt;</span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
         </div>
         <BottomSheet
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          title="기록 메뉴"
         >
           <div className="space-y-2">
             <Button
@@ -260,8 +364,8 @@ export default function RecordDetailPage() {
             </Button>
             <Button
               type="button"
-              variant="destructive"
-              className="w-full"
+              variant="outline"
+              className="w-full text-red-500 hover:text-red-500"
               onClick={() => {
                 setMenuOpen(false);
                 handleDelete();
