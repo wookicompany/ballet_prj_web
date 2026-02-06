@@ -18,6 +18,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
@@ -267,7 +268,7 @@ export default function RecordNewPage() {
     if (!user) return;
 
     if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
-      setError("날짜와 시간, 감정 상태는 꼭 입력해 주세요.");
+      toast("필수 항목을 입력해 주세요.");
       return;
     }
     if (form.end_time < form.start_time) {
@@ -338,7 +339,7 @@ export default function RecordNewPage() {
       });
     }
 
-    router.replace(`/record/${recordId}`);
+    router.replace("/calendar");
   };
 
   if (loading) {
@@ -434,7 +435,9 @@ export default function RecordNewPage() {
 
           <section className="space-y-4">
             <div className="pt-0">
-              <Label className="text-xs text-[#17171c]/60">날짜</Label>
+              <Label className="text-xs text-[#17171c]/60">
+                날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
+              </Label>
               <Button
                 type="button"
                 variant="outline"
@@ -459,7 +462,9 @@ export default function RecordNewPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
-                <Label className="text-xs text-[#17171c]/60">시작 시간</Label>
+                <Label className="text-xs text-[#17171c]/60">
+                  시작 시간<span className="-ml-[1px] text-[#17171c]/50">*</span>
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -478,7 +483,9 @@ export default function RecordNewPage() {
                 </Button>
               </div>
               <div>
-                <Label className="text-xs text-[#17171c]/60">종료 시간</Label>
+                <Label className="text-xs text-[#17171c]/60">
+                  종료 시간<span className="-ml-[1px] text-[#17171c]/50">*</span>
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -499,7 +506,7 @@ export default function RecordNewPage() {
             </div>
             <div className="pt-2">
               <Label className="text-xs text-[#17171c]/60">
-                오늘 발레는 어땠나요?
+                오늘 발레는 어땠나요?<span className="-ml-[1px] text-[#17171c]/50">*</span>
               </Label>
               <div className="mt-2">
                 <MoodSelector

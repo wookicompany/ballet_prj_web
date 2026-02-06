@@ -16,8 +16,9 @@ import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
-import { CalendarDays, ChevronLeft, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
@@ -67,12 +68,21 @@ export default function RecordEditPage() {
   const [recordLoading, setRecordLoading] = useState(true);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
+  const [showLevelInstructor, setShowLevelInstructor] = useState(false);
   const [barOrderTags, setBarOrderTags] = useState<string[]>([]);
   const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
+  const [existingMedia, setExistingMedia] = useState<
+    Array<{ id: string; url: string }>
+  >([]);
+  const [removedMediaIds, setRemovedMediaIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
   const [endSheetOpen, setEndSheetOpen] = useState(false);
+  const yearListRef = useRef<HTMLDivElement>(null);
+  const monthListRef = useRef<HTMLDivElement>(null);
+  const dayListRef = useRef<HTMLDivElement>(null);
   const startHourListRef = useRef<HTMLDivElement>(null);
   const startMinuteListRef = useRef<HTMLDivElement>(null);
   const endHourListRef = useRef<HTMLDivElement>(null);
@@ -84,8 +94,11 @@ export default function RecordEditPage() {
     month: new Date().getMonth() + 1,
     day: new Date().getDate(),
   });
+  const [locationName, setLocationName] = useState("");
+  const [locationBase, setLocationBase] = useState("");
+  const [locationDetail, setLocationDetail] = useState("");
   const hours = useMemo(
-    () => Array.from({ length: 18 }, (_, idx) => String(idx + 6).padStart(2, "0")),
+    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
     []
   );
   const minutes = useMemo(
@@ -97,6 +110,27 @@ export default function RecordEditPage() {
     return Array.from({ length: 6 }, (_, idx) => currentYear - 2 + idx);
   }, []);
   const months = useMemo(() => Array.from({ length: 12 }, (_, idx) => idx + 1), []);
+
+  useEffect(() => {
+    if (!dateSheetOpen) return;
+
+    const scrollToCenter = (container: HTMLDivElement | null, value: string) => {
+      if (!container) return;
+      const target = container.querySelector<HTMLButtonElement>(
+        `button[data-value="${value}"]`
+      );
+      if (!target) return;
+      target.scrollIntoView({ block: "center", inline: "center" });
+    };
+
+    const frame = requestAnimationFrame(() => {
+      scrollToCenter(yearListRef.current, String(dateDraft.year));
+      scrollToCenter(monthListRef.current, String(dateDraft.month).padStart(2, "0"));
+      scrollToCenter(dayListRef.current, String(dateDraft.day).padStart(2, "0"));
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [dateSheetOpen, dateDraft.year, dateDraft.month, dateDraft.day]);
 
   useEffect(() => {
     if (!startSheetOpen) return;
@@ -125,6 +159,23 @@ export default function RecordEditPage() {
       minuteTarget?.scrollIntoView({ block: "center" });
     });
   }, [endSheetOpen, endDraft]);
+
+  const handleSearchAddress = () => {
+    if (typeof window === "undefined") return;
+    const kakao = (window as typeof window & { kakao?: any }).kakao;
+    if (!kakao?.Postcode) {
+      setError("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    new kakao.Postcode({
+      oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => {
+        const address = data.roadAddress || data.jibunAddress || "";
+        setLocationBase(address);
+        setLocationDetail("");
+      },
+    }).open();
+  };
 
   const [form, setForm] = useState<FormState>({
     record_date: "",
@@ -159,7 +210,7 @@ export default function RecordEditPage() {
         .is("deleted_at", null)
         .single();
 
-      if (data) {
+    if (data) {
         const barTags = data.bar_order
           ? data.bar_order.split(",").map((value) => value.trim()).filter(Boolean)
           : [];
@@ -187,7 +238,24 @@ export default function RecordEditPage() {
         setCenterOrderTags(centerTags);
         setShowBarOrder(barTags.length > 0);
         setShowCenterOrder(centerTags.length > 0);
+        setShowLocation(Boolean(data.location));
+        setShowLevelInstructor(Boolean(data.level || data.instructor));
+        setLocationName("");
+        setLocationBase(data.location ?? "");
+        setLocationDetail("");
       }
+
+      const { data: mediaData } = await supabase
+        .from("record_media")
+        .select("id,url")
+        .eq("record_id", params.id)
+        .eq("user_id", user.id)
+        .order("created_at");
+
+      setExistingMedia(
+        (mediaData as Array<{ id: string; url: string }>) ?? []
+      );
+      setRemovedMediaIds([]);
       setRecordLoading(false);
     };
 
@@ -199,7 +267,7 @@ export default function RecordEditPage() {
     if (!user || authLoading) return;
 
     if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
-      setError("날짜와 시간, 감정 상태는 꼭 입력해 주세요.");
+      toast("날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요.");
       return;
     }
     if (form.end_time < form.start_time) {
@@ -207,11 +275,21 @@ export default function RecordEditPage() {
       return;
     }
 
+    const resolvedLocation = showLocation
+      ? [locationName, locationBase, locationDetail]
+          .filter(Boolean)
+          .join(" ")
+          .trim()
+      : "";
+
     setSaving(true);
     const { error: updateError } = await supabase
       .from("records")
       .update({
         ...form,
+        location: resolvedLocation,
+        level: showLevelInstructor ? form.level : "",
+        instructor: showLevelInstructor ? form.instructor : "",
         bar_order: showBarOrder ? barOrderTags.join(", ") : "",
         center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
       })
@@ -258,28 +336,45 @@ export default function RecordEditPage() {
       });
     }
 
-    router.replace(`/record/${params.id}`);
+    if (removedMediaIds.length > 0) {
+      await supabase
+        .from("record_media")
+        .delete()
+        .in("id", removedMediaIds)
+        .eq("user_id", user.id);
+    }
+
+    router.replace("/calendar");
   };
 
   const mediaItems = useMemo(() => {
-    const items: Array<{
-      type: "image";
-      url: string;
-      file: File;
-    }> = [];
+    const items: Array<
+      | { type: "existing"; id: string; url: string }
+      | { type: "new"; url: string; file: File }
+    > = [];
+
+    existingMedia.forEach((item) => {
+      if (removedMediaIds.includes(item.id)) return;
+      items.push({ type: "existing", id: item.id, url: item.url });
+    });
     images.forEach((file) => {
       items.push({
-        type: "image",
+        type: "new",
         url: URL.createObjectURL(file),
         file,
       });
     });
+
     return items.slice(0, 3);
-  }, [images]);
+  }, [existingMedia, images, removedMediaIds]);
 
   useEffect(() => {
     return () => {
-      mediaItems.forEach((item) => URL.revokeObjectURL(item.url));
+      mediaItems.forEach((item) => {
+        if (item.type === "new") {
+          URL.revokeObjectURL(item.url);
+        }
+      });
     };
   }, [mediaItems]);
 
@@ -288,7 +383,13 @@ export default function RecordEditPage() {
     if (!file) return;
 
     if (file.type.startsWith("image/")) {
-      if (file.size > MAX_IMAGE_SIZE || images.length >= 3) {
+      const visibleExisting = existingMedia.filter(
+        (item) => !removedMediaIds.includes(item.id)
+      );
+      if (
+        file.size > MAX_IMAGE_SIZE ||
+        visibleExisting.length + images.length >= 3
+      ) {
         return;
       }
       setImages((prev) => [...prev, file].slice(0, 3));
@@ -297,10 +398,35 @@ export default function RecordEditPage() {
     event.target.value = "";
   };
 
+  const handleRemoveImage = (
+    index: number,
+    item: { type: "existing"; id: string } | { type: "new" }
+  ) => {
+    if (item.type === "existing") {
+      setRemovedMediaIds((prev) =>
+        prev.includes(item.id) ? prev : [...prev, item.id]
+      );
+      return;
+    }
+    const newIndex = index - existingMedia.filter(
+      (media) => !removedMediaIds.includes(media.id)
+    ).length;
+    setImages((prev) => prev.filter((_, idx) => idx !== newIndex));
+  };
+
   const startHour = form.start_time ? form.start_time.split(":")[0] : "00";
   const startMinute = form.start_time ? form.start_time.split(":")[1] : "00";
   const endHour = form.end_time ? form.end_time.split(":")[0] : "00";
   const endMinute = form.end_time ? form.end_time.split(":")[1] : "00";
+  const getClampedNowTime = () => {
+    const now = new Date();
+    const hourValue = Math.max(now.getHours(), 6);
+    const minuteValue = now.getMinutes();
+    return {
+      hour: String(hourValue).padStart(2, "0"),
+      minute: String(minuteValue).padStart(2, "0"),
+    };
+  };
 
   if (authLoading) {
     return (
@@ -369,7 +495,7 @@ export default function RecordEditPage() {
               </button>
               {mediaItems.map((item, index) => (
                 <div
-                  key={`image-${index}`}
+                  key={`image-${item.type === "existing" ? item.id : index}`}
                   className="relative aspect-square overflow-hidden rounded-lg border border-black/10 bg-black/5"
                 >
                   <img
@@ -377,9 +503,21 @@ export default function RecordEditPage() {
                     alt="업로드 사진"
                     className="h-full w-full object-cover"
                   />
-                  <span className="absolute left-1 top-1 rounded-full bg-white/80 px-1.5 text-[10px] text-[#17171c]">
-                    사진
-                  </span>
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                    onClick={() =>
+                      handleRemoveImage(
+                        index,
+                        item.type === "existing"
+                          ? { type: "existing", id: item.id }
+                          : { type: "new" }
+                      )
+                    }
+                    aria-label="업로드 사진 삭제"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -399,7 +537,7 @@ export default function RecordEditPage() {
           <Separator />
 
           <section className="space-y-4">
-            <div className="pt-0.5">
+            <div className="pt-0">
               <Label className="text-xs text-[#17171c]/60">날짜</Label>
               <Button
                 type="button"
@@ -431,7 +569,10 @@ export default function RecordEditPage() {
                   variant="outline"
                   className="mt-2 w-full justify-start text-left font-normal"
                   onClick={() => {
-                    setStartDraft({ hour: startHour, minute: startMinute });
+                    const nextDraft = form.start_time
+                      ? { hour: startHour, minute: startMinute }
+                      : getClampedNowTime();
+                    setStartDraft(nextDraft);
                     setStartSheetOpen(true);
                   }}
                 >
@@ -447,7 +588,10 @@ export default function RecordEditPage() {
                   variant="outline"
                   className="mt-2 w-full justify-start text-left font-normal"
                   onClick={() => {
-                    setEndDraft({ hour: endHour, minute: endMinute });
+                    const nextDraft = form.end_time
+                      ? { hour: endHour, minute: endMinute }
+                      : getClampedNowTime();
+                    setEndDraft(nextDraft);
                     setEndSheetOpen(true);
                   }}
                 >
@@ -472,10 +616,10 @@ export default function RecordEditPage() {
             </div>
             <div className="pt-2">
               <Label className="text-xs text-[#17171c]/60">
-                오늘 발레를 글로 남겨보아요.
+                오늘의 발레를 한줄로 남겨보아요.
               </Label>
-              <Textarea
-                className="mt-2 min-h-[120px]"
+              <Input
+                className="mt-2 text-sm"
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
@@ -488,49 +632,11 @@ export default function RecordEditPage() {
 
           <section className="space-y-4">
             <div>
-              <Label className="text-xs text-[#17171c]/60">장소</Label>
-              <Input
-                type="text"
-                className="mt-2"
-                value={form.location}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, location: event.target.value }))
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.level}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, level: event.target.value }))
-                  }
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-[#17171c]/60">강사</Label>
-                <Input
-                  type="text"
-                  className="mt-2"
-                  value={form.instructor}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      instructor: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div>
               <Label className="text-xs text-[#17171c]/60">
                 오늘 잘했던 점을 남겨볼까요?
               </Label>
               <Textarea
-                className="mt-2"
+                className="mt-2 text-sm"
                 rows={3}
                 value={form.did_well}
                 onChange={(event) =>
@@ -543,7 +649,7 @@ export default function RecordEditPage() {
                 다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
-                className="mt-2"
+                className="mt-2 text-sm"
                 rows={3}
                 value={form.improve_next}
                 onChange={(event) =>
@@ -716,6 +822,107 @@ export default function RecordEditPage() {
                 </div>
               </div>
             ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="location-options"
+                checked={showLocation}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLocation(next);
+                  if (!next) {
+                    setLocationName("");
+                    setLocationBase("");
+                    setLocationDetail("");
+                    setForm((prev) => ({ ...prev, location: "" }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="location-options"
+                className="text-xs text-[#17171c]/70"
+              >
+                장소 입력
+              </Label>
+            </div>
+            {showLocation ? (
+              <div className="space-y-2">
+                <Label className="text-xs text-[#17171c]/60">장소</Label>
+                <Input
+                  type="text"
+                  className="text-sm placeholder:text-xs"
+                  placeholder="장소 이름을 입력해 주세요"
+                  value={locationName}
+                  onChange={(event) => setLocationName(event.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left text-[11px] font-normal"
+                  onClick={handleSearchAddress}
+                >
+                  {locationBase || "주소 검색하기"}
+                </Button>
+                <Input
+                  type="text"
+                  className="text-sm placeholder:text-xs"
+                  placeholder="상세 주소를 입력해 주세요 (선택사항)"
+                  value={locationDetail}
+                  onChange={(event) => setLocationDetail(event.target.value)}
+                />
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="level-instructor-options"
+                checked={showLevelInstructor}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLevelInstructor(next);
+                  if (!next) {
+                    setForm((prev) => ({
+                      ...prev,
+                      level: "",
+                      instructor: "",
+                    }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="level-instructor-options"
+                className="text-xs text-[#17171c]/70"
+              >
+                레벨 &amp; 강사 입력
+              </Label>
+            </div>
+            {showLevelInstructor ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                  <Input
+                    type="text"
+                    className="mt-2"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, level: event.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">강사</Label>
+                  <Input
+                    type="text"
+                    className="mt-2"
+                    value={form.instructor}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        instructor: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
@@ -734,10 +941,14 @@ export default function RecordEditPage() {
           title="날짜를 선택해 주세요"
         >
           <div className="grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={yearListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {years.map((year) => (
                 <Button
                   key={`year-${year}`}
+                  data-value={String(year)}
                   type="button"
                   variant={dateDraft.year === year ? "default" : "ghost"}
                   className="w-full justify-start"
@@ -747,34 +958,48 @@ export default function RecordEditPage() {
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
-              {months.map((month) => (
-                <Button
-                  key={`month-${month}`}
-                  type="button"
-                  variant={dateDraft.month === month ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setDateDraft((prev) => ({ ...prev, month }))}
-                >
-                  {String(month).padStart(2, "0")}월
-                </Button>
-              ))}
+            <div
+              ref={monthListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
+              {months.map((month) => {
+                const value = String(month).padStart(2, "0");
+                return (
+                  <Button
+                    key={`month-${month}`}
+                    data-value={value}
+                    type="button"
+                    variant={dateDraft.month === month ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setDateDraft((prev) => ({ ...prev, month }))}
+                  >
+                    {value}월
+                  </Button>
+                );
+              })}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div
+              ref={dayListRef}
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+            >
               {Array.from(
                 { length: new Date(dateDraft.year, dateDraft.month, 0).getDate() },
                 (_, idx) => idx + 1
-              ).map((day) => (
-                <Button
-                  key={`day-${day}`}
-                  type="button"
-                  variant={dateDraft.day === day ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setDateDraft((prev) => ({ ...prev, day }))}
-                >
-                  {String(day).padStart(2, "0")}일
-                </Button>
-              ))}
+              ).map((day) => {
+                const value = String(day).padStart(2, "0");
+                return (
+                  <Button
+                    key={`day-${day}`}
+                    data-value={value}
+                    type="button"
+                    variant={dateDraft.day === day ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setDateDraft((prev) => ({ ...prev, day }))}
+                  >
+                    {value}일
+                  </Button>
+                );
+              })}
             </div>
           </div>
           <div className="mt-4">

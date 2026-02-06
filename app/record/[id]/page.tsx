@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -143,6 +144,15 @@ export default function RecordDetailPage() {
 
   const barOrderTags = parseOrderTags(record.bar_order);
   const centerOrderTags = parseOrderTags(record.center_order);
+  const hasExtraInfo =
+    !!record.location ||
+    !!record.level ||
+    !!record.instructor ||
+    !!record.did_well ||
+    !!record.improve_next ||
+    barOrderTags.length > 0 ||
+    centerOrderTags.length > 0;
+  const showLevelInstructor = !!record.level || !!record.instructor;
 
   return (
     <MobileContainer>
@@ -174,26 +184,30 @@ export default function RecordDetailPage() {
         <div className="space-y-8">
           {media.length > 0 ? (
             <section className="space-y-3">
-              <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {media.map((item) =>
-                  item.media_type === "video" ? (
-                    <video
-                      key={item.id}
-                      controls
-                      className="aspect-square w-full rounded-lg border border-black/10 bg-black/5 object-cover"
-                    >
-                      <source src={item.url} />
-                    </video>
-                  ) : (
-                    <img
-                      key={item.id}
-                      src={item.url}
-                      alt="업로드 사진"
-                      className="aspect-square w-full rounded-lg border border-black/10 bg-black/5 object-cover"
-                    />
-                  )
-                )}
+              <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
+                {media.map((item) => (
+                  <div
+                    key={item.id}
+                    className="w-full shrink-0 snap-center overflow-hidden rounded-2xl border border-black/10 bg-black/5"
+                  >
+                    <AspectRatio ratio={1}>
+                      {item.media_type === "video" ? (
+                        <video
+                          controls
+                          className="h-full w-full object-cover"
+                        >
+                          <source src={item.url} />
+                        </video>
+                      ) : (
+                        <img
+                          src={item.url}
+                          alt="업로드 사진"
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </AspectRatio>
+                  </div>
+                ))}
               </div>
             </section>
           ) : null}
@@ -203,20 +217,20 @@ export default function RecordDetailPage() {
           <section className="space-y-4">
             <div className="pt-0">
               <Label className="text-xs text-[#17171c]/60">날짜</Label>
-              <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+              <div className="mt-2 w-full text-sm text-[#17171c]">
                 {record.record_date}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <Label className="text-xs text-[#17171c]/60">시작 시간</Label>
-                <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                <div className="mt-2 w-full text-sm text-[#17171c]">
                   {formatTimeLabel(record.start_time)}
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-[#17171c]/60">종료 시간</Label>
-                <div className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
+                <div className="mt-2 w-full text-sm text-[#17171c]">
                   {formatTimeLabel(record.end_time)}
                 </div>
               </div>
@@ -227,7 +241,7 @@ export default function RecordDetailPage() {
                   오늘 발레는 어땠나요?
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
-                  <div className="aspect-square w-full rounded-full border border-black/10 bg-[#17171c]/5 p-3">
+                  <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
                     <img
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
@@ -237,114 +251,126 @@ export default function RecordDetailPage() {
                 </div>
               </div>
             ) : null}
-            <div className="pt-2">
-              <Label className="text-xs text-[#17171c]/60">
-                오늘의 발레를 한줄로 남겨보아요.
-              </Label>
-              <Input
-                className="mt-2"
-                value={record.content}
-                readOnly
-              />
-            </div>
-          </section>
-
-          <Separator />
-
-          <section className="space-y-4">
-            {record.location ? (
-              <div>
-                <Label className="text-xs text-[#17171c]/60">장소</Label>
-                <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
-                  {record.location}
-                </div>
-              </div>
-            ) : null}
-            <div className="grid grid-cols-2 gap-3">
-              {record.level ? (
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                  <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
-                    {record.level}
-                  </div>
-                </div>
-              ) : null}
-              {record.instructor ? (
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">강사</Label>
-                  <div className="mt-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm">
-                    {record.instructor}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            <div>
-              <Label className="text-xs text-[#17171c]/60">
-                오늘 잘했던 점을 남겨볼까요?
-              </Label>
-              <Textarea
-                className="mt-2"
-                rows={3}
-                value={record.did_well ?? ""}
-                readOnly
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-[#17171c]/60">
-                다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
-              </Label>
-              <Textarea
-                className="mt-2"
-                rows={3}
-                value={record.improve_next ?? ""}
-                readOnly
-              />
-            </div>
-            {barOrderTags.length > 0 ? (
-              <div className="space-y-2">
+            {record.content ? (
+              <div className="pt-2">
                 <Label className="text-xs text-[#17171c]/60">
-                  바(bar) 순서
+                  오늘의 발레를 한줄로 남겨보아요.
                 </Label>
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-white p-2">
-                  {barOrderTags.map((tag, index) => (
-                    <div
-                      key={`bar-order-${tag}-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
-                        {tag}
-                      </span>
-                      {index < barOrderTags.length - 1 ? (
-                        <span className="text-xs text-[#17171c]/40">&gt;</span>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            {centerOrderTags.length > 0 ? (
-              <div className="space-y-2">
-                <Label className="text-xs text-[#17171c]/60">
-                  센터(center) 순서
-                </Label>
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-white p-2">
-                  {centerOrderTags.map((tag, index) => (
-                    <div
-                      key={`center-order-${tag}-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
-                        {tag}
-                      </span>
-                      {index < centerOrderTags.length - 1 ? (
-                        <span className="text-xs text-[#17171c]/40">&gt;</span>
-                      ) : null}
-                    </div>
-                  ))}
+                <div className="mt-2 text-sm text-[#17171c]">
+                  {record.content}
                 </div>
               </div>
             ) : null}
           </section>
+
+          {hasExtraInfo ? (
+            <>
+              <Separator />
+
+              <section className="space-y-4">
+                {record.location ? (
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">장소</Label>
+                    <div className="mt-2 text-sm text-[#17171c]">
+                      {record.location}
+                    </div>
+                  </div>
+                ) : null}
+                {showLevelInstructor ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {record.level ? (
+                      <div>
+                        <Label className="text-xs text-[#17171c]/60">
+                          레벨
+                        </Label>
+                        <div className="mt-2 text-sm text-[#17171c]">
+                          {record.level}
+                        </div>
+                      </div>
+                    ) : null}
+                    {record.instructor ? (
+                      <div>
+                        <Label className="text-xs text-[#17171c]/60">
+                          강사
+                        </Label>
+                        <div className="mt-2 text-sm text-[#17171c]">
+                          {record.instructor}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+                {record.did_well ? (
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">
+                      오늘 잘했던 점을 남겨볼까요?
+                    </Label>
+                    <div className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                      {record.did_well}
+                    </div>
+                  </div>
+                ) : null}
+                {record.improve_next ? (
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">
+                      다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
+                    </Label>
+                    <div className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                      {record.improve_next}
+                    </div>
+                  </div>
+                ) : null}
+                {barOrderTags.length > 0 ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-[#17171c]/60">
+                      바(bar) 순서
+                    </Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {barOrderTags.map((tag, index) => (
+                        <div
+                          key={`bar-order-${tag}-${index}`}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                            {tag}
+                          </span>
+                          {index < barOrderTags.length - 1 ? (
+                            <span className="text-xs text-[#17171c]/40">
+                              &gt;
+                            </span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {centerOrderTags.length > 0 ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-[#17171c]/60">
+                      센터(center) 순서
+                    </Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {centerOrderTags.map((tag, index) => (
+                        <div
+                          key={`center-order-${tag}-${index}`}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                            {tag}
+                          </span>
+                          {index < centerOrderTags.length - 1 ? (
+                            <span className="text-xs text-[#17171c]/40">
+                              &gt;
+                            </span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            </>
+          ) : null}
         </div>
         <BottomSheet
           open={menuOpen}
