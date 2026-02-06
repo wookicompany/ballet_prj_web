@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { CalendarDays, ChevronLeft, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -145,6 +145,10 @@ export default function RecordNewPage() {
     }
 
     event.target.value = "";
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const startHour = form.start_time ? form.start_time.split(":")[0] : "00";
@@ -286,9 +290,14 @@ export default function RecordNewPage() {
                     alt="업로드 사진"
                     className="h-full w-full object-cover"
                   />
-                  <span className="absolute left-1 top-1 rounded-full bg-white/80 px-1.5 text-[10px] text-[#17171c]">
-                    사진
-                  </span>
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                    onClick={() => handleRemoveImage(index)}
+                    aria-label="업로드 사진 삭제"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>

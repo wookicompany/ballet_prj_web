@@ -37,7 +37,7 @@ export function LoginSheetProvider({
       >
         <div className="space-y-3">
           <Button
-            className="w-full justify-center gap-2 bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
+            className="h-12 w-full justify-center gap-2 bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
             disabled={loading}
             onClick={() => signInWithProvider("kakao")}
           >
@@ -53,7 +53,7 @@ export function LoginSheetProvider({
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-center gap-2 bg-white text-[#17171c] hover:bg-black/5"
+            className="h-12 w-full justify-center gap-2 bg-white text-[#17171c] hover:bg-black/5"
             disabled={loading}
             onClick={() => signInWithProvider("google")}
           >
