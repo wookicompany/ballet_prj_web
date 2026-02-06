@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
@@ -304,7 +303,6 @@ export default function RecordDetailPage() {
 
           {hasExtraInfo ? (
             <>
-              <Separator />
 
               <section className="space-y-4">
                 {record.location ? (

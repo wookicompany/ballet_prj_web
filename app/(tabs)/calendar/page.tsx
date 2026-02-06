@@ -201,11 +201,12 @@ export default function CalendarPage() {
         </div>
         <Button
           variant="ghost"
-          className="h-10 w-10 p-0 text-[#17171c]/70"
+          size="icon-sm"
+          className="text-[#17171c]/70"
           aria-label="캘린더 설정"
           onClick={() => setSettingsOpen(true)}
         >
-          <Settings className="h-6 w-6" />
+          <Settings className="h-5 w-5" />
         </Button>
       </header>
 
@@ -371,13 +372,13 @@ export default function CalendarPage() {
         title="캘린더 설정"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-4">
             <p className="text-sm font-medium text-[#17171c]">
               월요일로 주간 시작
             </p>
             <Switch checked={weekStartMonday} onCheckedChange={setWeekStartMonday} />
           </div>
-          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-4">
             <p className="text-sm font-medium text-[#17171c]">주말 색 표시</p>
             <Switch
               checked={highlightWeekend}

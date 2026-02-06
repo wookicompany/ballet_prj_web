@@ -189,7 +189,7 @@ export default function ProfileEditPage() {
 
           <Button
             type="button"
-            className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             onClick={handleSave}
             disabled={saving}
           >

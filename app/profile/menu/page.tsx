@@ -72,6 +72,7 @@ export default function ProfileMenuPage() {
             type="button"
             variant="ghost"
             className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/support")}
           >
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <MessageCircle className="h-5 w-5 text-[#17171c]/70" />
