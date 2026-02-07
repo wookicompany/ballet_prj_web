@@ -4,30 +4,68 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SupportPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) return;
+    if (loading) return;
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+    if (!title.trim() || !content.trim()) {
+      toast("제목과 내용을 입력해 주세요.");
+      return;
+    }
     setSending(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setSending(false);
-    router.back();
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nickname")
+        .eq("id", user.id)
+        .single();
+
+      const { error } = await supabase.from("support_inquiries").insert({
+        user_id: user.id,
+        email: user.email ?? null,
+        nickname: profile?.nickname ?? null,
+        title: title.trim(),
+        content: content.trim(),
+      });
+
+      if (error) {
+        toast("문의 전송에 실패했습니다.");
+        return;
+      }
+
+      toast("문의가 접수되었어요.");
+      router.back();
+    } finally {
+      setSending(false);
+    }
   };
 
   const isDisabled = !title.trim() || !content.trim() || sending;
 
   return (
     <MobileContainer>
+      {sending ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12 pt-6">
         <header className="mb-6 flex items-center justify-between">
           <Button
@@ -73,7 +111,7 @@ export default function SupportPage() {
             disabled={isDisabled}
             onClick={handleSubmit}
           >
-            {sending ? "보내는 중..." : "문의하기"}
+            문의하기
           </Button>
         </div>
       </main>

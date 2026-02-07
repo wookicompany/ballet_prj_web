@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabaseClient";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -23,9 +23,7 @@ export default function AuthCallbackPage() {
           await supabase.auth.exchangeCodeForSession(url.toString());
 
         if (exchangeError) {
-          setError(
-            `로그인 처리 중 오류가 발생했습니다. (${exchangeError.message})`
-          );
+          toast(`로그인 처리 중 오류가 발생했습니다. (${exchangeError.message})`);
           return;
         }
 
@@ -40,9 +38,7 @@ export default function AuthCallbackPage() {
         });
 
         if (sessionError) {
-          setError(
-            `로그인 처리 중 오류가 발생했습니다. (${sessionError.message})`
-          );
+          toast(`로그인 처리 중 오류가 발생했습니다. (${sessionError.message})`);
           return;
         }
 
@@ -53,9 +49,7 @@ export default function AuthCallbackPage() {
       const { data } = await supabase.auth.getSession();
 
       if (!data.session) {
-        setError(
-          "로그인 처리 중 오류가 발생했습니다. (로그인 세션이 없습니다.)"
-        );
+        toast("로그인 처리 중 오류가 발생했습니다. (로그인 세션이 없습니다.)");
         return;
       }
 
@@ -67,11 +61,7 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center">
-      {error ? (
-        <p className="text-sm text-[#17171c]">{error}</p>
-      ) : (
-        <Spinner size="lg" />
-      )}
+      <Spinner size="lg" />
     </main>
   );
 }

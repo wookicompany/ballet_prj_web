@@ -8,6 +8,16 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +84,35 @@ const parseOrderTags = (value: string | null) =>
         .filter(Boolean)
     : [];
 
+const LOCATION_DELIMITER = " | ";
+const ADDRESS_DELIMITER = " || ";
+
+const parseLocationValue = (value: string | null) => {
+  if (!value) return { name: "", base: "", detail: "" };
+  if (value.includes(LOCATION_DELIMITER)) {
+    const [name, ...rest] = value.split(LOCATION_DELIMITER);
+    const address = rest.join(LOCATION_DELIMITER).trim();
+    if (address.includes(ADDRESS_DELIMITER)) {
+      const [base, ...detailParts] = address.split(ADDRESS_DELIMITER);
+      return {
+        name: name.trim(),
+        base: base.trim(),
+        detail: detailParts.join(ADDRESS_DELIMITER).trim(),
+      };
+    }
+    return { name: name.trim(), base: address, detail: "" };
+  }
+  if (value.includes(ADDRESS_DELIMITER)) {
+    const [base, ...detailParts] = value.split(ADDRESS_DELIMITER);
+    return {
+      name: "",
+      base: base.trim(),
+      detail: detailParts.join(ADDRESS_DELIMITER).trim(),
+    };
+  }
+  return { name: value.trim(), base: "", detail: "" };
+};
+
 export default function RecordDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -82,6 +121,7 @@ export default function RecordDetailPage() {
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const mediaScrollRef = useRef<HTMLDivElement>(null);
 
@@ -155,9 +195,6 @@ export default function RecordDetailPage() {
 
   const handleDelete = async () => {
     if (!user) return;
-    const confirmed = window.confirm("이 기록을 삭제할까요?");
-    if (!confirmed) return;
-
     await supabase
       .from("records")
       .update({ deleted_at: new Date().toISOString() })
@@ -178,6 +215,15 @@ export default function RecordDetailPage() {
     barOrderTags.length > 0 ||
     centerOrderTags.length > 0;
   const showLevelInstructor = !!record.level || !!record.instructor;
+  const locationParts = parseLocationValue(record.location);
+  const locationAddress = [locationParts.base, locationParts.detail]
+    .filter(Boolean)
+    .join(" ");
+  const locationDisplay = locationParts.name
+    ? locationAddress
+      ? `${locationParts.name} / ${locationAddress}`
+      : locationParts.name
+    : locationAddress;
 
   return (
     <MobileContainer>
@@ -273,6 +319,34 @@ export default function RecordDetailPage() {
                 record.end_time
               )}
             </div>
+            {record.location && locationDisplay ? (
+              <div className="pt-2">
+                <Label className="text-xs text-[#17171c]/60">장소</Label>
+                <div className="mt-2 text-sm text-[#17171c]">
+                  {locationDisplay}
+                </div>
+              </div>
+            ) : null}
+            {showLevelInstructor ? (
+              <div className="grid grid-cols-2 gap-3">
+                {record.instructor ? (
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">강사</Label>
+                    <div className="mt-2 text-sm text-[#17171c]">
+                      {record.instructor}
+                    </div>
+                  </div>
+                ) : null}
+                {record.level ? (
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                    <div className="mt-2 text-sm text-[#17171c]">
+                      {record.level}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             {record.mood ? (
               <div className="pt-2">
                 <Label className="text-xs text-[#17171c]/60">
@@ -305,38 +379,6 @@ export default function RecordDetailPage() {
             <>
 
               <section className="space-y-4">
-                {record.location ? (
-                  <div>
-                    <Label className="text-xs text-[#17171c]/60">장소</Label>
-                    <div className="mt-2 text-sm text-[#17171c]">
-                      {record.location}
-                    </div>
-                  </div>
-                ) : null}
-                {showLevelInstructor ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {record.level ? (
-                      <div>
-                        <Label className="text-xs text-[#17171c]/60">
-                          레벨
-                        </Label>
-                        <div className="mt-2 text-sm text-[#17171c]">
-                          {record.level}
-                        </div>
-                      </div>
-                    ) : null}
-                    {record.instructor ? (
-                      <div>
-                        <Label className="text-xs text-[#17171c]/60">
-                          강사
-                        </Label>
-                        <div className="mt-2 text-sm text-[#17171c]">
-                          {record.instructor}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
                 {record.did_well ? (
                   <div>
                     <Label className="text-xs text-[#17171c]/60">
@@ -412,6 +454,7 @@ export default function RecordDetailPage() {
         <BottomSheet
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          title="메뉴"
         >
           <div className="space-y-2">
             <Button
@@ -431,13 +474,39 @@ export default function RecordDetailPage() {
               className="h-12 w-full text-red-500 hover:text-red-500"
               onClick={() => {
                 setMenuOpen(false);
-                handleDelete();
+                setDeleteDialogOpen(true);
               }}
             >
               삭제
             </Button>
           </div>
         </BottomSheet>
+        <AlertDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>이 기록을 삭제할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                삭제하면 복구할 수 없어요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row gap-2">
+              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogAction
+                variant="outline"
+                className="flex-1 text-red-500 hover:text-red-500"
+                onClick={async () => {
+                  setDeleteDialogOpen(false);
+                  await handleDelete();
+                }}
+              >
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </MobileContainer>
   );

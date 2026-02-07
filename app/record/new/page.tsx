@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
@@ -33,6 +34,38 @@ const ORDER_TAGS = [
   "플리에",
   "퐁듀",
 ];
+
+const LOCATION_DELIMITER = " | ";
+const ADDRESS_DELIMITER = " || ";
+
+const buildLocationValue = (
+  name: string,
+  base: string,
+  detail: string
+) => {
+  const trimmedName = name.trim();
+  const trimmedBase = base.trim();
+  const trimmedDetail = detail.trim();
+  if (!trimmedName && !trimmedBase && !trimmedDetail) return "";
+
+  const normalizedBase =
+    trimmedDetail && trimmedBase.endsWith(trimmedDetail)
+      ? trimmedBase.slice(0, -trimmedDetail.length).trim()
+      : trimmedBase;
+  const shouldAppendDetail =
+    trimmedDetail && normalizedBase && !normalizedBase.includes(trimmedDetail);
+  const address = normalizedBase
+    ? shouldAppendDetail
+      ? `${normalizedBase}${ADDRESS_DELIMITER}${trimmedDetail}`
+      : normalizedBase
+    : trimmedDetail
+      ? `${ADDRESS_DELIMITER}${trimmedDetail}`
+      : "";
+
+  if (!trimmedName) return address;
+  if (!address) return trimmedName;
+  return `${trimmedName}${LOCATION_DELIMITER}${address}`;
+};
 
 const getSafeFileName = (file: File) => {
   const fallbackExt = file.type?.split("/")[1] || "jpg";
@@ -61,7 +94,6 @@ export default function RecordNewPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [showBarOrder, setShowBarOrder] = useState(false);
@@ -208,15 +240,22 @@ export default function RecordNewPage() {
     if (typeof window === "undefined") return;
     const kakao = (window as typeof window & { kakao?: any }).kakao;
     if (!kakao?.Postcode) {
-      setError("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
+      toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
     new kakao.Postcode({
       oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => {
         const address = data.roadAddress || data.jibunAddress || "";
+        if (!address) return;
+        if (address !== locationBase) {
+          setLocationBase(address);
+          if (locationDetail) {
+            setLocationDetail("");
+          }
+          return;
+        }
         setLocationBase(address);
-        setLocationDetail("");
       },
     }).open();
   };
@@ -264,7 +303,6 @@ export default function RecordNewPage() {
   }, [endSheetOpen, endDraft]);
 
   const handleSubmit = async () => {
-    setError(null);
     if (!user) return;
 
     if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
@@ -272,15 +310,12 @@ export default function RecordNewPage() {
       return;
     }
     if (form.end_time < form.start_time) {
-      setError("종료 시간이 시작 시간보다 빠를 수 없습니다.");
+      toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
       return;
     }
 
     const resolvedLocation = showLocation
-      ? [locationName, locationBase, locationDetail]
-          .filter(Boolean)
-          .join(" ")
-          .trim()
+      ? buildLocationValue(locationName, locationBase, locationDetail)
       : "";
 
     setSaving(true);
@@ -300,7 +335,7 @@ export default function RecordNewPage() {
 
     if (insertError || !data) {
       setSaving(false);
-      setError("기록 저장에 실패했습니다.");
+      toast("기록 저장에 실패했습니다.");
       return;
     }
 
@@ -369,6 +404,7 @@ export default function RecordNewPage() {
 
   return (
     <MobileContainer>
+      {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12 pt-6">
         <header className="mb-6 flex items-center justify-between">
           <Button
@@ -430,7 +466,6 @@ export default function RecordNewPage() {
             </p>
           </section>
 
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
           <Separator />
 
           <section className="space-y-4">
@@ -800,22 +835,11 @@ export default function RecordNewPage() {
                 htmlFor="level-instructor-options"
                 className="text-xs text-[#17171c]/70"
               >
-                레벨 &amp; 강사 입력
+                강사 &amp; 레벨 입력
               </Label>
             </div>
             {showLevelInstructor ? (
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                  <Input
-                    type="text"
-                    className="mt-2"
-                    value={form.level}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, level: event.target.value }))
-                    }
-                  />
-                </div>
                 <div>
                   <Label className="text-xs text-[#17171c]/60">강사</Label>
                   <Input
@@ -830,18 +854,28 @@ export default function RecordNewPage() {
                     }
                   />
                 </div>
+                <div>
+                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                  <Input
+                    type="text"
+                    className="mt-2"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, level: event.target.value }))
+                    }
+                  />
+                </div>
               </div>
             ) : null}
           </section>
 
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
           <Button
             type="button"
             className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             disabled={saving}
             onClick={handleSubmit}
           >
-            {saving ? "저장 중..." : "저장하기"}
+            저장하기
           </Button>
         </div>
         <BottomSheet

@@ -9,9 +9,10 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { supabase } from "@/lib/supabaseClient";
 import { Camera, ChevronLeft, User } from "lucide-react";
+import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
@@ -24,7 +25,6 @@ export default function ProfileEditPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -51,13 +51,11 @@ export default function ProfileEditPage() {
   const handleSave = async () => {
     if (!user || loading) return;
     if (nickname.length > 12) {
-      setError("닉네임은 최대 12자까지 가능합니다.");
+      toast("닉네임은 최대 12자까지 가능합니다.");
       return;
     }
 
     setSaving(true);
-    setError(null);
-
     let nextAvatarUrl = avatarUrl;
     if (imageFile) {
       const path = `${user.id}/profile/${Date.now()}-${imageFile.name}`;
@@ -81,7 +79,7 @@ export default function ProfileEditPage() {
 
     if (updateError) {
       setSaving(false);
-      setError("저장에 실패했습니다.");
+      toast("저장에 실패했습니다.");
       return;
     }
 
@@ -120,6 +118,7 @@ export default function ProfileEditPage() {
 
   return (
     <MobileContainer>
+      {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-16 pt-6">
         <header className="mb-6 flex items-center justify-between">
           <Button
@@ -185,15 +184,13 @@ export default function ProfileEditPage() {
             </p>
           </section>
 
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
-
           <Button
             type="button"
             className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "저장 중..." : "저장하기"}
+            저장하기
           </Button>
         </div>
       </main>
