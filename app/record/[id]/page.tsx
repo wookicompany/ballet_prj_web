@@ -272,13 +272,13 @@ export default function RecordDetailPage() {
                 {media.map((item) => (
                   <div
                     key={item.id}
-                    className="min-w-full shrink-0 snap-center snap-always overflow-hidden rounded-2xl border border-black/10 bg-black/5"
+                    className="min-w-full shrink-0 snap-center snap-always overflow-hidden rounded-2xl bg-white"
                   >
                     <AspectRatio ratio={1}>
                       {item.media_type === "video" ? (
                         <video
                           controls
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         >
                           <source src={item.url} />
                         </video>
@@ -286,7 +286,7 @@ export default function RecordDetailPage() {
                         <img
                           src={item.url}
                           alt="업로드 사진"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       )}
                     </AspectRatio>

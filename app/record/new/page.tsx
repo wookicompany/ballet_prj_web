@@ -424,10 +424,10 @@ export default function RecordNewPage() {
         <div className="space-y-8">
           <section className="space-y-3">
             <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
-                className="relative aspect-square rounded-lg border border-dashed border-black/10 bg-transparent"
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-transparent"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="사진 추가"
               >
@@ -436,7 +436,7 @@ export default function RecordNewPage() {
               {mediaItems.map((item, index) => (
                 <div
                   key={`image-${index}`}
-                  className="relative aspect-square overflow-hidden rounded-lg border border-black/10 bg-black/5"
+                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
                   <img
                     src={item.url}
@@ -445,7 +445,7 @@ export default function RecordNewPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
                     onClick={() => handleRemoveImage(index)}
                     aria-label="업로드 사진 삭제"
                   >
