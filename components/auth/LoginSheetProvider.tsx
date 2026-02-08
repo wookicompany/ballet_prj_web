@@ -15,6 +15,8 @@ const LoginSheetContext = createContext<LoginSheetContextValue | undefined>(
   undefined
 );
 
+const SHOW_KAKAO_LOGIN = false;
+
 export function LoginSheetProvider({
   children,
 }: {
@@ -36,21 +38,23 @@ export function LoginSheetProvider({
         description="소셜 계정으로 간편하게 시작할 수 있어요."
       >
         <div className="space-y-3">
-          <Button
-            className="h-12 w-full justify-center gap-2 bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
-            disabled={loading}
-            onClick={() => signInWithProvider("kakao")}
-          >
-            <span className="inline-flex h-5 w-5 items-center justify-center">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 3.5c-5.2 0-9.5 3.3-9.5 7.4 0 2.7 1.7 5 4.5 6.3l-1 3.5c-.1.3.2.6.5.4l4-2.6c.3 0 .9.1 1.5.1 5.2 0 9.5-3.3 9.5-7.4S17.2 3.5 12 3.5z"
-                />
-              </svg>
-            </span>
-            카카오로 시작하기
-          </Button>
+          {SHOW_KAKAO_LOGIN ? (
+            <Button
+              className="h-12 w-full justify-center gap-2 bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
+              disabled={loading}
+              onClick={() => signInWithProvider("kakao")}
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M12 3.5c-5.2 0-9.5 3.3-9.5 7.4 0 2.7 1.7 5 4.5 6.3l-1 3.5c-.1.3.2.6.5.4l4-2.6c.3 0 .9.1 1.5.1 5.2 0 9.5-3.3 9.5-7.4S17.2 3.5 12 3.5z"
+                  />
+                </svg>
+              </span>
+              카카오로 시작하기
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             className="h-12 w-full justify-center gap-2 bg-white text-[#17171c] hover:bg-black/5"
