@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft } from "lucide-react";
@@ -146,7 +147,8 @@ export default function DayPage() {
   }, [dateStr, weekDays]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-[#17171c]">
+    <MobileContainer>
+      <main className="flex min-h-screen flex-col bg-white text-[#17171c]">
       <header className="flex items-center justify-between px-4 pt-6">
         <Button
           type="button"
@@ -258,21 +260,24 @@ export default function DayPage() {
           })}
         </div>
       </section>
-      <Button
-        type="button"
-        size="icon-lg"
-        className="fixed bottom-6 right-4 z-20 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
-        aria-label="기록 등록"
-        onClick={() => {
-          if (!user) {
-            openLoginSheet();
-            return;
-          }
-          router.push("/record/new");
-        }}
-      >
-        <span className="text-[28px] leading-none">+</span>
-      </Button>
+      <div className="fixed bottom-6 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-4">
+        <Button
+          type="button"
+          size="icon-lg"
+          className="rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+          aria-label="기록 등록"
+          onClick={() => {
+            if (!user) {
+              openLoginSheet();
+              return;
+            }
+            router.push("/record/new");
+          }}
+        >
+          <span className="text-[28px] leading-none">+</span>
+        </Button>
+      </div>
     </main>
+    </MobileContainer>
   );
 }

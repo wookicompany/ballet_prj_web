@@ -21,22 +21,24 @@ export default function FloatingButton() {
   }
 
   return (
-    <Button
-      type="button"
-      size="icon-lg"
-      className="fixed bottom-[72px] right-4 z-20 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
-      aria-label="기록 생성"
-      onClick={async () => {
-        if (!user) {
-          openLoginSheet();
-          return;
-        }
-        const consentOk = await ensureConsent();
-        if (!consentOk) return;
-        router.push("/record/new");
-      }}
-    >
-      <span className="text-[28px] leading-none">+</span>
-    </Button>
+    <div className="fixed bottom-[72px] left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-4">
+      <Button
+        type="button"
+        size="icon-lg"
+        className="rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+        aria-label="기록 생성"
+        onClick={async () => {
+          if (!user) {
+            openLoginSheet();
+            return;
+          }
+          const consentOk = await ensureConsent();
+          if (!consentOk) return;
+          router.push("/record/new");
+        }}
+      >
+        <span className="text-[28px] leading-none">+</span>
+      </Button>
+    </div>
   );
 }
