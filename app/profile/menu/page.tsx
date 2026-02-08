@@ -35,15 +35,55 @@ export default function ProfileMenuPage() {
 
   const handleLogout = async () => {
     if (!user || loading) return;
-    await signOut();
+    await supabase.auth.signOut({ scope: "local" });
     router.replace("/calendar");
   };
 
   const handleDeleteAccount = async () => {
     if (!user || loading) return;
-    const { error } = await supabase.functions.invoke("delete-account");
-    if (error) {
-      toast("회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    const { data: sessionData } = await supabase.auth.getSession();
+    let accessToken = sessionData.session?.access_token;
+
+    if (!accessToken) {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      accessToken = refreshData.session?.access_token;
+    }
+
+    if (!accessToken) {
+      toast("로그인 정보가 없어요. 다시 로그인해 주세요.");
+      return;
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      toast("설정 정보를 찾을 수 없어요. 다시 시도해 주세요.");
+      return;
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/delete-account`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: supabaseAnonKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+      try {
+        const errorBody = await response.json();
+        if (errorBody?.message) {
+          errorMessage = `회원탈퇴에 실패했습니다. (${errorBody.message})`;
+        }
+      } catch {
+        // ignore parse errors
+      }
+      toast(errorMessage);
       return;
     }
     await signOut();

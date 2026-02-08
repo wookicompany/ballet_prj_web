@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Calendar, User } from "lucide-react";
@@ -12,6 +13,7 @@ export default function TabBar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
+  const { ensureConsent } = useConsentSheet();
 
   const isCalendar = pathname.startsWith("/calendar");
   const isProfile = pathname.startsWith("/profile");
@@ -35,11 +37,13 @@ export default function TabBar() {
           className={`h-full flex-col gap-1 rounded-none text-[11px] hover:bg-transparent active:bg-transparent ${
             isProfile ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
-          onClick={() => {
+          onClick={async () => {
             if (!user) {
               openLoginSheet();
               return;
             }
+            const consentOk = await ensureConsent();
+            if (!consentOk) return;
             router.push("/profile");
           }}
           type="button"

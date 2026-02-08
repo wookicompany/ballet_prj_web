@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,7 @@ export default function FloatingButton() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
+  const { ensureConsent } = useConsentSheet();
 
   const isCalendar = pathname.startsWith("/calendar");
 
@@ -24,11 +26,13 @@ export default function FloatingButton() {
       size="icon-lg"
       className="fixed bottom-[72px] right-4 z-20 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
       aria-label="기록 생성"
-      onClick={() => {
+      onClick={async () => {
         if (!user) {
           openLoginSheet();
           return;
         }
+        const consentOk = await ensureConsent();
+        if (!consentOk) return;
         router.push("/record/new");
       }}
     >

@@ -9,7 +9,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
 import { supabase } from "@/lib/supabaseClient";
 
 type AuthContextValue = {

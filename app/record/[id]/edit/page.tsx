@@ -1143,7 +1143,7 @@ export default function RecordEditPage() {
           </div>
           <div className="mt-4">
             <Button
-              className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1152,7 +1152,7 @@ export default function RecordEditPage() {
                 setStartSheetOpen(false);
               }}
             >
-              적용할게요
+              적용하기
             </Button>
           </div>
         </BottomSheet>
@@ -1200,7 +1200,7 @@ export default function RecordEditPage() {
           </div>
           <div className="mt-4">
             <Button
-              className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1209,7 +1209,7 @@ export default function RecordEditPage() {
                 setEndSheetOpen(false);
               }}
             >
-              적용할게요
+              적용하기
             </Button>
           </div>
         </BottomSheet>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 function formatDate(date: Date) {
   const year = date.getFullYear();
@@ -101,11 +102,18 @@ export default function CalendarPage() {
     }
 
     const fetchSettings = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("calendar_week_start_monday,calendar_highlight_weekend")
         .eq("id", user.id)
         .single();
+
+      if (error) {
+        setWeekStartMonday(false);
+        setHighlightWeekend(false);
+        setSettingsLoaded(true);
+        return;
+      }
 
       if (data) {
         setWeekStartMonday(!!data.calendar_week_start_monday);
@@ -113,6 +121,11 @@ export default function CalendarPage() {
       } else {
         setWeekStartMonday(false);
         setHighlightWeekend(false);
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          calendar_week_start_monday: false,
+          calendar_highlight_weekend: false,
+        });
       }
       setSettingsLoaded(true);
     };
@@ -122,11 +135,17 @@ export default function CalendarPage() {
 
   useEffect(() => {
     if (!settingsLoaded || !user) return;
-    supabase.from("profiles").upsert({
-      id: user.id,
-      calendar_week_start_monday: weekStartMonday,
-      calendar_highlight_weekend: highlightWeekend,
-    });
+    const persistSettings = async () => {
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        calendar_week_start_monday: weekStartMonday,
+        calendar_highlight_weekend: highlightWeekend,
+      });
+      if (error) {
+        toast("캘린더 설정 저장에 실패했습니다.");
+      }
+    };
+    void persistSettings();
   }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
 
   const monthLabel = `${currentDate.getFullYear()}년 ${
@@ -230,8 +249,8 @@ export default function CalendarPage() {
             index === (weekStartMonday ? 5 : 0) || index === 6;
           const weekendClass = highlightWeekend
             ? index === (weekStartMonday ? 5 : 0)
-              ? "text-red-500"
-              : "text-blue-600"
+              ? "text-blue-600"
+              : "text-red-500"
             : "";
           return (
             <span
@@ -261,8 +280,8 @@ export default function CalendarPage() {
             weekendIndex === (weekStartMonday ? 5 : 0) || weekendIndex === 6;
           const weekendClass = highlightWeekend
             ? weekendIndex === (weekStartMonday ? 5 : 0)
-              ? "text-red-500"
-              : "text-blue-600"
+              ? "text-blue-600"
+              : "text-red-500"
             : "";
 
           return (

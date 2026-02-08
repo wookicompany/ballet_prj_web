@@ -85,11 +85,8 @@ export default function ProfilePage() {
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
           <p className="text-sm text-[#17171c]/70">
-            로그인하면 프로필을 볼 수 있어요.
+            프로필을 보려면 로그인이 필요해요.
           </p>
-          <Button type="button" onClick={openLoginSheet}>
-            로그인할게요
-          </Button>
         </main>
       </MobileContainer>
     );
