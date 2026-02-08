@@ -23,8 +23,10 @@ import {
   ChevronRight,
   LogOut,
   MessageCircle,
+  ShieldCheck,
   UserX,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ProfileMenuPage() {
   const router = useRouter();
@@ -39,9 +41,11 @@ export default function ProfileMenuPage() {
 
   const handleDeleteAccount = async () => {
     if (!user || loading) return;
-    await supabase.from("record_media").delete().eq("user_id", user.id);
-    await supabase.from("records").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
+    const { error } = await supabase.functions.invoke("delete-account");
+    if (error) {
+      toast("회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
     await signOut();
     router.replace("/calendar");
   };
@@ -74,7 +78,19 @@ export default function ProfileMenuPage() {
           <div className="w-9" />
         </header>
 
-        <section className="rounded-xl border border-black/5 bg-white">
+        <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/policy")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <ShieldCheck className="h-5 w-5 text-[#17171c]/70" />
+              서비스 이용정책
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
           <Button
             type="button"
             variant="ghost"

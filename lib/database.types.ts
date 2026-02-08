@@ -17,6 +17,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          calendar_highlight_weekend: boolean
+          calendar_week_start_monday: boolean
           created_at: string
           id: string
           nickname: string | null
@@ -24,6 +26,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          calendar_highlight_weekend?: boolean
+          calendar_week_start_monday?: boolean
           created_at?: string
           id: string
           nickname?: string | null
@@ -31,12 +35,22 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          calendar_highlight_weekend?: boolean
+          calendar_week_start_monday?: boolean
           created_at?: string
           id?: string
           nickname?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       record_media: {
         Row: {
@@ -70,6 +84,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "records"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_media_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -140,7 +161,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       support_inquiries: {
         Row: {
@@ -170,11 +199,83 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_inquiries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_consents: {
+        Row: {
+          agreed_at: string
+          created_at: string
+          id: string
+          privacy_version: string
+          terms_version: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agreed_at?: string
+          created_at?: string
+          id?: string
+          privacy_version: string
+          terms_version: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agreed_at?: string
+          created_at?: string
+          id?: string
+          privacy_version?: string
+          terms_version?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      user_auth_providers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          last_sign_in_at: string | null
+          provider: string | null
+          providers: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          last_sign_in_at?: string | null
+          provider?: never
+          providers?: never
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          last_sign_in_at?: string | null
+          provider?: never
+          providers?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

@@ -38,6 +38,7 @@ export default function CalendarPage() {
   }));
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
@@ -92,28 +93,41 @@ export default function CalendarPage() {
   }, [user, start, end]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const weekStart = window.localStorage.getItem("calendarWeekStartMonday");
-    const weekendColor = window.localStorage.getItem("calendarHighlightWeekend");
-    if (weekStart !== null) {
-      setWeekStartMonday(weekStart === "true");
+    if (!user) {
+      setWeekStartMonday(false);
+      setHighlightWeekend(false);
+      setSettingsLoaded(true);
+      return;
     }
-    if (weekendColor !== null) {
-      setHighlightWeekend(weekendColor === "true");
-    }
-  }, []);
+
+    const fetchSettings = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("calendar_week_start_monday,calendar_highlight_weekend")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        setWeekStartMonday(!!data.calendar_week_start_monday);
+        setHighlightWeekend(!!data.calendar_highlight_weekend);
+      } else {
+        setWeekStartMonday(false);
+        setHighlightWeekend(false);
+      }
+      setSettingsLoaded(true);
+    };
+
+    fetchSettings();
+  }, [user]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      "calendarWeekStartMonday",
-      String(weekStartMonday)
-    );
-    window.localStorage.setItem(
-      "calendarHighlightWeekend",
-      String(highlightWeekend)
-    );
-  }, [weekStartMonday, highlightWeekend]);
+    if (!settingsLoaded || !user) return;
+    supabase.from("profiles").upsert({
+      id: user.id,
+      calendar_week_start_monday: weekStartMonday,
+      calendar_highlight_weekend: highlightWeekend,
+    });
+  }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
 
   const monthLabel = `${currentDate.getFullYear()}년 ${
     currentDate.getMonth() + 1
