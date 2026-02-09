@@ -15,7 +15,7 @@ const LoginSheetContext = createContext<LoginSheetContextValue | undefined>(
   undefined
 );
 
-const SHOW_KAKAO_LOGIN = false;
+const SHOW_KAKAO_LOGIN = true;
 
 export function LoginSheetProvider({
   children,
