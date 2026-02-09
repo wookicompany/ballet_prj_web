@@ -30,7 +30,7 @@
   - `/performance/[id]/reviews/[reviewId]/comments`: 리뷰 댓글 목록
   - `/performance/[id]/reviews/[reviewId]/comments/new`: 리뷰 댓글 작성
 - 네비게이션
-  - 하단 탭: `캘린더` / `프로필` (공연 탭은 Phase 1 예정)
+  - 하단 탭: `캘린더` / `공연` / `프로필`
   - 플로팅 버튼: 기록 생성(`/record/new`)
   - 상세 화면은 탭 없이 단일 페이지로 진입
 
@@ -128,11 +128,14 @@
 
 ### 데이터 적재/배치 및 CRUD 기준
 
-- Vercel Cron으로 **3일 주기 배치** 실행
-- **BBBC 전체 공연**을 매 배치마다 수집
+- 현재는 **수동 적재만 지원** (Vercel Cron은 이후 단계에서 적용)
+- **BBBC 전체 공연**을 수동 호출 시점에 수집
 - 공연목록/공연상세를 Supabase에 upsert 저장
 - 서비스는 KOPIS 실시간 호출 없이 DB 데이터만 사용
-- 배치 호출: `/api/cron/kopis-sync` (필요 시 `stdate`, `eddate`, `afterdate`로 범위 지정)
+- 수동 호출: `POST /api/cron/kopis-sync`
+  - 쿼리: `stdate=YYYYMMDD`, `eddate=YYYYMMDD`, `afterdate=YYYYMMDD` (선택)
+  - 헤더: `x-cron-secret`에 `CRON_SECRET` 값 전달 (설정된 경우)
+  - 기본값: `stdate`는 30일 전, `eddate`는 365일 후, `afterdate`는 3일 전
 
 #### 공연 목록 (KOPIS `pblprfr`)
 - **C**: `mt20id`가 DB에 없으면 생성
@@ -159,6 +162,15 @@
   - `genrenm`: 공연 장르명
   - `prfstate`: 공연상태
   - `area`: 지역
+
+#### 공연 목록 섹션 구성 (아이디어)
+
+- **인기 공연**: 리뷰 수/평균 별점 기준 (내부 데이터)
+- **공개 예정작**: `prfpdfrom`이 오늘 이후인 공연
+- **현재 공연**: `prfpdfrom` ≤ 오늘 ≤ `prfpdto`
+- **곧 종료**: `prfpdto`가 30일 이내인 공연
+- **오픈런**: `openrun = Y` 기준
+- **지역/공연장 묶음**: `area`, `fcltynm` 기준 추천 섹션
 
 ### 공연 상세
 
@@ -190,6 +202,7 @@
 - 사용자 프로필에서 내가 작성한 리뷰 목록 제공
 - 리뷰에 댓글 작성 가능 (공연 리뷰에 대한 댓글)
 - 리뷰/댓글 좋아요 기능 제공
+- 공연 좋아요 기능 제공
 
 ## 5) 프로필
 

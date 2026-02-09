@@ -64,6 +64,15 @@ Product Requirement Document (Phase 1)
   - `prfstate`: 공연상태
   - `area`: 지역
 
+추가 아이디어: 공연 목록 섹션 구성
+
+- 인기 공연(리뷰 수/평점)
+- 공개 예정작(`prfpdfrom` 기준)
+- 현재 공연(`prfpdfrom`/`prfpdto` 기준)
+- 곧 종료(`prfpdto`가 30일 이내)
+- 오픈런(`openrun = Y`)
+- 지역/공연장 기준 묶음(`area`, `fcltynm`)
+
 3) 공연 상세
 
 - 사용자 노출 필드 (KOPIS 공연상세 기준)
@@ -94,6 +103,7 @@ Product Requirement Document (Phase 1)
 - 사용자 프로필에서 내가 작성한 리뷰 목록 제공
 - 리뷰에 댓글 작성 가능 (공연 리뷰에 대한 댓글)
 - 리뷰/댓글 좋아요 기능 제공
+- 공연 좋아요 기능 제공
 
 ---
 
