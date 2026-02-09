@@ -132,6 +132,7 @@
 - **BBBC 전체 공연**을 매 배치마다 수집
 - 공연목록/공연상세를 Supabase에 upsert 저장
 - 서비스는 KOPIS 실시간 호출 없이 DB 데이터만 사용
+- 배치 호출: `/api/cron/kopis-sync` (필요 시 `stdate`, `eddate`, `afterdate`로 범위 지정)
 
 #### 공연 목록 (KOPIS `pblprfr`)
 - **C**: `mt20id`가 DB에 없으면 생성
