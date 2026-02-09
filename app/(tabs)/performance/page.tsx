@@ -6,12 +6,8 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -285,33 +281,40 @@ export default function PerformanceListPage() {
   );
 
 
+  if (loading) {
+    return (
+      <MobileContainer>
+        <main className="flex min-h-screen items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
+  }
+
   return (
     <MobileContainer>
       <main className="px-4 pb-16 pt-8">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-lg font-semibold">공연</h1>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <HoverCard>
+              <HoverCardTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-lg"
-                  className="text-[#17171c]/70"
-                  aria-label="KOPIS 출처 안내"
+                  className="-ml-1 text-[#17171c]/70"
+                  aria-label="출처 KOPIS"
                 >
-                  <Info className="size-4" />
+                  <Info className="size-4" strokeWidth={2.5} />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={6}
-                className="max-w-xs font-semibold"
-              >
-                KOPIS를 기반으로 만든 서비스예요. 출처: (재)예술경영지원센터
-                공연예술통합전산망(www.kopis.or.kr)
-              </TooltipContent>
-            </Tooltip>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-72 text-sm font-semibold text-[#17171c]">
+                공연 정보는 KOPIS 데이터를 바탕으로 안내드리고 있어요.
+                출처는 (재)예술경영지원센터 공연예술통합전산망이에요.
+                사이트 주소는 www.kopis.or.kr이에요.
+              </HoverCardContent>
+            </HoverCard>
           </div>
           <Button
             type="button"
@@ -325,12 +328,7 @@ export default function PerformanceListPage() {
           </Button>
         </header>
 
-        {loading ? (
-          <div className="flex min-h-[240px] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        ) : (
-          <div className="space-y-7">
+        <div className="space-y-7">
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -480,8 +478,7 @@ export default function PerformanceListPage() {
               </div>
             </section>
 
-          </div>
-        )}
+        </div>
       </main>
     </MobileContainer>
   );
