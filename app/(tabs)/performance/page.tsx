@@ -7,8 +7,13 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Info, Search } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -284,7 +289,30 @@ export default function PerformanceListPage() {
     <MobileContainer>
       <main className="px-4 pb-16 pt-8">
         <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">공연</h1>
+          <div className="flex items-center gap-0">
+            <h1 className="text-lg font-semibold">공연</h1>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  className="text-[#17171c]/70"
+                  aria-label="KOPIS 출처 안내"
+                >
+                  <Info className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                sideOffset={6}
+                className="max-w-xs font-semibold"
+              >
+                KOPIS를 기반으로 만든 서비스예요. 출처: (재)예술경영지원센터
+                공연예술통합전산망(www.kopis.or.kr)
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <Button
             type="button"
             variant="ghost"
