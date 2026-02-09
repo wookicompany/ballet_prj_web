@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
@@ -48,9 +50,15 @@ type MediaItem = {
   url: string;
 };
 
+const formatMeridiem = (hour: number) => (hour < 12 ? "오전" : "오후");
+const formatHour12 = (hour: number) => {
+  const normalized = hour % 12 === 0 ? 12 : hour % 12;
+  return String(normalized).padStart(2, "0");
+};
 const formatTimeLabel = (time: string) => {
   const [hour, minute] = time.split(":");
-  return `${hour}시 ${minute}분`;
+  const hourValue = Number(hour);
+  return `${formatMeridiem(hourValue)} ${formatHour12(hourValue)}시 ${minute}분`;
 };
 
 const calculateDuration = (start: string, end: string) => {
@@ -66,14 +74,13 @@ const calculateDuration = (start: string, end: string) => {
 
 const formatDateTimeLine = (dateStr: string, start: string, end: string) => {
   const date = new Date(`${dateStr}T00:00:00`);
-  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-  const weekday = Number.isNaN(date.getTime())
+  const weekdayLabel = Number.isNaN(date.getTime())
     ? ""
-    : `(${weekdays[date.getDay()]})`;
+    : format(date, "yyyy년 MM월 dd일(EEE)", { locale: ko });
   const duration = calculateDuration(start, end);
-  return `${dateStr}${weekday} ${formatTimeLabel(start)} - ${formatTimeLabel(
-    end
-  )} (총 ${duration.hours}시간 ${duration.minutes}분)`;
+  return `${weekdayLabel || dateStr} ${formatTimeLabel(
+    start
+  )} - ${formatTimeLabel(end)} (총 ${duration.hours}시간 ${duration.minutes}분)`;
 };
 
 const parseOrderTags = (value: string | null) =>
@@ -175,9 +182,6 @@ export default function RecordDetailPage() {
           <p className="text-sm text-[#17171c]/70">
             로그인하면 기록을 확인할 수 있어요.
           </p>
-          <Button type="button" onClick={openLoginSheet}>
-            로그인할게요
-          </Button>
         </main>
       </MobileContainer>
     );
@@ -232,23 +236,23 @@ export default function RecordDetailPage() {
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             onClick={() => router.back()}
             aria-label="뒤로"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="size-6" />
           </Button>
           <h1 className="text-base font-semibold">기록 상세</h1>
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             onClick={() => setMenuOpen(true)}
             aria-label="기록 메뉴"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="size-6" />
           </Button>
         </header>
 

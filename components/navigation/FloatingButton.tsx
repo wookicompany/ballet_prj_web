@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function FloatingButton() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function FloatingButton() {
       <Button
         type="button"
         size="icon-lg"
-        className="rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+        className="size-12 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
         aria-label="기록 생성"
         onClick={async () => {
           if (!user) {
@@ -37,7 +38,7 @@ export default function FloatingButton() {
           router.push("/record/new");
         }}
       >
-        <span className="text-[28px] leading-none">+</span>
+        <Plus className="size-6" strokeWidth={3} />
       </Button>
     </div>
   );

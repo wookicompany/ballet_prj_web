@@ -21,18 +21,20 @@ export default function MoodSelector({
             key={`mood-${moodValue}`}
             type="button"
             variant="outline"
-            className={`h-auto w-full aspect-square rounded-full p-2 ${
+            className={`h-auto w-full aspect-square rounded-full p-0 ${
               isActive
                 ? "border-[#17171c] bg-[#17171c]/5"
                 : "border-black/10"
             }`}
             onClick={() => onChange(moodValue)}
           >
-            <img
-              src={`/mood/cat-${moodValue}.svg`}
-              alt={`기분 ${moodValue}단계`}
-              className="h-full w-full object-contain"
-            />
+            <span className="block aspect-square w-full rounded-full overflow-hidden p-2">
+              <img
+                src={`/mood/cat-${moodValue}.svg`}
+                alt={`기분 ${moodValue}단계`}
+                className="h-full w-full object-contain"
+              />
+            </span>
           </Button>
         );
       })}

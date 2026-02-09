@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -493,6 +494,15 @@ export default function RecordEditPage() {
   const startMinute = form.start_time ? form.start_time.split(":")[1] : "00";
   const endHour = form.end_time ? form.end_time.split(":")[0] : "00";
   const endMinute = form.end_time ? form.end_time.split(":")[1] : "00";
+  const formatMeridiem = (hour: string) =>
+    Number(hour) < 12 ? "오전" : "오후";
+  const formatHour12 = (hour: string) => {
+    const value = Number(hour);
+    const normalized = value % 12 === 0 ? 12 : value % 12;
+    return String(normalized).padStart(2, "0");
+  };
+  const formatTimeDisplay = (hour: string, minute: string) =>
+    `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
   const getClampedNowTime = () => {
     const now = new Date();
     const hourValue = Math.max(now.getHours(), 6);
@@ -520,9 +530,6 @@ export default function RecordEditPage() {
           <p className="text-sm text-[#17171c]/70">
             로그인하면 기록을 수정할 수 있어요.
           </p>
-          <Button type="button" onClick={openLoginSheet}>
-            로그인할게요
-          </Button>
         </main>
       </MobileContainer>
     );
@@ -546,12 +553,12 @@ export default function RecordEditPage() {
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             onClick={() => router.back()}
             aria-label="뒤로"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="size-6" />
           </Button>
           <h1 className="text-base font-semibold">기록 수정</h1>
           <div className="w-9" />
@@ -632,7 +639,9 @@ export default function RecordEditPage() {
               >
                 <CalendarDays className="h-4 w-4" />
                 {form.record_date
-                  ? format(new Date(form.record_date), "yyyy-MM-dd")
+                  ? format(new Date(form.record_date), "yyyy년 MM월 dd일(EEE)", {
+                      locale: ko,
+                    })
                   : "날짜 선택"}
               </Button>
             </div>
@@ -652,7 +661,7 @@ export default function RecordEditPage() {
                   }}
                 >
                   {form.start_time
-                    ? `${startHour}시 ${startMinute}분`
+                    ? formatTimeDisplay(startHour, startMinute)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -671,7 +680,7 @@ export default function RecordEditPage() {
                   }}
                 >
                   {form.end_time
-                    ? `${endHour}시 ${endMinute}분`
+                    ? formatTimeDisplay(endHour, endMinute)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -1105,7 +1114,27 @@ export default function RecordEditPage() {
           onOpenChange={setStartSheetOpen}
           title="시작 시간을 선택해 주세요"
         >
-          <div className="mt-2 grid grid-cols-2 gap-3">
+          <div className="mt-2 grid grid-cols-3 gap-3">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+              <div
+                className={`flex h-10 items-center justify-center rounded-md text-sm ${
+                  Number(startDraft.hour) < 12
+                    ? "bg-[#17171c]/5 text-[#17171c]"
+                    : "text-[#17171c]/40"
+                }`}
+              >
+                오전
+              </div>
+              <div
+                className={`flex h-10 items-center justify-center rounded-md text-sm ${
+                  Number(startDraft.hour) >= 12
+                    ? "bg-[#17171c]/5 text-[#17171c]"
+                    : "text-[#17171c]/40"
+                }`}
+              >
+                오후
+              </div>
+            </div>
             <div
               ref={startHourListRef}
               className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
@@ -1119,7 +1148,7 @@ export default function RecordEditPage() {
                   data-value={hour}
                   onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
                 >
-                  {hour}시
+                  {formatHour12(hour)}시
                 </Button>
               ))}
             </div>
@@ -1162,7 +1191,27 @@ export default function RecordEditPage() {
           onOpenChange={setEndSheetOpen}
           title="종료 시간을 선택해 주세요"
         >
-          <div className="mt-2 grid grid-cols-2 gap-3">
+          <div className="mt-2 grid grid-cols-3 gap-3">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+              <div
+                className={`flex h-10 items-center justify-center rounded-md text-sm ${
+                  Number(endDraft.hour) < 12
+                    ? "bg-[#17171c]/5 text-[#17171c]"
+                    : "text-[#17171c]/40"
+                }`}
+              >
+                오전
+              </div>
+              <div
+                className={`flex h-10 items-center justify-center rounded-md text-sm ${
+                  Number(endDraft.hour) >= 12
+                    ? "bg-[#17171c]/5 text-[#17171c]"
+                    : "text-[#17171c]/40"
+                }`}
+              >
+                오후
+              </div>
+            </div>
             <div
               ref={endHourListRef}
               className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
@@ -1176,7 +1225,7 @@ export default function RecordEditPage() {
                   data-value={hour}
                   onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
                 >
-                  {hour}시
+                  {formatHour12(hour)}시
                 </Button>
               ))}
             </div>

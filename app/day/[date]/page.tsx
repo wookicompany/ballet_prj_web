@@ -8,7 +8,7 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
 
 type RecordItem = {
   id: string;
@@ -153,12 +153,12 @@ export default function DayPage() {
         <Button
           type="button"
           variant="ghost"
-          size="icon-sm"
+          size="icon-lg"
           className="text-[#17171c]/70"
           onClick={() => router.push("/calendar")}
           aria-label="캘린더로 이동"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="size-6" />
         </Button>
         <div className="text-center">
           <h1 className="text-base font-semibold">{dateStr}</h1>
@@ -264,17 +264,17 @@ export default function DayPage() {
         <Button
           type="button"
           size="icon-lg"
-          className="rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+          className="size-12 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
           aria-label="기록 등록"
           onClick={() => {
             if (!user) {
               openLoginSheet();
               return;
             }
-            router.push("/record/new");
+            router.push(`/record/new?date=${dateStr}`);
           }}
         >
-          <span className="text-[28px] leading-none">+</span>
+          <Plus className="size-6" strokeWidth={3} />
         </Button>
       </div>
     </main>

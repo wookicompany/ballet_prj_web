@@ -114,12 +114,12 @@ export default function ProfilePage() {
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             onClick={() => router.push("/profile/menu")}
             aria-label="더보기"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="size-6" />
           </Button>
         </header>
 
@@ -130,7 +130,7 @@ export default function ProfilePage() {
                 <img
                   src={profile.avatar_url}
                   alt="프로필 이미지"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#17171c]/60">

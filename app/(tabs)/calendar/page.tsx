@@ -214,11 +214,11 @@ export default function CalendarPage() {
   return (
     <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-6">
       <header className="mb-4 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             aria-label="연월 선택"
             onClick={() => {
@@ -229,17 +229,17 @@ export default function CalendarPage() {
               setMonthSheetOpen(true);
             }}
           >
-            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+            <ChevronDown className="size-6" strokeWidth={2.5} />
           </Button>
         </div>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon-lg"
           className="text-[#17171c]/70"
           aria-label="캘린더 설정"
           onClick={() => setSettingsOpen(true)}
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="size-6" />
         </Button>
       </header>
 

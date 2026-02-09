@@ -71,12 +71,12 @@ export default function SupportPage() {
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-lg"
             className="text-[#17171c]/70"
             onClick={() => router.back()}
             aria-label="뒤로"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="size-6" />
           </Button>
           <h1 className="text-base font-semibold">문의하기</h1>
           <div className="w-9" />
