@@ -14,6 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
+      kopis_performance_details: {
+        Row: {
+          area: string | null
+          child: string | null
+          created_at: string
+          daehakro: string | null
+          deleted_at: string | null
+          dtguidance: string | null
+          entrpsnm: string | null
+          entrpsnm_a: string | null
+          entrpsnm_h: string | null
+          entrpsnm_p: string | null
+          entrpsnm_s: string | null
+          fcltynm: string | null
+          festival: string | null
+          genrenm: string | null
+          is_active: boolean
+          mt10id: string | null
+          mt20id: string
+          musicalcreate: string | null
+          musicallicense: string | null
+          openrun: string | null
+          pcseguidance: string | null
+          poster: string | null
+          prfage: string | null
+          prfcast: string | null
+          prfcrew: string | null
+          prfnm: string | null
+          prfpdfrom: string | null
+          prfpdto: string | null
+          prfruntime: string | null
+          prfstate: string | null
+          relates: Json | null
+          sty: string | null
+          styurls: Json | null
+          updated_at: string
+          updatedate: string | null
+          visit: string | null
+        }
+        Insert: {
+          area?: string | null
+          child?: string | null
+          created_at?: string
+          daehakro?: string | null
+          deleted_at?: string | null
+          dtguidance?: string | null
+          entrpsnm?: string | null
+          entrpsnm_a?: string | null
+          entrpsnm_h?: string | null
+          entrpsnm_p?: string | null
+          entrpsnm_s?: string | null
+          fcltynm?: string | null
+          festival?: string | null
+          genrenm?: string | null
+          is_active?: boolean
+          mt10id?: string | null
+          mt20id: string
+          musicalcreate?: string | null
+          musicallicense?: string | null
+          openrun?: string | null
+          pcseguidance?: string | null
+          poster?: string | null
+          prfage?: string | null
+          prfcast?: string | null
+          prfcrew?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfruntime?: string | null
+          prfstate?: string | null
+          relates?: Json | null
+          sty?: string | null
+          styurls?: Json | null
+          updated_at?: string
+          updatedate?: string | null
+          visit?: string | null
+        }
+        Update: {
+          area?: string | null
+          child?: string | null
+          created_at?: string
+          daehakro?: string | null
+          deleted_at?: string | null
+          dtguidance?: string | null
+          entrpsnm?: string | null
+          entrpsnm_a?: string | null
+          entrpsnm_h?: string | null
+          entrpsnm_p?: string | null
+          entrpsnm_s?: string | null
+          fcltynm?: string | null
+          festival?: string | null
+          genrenm?: string | null
+          is_active?: boolean
+          mt10id?: string | null
+          mt20id?: string
+          musicalcreate?: string | null
+          musicallicense?: string | null
+          openrun?: string | null
+          pcseguidance?: string | null
+          poster?: string | null
+          prfage?: string | null
+          prfcast?: string | null
+          prfcrew?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfruntime?: string | null
+          prfstate?: string | null
+          relates?: Json | null
+          sty?: string | null
+          styurls?: Json | null
+          updated_at?: string
+          updatedate?: string | null
+          visit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kopis_performance_details_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: true
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+        ]
+      }
+      kopis_performances: {
+        Row: {
+          area: string | null
+          created_at: string
+          deleted_at: string | null
+          fcltynm: string | null
+          genrenm: string | null
+          is_active: boolean
+          mt20id: string
+          openrun: string | null
+          poster: string | null
+          prfnm: string
+          prfpdfrom: string | null
+          prfpdto: string | null
+          prfstate: string | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          is_active?: boolean
+          mt20id: string
+          openrun?: string | null
+          poster?: string | null
+          prfnm: string
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          is_active?: boolean
+          mt20id?: string
+          openrun?: string | null
+          poster?: string | null
+          prfnm?: string
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
