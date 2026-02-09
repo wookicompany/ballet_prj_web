@@ -10,12 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { Menu, User } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 
 type Profile = {
   id: string;
   nickname: string | null;
   avatar_url: string | null;
+};
+
+type ReviewSummary = {
+  id: string;
+  performanceId: string;
+  performanceName: string | null;
+  rating: number;
+  createdAt: string;
 };
 
 function toMinutes(time: string) {
@@ -30,6 +38,10 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewAverage, setReviewAverage] = useState<number | null>(null);
+  const [reviews, setReviews] = useState<ReviewSummary[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -64,6 +76,44 @@ export default function ProfilePage() {
           return sum + (toMinutes(record.end_time) - toMinutes(record.start_time));
         }, 0);
         setTotalMinutes(minutes);
+      }
+
+      const { data: reviewRows } = await supabase
+        .from("performance_reviews")
+        .select("id,performance_id,rating,created_at")
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (reviewRows && reviewRows.length > 0) {
+        const performanceIds = Array.from(
+          new Set(reviewRows.map((row) => row.performance_id))
+        );
+        const { data: performanceRows } = await supabase
+          .from("kopis_performances")
+          .select("mt20id,prfnm")
+          .in("mt20id", performanceIds);
+
+        const performanceMap = new Map<string, string | null>();
+        (performanceRows ?? []).forEach((row) => {
+          performanceMap.set(row.mt20id, row.prfnm);
+        });
+
+        const mapped = reviewRows.map((row) => ({
+          id: row.id,
+          performanceId: row.performance_id,
+          performanceName: performanceMap.get(row.performance_id) ?? null,
+          rating: row.rating,
+          createdAt: row.created_at,
+        }));
+        setReviews(mapped);
+        setReviewCount(mapped.length);
+        const totalRating = mapped.reduce((sum, row) => sum + row.rating, 0);
+        setReviewAverage(Math.round((totalRating / mapped.length) * 10) / 10);
+      } else {
+        setReviews([]);
+        setReviewCount(0);
+        setReviewAverage(null);
       }
     };
 
@@ -125,19 +175,29 @@ export default function ProfilePage() {
 
         <section className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5">
+            <button
+              type="button"
+              className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5"
+              onClick={() => {
+                if (profile.avatar_url) {
+                  setAvatarOpen(true);
+                }
+              }}
+              aria-label="프로필 이미지 크게 보기"
+              disabled={!profile.avatar_url}
+            >
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt="프로필 이미지"
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#17171c]/60">
                   <User className="h-7 w-7" />
                 </div>
               )}
-            </div>
+            </button>
             <div className="flex-1">
               <p className="text-base font-semibold">{displayName}</p>
             </div>
@@ -167,7 +227,83 @@ export default function ProfilePage() {
             프로필 편집
           </Button>
         </section>
+
+        <section className="mt-6 space-y-4 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[#17171c]">내 공연 리뷰</h2>
+            <span className="text-xs text-[#17171c]/60">
+              {reviewAverage !== null
+                ? `평균 ${reviewAverage}점 · ${reviewCount}개`
+                : "아직 리뷰가 없어요."}
+            </span>
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="text-xs text-[#17171c]/60">
+              첫 리뷰를 남겨보세요.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {reviews.slice(0, 3).map((review) => (
+                <Card key={review.id} className="border-black/5">
+                  <CardContent className="space-y-2 p-3">
+                    <div className="flex items-center justify-between text-xs text-[#17171c]/60">
+                      <span>{review.performanceName || "공연명 미정"}</span>
+                      <span>별점 {review.rating}점</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full text-left text-xs text-[#17171c]/70"
+                      onClick={() =>
+                        router.push(
+                          `/performance/${review.performanceId}/reviews/${review.id}`
+                        )
+                      }
+                    >
+                      리뷰 상세 보기
+                    </button>
+                  </CardContent>
+                </Card>
+              ))}
+              {reviewCount > 3 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => router.push("/performance")}
+                >
+                  공연 리뷰 더 보기
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </section>
       </main>
+      {avatarOpen && profile.avatar_url ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setAvatarOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white"
+            onClick={(event) => {
+              event.stopPropagation();
+              setAvatarOpen(false);
+            }}
+            aria-label="닫기"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={profile.avatar_url}
+            alt="프로필 이미지 크게 보기"
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      ) : null}
     </MobileContainer>
   );
 }

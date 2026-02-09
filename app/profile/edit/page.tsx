@@ -144,7 +144,7 @@ export default function ProfileEditPage() {
                   <img
                     src={avatarUrl}
                     alt="프로필 이미지"
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[#17171c]/40">

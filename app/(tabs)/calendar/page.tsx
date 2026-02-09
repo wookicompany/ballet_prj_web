@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Settings } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
@@ -32,7 +31,6 @@ export default function CalendarPage() {
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => ({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
@@ -232,15 +230,7 @@ export default function CalendarPage() {
             <ChevronDown className="size-6" strokeWidth={2.5} />
           </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          className="text-[#17171c]/70"
-          aria-label="캘린더 설정"
-          onClick={() => setSettingsOpen(true)}
-        >
-          <Settings className="size-6" />
-        </Button>
+        <div className="w-9" />
       </header>
 
       <section className="grid grid-cols-7 gap-0 pb-2 text-center text-xs text-[#17171c]/60">
@@ -397,27 +387,6 @@ export default function CalendarPage() {
           >
             적용하기
           </Button>
-        </div>
-      </BottomSheet>
-      <BottomSheet
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        title="캘린더 설정"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-4">
-            <p className="text-sm font-medium text-[#17171c]">
-              월요일로 주간 시작
-            </p>
-            <Switch checked={weekStartMonday} onCheckedChange={setWeekStartMonday} />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-4">
-            <p className="text-sm font-medium text-[#17171c]">주말 색 표시</p>
-            <Switch
-              checked={highlightWeekend}
-              onCheckedChange={setHighlightWeekend}
-            />
-          </div>
         </div>
       </BottomSheet>
     </main>

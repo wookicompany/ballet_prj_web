@@ -190,6 +190,204 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_review_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "performance_review_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_review_comments: {
+        Row: {
+          content: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          review_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          review_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          review_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_comments_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "performance_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_review_images: {
+        Row: {
+          created_at: string
+          id: string
+          review_id: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          review_id: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          review_id?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_images_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "performance_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_images_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_review_likes: {
+        Row: {
+          created_at: string
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_likes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "performance_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_reviews: {
+        Row: {
+          content: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          performance_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          performance_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          performance_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_reviews_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "performance_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -221,7 +221,7 @@ export default function DayPage() {
               <Button
                 key={record.id}
                 type="button"
-                className="absolute left-12 right-2 h-auto rounded-2xl border border-black/5 bg-white px-3 py-2 text-left text-xs text-[#17171c] shadow-sm"
+                className="absolute left-12 right-2 h-auto rounded-2xl border border-black/5 bg-white px-3 py-2 text-left text-xs text-[#17171c] shadow-sm hover:bg-white hover:text-[#17171c]"
                 style={{ top: `${top}px`, height: `${clampedHeight}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
