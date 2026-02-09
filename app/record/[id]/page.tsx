@@ -72,15 +72,19 @@ const calculateDuration = (start: string, end: string) => {
   return { hours, minutes };
 };
 
-const formatDateTimeLine = (dateStr: string, start: string, end: string) => {
+const formatDateLabel = (dateStr: string) => {
   const date = new Date(`${dateStr}T00:00:00`);
   const weekdayLabel = Number.isNaN(date.getTime())
     ? ""
     : format(date, "yyyy년 MM월 dd일(EEE)", { locale: ko });
+  return weekdayLabel || dateStr;
+};
+
+const formatTimeRangeLine = (start: string, end: string) => {
   const duration = calculateDuration(start, end);
-  return `${weekdayLabel || dateStr} ${formatTimeLabel(
-    start
-  )} - ${formatTimeLabel(end)} (총 ${duration.hours}시간 ${duration.minutes}분)`;
+  return `${formatTimeLabel(start)} - ${formatTimeLabel(
+    end
+  )} (총 ${duration.hours}시간 ${duration.minutes}분)`;
 };
 
 const parseOrderTags = (value: string | null) =>
@@ -316,12 +320,11 @@ export default function RecordDetailPage() {
 
           <section className="space-y-4">
             <Label className="text-xs text-[#17171c]/60">날짜와 시간</Label>
-            <div className="pt-0 text-sm font-medium text-[#17171c]">
-              {formatDateTimeLine(
-                record.record_date,
-                record.start_time,
-                record.end_time
-              )}
+            <div className="pt-0 text-sm text-[#17171c]">
+              <div>{formatDateLabel(record.record_date)}</div>
+              <div>
+                {formatTimeRangeLine(record.start_time, record.end_time)}
+              </div>
             </div>
             {record.location && locationDisplay ? (
               <div className="pt-2">
