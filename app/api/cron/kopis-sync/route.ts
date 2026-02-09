@@ -6,7 +6,7 @@ import {
   mapKopisDetailItem,
   mapKopisListItem,
 } from "@/lib/kopis";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -62,6 +62,7 @@ const requireCronSecret = (request: Request) => {
 export async function POST(request: Request) {
   try {
     requireCronSecret(request);
+    const supabaseAdmin = getSupabaseAdmin();
     const serviceKey = getRequiredEnv("KOPIS_API_KEY");
 
     const url = new URL(request.url);
