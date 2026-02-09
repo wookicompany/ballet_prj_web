@@ -75,7 +75,10 @@ export async function POST(request: Request) {
 
     let page = 1;
     let listItems: Awaited<ReturnType<typeof fetchKopisListPage>> = [];
-    const listRecords: ReturnType<typeof mapKopisListItem>[] = [];
+    const listRecords: (ReturnType<typeof mapKopisListItem> & {
+      mt20id: string;
+      prfnm: string;
+    })[] = [];
 
     while (true) {
       listItems = await fetchKopisListPage({
@@ -89,7 +92,16 @@ export async function POST(request: Request) {
 
       if (!listItems.length) break;
 
-      const mapped = listItems.map(mapKopisListItem).filter((item) => item.mt20id);
+      const mapped = listItems
+        .map(mapKopisListItem)
+        .filter(
+          (
+            item
+          ): item is ReturnType<typeof mapKopisListItem> & {
+            mt20id: string;
+            prfnm: string;
+          } => Boolean(item.mt20id) && Boolean(item.prfnm)
+        );
       listRecords.push(...mapped);
 
       if (listItems.length < KOPIS_PAGE_SIZE) break;
@@ -107,7 +119,9 @@ export async function POST(request: Request) {
       .map((item) => item.mt20id)
       .filter((id): id is string => Boolean(id));
 
-    const detailRecords: ReturnType<typeof mapKopisDetailItem>[] = [];
+    const detailRecords: (ReturnType<typeof mapKopisDetailItem> & {
+      mt20id: string;
+    })[] = [];
     const idChunks = chunk(detailIds, 10);
 
     for (const ids of idChunks) {
@@ -117,7 +131,10 @@ export async function POST(request: Request) {
       details
         .filter((detail): detail is NonNullable<typeof detail> => Boolean(detail))
         .forEach((detail) => {
-          detailRecords.push(mapKopisDetailItem(detail));
+          const mapped = mapKopisDetailItem(detail);
+          if (mapped.mt20id) {
+            detailRecords.push({ ...mapped, mt20id: mapped.mt20id });
+          }
         });
     }
 

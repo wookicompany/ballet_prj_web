@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
@@ -91,7 +91,7 @@ type FormState = {
   improve_next: string;
 };
 
-export default function RecordNewPage() {
+function RecordNewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -1145,5 +1145,21 @@ export default function RecordNewPage() {
         </BottomSheet>
       </main>
     </MobileContainer>
+  );
+}
+
+export default function RecordNewPage() {
+  return (
+    <Suspense
+      fallback={
+        <MobileContainer>
+          <main className="flex min-h-screen items-center justify-center">
+            <Spinner size="lg" />
+          </main>
+        </MobileContainer>
+      }
+    >
+      <RecordNewContent />
+    </Suspense>
   );
 }

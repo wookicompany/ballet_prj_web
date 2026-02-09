@@ -175,13 +175,20 @@ export const mapKopisListItem = (item: KopisListItem) => ({
 });
 
 export const mapKopisDetailItem = (item: KopisDetailItem) => {
-  const styurlList =
+  const styurlList = normalizeArray(
     typeof item.styurls === "string"
-      ? [item.styurls]
-      : normalizeArray(item.styurls?.styurl);
+      ? item.styurls
+      : Array.isArray(item.styurls)
+        ? item.styurls
+        : item.styurls?.styurl
+  ).filter((value): value is string => typeof value === "string");
   const relatesList = normalizeArray(
-    typeof item.relates === "string" ? item.relates : item.relates?.relate,
-  );
+    typeof item.relates === "string"
+      ? item.relates
+      : Array.isArray(item.relates)
+        ? item.relates
+        : item.relates?.relate,
+  ).filter((value): value is string => typeof value === "string");
 
   return {
     mt20id: item.mt20id ?? null,
