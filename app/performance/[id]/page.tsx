@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, MessageCircle, PenLine, Star, ThumbsUp } from "lucide-react";
+import { ChevronLeft, Heart, MessageCircle, PenLine, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceDetail = {
@@ -82,6 +84,8 @@ export default function PerformanceDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const performanceId = params.id;
+  const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<PerformanceDetail | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
@@ -89,13 +93,16 @@ export default function PerformanceDetailPage() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileSummary>>({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
   const [reviewPage, setReviewPage] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestedPagesRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -159,9 +166,12 @@ export default function PerformanceDetailPage() {
     setReviews([]);
     setProfiles({});
     setLikeCounts({});
+    setLikedMap({});
     setCommentCounts({});
+    setReviewImages({});
     setHasMoreReviews(true);
-    setReviewPage(0);
+    setReviewPage(1);
+    requestedPagesRef.current = new Set();
   }, [performanceId]);
 
   useEffect(() => {
@@ -184,6 +194,8 @@ export default function PerformanceDetailPage() {
   useEffect(() => {
     const fetchReviewsPage = async () => {
       if (reviewPage === 0 || !hasMoreReviews) return;
+      if (requestedPagesRef.current.has(reviewPage)) return;
+      requestedPagesRef.current.add(reviewPage);
       setLoadingReviews(true);
 
       const from = (reviewPage - 1) * REVIEW_PAGE_SIZE;
@@ -203,7 +215,15 @@ export default function PerformanceDetailPage() {
       }
 
       const nextRows = (data as ReviewItem[]) ?? [];
-      setReviews((prev) => [...prev, ...nextRows]);
+      setReviews((prev) => {
+        const merged = [...prev, ...nextRows];
+        const seen = new Set<string>();
+        return merged.filter((item) => {
+          if (seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
+      });
       if (nextRows.length < REVIEW_PAGE_SIZE) {
         setHasMoreReviews(false);
       }
@@ -212,22 +232,38 @@ export default function PerformanceDetailPage() {
       const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
 
       if (reviewIds.length > 0) {
-        const [{ data: profileRows }, { data: likeRows }, { data: commentRows }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("id,nickname,avatar_url")
-              .in("id", userIds),
-            supabase
-              .from("performance_review_likes")
-              .select("review_id")
-              .in("review_id", reviewIds),
-            supabase
-              .from("performance_review_comments")
-              .select("review_id")
-              .in("review_id", reviewIds)
-              .is("deleted_at", null),
-          ]);
+        const [
+          { data: profileRows },
+          { data: likeRows },
+          { data: commentRows },
+          { data: imageRows },
+          { data: likedRows },
+        ] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id,nickname,avatar_url")
+            .in("id", userIds),
+          supabase
+            .from("performance_review_likes")
+            .select("review_id")
+            .in("review_id", reviewIds),
+          supabase
+            .from("performance_review_comments")
+            .select("review_id")
+            .in("review_id", reviewIds)
+            .is("deleted_at", null),
+          supabase
+            .from("performance_review_images")
+            .select("review_id,url")
+            .in("review_id", reviewIds),
+          user
+            ? supabase
+                .from("performance_review_likes")
+                .select("review_id")
+                .eq("user_id", user.id)
+                .in("review_id", reviewIds)
+            : Promise.resolve({ data: [] }),
+        ]);
 
         const nextProfiles: Record<string, ProfileSummary> = {};
         (profileRows ?? []).forEach((row) => {
@@ -242,19 +278,83 @@ export default function PerformanceDetailPage() {
         });
         setLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
 
+        if (user) {
+          const nextLiked: Record<string, boolean> = {};
+          (likedRows ?? []).forEach((row) => {
+            nextLiked[row.review_id] = true;
+          });
+          setLikedMap((prev) => ({ ...prev, ...nextLiked }));
+        }
+
         const nextCommentCounts: Record<string, number> = {};
         (commentRows ?? []).forEach((row) => {
           nextCommentCounts[row.review_id] =
             (nextCommentCounts[row.review_id] ?? 0) + 1;
         });
         setCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
+
+        const nextImages: Record<string, string[]> = {};
+        (imageRows ?? []).forEach((row) => {
+          if (!row.url) return;
+          nextImages[row.review_id] = [
+            ...(nextImages[row.review_id] ?? []),
+            row.url,
+          ];
+        });
+        if (Object.keys(nextImages).length > 0) {
+          setReviewImages((prev) => ({ ...prev, ...nextImages }));
+        }
       }
 
       setLoadingReviews(false);
     };
 
     fetchReviewsPage();
-  }, [reviewPage, performanceId, hasMoreReviews]);
+  }, [reviewPage, performanceId, hasMoreReviews, user]);
+
+  const handleToggleLike = async (reviewId: string) => {
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+
+    const isLiked = likedMap[reviewId];
+    setLikedMap((prev) => ({ ...prev, [reviewId]: !isLiked }));
+    setLikeCounts((prev) => ({
+      ...prev,
+      [reviewId]: Math.max(0, (prev[reviewId] ?? 0) + (isLiked ? -1 : 1)),
+    }));
+
+    if (isLiked) {
+      const { error } = await supabase
+        .from("performance_review_likes")
+        .delete()
+        .eq("review_id", reviewId)
+        .eq("user_id", user.id);
+      if (error) {
+        toast("좋아요를 취소하지 못했어요.");
+        setLikedMap((prev) => ({ ...prev, [reviewId]: true }));
+        setLikeCounts((prev) => ({
+          ...prev,
+          [reviewId]: (prev[reviewId] ?? 1) + 1,
+        }));
+      }
+      return;
+    }
+
+    const { error } = await supabase.from("performance_review_likes").insert({
+      review_id: reviewId,
+      user_id: user.id,
+    });
+    if (error) {
+      toast("좋아요를 남기지 못했어요.");
+      setLikedMap((prev) => ({ ...prev, [reviewId]: false }));
+      setLikeCounts((prev) => ({
+        ...prev,
+        [reviewId]: Math.max(0, (prev[reviewId] ?? 1) - 1),
+      }));
+    }
+  };
 
   return (
     <MobileContainer>
@@ -407,7 +507,7 @@ export default function PerformanceDetailPage() {
                 </section>
               ) : null}
 
-              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+              <section className="space-y-5 rounded-xl border border-black/5 bg-white p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[#17171c]">리뷰</h3>
                   <Button
@@ -433,23 +533,13 @@ export default function PerformanceDetailPage() {
                     <span>아직 리뷰가 없어요.</span>
                   )}
                 </div>
-                {reviews.length === 0 && !loadingReviews ? (
-                  <p className="text-sm text-[#17171c]/60">
-                    아직 리뷰가 없어요.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between rounded-lg border border-dashed border-black/10 bg-black/[0.02] px-3 py-3 text-sm text-[#17171c]/70"
-                      onClick={() =>
-                        router.push(`/performance/${detail.mt20id}/reviews/new`)
-                      }
-                    >
-                      <span>첫 리뷰를 남겨주세요.</span>
-                      <span className="text-xs text-[#17171c]/50">작성하기</span>
-                    </button>
-                    {reviews.map((review) => {
+                <div className="space-y-4">
+                  {reviews.length === 0 && !loadingReviews ? (
+                    <p className="text-sm text-[#17171c]/60">
+                      아직 리뷰가 없어요.
+                    </p>
+                  ) : (
+                    reviews.map((review) => {
                       const profile = profiles[review.user_id];
                       return (
                         <div
@@ -468,41 +558,67 @@ export default function PerformanceDetailPage() {
                                   className={
                                     index < review.rating
                                       ? "h-4 w-4 text-[#ff273d]"
-                                      : "h-4 w-4 text-[#17171c]/15"
+                                      : "h-4 w-4 text-[#ff273d]"
                                   }
+                                  fill={index < review.rating ? "#ff273d" : "none"}
                                 />
                               ))}
                             </div>
                           </div>
-                          <p className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                          <p className="mt-3 whitespace-pre-line text-sm text-[#17171c]">
                             {review.content || "내용이 없어요."}
                           </p>
-                          <div className="mt-2 flex items-center gap-4 text-xs text-[#17171c]/70">
-                            <span className="inline-flex items-center gap-1">
-                              <ThumbsUp className="h-4 w-4" />
+                          {reviewImages[review.id]?.length ? (
+                            <div className="mt-3 flex gap-2">
+                              {reviewImages[review.id].slice(0, 3).map((url, index) => (
+                                <button
+                                  key={`${review.id}-img-${index}`}
+                                  type="button"
+                                  className="h-16 w-16 overflow-hidden rounded-md bg-black/5"
+                                  onClick={() => {
+                                    setViewerUrl(url);
+                                    setViewerOpen(true);
+                                  }}
+                                  aria-label="리뷰 이미지 크게 보기"
+                                >
+                                  <img
+                                    src={url}
+                                    alt="리뷰 이미지"
+                                    className="h-full w-full object-cover"
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className="mt-3 flex items-center gap-4 text-xs text-[#17171c]">
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1"
+                              onClick={() => handleToggleLike(review.id)}
+                              aria-label="리뷰 좋아요"
+                            >
+                              <Heart
+                                className="h-4 w-4 text-[#17171c]"
+                                fill={likedMap[review.id] ? "#17171c" : "none"}
+                              />
                               {likeCounts[review.id] ?? 0}
-                            </span>
+                            </button>
                             <span className="inline-flex items-center gap-1">
-                              <MessageCircle className="h-4 w-4" />
+                              <MessageCircle className="h-4 w-4 text-[#17171c]" />
                               {commentCounts[review.id] ?? 0}
                             </span>
                           </div>
                         </div>
                       );
-                    })}
-                    {loadingReviews ? (
-                      <div className="flex justify-center py-2">
-                        <Spinner size="sm" />
-                      </div>
-                    ) : null}
-                    {!hasMoreReviews && reviews.length > 0 ? (
-                      <p className="text-xs text-[#17171c]/50">
-                        모든 리뷰를 불러왔어요.
-                      </p>
-                    ) : null}
-                    <div ref={sentinelRef} />
-                  </div>
-                )}
+                    })
+                  )}
+                  {loadingReviews ? (
+                    <div className="flex justify-center py-2">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : null}
+                  <div ref={sentinelRef} />
+                </div>
               </section>
 
               {detail.relates && detail.relates.length > 0 ? (
