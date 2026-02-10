@@ -123,7 +123,7 @@ export default function PerformanceReviewNewPage() {
       }
     }
 
-    router.replace(`/performance/${performanceId}/reviews/${data.id}`);
+    router.replace(`/performance/${performanceId}`);
   };
 
 

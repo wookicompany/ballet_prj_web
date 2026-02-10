@@ -256,9 +256,7 @@ export default function ProfilePage() {
                       type="button"
                       className="w-full text-left text-xs text-[#17171c]/70"
                       onClick={() =>
-                        router.push(
-                          `/performance/${review.performanceId}/reviews/${review.id}`
-                        )
+                        router.push(`/performance/${review.performanceId}`)
                       }
                     >
                       리뷰 상세 보기
