@@ -526,7 +526,7 @@ export default function PerformanceReviewDetailPage() {
                   <button
                     key={`${review.id}-img-${index}`}
                     type="button"
-                    className="h-20 w-20 overflow-hidden rounded-lg bg-black/5"
+                    className="h-20 w-20 overflow-hidden rounded-lg bg-white"
                     onClick={() => {
                       setViewerUrl(url);
                       setViewerOpen(true);
@@ -536,7 +536,7 @@ export default function PerformanceReviewDetailPage() {
                     <img
                       src={url}
                       alt="리뷰 이미지"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   </button>
                 ))}

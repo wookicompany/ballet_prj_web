@@ -814,7 +814,7 @@ export default function PerformanceDetailPage() {
                                 <button
                                   key={`${review.id}-img-${index}`}
                                   type="button"
-                                  className="h-16 w-16 overflow-hidden rounded-md bg-black/5"
+                                  className="h-16 w-16 overflow-hidden rounded-md bg-white"
                                   onClick={(event) => {
                                     event.stopPropagation();
                                     setViewerUrl(url);
@@ -825,7 +825,7 @@ export default function PerformanceDetailPage() {
                                   <img
                                     src={url}
                                     alt="리뷰 이미지"
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full object-contain"
                                   />
                                 </button>
                               ))}

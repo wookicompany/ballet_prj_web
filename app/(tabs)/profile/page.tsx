@@ -471,12 +471,12 @@ export default function ProfilePage() {
                     <div className="text-[11px] text-[#17171c]/50">
                       {formatReviewDate(review.createdAt)}
                     </div>
-                    <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-black/5">
+                    <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
                       {reviewImages[review.id]?.length ? (
                         <img
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-[10px] text-[#17171c]/40">
