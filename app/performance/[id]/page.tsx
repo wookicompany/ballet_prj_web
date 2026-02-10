@@ -148,6 +148,7 @@ export default function PerformanceDetailPage() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [storyExpanded, setStoryExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
 
@@ -576,9 +577,22 @@ export default function PerformanceDetailPage() {
                     <Separator className="bg-black/5" />
                     <div className="space-y-2">
                       <h4 className="text-xs font-semibold">줄거리</h4>
-                      <p className="whitespace-pre-line text-xs text-[#17171c]/70">
+                      <p
+                        className={`whitespace-pre-line text-xs text-[#17171c]/70 ${
+                          storyExpanded ? "" : "line-clamp-3"
+                        }`}
+                      >
                         {formatOptionalText(detail.sty)}
                       </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-1 w-full text-[11px] text-[#17171c]/60"
+                        onClick={() => setStoryExpanded((prev) => !prev)}
+                      >
+                        {storyExpanded ? "접기" : "더보기"}
+                      </Button>
                     </div>
                   </>
                 ) : null}
