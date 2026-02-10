@@ -344,19 +344,19 @@ export default function ProfilePage() {
 
           <div className="mt-4 flex flex-wrap items-center gap-4 text-left text-xs text-[#17171c]/70">
             <span>
-              총 발레 횟수{" "}
+              발레 횟수{" "}
               <span className="font-semibold text-[#17171c]">
                 {recordCount}회
               </span>
             </span>
             <span>
-              총 발레 시간{" "}
+              발레 시간{" "}
               <span className="font-semibold text-[#17171c]">
                 {hours}시간 {minutes}분
               </span>
             </span>
             <span>
-              리뷰 수{" "}
+              리뷰 작성 수{" "}
               <span className="font-semibold text-[#17171c]">
                 {reviewCount}개
               </span>
