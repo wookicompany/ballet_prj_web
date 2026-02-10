@@ -651,11 +651,15 @@ export default function PerformanceDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#17171c]/70">
-                  <Star className="h-4 w-4 text-[#ff273d]" />
                   {reviewAverage !== null ? (
-                    <span>
-                      평균 {reviewAverage}점 · 리뷰 {reviewCount}개
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[#ff273d]">
+                        평균
+                        <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
+                        {reviewAverage}점
+                      </span>
+                      <span>• 리뷰 {reviewCount}개</span>
+                    </div>
                   ) : (
                     <span>아직 리뷰가 없어요.</span>
                   )}
@@ -672,41 +676,28 @@ export default function PerformanceDetailPage() {
                         <div
                           key={review.id}
                           className="rounded-lg border border-black/5 p-3 text-sm text-[#17171c]"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            router.push(
+                              `/performance/${detail.mt20id}/reviews/${review.id}`
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              router.push(
+                                `/performance/${detail.mt20id}/reviews/${review.id}`
+                              );
+                            }
+                          }}
                         >
                           <div className="flex items-start justify-between gap-2 text-xs text-[#17171c]/60">
-                            <div>
+                            <div className="flex items-start gap-2">
                               <span>
                                 {profile?.nickname || "익명"} ·{" "}
                                 {formatDate(review.created_at)}
                               </span>
-                            <div className="mt-2 flex items-center gap-1">
-                              {Array.from({ length: 5 }, (_, index) => {
-                                const ratio = getStarFillRatio(
-                                  review.rating,
-                                  index + 1
-                                );
-                                return (
-                                  <div
-                                    key={`${review.id}-star-${index}`}
-                                    className="relative h-4 w-4"
-                                  >
-                                    <Star
-                                      className="h-4 w-4 text-[#ff273d]"
-                                      fill="none"
-                                    />
-                                    <div
-                                      className="absolute inset-0 overflow-hidden"
-                                      style={{ width: `${ratio * 100}%` }}
-                                    >
-                                      <Star
-                                        className="h-4 w-4 text-[#ff273d]"
-                                        fill="#ff273d"
-                                      />
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
                             </div>
                             {user?.id === review.user_id ? (
                               <Popover>
@@ -717,6 +708,7 @@ export default function PerformanceDetailPage() {
                                     size="icon"
                                     className="h-8 w-8 text-[#17171c]/60"
                                     aria-label="리뷰 메뉴"
+                                    onClick={(event) => event.stopPropagation()}
                                   >
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
@@ -729,11 +721,12 @@ export default function PerformanceDetailPage() {
                                     type="button"
                                     variant="ghost"
                                     className="w-full justify-start text-sm"
-                                    onClick={() =>
+                                    onClick={(event) => {
+                                      event.stopPropagation();
                                       router.push(
                                         `/performance/${detail.mt20id}/reviews/${review.id}/edit`
-                                      )
-                                    }
+                                      );
+                                    }}
                                   >
                                     <PenLine className="mr-2 h-4 w-4" />
                                     수정하기
@@ -742,7 +735,10 @@ export default function PerformanceDetailPage() {
                                     type="button"
                                     variant="ghost"
                                     className="w-full justify-start text-sm text-red-500 hover:text-red-500"
-                                    onClick={() => setDeleteTargetId(review.id)}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setDeleteTargetId(review.id);
+                                    }}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     삭제하기
@@ -750,6 +746,34 @@ export default function PerformanceDetailPage() {
                                 </PopoverContent>
                               </Popover>
                             ) : null}
+                          </div>
+                          <div className="mt-2 flex items-center gap-1">
+                            {Array.from({ length: 5 }, (_, index) => {
+                              const ratio = getStarFillRatio(
+                                review.rating,
+                                index + 1
+                              );
+                              return (
+                                <div
+                                  key={`${review.id}-star-${index}`}
+                                  className="relative h-4 w-4"
+                                >
+                                  <Star
+                                    className="h-4 w-4 text-[#ff273d]"
+                                    fill="none"
+                                  />
+                                  <div
+                                    className="absolute inset-0 overflow-hidden"
+                                    style={{ width: `${ratio * 100}%` }}
+                                  >
+                                    <Star
+                                      className="h-4 w-4 text-[#ff273d]"
+                                      fill="#ff273d"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                           <p className="mt-3 whitespace-pre-line text-sm text-[#17171c]">
                             {review.content || "내용이 없어요."}
@@ -761,7 +785,8 @@ export default function PerformanceDetailPage() {
                                   key={`${review.id}-img-${index}`}
                                   type="button"
                                   className="h-16 w-16 overflow-hidden rounded-md bg-black/5"
-                                  onClick={() => {
+                                  onClick={(event) => {
+                                    event.stopPropagation();
                                     setViewerUrl(url);
                                     setViewerOpen(true);
                                   }}
@@ -780,7 +805,10 @@ export default function PerformanceDetailPage() {
                             <button
                               type="button"
                               className="inline-flex items-center gap-1"
-                              onClick={() => handleToggleLike(review.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleToggleLike(review.id);
+                              }}
                               aria-label="리뷰 좋아요"
                             >
                               <Heart
