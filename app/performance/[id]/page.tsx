@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft, MessageCircle, PenLine, Star, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceDetail = {
@@ -40,6 +40,20 @@ type PerformanceDetail = {
   relates: string[] | null;
 };
 
+type ReviewItem = {
+  id: string;
+  rating: number;
+  content: string | null;
+  created_at: string;
+  user_id: string;
+};
+
+type ProfileSummary = {
+  id: string;
+  nickname: string | null;
+  avatar_url: string | null;
+};
+
 const formatOptionalText = (value?: string | null) => {
   if (!value) return null;
   const trimmed = value.trim();
@@ -56,6 +70,14 @@ const formatDateRange = (from?: string | null, to?: string | null) => {
   return `${start} ~ ${end}`;
 };
 
+const formatDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("ko-KR");
+};
+
+const REVIEW_PAGE_SIZE = 6;
+
 export default function PerformanceDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -64,8 +86,16 @@ export default function PerformanceDetailPage() {
   const [detail, setDetail] = useState<PerformanceDetail | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
   const [reviewAverage, setReviewAverage] = useState<number | null>(null);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileSummary>>({});
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [hasMoreReviews, setHasMoreReviews] = useState(true);
+  const [reviewPage, setReviewPage] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -95,26 +125,26 @@ export default function PerformanceDetailPage() {
         return;
       }
 
-    const merged: PerformanceDetail = {
-      ...(listData as PerformanceDetail),
-      ...(detailData as Partial<PerformanceDetail>),
-      entrpsnmP: detailData?.entrpsnm_p ?? null,
-      entrpsnmA: detailData?.entrpsnm_a ?? null,
-      entrpsnmH: detailData?.entrpsnm_h ?? null,
-      entrpsnmS: detailData?.entrpsnm_s ?? null,
-    };
+      const merged: PerformanceDetail = {
+        ...(listData as PerformanceDetail),
+        ...(detailData as Partial<PerformanceDetail>),
+        entrpsnmP: detailData?.entrpsnm_p ?? null,
+        entrpsnmA: detailData?.entrpsnm_a ?? null,
+        entrpsnmH: detailData?.entrpsnm_h ?? null,
+        entrpsnmS: detailData?.entrpsnm_s ?? null,
+      };
       setDetail(merged);
 
-      const { data: reviews } = await supabase
+      const { data: ratings } = await supabase
         .from("performance_reviews")
         .select("rating")
         .eq("performance_id", performanceId)
         .is("deleted_at", null);
 
-      if (reviews && reviews.length > 0) {
-        const total = reviews.reduce((sum, row) => sum + row.rating, 0);
-        setReviewCount(reviews.length);
-        setReviewAverage(Math.round((total / reviews.length) * 10) / 10);
+      if (ratings && ratings.length > 0) {
+        const total = ratings.reduce((sum, row) => sum + row.rating, 0);
+        setReviewCount(ratings.length);
+        setReviewAverage(Math.round((total / ratings.length) * 10) / 10);
       } else {
         setReviewCount(0);
         setReviewAverage(null);
@@ -124,6 +154,107 @@ export default function PerformanceDetailPage() {
 
     fetchDetail();
   }, [performanceId]);
+
+  useEffect(() => {
+    setReviews([]);
+    setProfiles({});
+    setLikeCounts({});
+    setCommentCounts({});
+    setHasMoreReviews(true);
+    setReviewPage(0);
+  }, [performanceId]);
+
+  useEffect(() => {
+    if (loading || loadingReviews || !hasMoreReviews) return;
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setReviewPage((prev) => prev + 1);
+        }
+      },
+      { rootMargin: "120px" }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [loading, loadingReviews, hasMoreReviews]);
+
+  useEffect(() => {
+    const fetchReviewsPage = async () => {
+      if (reviewPage === 0 || !hasMoreReviews) return;
+      setLoadingReviews(true);
+
+      const from = (reviewPage - 1) * REVIEW_PAGE_SIZE;
+      const to = from + REVIEW_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("performance_reviews")
+        .select("id,rating,content,created_at,user_id")
+        .eq("performance_id", performanceId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        toast("리뷰를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setLoadingReviews(false);
+        return;
+      }
+
+      const nextRows = (data as ReviewItem[]) ?? [];
+      setReviews((prev) => [...prev, ...nextRows]);
+      if (nextRows.length < REVIEW_PAGE_SIZE) {
+        setHasMoreReviews(false);
+      }
+
+      const reviewIds = nextRows.map((row) => row.id);
+      const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
+
+      if (reviewIds.length > 0) {
+        const [{ data: profileRows }, { data: likeRows }, { data: commentRows }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("id,nickname,avatar_url")
+              .in("id", userIds),
+            supabase
+              .from("performance_review_likes")
+              .select("review_id")
+              .in("review_id", reviewIds),
+            supabase
+              .from("performance_review_comments")
+              .select("review_id")
+              .in("review_id", reviewIds)
+              .is("deleted_at", null),
+          ]);
+
+        const nextProfiles: Record<string, ProfileSummary> = {};
+        (profileRows ?? []).forEach((row) => {
+          nextProfiles[row.id] = row as ProfileSummary;
+        });
+        setProfiles((prev) => ({ ...prev, ...nextProfiles }));
+
+        const nextLikeCounts: Record<string, number> = {};
+        (likeRows ?? []).forEach((row) => {
+          nextLikeCounts[row.review_id] =
+            (nextLikeCounts[row.review_id] ?? 0) + 1;
+        });
+        setLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
+
+        const nextCommentCounts: Record<string, number> = {};
+        (commentRows ?? []).forEach((row) => {
+          nextCommentCounts[row.review_id] =
+            (nextCommentCounts[row.review_id] ?? 0) + 1;
+        });
+        setCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
+      }
+
+      setLoadingReviews(false);
+    };
+
+    fetchReviewsPage();
+  }, [reviewPage, performanceId, hasMoreReviews]);
 
   return (
     <MobileContainer>
@@ -248,7 +379,7 @@ export default function PerformanceDetailPage() {
                 ) : null}
               </section>
 
-            {detail.styurls && detail.styurls.length > 0 ? (
+              {detail.styurls && detail.styurls.length > 0 ? (
                 <section className="space-y-3">
                   <h3 className="text-sm font-semibold text-[#17171c]">
                     소개 이미지
@@ -276,8 +407,23 @@ export default function PerformanceDetailPage() {
                 </section>
               ) : null}
 
-              <div className="flex items-center justify-between rounded-xl border border-black/5 bg-white px-4 py-3 text-sm text-[#17171c]">
-                <div className="flex items-center gap-2">
+              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#17171c]">리뷰</h3>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-[#17171c]/70 hover:bg-black/5"
+                    onClick={() =>
+                      router.push(`/performance/${detail.mt20id}/reviews/new`)
+                    }
+                    aria-label="리뷰 작성"
+                  >
+                    <PenLine className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#17171c]/70">
                   <Star className="h-4 w-4 text-[#ff273d]" />
                   {reviewAverage !== null ? (
                     <span>
@@ -287,17 +433,77 @@ export default function PerformanceDetailPage() {
                     <span>아직 리뷰가 없어요.</span>
                   )}
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 bg-[#17171c] text-white hover:bg-[#17171c]/90"
-                  onClick={() =>
-                    router.push(`/performance/${detail.mt20id}/reviews`)
-                  }
-                >
-                  리뷰 보기
-                </Button>
-              </div>
+                {reviews.length === 0 && !loadingReviews ? (
+                  <p className="text-sm text-[#17171c]/60">
+                    아직 리뷰가 없어요.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg border border-dashed border-black/10 bg-black/[0.02] px-3 py-3 text-sm text-[#17171c]/70"
+                      onClick={() =>
+                        router.push(`/performance/${detail.mt20id}/reviews/new`)
+                      }
+                    >
+                      <span>첫 리뷰를 남겨주세요.</span>
+                      <span className="text-xs text-[#17171c]/50">작성하기</span>
+                    </button>
+                    {reviews.map((review) => {
+                      const profile = profiles[review.user_id];
+                      return (
+                        <div
+                          key={review.id}
+                          className="rounded-lg border border-black/5 p-3 text-sm text-[#17171c]"
+                        >
+                          <div className="flex items-center justify-between text-xs text-[#17171c]/60">
+                            <span>
+                              {profile?.nickname || "익명"} ·{" "}
+                              {formatDate(review.created_at)}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }, (_, index) => (
+                                <Star
+                                  key={`${review.id}-star-${index}`}
+                                  className={
+                                    index < review.rating
+                                      ? "h-4 w-4 text-[#ff273d]"
+                                      : "h-4 w-4 text-[#17171c]/15"
+                                  }
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                            {review.content || "내용이 없어요."}
+                          </p>
+                          <div className="mt-2 flex items-center gap-4 text-xs text-[#17171c]/70">
+                            <span className="inline-flex items-center gap-1">
+                              <ThumbsUp className="h-4 w-4" />
+                              {likeCounts[review.id] ?? 0}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <MessageCircle className="h-4 w-4" />
+                              {commentCounts[review.id] ?? 0}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {loadingReviews ? (
+                      <div className="flex justify-center py-2">
+                        <Spinner size="sm" />
+                      </div>
+                    ) : null}
+                    {!hasMoreReviews && reviews.length > 0 ? (
+                      <p className="text-xs text-[#17171c]/50">
+                        모든 리뷰를 불러왔어요.
+                      </p>
+                    ) : null}
+                    <div ref={sentinelRef} />
+                  </div>
+                )}
+              </section>
 
               {detail.relates && detail.relates.length > 0 ? (
                 <section className="space-y-2 rounded-xl border border-black/5 bg-white p-4">

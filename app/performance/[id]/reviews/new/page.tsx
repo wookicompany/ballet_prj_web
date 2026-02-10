@@ -1,21 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
-import LoadingOverlay from "@/components/ui/loading-overlay";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Plus, Star, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_IMAGES = 3;
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
 
 const getSafeFileName = (file: File) => {
@@ -50,16 +52,15 @@ export default function PerformanceReviewNewPage() {
   }, [mediaItems]);
 
   const handleSelectFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
-
-    const nextItems: PreviewItem[] = [];
-    files.forEach((file) => {
-      if (nextItems.length + mediaItems.length >= MAX_IMAGES) return;
-      nextItems.push({ file, url: URL.createObjectURL(file) });
-    });
-
-    setMediaItems((prev) => [...prev, ...nextItems].slice(0, MAX_IMAGES));
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE || mediaItems.length >= MAX_IMAGES) {
+      event.target.value = "";
+      return;
+    }
+    setMediaItems((prev) =>
+      [...prev, { file, url: URL.createObjectURL(file) }].slice(0, MAX_IMAGES)
+    );
     event.target.value = "";
   };
 
@@ -125,10 +126,6 @@ export default function PerformanceReviewNewPage() {
     router.replace(`/performance/${performanceId}/reviews/${data.id}`);
   };
 
-  const ratingText = useMemo(() => {
-    if (rating === 0) return "별점을 선택해 주세요.";
-    return `선택한 별점 ${rating}점`;
-  }, [rating]);
 
   if (loading) {
     return (
@@ -198,28 +195,30 @@ export default function PerformanceReviewNewPage() {
                   />
                 </button>
               ))}
-              <span className="text-xs text-[#17171c]/60">{ratingText}</span>
             </div>
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">내용</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-[#17171c]/60">내용</Label>
+              <span className="text-[11px] text-[#17171c]/50">
+                {content.length}/300
+              </span>
+            </div>
             <Textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder="공연 후기를 남겨 주세요."
-              className="min-h-[140px]"
+              className="min-h-[140px] text-sm"
+              maxLength={300}
             />
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">사진 업로드</Label>
+            <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
-                className={`relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-transparent ${
-                  canUploadMore ? "" : "opacity-40"
-                }`}
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-transparent"
                 onClick={() => (canUploadMore ? fileInputRef.current?.click() : null)}
                 aria-label="사진 추가"
                 disabled={!canUploadMore}
@@ -238,23 +237,25 @@ export default function PerformanceReviewNewPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-1 top-1 rounded-full bg-white/80 p-1"
+                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
                     onClick={() => handleRemove(index)}
                     aria-label="사진 삭제"
                   >
-                    <Trash2 className="h-4 w-4 text-[#17171c]" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))}
             </div>
-            <input
+            <Input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              multiple
               className="hidden"
               onChange={handleSelectFiles}
             />
+            <p className="text-[11px] text-[#17171c]/50">
+              사진은 최대 3장까지 업로드할 수 있어요.
+            </p>
           </section>
 
           <Button
