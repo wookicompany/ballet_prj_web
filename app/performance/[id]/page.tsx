@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
   ChevronLeft,
   Heart,
@@ -462,13 +463,25 @@ export default function PerformanceDetailPage() {
 
   const handleDeleteReview = async () => {
     if (!user || !deleteTargetId) return;
-    const { error } = await supabase
-      .from("performance_reviews")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", deleteTargetId)
-      .eq("user_id", user.id);
+    const target = reviews.find((review) => review.id === deleteTargetId);
+    if (!target) {
+      toast("삭제할 리뷰를 찾지 못했어요.");
+      return;
+    }
+    if (target.user_id !== user.id) {
+      toast("내 리뷰만 삭제할 수 있어요.");
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const response = await fetch(`/api/reviews/${deleteTargetId}/delete`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
 
-    if (error) {
+    if (!response.ok) {
       toast("리뷰를 삭제하지 못했어요.");
       return;
     }
@@ -673,9 +686,13 @@ export default function PerformanceDetailPage() {
                     size="sm"
                     variant="ghost"
                     className="h-8 w-8 p-0 text-[#17171c]/70 hover:bg-black/5"
-                    onClick={() =>
-                      router.push(`/performance/${detail.mt20id}/reviews/new`)
-                    }
+                    onClick={() => {
+                      if (!user) {
+                        openLoginSheet();
+                        return;
+                      }
+                      router.push(`/performance/${detail.mt20id}/reviews/new`);
+                    }}
                     aria-label="리뷰 작성"
                   >
                     <PenLine className="h-4 w-4" />

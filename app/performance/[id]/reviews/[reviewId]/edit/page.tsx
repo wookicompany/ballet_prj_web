@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -130,12 +131,24 @@ export default function PerformanceReviewEditPage() {
   };
 
   const handleRemoveExisting = async (imageId: string) => {
-    if (!user) return;
-    await supabase
-      .from("performance_review_images")
-      .delete()
-      .eq("id", imageId)
-      .eq("user_id", user.id);
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const response = await fetch(`/api/reviews/${reviewId}/images`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ imageIds: [imageId] }),
+    });
+    if (!response.ok) {
+      toast("이미지를 삭제하지 못했어요.");
+      return;
+    }
     setExistingImages((prev) => prev.filter((item) => item.id !== imageId));
   };
 
@@ -150,22 +163,31 @@ export default function PerformanceReviewEditPage() {
     }
 
     setSaving(true);
-    const { error } = await supabase
-      .from("performance_reviews")
-      .update({
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setSaving(false);
+      return;
+    }
+    const response = await fetch(`/api/reviews/${reviewId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         rating,
         content: content.trim() ? content.trim() : null,
-      })
-      .eq("id", reviewId)
-      .eq("user_id", user.id);
+      }),
+    });
 
-    if (error) {
+    if (!response.ok) {
       toast("리뷰 수정에 실패했습니다.");
       setSaving(false);
       return;
     }
 
     if (mediaItems.length > 0) {
+      const uploadedUrls: string[] = [];
       for (const item of mediaItems) {
         const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(
           item.file
@@ -179,10 +201,16 @@ export default function PerformanceReviewEditPage() {
         const { data: urlData } = supabase.storage
           .from(BUCKET)
           .getPublicUrl(path);
-        await supabase.from("performance_review_images").insert({
-          review_id: reviewId,
-          user_id: user.id,
-          url: urlData.publicUrl,
+        uploadedUrls.push(urlData.publicUrl);
+      }
+      if (uploadedUrls.length > 0) {
+        await fetch(`/api/reviews/${reviewId}/images`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ urls: uploadedUrls }),
         });
       }
     }

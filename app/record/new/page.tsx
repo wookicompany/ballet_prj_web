@@ -9,6 +9,7 @@ import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -342,27 +343,43 @@ function RecordNewContent() {
       : "";
 
     setSaving(true);
-    const { data, error: insertError } = await supabase
-      .from("records")
-      .insert({
-        user_id: user.id,
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setSaving(false);
+      return;
+    }
+    const response = await fetch("/api/records", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         ...form,
         location: resolvedLocation,
         level: showLevelInstructor ? form.level : "",
         instructor: showLevelInstructor ? form.instructor : "",
         bar_order: showBarOrder ? barOrderTags.join(", ") : "",
         center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-      })
-      .select("id, record_date")
-      .single();
+      }),
+    });
 
-    if (insertError || !data) {
+    if (!response.ok) {
+      setSaving(false);
+      toast("기록 저장에 실패했습니다.");
+      return;
+    }
+    const payload = (await response.json()) as {
+      id?: string;
+      record_date?: string;
+    };
+    const recordId = payload.id;
+    if (!recordId) {
       setSaving(false);
       toast("기록 저장에 실패했습니다.");
       return;
     }
 
-    const recordId = data.id;
     const uploads: Array<{
       path: string;
       media_type: "image" | "video";
@@ -388,12 +405,20 @@ function RecordNewContent() {
       const { data: urlData } = supabase.storage
         .from(BUCKET)
         .getPublicUrl(upload.path);
-
-      await supabase.from("record_media").insert({
-        record_id: recordId,
-        user_id: user.id,
-        media_type: upload.media_type,
-        url: urlData.publicUrl,
+      await fetch(`/api/records/${recordId}/media`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              media_type: upload.media_type,
+              url: urlData.publicUrl,
+            },
+          ],
+        }),
       });
     }
 

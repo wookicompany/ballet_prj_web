@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -89,26 +90,41 @@ export default function PerformanceReviewNewPage() {
     }
 
     setSaving(true);
-    const { data, error } = await supabase
-      .from("performance_reviews")
-      .insert({
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setSaving(false);
+      return;
+    }
+    const response = await fetch("/api/reviews", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         performance_id: performanceId,
-        user_id: user.id,
         rating,
         content: content.trim() ? content.trim() : null,
-      })
-      .select("id")
-      .single();
+      }),
+    });
 
-    if (error || !data) {
+    if (!response.ok) {
+      toast("리뷰 저장에 실패했습니다.");
+      setSaving(false);
+      return;
+    }
+    const payload = (await response.json()) as { id?: string };
+    const reviewId = payload.id;
+    if (!reviewId) {
       toast("리뷰 저장에 실패했습니다.");
       setSaving(false);
       return;
     }
 
     if (mediaItems.length > 0) {
+      const uploadedUrls: string[] = [];
       for (const item of mediaItems) {
-        const path = `${user.id}/performance-reviews/${data.id}/${getSafeFileName(
+        const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(
           item.file
         )}`;
         const { error: uploadError } = await supabase.storage
@@ -120,10 +136,16 @@ export default function PerformanceReviewNewPage() {
         const { data: urlData } = supabase.storage
           .from(BUCKET)
           .getPublicUrl(path);
-        await supabase.from("performance_review_images").insert({
-          review_id: data.id,
-          user_id: user.id,
-          url: urlData.publicUrl,
+        uploadedUrls.push(urlData.publicUrl);
+      }
+      if (uploadedUrls.length > 0) {
+        await fetch(`/api/reviews/${reviewId}/images`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ urls: uploadedUrls }),
         });
       }
     }
@@ -131,6 +153,12 @@ export default function PerformanceReviewNewPage() {
     router.replace(`/performance/${performanceId}`);
   };
 
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      openLoginSheet();
+    }
+  }, [user, loading, openLoginSheet]);
 
   if (loading) {
     return (

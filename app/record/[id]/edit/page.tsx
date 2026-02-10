@@ -9,6 +9,7 @@ import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -359,20 +360,28 @@ export default function RecordEditPage() {
       : "";
 
     setSaving(true);
-    const { error: updateError } = await supabase
-      .from("records")
-      .update({
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setSaving(false);
+      return;
+    }
+    const response = await fetch(`/api/records/${params.id}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         ...form,
         location: resolvedLocation,
         level: showLevelInstructor ? form.level : "",
         instructor: showLevelInstructor ? form.instructor : "",
         bar_order: showBarOrder ? barOrderTags.join(", ") : "",
         center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-      })
-      .eq("id", params.id)
-      .eq("user_id", user.id);
+      }),
+    });
 
-    if (updateError) {
+    if (!response.ok) {
       setSaving(false);
       toast("기록 수정에 실패했습니다.");
       return;
@@ -403,21 +412,37 @@ export default function RecordEditPage() {
       const { data: urlData } = supabase.storage
         .from(BUCKET)
         .getPublicUrl(upload.path);
-
-      await supabase.from("record_media").insert({
-        record_id: params.id,
-        user_id: user.id,
-        media_type: upload.media_type,
-        url: urlData.publicUrl,
+      await fetch(`/api/records/${params.id}/media`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              media_type: upload.media_type,
+              url: urlData.publicUrl,
+            },
+          ],
+        }),
       });
     }
 
     if (removedMediaIds.length > 0) {
-      await supabase
-        .from("record_media")
-        .delete()
-        .in("id", removedMediaIds)
-        .eq("user_id", user.id);
+      const deleteResponse = await fetch(`/api/records/${params.id}/media`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mediaIds: removedMediaIds }),
+      });
+      if (!deleteResponse.ok) {
+        toast("미디어 삭제에 실패했습니다.");
+        setSaving(false);
+        return;
+      }
     }
 
     router.replace(`/record/${params.id}`);

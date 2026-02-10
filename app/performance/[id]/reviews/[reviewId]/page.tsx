@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
   ChevronLeft,
   Heart,
@@ -298,17 +299,30 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
     setSubmittingComment(true);
-    const { data, error } = await supabase
-      .from("performance_review_comments")
-      .insert({
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setSubmittingComment(false);
+      return;
+    }
+    const response = await fetch("/api/review-comments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         review_id: reviewId,
-        user_id: user.id,
         content: trimmed,
-      })
-      .select("id,content,created_at,user_id")
-      .single();
+      }),
+    });
 
-    if (error || !data) {
+    if (!response.ok) {
+      toast("댓글을 저장하지 못했어요.");
+      setSubmittingComment(false);
+      return;
+    }
+    const data = (await response.json()) as CommentItem | null;
+    if (!data) {
       toast("댓글을 저장하지 못했어요.");
       setSubmittingComment(false);
       return;
@@ -344,12 +358,17 @@ export default function PerformanceReviewDetailPage() {
       toast("댓글을 입력해 주세요.");
       return;
     }
-    const { error } = await supabase
-      .from("performance_review_comments")
-      .update({ content: trimmed, updated_at: new Date().toISOString() })
-      .eq("id", commentId)
-      .eq("user_id", user.id);
-    if (error) {
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const response = await fetch(`/api/review-comments/${commentId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content: trimmed }),
+    });
+    if (!response.ok) {
       toast("댓글을 수정하지 못했어요.");
       return;
     }
@@ -364,12 +383,27 @@ export default function PerformanceReviewDetailPage() {
 
   const handleDeleteComment = async () => {
     if (!user || !deleteCommentId) return;
-    const { error } = await supabase
-      .from("performance_review_comments")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", deleteCommentId)
-      .eq("user_id", user.id);
-    if (error) {
+    const target = comments.find((comment) => comment.id === deleteCommentId);
+    if (!target) {
+      toast("삭제할 댓글을 찾지 못했어요.");
+      return;
+    }
+    if (target.user_id !== user.id) {
+      toast("내 댓글만 삭제할 수 있어요.");
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const response = await fetch(
+      `/api/review-comments/${deleteCommentId}/delete`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+    if (!response.ok) {
       toast("댓글을 삭제하지 못했어요.");
       return;
     }
@@ -458,7 +492,13 @@ export default function PerformanceReviewDetailPage() {
             variant="ghost"
             size="icon-lg"
             className="text-[#17171c]/70"
-            onClick={() => setActionSheetOpen(true)}
+            onClick={() => {
+              if (!user) {
+                openLoginSheet();
+                return;
+              }
+              setActionSheetOpen(true);
+            }}
             aria-label="리뷰 메뉴"
           >
             <MoreHorizontal className="size-5" />
@@ -566,17 +606,23 @@ export default function PerformanceReviewDetailPage() {
             <textarea
               value={newComment}
               onChange={(event) => setNewComment(event.target.value)}
+              onFocus={(event) => {
+                if (!user) {
+                  openLoginSheet();
+                  event.currentTarget.blur();
+                }
+              }}
               className="h-10 min-h-10 flex-1 resize-none rounded-md border border-black/5 bg-white p-2 text-sm placeholder:text-sm text-[#17171c] focus:outline-none"
               maxLength={300}
               placeholder="댓글을 입력해 주세요."
             />
             <Button
               type="button"
-              className="h-10 w-16 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-10 w-16 bg-[#17171c] text-white hover:bg-[#17171c]/90 flex items-center justify-center"
               onClick={handleSubmitComment}
               disabled={submittingComment}
             >
-              등록
+              {submittingComment ? <Spinner size="sm" /> : "등록"}
             </Button>
           </div>
           <div className="space-y-3">
@@ -762,12 +808,15 @@ export default function PerformanceReviewDetailPage() {
                   openLoginSheet();
                   return;
                 }
-                const { error } = await supabase
-                  .from("performance_reviews")
-                  .update({ deleted_at: new Date().toISOString() })
-                  .eq("id", reviewId)
-                  .eq("user_id", user.id);
-                if (error) {
+                const session = await ensureSessionOrLogin(openLoginSheet);
+                if (!session) return;
+                const response = await fetch(`/api/reviews/${reviewId}/delete`, {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                });
+                if (!response.ok) {
                   toast("리뷰를 삭제하지 못했어요.");
                   return;
                 }

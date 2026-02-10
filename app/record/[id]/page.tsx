@@ -26,7 +26,9 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Menu } from "lucide-react";
+import { ensureSessionOrLogin } from "@/lib/authSession";
+import { ChevronLeft, Menu, PenLine, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 type RecordDetail = {
   id: string;
@@ -202,12 +204,22 @@ export default function RecordDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!user) return;
-    await supabase
-      .from("records")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", record.id)
-      .eq("user_id", user.id);
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const response = await fetch(`/api/records/${record.id}/delete`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    if (!response.ok) {
+      toast("기록을 삭제하지 못했어요.");
+      return;
+    }
 
     router.replace(`/day/${record.record_date}`);
   };
@@ -461,30 +473,32 @@ export default function RecordDetailPage() {
         <BottomSheet
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          title="메뉴"
+        title="메뉴"
         >
           <div className="space-y-2">
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full"
+            className="h-12 w-full justify-start"
               onClick={() => {
                 setMenuOpen(false);
                 router.push(`/record/${record.id}/edit`);
               }}
             >
-              편집
+            <PenLine className="mr-2 h-4 w-4" />
+            편집하기
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full text-red-500 hover:text-red-500"
+            className="h-12 w-full justify-start text-red-500 hover:text-red-500"
               onClick={() => {
                 setMenuOpen(false);
                 setDeleteDialogOpen(true);
               }}
             >
-              삭제
+            <Trash2 className="mr-2 h-4 w-4" />
+            삭제하기
             </Button>
           </div>
         </BottomSheet>

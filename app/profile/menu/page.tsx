@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
+import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
   Calendar,
   ChevronLeft,
@@ -32,6 +34,7 @@ import { toast } from "sonner";
 export default function ProfileMenuPage() {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -42,18 +45,12 @@ export default function ProfileMenuPage() {
 
   const handleDeleteAccount = async () => {
     if (!user || loading) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    let accessToken = sessionData.session?.access_token;
-
-    if (!accessToken) {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      accessToken = refreshData.session?.access_token;
-    }
-
-    if (!accessToken) {
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
       toast("로그인 정보가 없어요. 다시 로그인해 주세요.");
       return;
     }
+    const accessToken = session.access_token;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
