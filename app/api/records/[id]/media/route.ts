@@ -139,7 +139,9 @@ export const DELETE = async (
 
   const body = await request.json();
   const mediaIds = Array.isArray(body?.mediaIds) ? body.mediaIds : [];
-  const cleanedIds = mediaIds.filter((value) => typeof value === "string");
+  const cleanedIds = mediaIds.filter(
+    (value: unknown): value is string => typeof value === "string"
+  );
 
   if (cleanedIds.length === 0) {
     return NextResponse.json({ ok: true });

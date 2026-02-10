@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (
-  request: Request,
-  { params }: { params?: { id?: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) => {
+  const resolvedParams = await params;
   const fallbackId = (() => {
     try {
       const { pathname } = new URL(request.url);
@@ -15,7 +16,7 @@ export const POST = async (
       return "";
     }
   })();
-  const performanceId = String(params?.id ?? fallbackId ?? "").trim();
+  const performanceId = String(resolvedParams?.id ?? fallbackId ?? "").trim();
 
   if (!performanceId) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });

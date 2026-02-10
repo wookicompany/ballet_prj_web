@@ -52,8 +52,10 @@ export const POST = async (
   const body = await request.json();
   const urls = Array.isArray(body?.urls) ? body.urls : [];
   const cleanedUrls = urls
-    .filter((url) => typeof url === "string" && url.trim())
-    .map((url) => url.trim());
+    .filter((url: unknown): url is string => {
+      return typeof url === "string" && url.trim().length > 0;
+    })
+    .map((url: string) => url.trim());
 
   if (cleanedUrls.length === 0) {
     return NextResponse.json({ ok: true });
@@ -62,7 +64,7 @@ export const POST = async (
   const { error: insertError } = await supabaseAdmin
     .from("performance_review_images")
     .insert(
-      cleanedUrls.map((url) => ({
+      cleanedUrls.map((url: string) => ({
         review_id: id,
         user_id: userData.user.id,
         url,
@@ -129,7 +131,9 @@ export const DELETE = async (
 
   const body = await request.json();
   const imageIds = Array.isArray(body?.imageIds) ? body.imageIds : [];
-  const cleanedIds = imageIds.filter((value) => typeof value === "string");
+  const cleanedIds = imageIds.filter(
+    (value: unknown): value is string => typeof value === "string"
+  );
 
   if (cleanedIds.length === 0) {
     return NextResponse.json({ ok: true });

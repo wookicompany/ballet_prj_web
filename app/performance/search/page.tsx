@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -75,7 +75,7 @@ const formatDateRange = (from?: string | null, to?: string | null) => {
 
 const PAGE_SIZE = 12;
 
-export default function PerformanceSearchPage() {
+function PerformanceSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sectionKey = searchParams.get("section") ?? "";
@@ -499,5 +499,21 @@ export default function PerformanceSearchPage() {
         <div ref={sentinelRef} className="h-6" />
       </main>
     </MobileContainer>
+  );
+}
+
+export default function PerformanceSearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <MobileContainer>
+          <main className="flex min-h-screen items-center justify-center">
+            <Spinner size="lg" />
+          </main>
+        </MobileContainer>
+      }
+    >
+      <PerformanceSearchContent />
+    </Suspense>
   );
 }

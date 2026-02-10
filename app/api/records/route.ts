@@ -58,11 +58,13 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
+  const normalizedPayload = { ...payload, mood: moodValue };
+
   const { data, error } = await supabaseAdmin
     .from("records")
     .insert({
       user_id: userData.user.id,
-      ...payload,
+      ...normalizedPayload,
     })
     .select("id, record_date")
     .single();

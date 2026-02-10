@@ -84,9 +84,11 @@ export const PATCH = async (
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
+  const normalizedPayload = { ...payload, mood: moodValue };
+
   const { error: updateError } = await supabaseAdmin
     .from("records")
-    .update(payload)
+    .update(normalizedPayload)
     .eq("id", id)
     .is("deleted_at", null);
 
