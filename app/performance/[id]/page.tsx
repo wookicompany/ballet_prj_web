@@ -695,11 +695,7 @@ export default function PerformanceDetailPage() {
                   )}
                 </div>
                 <div className="space-y-4">
-                  {reviews.length === 0 && !loadingReviews ? (
-                    <p className="text-sm text-[#17171c]/60">
-                      아직 리뷰가 없어요.
-                    </p>
-                  ) : (
+                  {reviews.length === 0 && !loadingReviews ? null : (
                     reviews.map((review) => {
                       const profile = profiles[review.user_id];
                       return (

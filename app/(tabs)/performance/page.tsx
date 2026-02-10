@@ -7,6 +7,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search, Star } from "lucide-react";
@@ -318,12 +319,71 @@ export default function PerformanceListPage() {
     renderCard(item, { metaLabel: item.fcltynm })
   );
 
+  const renderSectionSkeleton = (title: string) => (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-52" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <div key={`${title}-skeleton-${index}`} className="w-[140px] shrink-0">
+            <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
+            <div className="mt-2 space-y-1">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
 
   if (loading) {
     return (
       <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
+        <main className="px-4 pb-16 pt-8">
+          <header className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-0">
+              <h1 className="text-lg font-semibold">공연</h1>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-lg"
+                    className="-ml-1 text-[#17171c]/70"
+                    aria-label="출처 KOPIS"
+                  >
+                    <Info className="size-4" strokeWidth={2.5} />
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-72 text-sm font-semibold text-[#17171c]">
+                  공연 정보는 KOPIS 데이터를 바탕으로 안내드리고 있어요.
+                  출처는 (재)예술경영지원센터 공연예술통합전산망이에요.
+                  사이트 주소는 www.kopis.or.kr이에요.
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              aria-label="검색"
+            >
+              <Search className="size-6" />
+            </Button>
+          </header>
+
+          <div className="space-y-7">
+            {renderSectionSkeleton("popular")}
+            {renderSectionSkeleton("scheduled")}
+            {renderSectionSkeleton("ongoing")}
+            {renderSectionSkeleton("visit")}
+            {renderSectionSkeleton("completed")}
+          </div>
         </main>
       </MobileContainer>
     );
@@ -348,9 +408,9 @@ export default function PerformanceListPage() {
                 </Button>
               </HoverCardTrigger>
               <HoverCardContent className="w-72 text-sm font-semibold text-[#17171c]">
-                공연 정보는 KOPIS 데이터를 바탕으로 안내드리고 있어요.
-                출처는 (재)예술경영지원센터 공연예술통합전산망이에요.
-                사이트 주소는 www.kopis.or.kr이에요.
+                공연 정보는 KOPIS(공연예술통합전산망) API 데이터를 기반으로 제공해요.
+                <br />
+                KOPIS는 (재)예술경영지원센터가 운영하는 공식 공연 정보 서비스예요.
               </HoverCardContent>
             </HoverCard>
           </div>
