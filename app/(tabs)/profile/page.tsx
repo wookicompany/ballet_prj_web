@@ -44,7 +44,7 @@ const formatReviewDate = (value: string) => {
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {
   const value = rating10 / 2 - (starIndex - 1);
-  return Math.min(1, Math.max(0, value));
+  return value >= 1 ? 1 : 0;
 };
 
 export default function ProfilePage() {
@@ -387,7 +387,7 @@ export default function ProfilePage() {
               {reviews.map((review) => (
                 <div
                   key={review.id}
-                  className="flex w-full items-stretch gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                  className="flex w-full items-start gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
                 >
                   <button
                     type="button"
@@ -467,30 +467,31 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </button>
-                  <div className="flex h-20 w-16 flex-col items-center justify-between gap-2">
-                    <div className="text-[11px] text-[#17171c]/50">
-                      {formatReviewDate(review.createdAt)}
-                    </div>
-                    <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
-                      {reviewImages[review.id]?.length ? (
+                  {reviewImages[review.id]?.length ? (
+                    <div className="flex h-20 w-16 flex-col items-center gap-2">
+                      <div className="text-[11px] text-[#17171c]/50">
+                        {formatReviewDate(review.createdAt)}
+                      </div>
+                      <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
                         <img
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
                           className="h-full w-full object-contain"
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] text-[#17171c]/40">
-                          없음
-                        </div>
-                      )}
-                      {reviewImages[review.id]?.length &&
-                      reviewImages[review.id].length > 1 ? (
-                        <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
-                          {reviewImages[review.id].length}
-                        </span>
-                      ) : null}
+                        {reviewImages[review.id].length > 1 ? (
+                          <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                            {reviewImages[review.id].length}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex h-20 w-16 items-start justify-center">
+                      <div className="text-[11px] text-[#17171c]/50">
+                        {formatReviewDate(review.createdAt)}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {!showMoreReviews && reviewCount > REVIEW_PAGE_SIZE_INITIAL ? (

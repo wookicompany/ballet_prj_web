@@ -105,7 +105,7 @@ const formatDate = (value: string) => {
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {
   const value = rating10 / 2 - (starIndex - 1);
-  return Math.min(1, Math.max(0, value));
+  return value >= 1 ? 1 : 0;
 };
 
 const RECENT_STORAGE_KEY = "recent_performances";

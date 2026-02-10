@@ -64,6 +64,7 @@ type CommentItem = {
 };
 
 const COMMENT_PAGE_SIZE = 10;
+const COMMENT_INPUT_BASE_HEIGHT = 40;
 
 const formatDate = (value: string) => {
   const date = new Date(value);
@@ -73,7 +74,7 @@ const formatDate = (value: string) => {
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {
   const value = rating10 / 2 - (starIndex - 1);
-  return Math.min(1, Math.max(0, value));
+  return value >= 1 ? 1 : 0;
 };
 
 export default function PerformanceReviewDetailPage() {
@@ -97,6 +98,7 @@ export default function PerformanceReviewDetailPage() {
   >({});
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+  const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
@@ -282,6 +284,19 @@ export default function PerformanceReviewDetailPage() {
 
     fetchCommentsPage();
   }, [commentPage, reviewId, hasMoreComments]);
+
+  useEffect(() => {
+    if (!newCommentRef.current) return;
+    if (!newComment) {
+      newCommentRef.current.style.height = `${COMMENT_INPUT_BASE_HEIGHT}px`;
+      return;
+    }
+    newCommentRef.current.style.height = "auto";
+    newCommentRef.current.style.height = `${Math.max(
+      newCommentRef.current.scrollHeight,
+      COMMENT_INPUT_BASE_HEIGHT
+    )}px`;
+  }, [newComment]);
 
   const commentSummary = useMemo(
     () => (commentCount > 0 ? `댓글 ${commentCount}개` : ""),
@@ -604,8 +619,19 @@ export default function PerformanceReviewDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <textarea
+              ref={newCommentRef}
+              rows={1}
               value={newComment}
-              onChange={(event) => setNewComment(event.target.value)}
+              onChange={(event) => {
+                setNewComment(event.target.value);
+                if (newCommentRef.current) {
+                  newCommentRef.current.style.height = "auto";
+                  newCommentRef.current.style.height = `${Math.max(
+                    newCommentRef.current.scrollHeight,
+                    COMMENT_INPUT_BASE_HEIGHT
+                  )}px`;
+                }
+              }}
               onFocus={(event) => {
                 if (!user) {
                   openLoginSheet();
@@ -622,7 +648,7 @@ export default function PerformanceReviewDetailPage() {
               onClick={handleSubmitComment}
               disabled={submittingComment}
             >
-              {submittingComment ? <Spinner size="sm" /> : "등록"}
+              {submittingComment ? <Spinner size="sm" className="text-white" /> : "등록"}
             </Button>
           </div>
           <div className="space-y-3">

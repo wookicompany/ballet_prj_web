@@ -28,7 +28,7 @@ const getSafeFileName = (file: File) => {
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {
   const value = rating10 / 2 - (starIndex - 1);
-  return Math.min(1, Math.max(0, value));
+  return value >= 1 ? 1 : 0;
 };
 
 type PreviewItem = {
@@ -286,13 +286,7 @@ export default function PerformanceReviewEditPage() {
                     </div>
                     <button
                       type="button"
-                      className="absolute inset-y-0 left-0 w-1/2"
-                      aria-label={`${starIndex * 2 - 1}점`}
-                      onClick={() => setRating(starIndex * 2 - 1)}
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 w-1/2"
+                      className="absolute inset-0"
                       aria-label={`${starIndex * 2}점`}
                       onClick={() => setRating(starIndex * 2)}
                     />

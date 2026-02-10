@@ -35,8 +35,9 @@ export const POST = async (request: Request) => {
     !performanceId ||
     !Number.isFinite(rating) ||
     !Number.isInteger(rating) ||
-    rating < 1 ||
-    rating > 10
+    rating < 2 ||
+    rating > 10 ||
+    rating % 2 !== 0
   ) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
