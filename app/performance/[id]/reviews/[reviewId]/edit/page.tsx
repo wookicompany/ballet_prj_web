@@ -222,8 +222,8 @@ export default function PerformanceReviewEditPage() {
   return (
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
-      <main className="px-4 pb-12 pt-6">
-        <header className="mb-6 flex items-center justify-between">
+      <main className="px-4 pb-16 pt-6">
+        <header className="mb-5 flex items-center justify-between">
           <Button
             type="button"
             variant="ghost"
@@ -238,9 +238,11 @@ export default function PerformanceReviewEditPage() {
           <div className="w-9" />
         </header>
 
-        <div className="space-y-8">
+        <div className="space-y-5">
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">별점</Label>
+            <Label className="text-xs text-[#17171c]/60">
+              별점<span className="-ml-[1px] text-[#17171c]/50">*</span>
+            </Label>
             <div className="flex items-center gap-2">
               {Array.from({ length: 5 }, (_, index) => {
                 const starIndex = index + 1;
@@ -282,17 +284,22 @@ export default function PerformanceReviewEditPage() {
             <Textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              className="min-h-[140px] text-sm"
+              className="min-h-[160px] border-black/5 bg-[#fafafa] text-sm"
               maxLength={300}
             />
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
+              <span className="text-[11px] text-[#17171c]/50">
+                {existingImages.length + mediaItems.length}/{MAX_IMAGES}
+              </span>
+            </div>
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-transparent"
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-[#fafafa]"
                 onClick={() => (canUploadMore ? fileInputRef.current?.click() : null)}
                 aria-label="사진 추가"
                 disabled={!canUploadMore}

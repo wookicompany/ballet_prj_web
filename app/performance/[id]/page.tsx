@@ -470,8 +470,8 @@ export default function PerformanceDetailPage() {
             공연 정보를 찾을 수 없어요.
           </div>
         ) : (
-          <div className="space-y-6">
-            <section className="relative h-[360px] w-full overflow-hidden bg-black/5">
+          <div className="space-y-5">
+            <section className="relative h-[380px] w-full overflow-hidden bg-black/5">
               {detail.poster ? (
                 <>
                   <img
@@ -480,7 +480,7 @@ export default function PerformanceDetailPage() {
                     aria-hidden="true"
                     className="absolute inset-0 h-full w-full object-cover blur-2xl"
                   />
-                  <div className="absolute inset-0 bg-black/10" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-white/5" />
                   <img
                     src={detail.poster}
                     alt={`${detail.prfnm ?? "공연"} 포스터`}
@@ -509,7 +509,7 @@ export default function PerformanceDetailPage() {
 
             <div className="space-y-4 px-4">
               <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-[#17171c]/60">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#17171c]/60">
                   {detail.prfstate ? (
                     <Badge variant="secondary">{detail.prfstate}</Badge>
                   ) : null}
@@ -519,15 +519,15 @@ export default function PerformanceDetailPage() {
                 <h1 className="mt-2 text-base font-semibold text-[#17171c]">
                   {detail.prfnm || "공연명 미정"}
                 </h1>
-                <p className="mt-1 text-xs text-[#17171c]/70">
-                  {formatDateRange(detail.prfpdfrom, detail.prfpdto)}
-                </p>
-                <p className="text-xs text-[#17171c]/70">
-                  {formatOrFallback(detail.fcltynm, "공연장 정보 없음")}
-                </p>
+                <div className="mt-2 grid gap-1 text-xs text-[#17171c]/70">
+                  <span>{formatDateRange(detail.prfpdfrom, detail.prfpdto)}</span>
+                  <span>{formatOrFallback(detail.fcltynm, "공연장 정보 없음")}</span>
+                </div>
               </section>
               <section className="space-y-4 rounded-xl border border-black/5 bg-white p-4 text-xs text-[#17171c]">
-                <h3 className="text-xs font-semibold">공연 정보</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">공연 정보</h3>
+                </div>
                 <div className="space-y-2 text-[#17171c]/70">
                   {[
                     { label: "출연진", value: detail.prfcast },
@@ -548,9 +548,10 @@ export default function PerformanceDetailPage() {
                     }))
                     .filter((item) => item.value)
                     .map((item) => (
-                      <p key={item.label}>
-                        {item.label}: {item.value}
-                      </p>
+                      <div key={item.label} className="grid grid-cols-[72px_1fr] gap-2">
+                        <span className="text-[#17171c]/50">{item.label}</span>
+                        <span className="break-words">{item.value}</span>
+                      </div>
                     ))}
                   {![
                     detail.prfcast,
@@ -566,7 +567,9 @@ export default function PerformanceDetailPage() {
                     detail.dtguidance,
                   ]
                     .map(formatOptionalText)
-                    .some(Boolean) ? <p>정보 없음</p> : null}
+                    .some(Boolean) ? (
+                    <p className="text-[#17171c]/50">정보 없음</p>
+                  ) : null}
                 </div>
                 {formatOptionalText(detail.sty) ? (
                   <>
@@ -582,28 +585,28 @@ export default function PerformanceDetailPage() {
               </section>
 
               {detail.styurls && detail.styurls.length > 0 ? (
-                <section className="space-y-3">
+                <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
                   <h3 className="text-sm font-semibold text-[#17171c]">
                     소개 이미지
                   </h3>
                   <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
                     {detail.styurls.map((url, index) => (
-                    <button
+                      <button
                         key={`${detail.mt20id}-sty-${index}`}
                       type="button"
-                      className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-black/5"
-                      onClick={() => {
-                        setViewerUrl(url);
-                        setViewerOpen(true);
-                      }}
-                      aria-label="소개 이미지 크게 보기"
+                        className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-black/5"
+                        onClick={() => {
+                          setViewerUrl(url);
+                          setViewerOpen(true);
+                        }}
+                        aria-label="소개 이미지 크게 보기"
                       >
                         <img
                           src={url}
                           alt="소개 이미지"
                           className="h-full w-full object-cover"
                         />
-                    </button>
+                      </button>
                     ))}
                   </div>
                 </section>
