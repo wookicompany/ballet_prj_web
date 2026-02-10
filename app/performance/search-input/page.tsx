@@ -403,13 +403,13 @@ export default function PerformanceSearchInputPage() {
               ) : null}
             </div>
             {recentItems.length ? (
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+              <div className="grid grid-cols-3 gap-3">
                 {recentItems.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => router.push(`/performance/${item.id}`)}
-                    className="h-32 w-24 shrink-0 overflow-hidden rounded-xl bg-black/5 shadow-sm"
+                    className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/5"
                   >
                     {item.poster ? (
                       <img
