@@ -107,6 +107,9 @@ const getStarFillRatio = (rating10: number, starIndex: number) => {
   return Math.min(1, Math.max(0, value));
 };
 
+const RECENT_STORAGE_KEY = "recent_performances";
+const RECENT_LIMIT = 12;
+
 const toRelateDisplay = (relate: string | RelateItem) => {
   if (typeof relate === "string") {
     const trimmed = relate.trim();
@@ -210,6 +213,34 @@ export default function PerformanceDetailPage() {
 
     fetchDetail();
   }, [performanceId]);
+
+  useEffect(() => {
+    if (!detail || !user) return;
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(RECENT_STORAGE_KEY);
+      const parsed = raw
+        ? (JSON.parse(raw) as Array<{
+            id: string;
+            title: string;
+            poster: string | null;
+          }>)
+        : [];
+      const next = Array.isArray(parsed) ? parsed : [];
+      const filtered = next.filter((item) => item.id !== detail.mt20id);
+      filtered.unshift({
+        id: detail.mt20id,
+        title: detail.prfnm ?? "",
+        poster: detail.poster ?? null,
+      });
+      window.localStorage.setItem(
+        RECENT_STORAGE_KEY,
+        JSON.stringify(filtered.slice(0, RECENT_LIMIT))
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [detail, user]);
 
   useEffect(() => {
     if (!performanceId) return;

@@ -359,7 +359,7 @@ export default function PerformanceListPage() {
             variant="ghost"
             size="icon-lg"
             className="text-[#17171c]/70"
-            onClick={() => router.push("/performance/search")}
+            onClick={() => router.push("/performance/search-input")}
             aria-label="검색"
           >
             <Search className="size-6" />
