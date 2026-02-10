@@ -562,14 +562,7 @@ export default function PerformanceDetailPage() {
 
             <div className="space-y-4 px-4">
               <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#17171c]/60">
-                  {detail.prfstate ? (
-                    <Badge variant="secondary">{detail.prfstate}</Badge>
-                  ) : null}
-                  {detail.genrenm ? <span>{detail.genrenm}</span> : null}
-                  {detail.area ? <span>· {detail.area}</span> : null}
-                </div>
-                <h1 className="mt-2 text-base font-semibold text-[#17171c]">
+                <h1 className="text-base font-semibold text-[#17171c]">
                   {detail.prfnm || "공연명 미정"}
                 </h1>
                 <div className="mt-2 grid gap-1 text-xs text-[#17171c]/70">
