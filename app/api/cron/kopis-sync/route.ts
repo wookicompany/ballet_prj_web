@@ -42,6 +42,15 @@ const getAfterDate = () => {
   return getDateKey(after);
 };
 
+const normalizeAfterDate = (value: string | null) => {
+  if (value === null) return getAfterDate();
+  const normalized = value.trim().toLowerCase();
+  if (!normalized || ["0", "off", "none"].includes(normalized)) {
+    return undefined;
+  }
+  return value;
+};
+
 const chunk = <T,>(list: T[], size: number) => {
   const result: T[][] = [];
   for (let i = 0; i < list.length; i += size) {
@@ -68,7 +77,7 @@ export async function POST(request: Request) {
     const url = new URL(request.url);
     const stdate = url.searchParams.get("stdate");
     const eddate = url.searchParams.get("eddate");
-    const afterdate = url.searchParams.get("afterdate") ?? getAfterDate();
+    const afterdate = normalizeAfterDate(url.searchParams.get("afterdate"));
     const { stdate: defaultStart, eddate: defaultEnd } = getDefaultDateRange();
 
     const rangeStart = stdate ?? defaultStart;

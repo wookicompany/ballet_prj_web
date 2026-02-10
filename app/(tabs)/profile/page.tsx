@@ -8,9 +8,10 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { Menu, User, X } from "lucide-react";
+import { Menu, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -279,31 +280,12 @@ export default function ProfilePage() {
           )}
         </section>
       </main>
-      {avatarOpen && profile.avatar_url ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
-          onClick={() => setAvatarOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            type="button"
-            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white"
-            onClick={(event) => {
-              event.stopPropagation();
-              setAvatarOpen(false);
-            }}
-            aria-label="닫기"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={profile.avatar_url}
-            alt="프로필 이미지 크게 보기"
-            className="max-h-full max-w-full object-contain"
-          />
-        </div>
-      ) : null}
+      <ImageViewer
+        isOpen={avatarOpen}
+        imageUrl={profile.avatar_url}
+        alt="프로필 이미지 크게 보기"
+        onClose={() => setAvatarOpen(false)}
+      />
     </MobileContainer>
   );
 }
