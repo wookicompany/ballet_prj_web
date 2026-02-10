@@ -7,7 +7,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Heart, MessageCircle, Star } from "lucide-react";
+import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -31,7 +31,6 @@ type EngagementSummary = {
   performance_id: string | null;
   view_count?: number | null;
   review_count?: number | null;
-  like_count: number | null;
   comment_count: number | null;
 };
 
@@ -132,8 +131,12 @@ export default function PerformanceSearchPage() {
         supabase
           .from("performance_engagement_summaries")
           .select(
-            "performance_id,view_count,review_count,like_count,comment_count"
-          ),
+            "performance_id,view_count,review_count,comment_count"
+          )
+          .or(
+            "view_count.gt.0,review_count.gt.0,comment_count.gt.0"
+          )
+          .range(0, 4999),
       ]);
 
       if (reviewError || engagementError) {
@@ -150,15 +153,16 @@ export default function PerformanceSearchPage() {
           id: item.performance_id as string,
           score:
             (item.view_count ?? 0) +
-            (item.review_count ?? 0) * 3 +
-            (item.like_count ?? 0) * 2 +
-            (item.comment_count ?? 0) * 2,
+            (item.review_count ?? 0) +
+            (item.comment_count ?? 0),
         }));
-      const hasEngagement = engagementScores.some((item) => item.score > 0);
+      const activeEngagement = engagementScores.filter((item) => item.score > 0);
 
-      if (hasEngagement) {
+      if (activeEngagement.length) {
         setOrderedIds(
-          engagementScores.sort((a, b) => b.score - a.score).map((item) => item.id)
+          activeEngagement
+            .sort((a, b) => b.score - a.score)
+            .map((item) => item.id)
         );
         setOrderedReady(true);
         return;
@@ -338,7 +342,7 @@ export default function PerformanceSearchPage() {
             .in("performance_id", targetIds),
           supabase
             .from("performance_engagement_summaries")
-            .select("performance_id,like_count,comment_count")
+            .select("performance_id,comment_count")
             .in("performance_id", targetIds),
         ]);
 
@@ -472,13 +476,9 @@ export default function PerformanceSearchPage() {
                       {item.fcltynm || "공연장 정보 없음"}
                     </p>
                     <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#17171c]/70">
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 text-[#ff273d]">
                         <Star className="h-3 w-3 text-[#ff273d]" fill="#ff273d" />
                         {rating ? rating.avg.toFixed(1) : "-"}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Heart className="h-3 w-3" />
-                        {engagement?.like_count ?? 0}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <MessageCircle className="h-3 w-3" />

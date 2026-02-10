@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Heart, MessageCircle, Search, Star } from "lucide-react";
+import { ChevronLeft, MessageCircle, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -36,7 +36,8 @@ type RatingSummary = {
 
 type EngagementSummary = {
   performance_id: string | null;
-  like_count: number | null;
+  view_count?: number | null;
+  review_count?: number | null;
   comment_count: number | null;
 };
 
@@ -172,7 +173,7 @@ export default function PerformanceSearchInputPage() {
         .is("deleted_at", null)
         .eq("is_active", true)
         .in("mt20id", ids)
-        .order("prfpdfrom", { ascending: true })
+        .order("prfpdfrom", { ascending: false })
         .range(rangeStart, rangeEnd);
 
       if (error) {
@@ -187,17 +188,10 @@ export default function PerformanceSearchInputPage() {
       }
 
       const fetched = (data as PerformanceItem[]) ?? [];
-      setItems((prev) => {
-        if (pageToFetch === 0) return fetched;
-        const seen = new Set(prev.map((item) => item.mt20id));
-        const merged = [...prev];
-        fetched.forEach((item) => {
-          if (!seen.has(item.mt20id)) merged.push(item);
-        });
-        return merged;
-      });
-
       const targetIds = fetched.map((item) => item.mt20id).filter(Boolean);
+      let nextRatingMap: Record<string, RatingSummary> = {};
+      let nextEngagementMap: Record<string, EngagementSummary> = {};
+
       if (targetIds.length) {
         const [
           { data: reviewRows, error: reviewError },
@@ -210,7 +204,9 @@ export default function PerformanceSearchInputPage() {
             .in("performance_id", targetIds),
           supabase
             .from("performance_engagement_summaries")
-            .select("performance_id,like_count,comment_count")
+            .select(
+              "performance_id,view_count,review_count,comment_count"
+            )
             .in("performance_id", targetIds),
         ]);
 
@@ -218,7 +214,6 @@ export default function PerformanceSearchInputPage() {
           toast("공연 통계를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
         }
 
-        const nextRatingMap: Record<string, RatingSummary> = {};
         (reviewRows ?? []).forEach((row) => {
           if (!row.performance_id) return;
           const current = nextRatingMap[row.performance_id] ?? { count: 0, avg: 0 };
@@ -227,7 +222,6 @@ export default function PerformanceSearchInputPage() {
           nextRatingMap[row.performance_id] = { count: nextCount, avg: nextAvg };
         });
 
-        const nextEngagementMap: Record<string, EngagementSummary> = {};
         (engagementRows ?? []).forEach((row) => {
           if (!row.performance_id) return;
           nextEngagementMap[row.performance_id] = row;
@@ -237,6 +231,45 @@ export default function PerformanceSearchInputPage() {
         setEngagementMap((prev) => ({ ...prev, ...nextEngagementMap }));
       }
 
+      const getEngagementScore = (itemId: string) => {
+        const engagement = nextEngagementMap[itemId] ?? engagementMap[itemId];
+        if (!engagement) return 0;
+        return (
+          (engagement.view_count ?? 0) +
+          (engagement.review_count ?? 0) +
+          (engagement.comment_count ?? 0)
+        );
+      };
+      const hasEngagement = fetched.some(
+        (item) => getEngagementScore(item.mt20id) > 0
+      );
+      const ordered = [...fetched].sort((a, b) => {
+        const dateA = a.prfpdfrom ? new Date(`${a.prfpdfrom}T00:00:00`) : null;
+        const dateB = b.prfpdfrom ? new Date(`${b.prfpdfrom}T00:00:00`) : null;
+        const timeA = dateA && !Number.isNaN(dateA.getTime()) ? dateA.getTime() : 0;
+        const timeB = dateB && !Number.isNaN(dateB.getTime()) ? dateB.getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        if (hasEngagement) {
+          return getEngagementScore(b.mt20id) - getEngagementScore(a.mt20id);
+        }
+        const ratingA = nextRatingMap[a.mt20id] ?? ratingMap[a.mt20id];
+        const ratingB = nextRatingMap[b.mt20id] ?? ratingMap[b.mt20id];
+        if (!ratingA && !ratingB) return 0;
+        if (!ratingA) return 1;
+        if (!ratingB) return -1;
+        return ratingB.count - ratingA.count || ratingB.avg - ratingA.avg;
+      });
+
+      setItems((prev) => {
+        if (pageToFetch === 0) return ordered;
+        const seen = new Set(prev.map((item) => item.mt20id));
+        const merged = [...prev];
+        ordered.forEach((item) => {
+          if (!seen.has(item.mt20id)) merged.push(item);
+        });
+        return merged;
+      });
+
       setHasMore(rangeStart + PAGE_SIZE < ids.length && fetched.length > 0);
       setLoading(false);
       setLoadingMore(false);
@@ -244,8 +277,7 @@ export default function PerformanceSearchInputPage() {
     [fetchMatchedIds, filters.keyword, matchedIds]
   );
 
-  const handleSearch = () => {
-    const keyword = draft.keyword.trim();
+  const handleSearch = (keyword: string) => {
     if (keyword && user && typeof window !== "undefined") {
       const next = [keyword, ...recentSearches.filter((term) => term !== keyword)];
       const sliced = next.slice(0, RECENT_SEARCH_LIMIT);
@@ -253,7 +285,7 @@ export default function PerformanceSearchInputPage() {
       setRecentSearches(sliced);
     }
     setFilters({
-      keyword: draft.keyword.trim(),
+      keyword,
     });
     setHasSearched(true);
     setIsFocused(false);
@@ -333,7 +365,7 @@ export default function PerformanceSearchInputPage() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  handleSearch();
+                  handleSearch(draft.keyword.trim());
                 }
               }}
             />
@@ -370,7 +402,7 @@ export default function PerformanceSearchInputPage() {
                     onClick={() => {
                       setDraft((prev) => ({ ...prev, keyword: term }));
                       setIsFocused(false);
-                      setTimeout(handleSearch, 0);
+                      setTimeout(() => handleSearch(term), 0);
                     }}
                   >
                     {term}
@@ -470,13 +502,9 @@ export default function PerformanceSearchInputPage() {
                     {item.fcltynm || "공연장 정보 없음"}
                   </p>
                   <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#17171c]/70">
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 text-[#ff273d]">
                       <Star className="h-3 w-3 text-[#ff273d]" fill="#ff273d" />
                       {rating ? rating.avg.toFixed(1) : "-"}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {engagement?.like_count ?? 0}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <MessageCircle className="h-3 w-3" />

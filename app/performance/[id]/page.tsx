@@ -247,7 +247,9 @@ export default function PerformanceDetailPage() {
     if (!performanceId) return;
     if (viewTrackedRef.current === performanceId) return;
     viewTrackedRef.current = performanceId;
-    supabase.from("performance_views").insert({ performance_id: performanceId });
+    fetch(`/api/performances/${performanceId}/view`, { method: "POST" }).catch(
+      () => {}
+    );
   }, [performanceId]);
 
   useEffect(() => {
@@ -534,11 +536,21 @@ export default function PerformanceDetailPage() {
                     className="absolute inset-0 h-full w-full object-cover blur-2xl"
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-white/5" />
-                  <img
-                    src={detail.poster}
-                    alt={`${detail.prfnm ?? "공연"} 포스터`}
-                    className="absolute inset-0 h-full w-full object-contain"
-                  />
+                  <button
+                    type="button"
+                    className="absolute inset-0 h-full w-full"
+                    onClick={() => {
+                      setViewerUrl(detail.poster);
+                      setViewerOpen(true);
+                    }}
+                    aria-label="포스터 이미지 크게 보기"
+                  >
+                    <img
+                      src={detail.poster}
+                      alt={`${detail.prfnm ?? "공연"} 포스터`}
+                      className="h-full w-full object-contain"
+                    />
+                  </button>
                 </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-[#17171c]/50">

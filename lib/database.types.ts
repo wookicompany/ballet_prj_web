@@ -652,7 +652,6 @@ export type Database = {
       performance_engagement_summaries: {
         Row: {
           comment_count: number | null
-          like_count: number | null
           performance_id: string | null
           review_count: number | null
           view_count: number | null

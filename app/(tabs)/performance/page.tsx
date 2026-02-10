@@ -34,7 +34,6 @@ type EngagementSummary = {
   performance_id: string;
   view_count: number;
   review_count: number;
-  like_count: number;
   comment_count: number;
 };
 
@@ -60,13 +59,11 @@ export default function PerformanceListPage() {
   const [sections, setSections] = useState<{
     popular: PerformanceItem[];
     scheduled: PerformanceItem[];
-    ongoing: PerformanceItem[];
     completed: PerformanceItem[];
     visit: PerformanceItem[];
   }>({
     popular: [],
     scheduled: [],
-    ongoing: [],
     completed: [],
     visit: [],
   });
@@ -89,8 +86,12 @@ export default function PerformanceListPage() {
       supabase
         .from("performance_engagement_summaries")
         .select(
-          "performance_id,view_count,review_count,like_count,comment_count"
-        ),
+          "performance_id,view_count,review_count,comment_count"
+        )
+        .or(
+          "view_count.gt.0,review_count.gt.0,comment_count.gt.0"
+        )
+        .range(0, 4999),
     ]);
 
     if (reviewError || engagementError) {
@@ -110,24 +111,24 @@ export default function PerformanceListPage() {
       id: item.performance_id,
       score:
         item.view_count +
-        item.review_count * 3 +
-        item.like_count * 2 +
-        item.comment_count * 2,
+        item.review_count +
+        item.comment_count,
     }));
-    const hasEngagement = engagementScores.some((item) => item.score > 0);
-    const popularIds = hasEngagement
-      ? engagementScores
+    const activeEngagement = engagementScores.filter((item) => item.score > 0);
+    const nextPopularIds = activeEngagement.length
+      ? activeEngagement
           .sort((a, b) => b.score - a.score)
           .map((item) => item.id)
-          .slice(0, 12)
+          .filter(Boolean)
       : Object.entries(ratingSummary)
+          .filter(([, value]) => value.count > 0)
           .sort(
             (a, b) =>
               b[1].count - a[1].count || b[1].avg - a[1].avg
           )
           .map(([id]) => id)
-          .slice(0, 12);
-
+          ;
+    const popularIds = nextPopularIds.slice(0, 12);
     const popularQuery = popularIds.length
       ? supabase
           .from("kopis_performances")
@@ -150,15 +151,6 @@ export default function PerformanceListPage() {
       .eq("is_active", true)
       .eq("prfstate", "공연예정")
       .order("prfpdfrom", { ascending: true })
-      .limit(12);
-
-    const ongoingQuery = supabase
-      .from("kopis_performances")
-      .select(baseSelect)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .eq("prfstate", "공연중")
-      .order("prfpdto", { ascending: true })
       .limit(12);
 
     const completedQuery = supabase
@@ -194,11 +186,10 @@ export default function PerformanceListPage() {
           .eq("is_active", true)
           .in("mt20id", visitIds)
       : null;
-    const [popularRes, scheduledRes, ongoingRes, completedRes, visitRes] =
+    const [popularRes, scheduledRes, completedRes, visitRes] =
       await Promise.all([
         popularQuery,
         scheduledQuery,
-        ongoingQuery,
         completedQuery,
         visitQuery ?? Promise.resolve({ data: [] }),
       ]);
@@ -206,7 +197,6 @@ export default function PerformanceListPage() {
     if (
       popularRes.error ||
       scheduledRes.error ||
-      ongoingRes.error ||
       completedRes.error ||
       visitIdsRes.error ||
       (visitRes as { error?: unknown }).error
@@ -220,7 +210,6 @@ export default function PerformanceListPage() {
           (a, b) => popularIds.indexOf(a.mt20id) - popularIds.indexOf(b.mt20id)
         )
       : popularData;
-
     const visitData = ((visitRes as { data?: PerformanceItem[] }).data ??
       []) as PerformanceItem[];
     const orderedVisit = visitIds.length
@@ -230,13 +219,13 @@ export default function PerformanceListPage() {
       : visitData;
 
     setRatingMap(ratingSummary);
-    setSections({
+    setSections((prev) => ({
+      ...prev,
       popular: orderedPopular,
       scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
-      ongoing: (ongoingRes.data ?? []) as PerformanceItem[],
       completed: (completedRes.data ?? []) as PerformanceItem[],
       visit: orderedVisit,
-    });
+    }));
     setLoading(false);
 
     if (shouldWarn) {
@@ -307,10 +296,6 @@ export default function PerformanceListPage() {
     return renderCard(item, { badgeLabel: label, metaLabel: item.fcltynm });
   });
 
-  const ongoingCards = sections.ongoing.map((item) =>
-    renderCard(item, { metaLabel: item.fcltynm })
-  );
-
   const completedCards = sections.completed.map((item) =>
     renderCard(item, { metaLabel: item.fcltynm })
   );
@@ -380,7 +365,6 @@ export default function PerformanceListPage() {
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
             {renderSectionSkeleton("scheduled")}
-            {renderSectionSkeleton("ongoing")}
             {renderSectionSkeleton("visit")}
             {renderSectionSkeleton("completed")}
           </div>
@@ -479,35 +463,6 @@ export default function PerformanceListPage() {
               <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {scheduledCards.length ? (
                   scheduledCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    지금 바로 관람할 수 있어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=ongoing")}
-                  aria-label="공연중 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {ongoingCards.length ? (
-                  ongoingCards
                 ) : (
                   <div className="text-sm text-[#17171c]/50">
                     표시할 공연이 없어요.
