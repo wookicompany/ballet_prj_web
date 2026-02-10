@@ -654,7 +654,6 @@ export default function PerformanceDetailPage() {
                   {reviewAverage !== null ? (
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[#ff273d]">
-                        평균
                         <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
                         {reviewAverage}점
                       </span>

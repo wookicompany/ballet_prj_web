@@ -1,16 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, Heart, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -25,37 +22,50 @@ type PerformanceItem = {
   area: string | null;
 };
 
-const SECTION_CONFIG = {
+type RatingSummary = {
+  count: number;
+  avg: number;
+};
+
+type EngagementSummary = {
+  performance_id: string | null;
+  view_count?: number | null;
+  review_count?: number | null;
+  like_count: number | null;
+  comment_count: number | null;
+};
+
+type SectionConfig = {
+  title: string;
+  prfstate?: string;
+  detailFlag?: string;
+};
+
+const SECTION_CONFIG: Record<string, SectionConfig> = {
   popular: {
-    title: "인기 공연",
-    copy: "지금 가장 반응이 많은 공연이에요.",
+    title: "지금 가장 반응이 많은 공연이에요",
   },
   scheduled: {
-    title: "공연예정",
-    copy: "곧 만날 수 있는 공연을 모았어요.",
+    title: "곧 만날 수 있는 공연을 모았어요",
     prfstate: "공연예정",
   },
   ongoing: {
-    title: "공연중",
-    copy: "지금 바로 관람할 수 있어요.",
+    title: "지금 바로 관람할 수 있어요",
     prfstate: "공연중",
   },
   completed: {
-    title: "공연 완료",
-    copy: "막을 내린 공연을 모아봤어요.",
+    title: "막을 내린 공연을 모아봤어요",
     prfstate: "공연완료",
   },
   visit: {
-    title: "내한공연",
-    copy: "해외 팀이 방문하는 공연만 모았어요.",
+    title: "해외 팀이 방문하는 공연만 모았어요",
     detailFlag: "visit",
   },
   child: {
-    title: "아동극",
-    copy: "아이와 함께 보기 좋은 공연이에요.",
+    title: "아이와 함께 보기 좋은 공연이에요",
     detailFlag: "child",
   },
-} as const;
+};
 
 const formatDateRange = (from?: string | null, to?: string | null) => {
   if (!from && !to) return "공연 기간 정보 없음";
@@ -64,14 +74,13 @@ const formatDateRange = (from?: string | null, to?: string | null) => {
   return `${start} ~ ${end}`;
 };
 
+const PAGE_SIZE = 12;
+
 export default function PerformanceSearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sectionKey = searchParams.get("section") ?? "";
-  const sectionConfig =
-    (SECTION_CONFIG as Record<string, (typeof SECTION_CONFIG)[keyof typeof SECTION_CONFIG]>)[
-      sectionKey
-    ] ?? null;
+  const sectionConfig = SECTION_CONFIG[sectionKey] ?? null;
   const today = useMemo(() => new Date(), []);
   const defaultStart = useMemo(
     () => today.toISOString().slice(0, 10),
@@ -84,97 +93,74 @@ export default function PerformanceSearchPage() {
   }, [today]);
 
   const [filters, setFilters] = useState(() => ({
-    keyword: "",
     startDate: sectionConfig ? "" : defaultStart,
     endDate: sectionConfig ? "" : defaultEnd,
   }));
-  const [draft, setDraft] = useState(filters);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [items, setItems] = useState<PerformanceItem[]>([]);
+  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>({});
+  const [engagementMap, setEngagementMap] = useState<
+    Record<string, EngagementSummary>
+  >({});
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [orderedIds, setOrderedIds] = useState<string[] | null>(null);
+  const [orderedReady, setOrderedReady] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestedPagesRef = useRef(new Set<number>());
 
   useEffect(() => {
     const nextFilters = {
-      keyword: "",
       startDate: sectionConfig ? "" : defaultStart,
       endDate: sectionConfig ? "" : defaultEnd,
     };
     setFilters(nextFilters);
-    setDraft(nextFilters);
   }, [defaultEnd, defaultStart, sectionConfig]);
 
-  const fetchPerformances = useCallback(async () => {
-    setLoading(true);
-    let ids: string[] | null = null;
-    let orderedIds: string[] | null = null;
-    const baseSelect =
-      "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
-
-    if (filters.keyword) {
-      const keywordLike = `%${filters.keyword}%`;
-      const [{ data: nameMatches }, { data: castMatches }] = await Promise.all([
-        supabase
-          .from("kopis_performances")
-          .select("mt20id")
-          .ilike("prfnm", keywordLike),
-        supabase
-          .from("kopis_performance_details")
-          .select("mt20id")
-          .ilike("prfcast", keywordLike),
-      ]);
-      const idSet = new Set<string>();
-      (nameMatches ?? []).forEach((row) => {
-        if (row.mt20id) idSet.add(row.mt20id);
-      });
-      (castMatches ?? []).forEach((row) => {
-        if (row.mt20id) idSet.add(row.mt20id);
-      });
-      ids = Array.from(idSet);
-      if (ids.length === 0) {
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (sectionConfig?.detailFlag) {
-      const { data: detailRows, error: detailError } = await supabase
-        .from("kopis_performance_details")
-        .select("mt20id")
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .eq(sectionConfig.detailFlag, "Y")
-        .order("updatedate", { ascending: false })
-        .limit(300);
-
-      if (detailError) {
-        toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-
-      const detailIds = (detailRows ?? [])
-        .map((row) => row.mt20id)
-        .filter(Boolean);
-      orderedIds = detailIds;
-      ids = ids ? ids.filter((id) => detailIds.includes(id)) : detailIds;
-      if (!ids.length) {
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-    }
-
+  const fetchOrderedIds = useCallback(async () => {
+    setOrderedReady(false);
     if (sectionKey === "popular") {
-      const { data: reviewRows, error: reviewError } = await supabase
-        .from("performance_reviews")
-        .select("performance_id,rating")
-        .is("deleted_at", null);
+      const [
+        { data: reviewRows, error: reviewError },
+        { data: engagementRows, error: engagementError },
+      ] = await Promise.all([
+        supabase
+          .from("performance_reviews")
+          .select("performance_id,rating")
+          .is("deleted_at", null),
+        supabase
+          .from("performance_engagement_summaries")
+          .select(
+            "performance_id,view_count,review_count,like_count,comment_count"
+          ),
+      ]);
 
-      if (reviewError) {
+      if (reviewError || engagementError) {
         toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-        setItems([]);
-        setLoading(false);
+        setOrderedIds(null);
+        setOrderedReady(true);
+        return;
+      }
+
+      const engagementList = (engagementRows ?? []) as EngagementSummary[];
+      const engagementScores = engagementList
+        .filter((item) => item.performance_id)
+        .map((item) => ({
+          id: item.performance_id as string,
+          score:
+            (item.view_count ?? 0) +
+            (item.review_count ?? 0) * 3 +
+            (item.like_count ?? 0) * 2 +
+            (item.comment_count ?? 0) * 2,
+        }));
+      const hasEngagement = engagementScores.some((item) => item.score > 0);
+
+      if (hasEngagement) {
+        setOrderedIds(
+          engagementScores.sort((a, b) => b.score - a.score).map((item) => item.id)
+        );
+        setOrderedReady(true);
         return;
       }
 
@@ -197,62 +183,232 @@ export default function PerformanceSearchPage() {
         )
         .map(([id]) => id);
 
-      orderedIds = popularIds;
-      ids = ids ? ids.filter((id) => popularIds.includes(id)) : popularIds;
-      if (!ids.length && filters.keyword) {
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-      if (!ids.length && !filters.keyword) {
-        ids = null;
-        orderedIds = null;
-      }
-    }
-
-    let query = supabase
-      .from("kopis_performances")
-      .select(baseSelect)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .order("prfpdfrom", { ascending: true });
-
-    if (sectionConfig?.prfstate) {
-      query = query.eq("prfstate", sectionConfig.prfstate);
-    }
-
-    if (filters.startDate) {
-      query = query.gte("prfpdto", filters.startDate);
-    }
-    if (filters.endDate) {
-      query = query.lte("prfpdfrom", filters.endDate);
-    }
-    if (ids && ids.length) {
-      query = query.in("mt20id", ids);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      toast("공연 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-      setItems([]);
-      setLoading(false);
+      setOrderedIds(popularIds.length ? popularIds : null);
+      setOrderedReady(true);
       return;
     }
 
-    const fetched = (data as PerformanceItem[]) ?? [];
-    const ordered =
-      orderedIds && orderedIds.length
+    if (sectionConfig?.detailFlag) {
+      const { data: detailRows, error: detailError } = await supabase
+        .from("kopis_performance_details")
+        .select("mt20id")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .eq(sectionConfig.detailFlag, "Y")
+        .order("updatedate", { ascending: false })
+        .limit(1000);
+
+      if (detailError) {
+        toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setOrderedIds([]);
+        setOrderedReady(true);
+        return;
+      }
+
+      const detailIds = (detailRows ?? [])
+        .map((row) => row.mt20id)
+        .filter((id): id is string => Boolean(id));
+      setOrderedIds(detailIds);
+      setOrderedReady(true);
+      return;
+    }
+
+    setOrderedIds(null);
+    setOrderedReady(true);
+  }, [sectionConfig, sectionKey]);
+
+  const fetchPage = useCallback(
+    async (pageToFetch: number) => {
+      if (!orderedReady) return;
+      if (pageToFetch === 0) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const baseSelect =
+        "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
+      const rangeStart = pageToFetch * PAGE_SIZE;
+      const rangeEnd = rangeStart + PAGE_SIZE - 1;
+      let query = supabase
+        .from("kopis_performances")
+        .select(baseSelect)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+
+      let sliceIds: string[] | null = null;
+      let useOrderedSlice = false;
+
+      if (sectionKey === "popular") {
+        if (orderedIds && orderedIds.length) {
+          sliceIds = orderedIds.slice(rangeStart, rangeStart + PAGE_SIZE);
+          useOrderedSlice = true;
+        } else {
+          query = query.order("updated_at", { ascending: false });
+        }
+      } else if (sectionConfig?.detailFlag) {
+        sliceIds = (orderedIds ?? []).slice(rangeStart, rangeStart + PAGE_SIZE);
+        useOrderedSlice = true;
+      } else if (sectionKey === "scheduled") {
+        query = query
+          .eq("prfstate", "공연예정")
+          .order("prfpdfrom", { ascending: true });
+      } else if (sectionKey === "ongoing") {
+        query = query
+          .eq("prfstate", "공연중")
+          .order("prfpdto", { ascending: true });
+      } else if (sectionKey === "completed") {
+        query = query
+          .eq("prfstate", "공연완료")
+          .order("prfpdto", { ascending: false });
+      } else if (sectionConfig?.prfstate) {
+        query = query.eq("prfstate", sectionConfig.prfstate);
+      } else {
+        query = query.order("prfpdfrom", { ascending: true });
+      }
+
+      if (filters.startDate) {
+        query = query.gte("prfpdto", filters.startDate);
+      }
+      if (filters.endDate) {
+        query = query.lte("prfpdfrom", filters.endDate);
+      }
+
+      if (useOrderedSlice) {
+        if (!sliceIds || sliceIds.length === 0) {
+          if (pageToFetch === 0) {
+            setItems([]);
+            setRatingMap({});
+            setEngagementMap({});
+          }
+          setHasMore(false);
+          setLoading(false);
+          setLoadingMore(false);
+          return;
+        }
+        query = query.in("mt20id", sliceIds);
+      } else {
+        query = query.range(rangeStart, rangeEnd);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        toast("공연 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setItems([]);
+        setRatingMap({});
+        setEngagementMap({});
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      const fetched = (data as PerformanceItem[]) ?? [];
+      const ordered = useOrderedSlice && sliceIds
         ? fetched.sort(
-            (a, b) => orderedIds.indexOf(a.mt20id) - orderedIds.indexOf(b.mt20id)
+            (a, b) => sliceIds.indexOf(a.mt20id) - sliceIds.indexOf(b.mt20id)
           )
         : fetched;
-    setItems(ordered);
-    setLoading(false);
-  }, [filters, sectionConfig, sectionKey]);
+
+      setItems((prev) => {
+        if (pageToFetch === 0) return ordered;
+        const seen = new Set(prev.map((item) => item.mt20id));
+        const merged = [...prev];
+        ordered.forEach((item) => {
+          if (!seen.has(item.mt20id)) merged.push(item);
+        });
+        return merged;
+      });
+
+      if (useOrderedSlice && orderedIds) {
+        setHasMore(rangeStart + PAGE_SIZE < orderedIds.length);
+      } else {
+        setHasMore(fetched.length === PAGE_SIZE);
+      }
+
+      const targetIds = ordered.map((item) => item.mt20id).filter(Boolean);
+      if (targetIds.length) {
+        const [
+          { data: reviewRows, error: reviewError },
+          { data: engagementRows, error: engagementError },
+        ] = await Promise.all([
+          supabase
+            .from("performance_reviews")
+            .select("performance_id,rating")
+            .is("deleted_at", null)
+            .in("performance_id", targetIds),
+          supabase
+            .from("performance_engagement_summaries")
+            .select("performance_id,like_count,comment_count")
+            .in("performance_id", targetIds),
+        ]);
+
+        if (reviewError || engagementError) {
+          toast("공연 통계를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        }
+
+        const nextRatingMap: Record<string, RatingSummary> = {};
+        (reviewRows ?? []).forEach((row) => {
+          if (!row.performance_id) return;
+          const current = nextRatingMap[row.performance_id] ?? { count: 0, avg: 0 };
+          const nextCount = current.count + 1;
+          const nextAvg = (current.avg * current.count + row.rating) / nextCount;
+          nextRatingMap[row.performance_id] = { count: nextCount, avg: nextAvg };
+        });
+
+        const nextEngagementMap: Record<string, EngagementSummary> = {};
+        (engagementRows ?? []).forEach((row) => {
+          if (!row.performance_id) return;
+          nextEngagementMap[row.performance_id] = row;
+        });
+
+        setRatingMap((prev) => ({ ...prev, ...nextRatingMap }));
+        setEngagementMap((prev) => ({ ...prev, ...nextEngagementMap }));
+      }
+
+      setLoading(false);
+      setLoadingMore(false);
+    },
+    [filters, orderedIds, orderedReady, sectionConfig, sectionKey]
+  );
 
   useEffect(() => {
-    fetchPerformances();
-  }, [fetchPerformances]);
+    setItems([]);
+    setRatingMap({});
+    setEngagementMap({});
+    setPage(0);
+    setHasMore(true);
+    setLoading(true);
+    setLoadingMore(false);
+    requestedPagesRef.current = new Set();
+    fetchOrderedIds();
+  }, [fetchOrderedIds]);
+
+  useEffect(() => {
+    if (!orderedReady) return;
+    fetchPage(0);
+  }, [fetchPage, orderedReady]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    const nextPage = page + 1;
+    if (requestedPagesRef.current.has(nextPage)) return;
+    requestedPagesRef.current.add(nextPage);
+    setPage(nextPage);
+    fetchPage(nextPage);
+  }, [fetchPage, hasMore, loadingMore, page]);
+
+  useEffect(() => {
+    const target = sentinelRef.current;
+    if (!target || loading || loadingMore || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { rootMargin: "120px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, loading, loadingMore]);
 
   return (
     <MobileContainer>
@@ -270,55 +426,13 @@ export default function PerformanceSearchPage() {
           </Button>
           <div className="flex-1 text-center">
             <h1 className="text-base font-semibold">
-              {sectionConfig?.title ?? "공연 검색"}
+              {sectionConfig?.title ?? "공연 리스트"}
             </h1>
-            {sectionConfig?.copy ? (
-              <p className="text-xs text-[#17171c]/60">{sectionConfig.copy}</p>
-            ) : null}
           </div>
           <div className="w-9" />
         </header>
 
-        <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-[#17171c]/40" />
-            <Input
-              value={draft.keyword}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, keyword: event.target.value }))
-              }
-              placeholder="공연명, 출연진으로 검색"
-              className="h-10"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="date"
-              value={draft.startDate}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, startDate: event.target.value }))
-              }
-              className="h-10"
-            />
-            <Input
-              type="date"
-              value={draft.endDate}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, endDate: event.target.value }))
-              }
-              className="h-10"
-            />
-          </div>
-          <Button
-            type="button"
-            className="h-11 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
-            onClick={() => setFilters({ ...draft, keyword: draft.keyword.trim() })}
-          >
-            조회하기
-          </Button>
-        </section>
-
-        <section className="mt-6 space-y-3">
+        <section className="mt-6 space-y-1">
           {loading ? (
             <div className="flex min-h-[200px] items-center justify-center">
               <Spinner size="lg" />
@@ -328,10 +442,17 @@ export default function PerformanceSearchPage() {
               조회된 공연이 없어요.
             </div>
           ) : (
-            items.map((item) => (
-              <Card key={item.mt20id} className="border-black/5">
-                <CardContent className="flex gap-3 p-4">
-                  <div className="h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-black/5">
+            items.map((item) => {
+              const rating = ratingMap[item.mt20id];
+              const engagement = engagementMap[item.mt20id];
+              return (
+                <button
+                  key={item.mt20id}
+                  type="button"
+                  onClick={() => router.push(`/performance/${item.mt20id}`)}
+                  className="flex w-full gap-3 border-b border-black/5 py-4 text-left"
+                >
+                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                     {item.poster ? (
                       <img
                         src={item.poster}
@@ -341,41 +462,41 @@ export default function PerformanceSearchPage() {
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="line-clamp-2 text-sm font-semibold text-[#17171c]">
-                        {item.prfnm}
-                      </h2>
-                      {item.prfstate ? (
-                        <Badge variant="secondary" className="shrink-0">
-                          {item.prfstate}
-                        </Badge>
-                      ) : null}
-                    </div>
+                    <h2 className="line-clamp-2 text-sm font-semibold text-[#17171c]">
+                      {item.prfnm}
+                    </h2>
                     <p className="text-xs text-[#17171c]/60">
                       {formatDateRange(item.prfpdfrom, item.prfpdto)}
                     </p>
                     <p className="text-xs text-[#17171c]/60">
                       {item.fcltynm || "공연장 정보 없음"}
                     </p>
-                    <div className="flex flex-wrap gap-1 pt-1 text-[11px] text-[#17171c]/60">
-                      {item.genrenm ? <span>{item.genrenm}</span> : null}
-                      {item.area ? <span>· {item.area}</span> : null}
+                    <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#17171c]/70">
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="h-3 w-3 text-[#ff273d]" fill="#ff273d" />
+                        {rating ? rating.avg.toFixed(1) : "-"}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {engagement?.like_count ?? 0}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {engagement?.comment_count ?? 0}
+                      </span>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 h-8"
-                      onClick={() => router.push(`/performance/${item.mt20id}`)}
-                    >
-                      상세 보기
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))
+                </button>
+              );
+            })
           )}
         </section>
+        {loadingMore ? (
+          <div className="flex justify-center py-4">
+            <Spinner size="sm" />
+          </div>
+        ) : null}
+        <div ref={sentinelRef} className="h-6" />
       </main>
     </MobileContainer>
   );

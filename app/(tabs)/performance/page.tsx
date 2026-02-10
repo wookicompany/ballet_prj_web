@@ -118,14 +118,14 @@ export default function PerformanceListPage() {
       ? engagementScores
           .sort((a, b) => b.score - a.score)
           .map((item) => item.id)
-          .slice(0, 6)
+          .slice(0, 12)
       : Object.entries(ratingSummary)
           .sort(
             (a, b) =>
               b[1].count - a[1].count || b[1].avg - a[1].avg
           )
           .map(([id]) => id)
-          .slice(0, 6);
+          .slice(0, 12);
 
     const popularQuery = popularIds.length
       ? supabase
@@ -140,7 +140,7 @@ export default function PerformanceListPage() {
           .is("deleted_at", null)
           .eq("is_active", true)
           .order("updated_at", { ascending: false })
-          .limit(6);
+          .limit(12);
 
     const scheduledQuery = supabase
       .from("kopis_performances")
@@ -149,7 +149,7 @@ export default function PerformanceListPage() {
       .eq("is_active", true)
       .eq("prfstate", "공연예정")
       .order("prfpdfrom", { ascending: true })
-      .limit(6);
+      .limit(12);
 
     const ongoingQuery = supabase
       .from("kopis_performances")
@@ -158,7 +158,7 @@ export default function PerformanceListPage() {
       .eq("is_active", true)
       .eq("prfstate", "공연중")
       .order("prfpdto", { ascending: true })
-      .limit(6);
+      .limit(12);
 
     const completedQuery = supabase
       .from("kopis_performances")
@@ -167,7 +167,7 @@ export default function PerformanceListPage() {
       .eq("is_active", true)
       .eq("prfstate", "공연완료")
       .order("prfpdto", { ascending: false })
-      .limit(6);
+      .limit(12);
 
     const [visitIdsRes] = await Promise.all([
       supabase
@@ -177,13 +177,13 @@ export default function PerformanceListPage() {
         .eq("is_active", true)
         .eq("visit", "Y")
         .order("updatedate", { ascending: false })
-        .limit(20),
+        .limit(60),
     ]);
 
     const visitIds = (visitIdsRes.data ?? [])
       .map((row) => row.mt20id)
       .filter(Boolean)
-      .slice(0, 6);
+      .slice(0, 12);
 
     const visitQuery = visitIds.length
       ? supabase
@@ -256,7 +256,7 @@ export default function PerformanceListPage() {
         key={item.mt20id}
         type="button"
         onClick={() => router.push(`/performance/${item.mt20id}`)}
-        className="w-[140px] shrink-0 text-left"
+        className="w-[140px] shrink-0 snap-start text-left"
       >
         <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-black/5">
           {options?.badgeLabel ? (
@@ -293,7 +293,6 @@ export default function PerformanceListPage() {
     const rating = ratingMap[item.mt20id];
     const ratingLabel = rating ? (
       <span className="inline-flex items-center gap-1 text-[#ff273d]">
-        평균
         <Star className="h-3 w-3 fill-current" />
         {rating.avg.toFixed(1)}
       </span>
@@ -386,7 +385,7 @@ export default function PerformanceListPage() {
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {popularCards.length ? (
                   popularCards
                 ) : (
@@ -417,7 +416,7 @@ export default function PerformanceListPage() {
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {scheduledCards.length ? (
                   scheduledCards
                 ) : (
@@ -446,7 +445,7 @@ export default function PerformanceListPage() {
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {ongoingCards.length ? (
                   ongoingCards
                 ) : (
@@ -475,7 +474,7 @@ export default function PerformanceListPage() {
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {visitCards.length ? (
                   visitCards
                 ) : (
@@ -506,7 +505,7 @@ export default function PerformanceListPage() {
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {completedCards.length ? (
                   completedCards
                 ) : (
