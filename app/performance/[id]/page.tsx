@@ -6,14 +6,38 @@ import { useParams, useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Heart, MessageCircle, PenLine, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  PenLine,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+
+type RelateItem = {
+  relatenm?: string | null;
+  relateurl?: string | null;
+};
 
 type PerformanceDetail = {
   mt20id: string;
@@ -39,7 +63,7 @@ type PerformanceDetail = {
   child: string | null;
   dtguidance: string | null;
   styurls: string[] | null;
-  relates: string[] | null;
+  relates: Array<string | RelateItem> | null;
 };
 
 type ReviewItem = {
@@ -78,6 +102,28 @@ const formatDate = (value: string) => {
   return date.toLocaleDateString("ko-KR");
 };
 
+const getStarFillRatio = (rating10: number, starIndex: number) => {
+  const value = rating10 / 2 - (starIndex - 1);
+  return Math.min(1, Math.max(0, value));
+};
+
+const toRelateDisplay = (relate: string | RelateItem) => {
+  if (typeof relate === "string") {
+    const trimmed = relate.trim();
+    return trimmed ? { label: trimmed, url: null } : null;
+  }
+  if (relate && typeof relate === "object") {
+    const label =
+      typeof relate.relatenm === "string" ? relate.relatenm.trim() : "";
+    const url =
+      typeof relate.relateurl === "string" ? relate.relateurl.trim() : "";
+    if (label || url) {
+      return { label: label || url, url: url || null };
+    }
+  }
+  return null;
+};
+
 const REVIEW_PAGE_SIZE = 6;
 
 export default function PerformanceDetailPage() {
@@ -101,6 +147,7 @@ export default function PerformanceDetailPage() {
   const [reviewPage, setReviewPage] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
 
@@ -312,6 +359,23 @@ export default function PerformanceDetailPage() {
     fetchReviewsPage();
   }, [reviewPage, performanceId, hasMoreReviews, user]);
 
+  const refreshReviewSummary = async () => {
+    const { data: ratings } = await supabase
+      .from("performance_reviews")
+      .select("rating")
+      .eq("performance_id", performanceId)
+      .is("deleted_at", null);
+
+    if (ratings && ratings.length > 0) {
+      const total = ratings.reduce((sum, row) => sum + row.rating, 0);
+      setReviewCount(ratings.length);
+      setReviewAverage(Math.round((total / ratings.length) * 10) / 10);
+    } else {
+      setReviewCount(0);
+      setReviewAverage(null);
+    }
+  };
+
   const handleToggleLike = async (reviewId: string) => {
     if (!user) {
       openLoginSheet();
@@ -354,6 +418,44 @@ export default function PerformanceDetailPage() {
         [reviewId]: Math.max(0, (prev[reviewId] ?? 1) - 1),
       }));
     }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!user || !deleteTargetId) return;
+    const { error } = await supabase
+      .from("performance_reviews")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", deleteTargetId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast("리뷰를 삭제하지 못했어요.");
+      return;
+    }
+
+    setReviews((prev) => prev.filter((review) => review.id !== deleteTargetId));
+    setLikeCounts((prev) => {
+      const next = { ...prev };
+      delete next[deleteTargetId];
+      return next;
+    });
+    setLikedMap((prev) => {
+      const next = { ...prev };
+      delete next[deleteTargetId];
+      return next;
+    });
+    setCommentCounts((prev) => {
+      const next = { ...prev };
+      delete next[deleteTargetId];
+      return next;
+    });
+    setReviewImages((prev) => {
+      const next = { ...prev };
+      delete next[deleteTargetId];
+      return next;
+    });
+    await refreshReviewSummary();
+    setDeleteTargetId(null);
   };
 
   return (
@@ -546,24 +648,83 @@ export default function PerformanceDetailPage() {
                           key={review.id}
                           className="rounded-lg border border-black/5 p-3 text-sm text-[#17171c]"
                         >
-                          <div className="flex items-center justify-between text-xs text-[#17171c]/60">
-                            <span>
-                              {profile?.nickname || "익명"} ·{" "}
-                              {formatDate(review.created_at)}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: 5 }, (_, index) => (
-                                <Star
-                                  key={`${review.id}-star-${index}`}
-                                  className={
-                                    index < review.rating
-                                      ? "h-4 w-4 text-[#ff273d]"
-                                      : "h-4 w-4 text-[#ff273d]"
-                                  }
-                                  fill={index < review.rating ? "#ff273d" : "none"}
-                                />
-                              ))}
+                          <div className="flex items-start justify-between gap-2 text-xs text-[#17171c]/60">
+                            <div>
+                              <span>
+                                {profile?.nickname || "익명"} ·{" "}
+                                {formatDate(review.created_at)}
+                              </span>
+                            <div className="mt-2 flex items-center gap-1">
+                              {Array.from({ length: 5 }, (_, index) => {
+                                const ratio = getStarFillRatio(
+                                  review.rating,
+                                  index + 1
+                                );
+                                return (
+                                  <div
+                                    key={`${review.id}-star-${index}`}
+                                    className="relative h-4 w-4"
+                                  >
+                                    <Star
+                                      className="h-4 w-4 text-[#ff273d]"
+                                      fill="none"
+                                    />
+                                    <div
+                                      className="absolute inset-0 overflow-hidden"
+                                      style={{ width: `${ratio * 100}%` }}
+                                    >
+                                      <Star
+                                        className="h-4 w-4 text-[#ff273d]"
+                                        fill="#ff273d"
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
+                            </div>
+                            {user?.id === review.user_id ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-[#17171c]/60"
+                                    aria-label="리뷰 메뉴"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  align="end"
+                                  className="w-36 p-1"
+                                >
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="w-full justify-start text-sm"
+                                    onClick={() =>
+                                      router.push(
+                                        `/performance/${detail.mt20id}/reviews/${review.id}/edit`
+                                      )
+                                    }
+                                  >
+                                    <PenLine className="mr-2 h-4 w-4" />
+                                    수정하기
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="w-full justify-start text-sm text-red-500 hover:text-red-500"
+                                    onClick={() => setDeleteTargetId(review.id)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    삭제하기
+                                  </Button>
+                                </PopoverContent>
+                              </Popover>
+                            ) : null}
                           </div>
                           <p className="mt-3 whitespace-pre-line text-sm text-[#17171c]">
                             {review.content || "내용이 없어요."}
@@ -621,18 +782,7 @@ export default function PerformanceDetailPage() {
                 </div>
               </section>
 
-              {detail.relates && detail.relates.length > 0 ? (
-                <section className="space-y-2 rounded-xl border border-black/5 bg-white p-4">
-                  <h3 className="text-sm font-semibold text-[#17171c]">
-                    예매처
-                  </h3>
-                  <div className="space-y-1 text-sm text-[#17171c]/70">
-                    {detail.relates.map((relate, index) => (
-                      <p key={`${detail.mt20id}-relate-${index}`}>{relate}</p>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+              {null}
             </div>
           </div>
         )}
@@ -643,6 +793,33 @@ export default function PerformanceDetailPage() {
         alt="소개 이미지 크게 보기"
         onClose={() => setViewerOpen(false)}
       />
+      <AlertDialog
+        open={Boolean(deleteTargetId)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>리뷰를 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              삭제하면 되돌릴 수 없어요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-2">
+            <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+            <AlertDialogAction
+              variant="outline"
+              className="flex-1 text-red-500 hover:text-red-500"
+              onClick={async () => {
+                await handleDeleteReview();
+              }}
+            >
+              삭제할게요
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MobileContainer>
   );
 }

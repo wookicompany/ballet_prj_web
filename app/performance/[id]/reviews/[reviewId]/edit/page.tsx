@@ -35,10 +35,16 @@ type PreviewItem = {
   url: string;
 };
 
-export default function PerformanceReviewNewPage() {
+type ExistingImage = {
+  id: string;
+  url: string;
+};
+
+export default function PerformanceReviewEditPage() {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; reviewId: string }>();
   const performanceId = params.id;
+  const reviewId = params.reviewId;
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -46,9 +52,11 @@ export default function PerformanceReviewNewPage() {
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
   const [mediaItems, setMediaItems] = useState<PreviewItem[]>([]);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  const canUploadMore = mediaItems.length < MAX_IMAGES;
+  const canUploadMore = mediaItems.length + existingImages.length < MAX_IMAGES;
 
   useEffect(() => {
     return () => {
@@ -56,10 +64,53 @@ export default function PerformanceReviewNewPage() {
     };
   }, [mediaItems]);
 
+  useEffect(() => {
+    const fetchReview = async () => {
+      if (loading) return;
+      if (!user) {
+        openLoginSheet();
+        return;
+      }
+      const { data: review, error } = await supabase
+        .from("performance_reviews")
+        .select("id,rating,content,user_id")
+        .eq("id", reviewId)
+        .eq("performance_id", performanceId)
+        .single();
+
+      if (error || !review) {
+        toast("리뷰 정보를 불러오지 못했어요.");
+        router.replace(`/performance/${performanceId}`);
+        return;
+      }
+
+      if (review.user_id !== user.id) {
+        toast("내 리뷰만 수정할 수 있어요.");
+        router.replace(`/performance/${performanceId}`);
+        return;
+      }
+
+      setRating(review.rating);
+      setContent(review.content ?? "");
+
+      const { data: images } = await supabase
+        .from("performance_review_images")
+        .select("id,url")
+        .eq("review_id", reviewId);
+      setExistingImages((images ?? []) as ExistingImage[]);
+      setFetching(false);
+    };
+
+    fetchReview();
+  }, [reviewId, performanceId, user, loading, openLoginSheet, router]);
+
   const handleSelectFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > MAX_IMAGE_SIZE || mediaItems.length >= MAX_IMAGES) {
+    if (
+      file.size > MAX_IMAGE_SIZE ||
+      mediaItems.length + existingImages.length >= MAX_IMAGES
+    ) {
       event.target.value = "";
       return;
     }
@@ -69,13 +120,23 @@ export default function PerformanceReviewNewPage() {
     event.target.value = "";
   };
 
-  const handleRemove = (index: number) => {
+  const handleRemoveNew = (index: number) => {
     setMediaItems((prev) => {
       const next = [...prev];
       const removed = next.splice(index, 1);
       removed.forEach((item) => URL.revokeObjectURL(item.url));
       return next;
     });
+  };
+
+  const handleRemoveExisting = async (imageId: string) => {
+    if (!user) return;
+    await supabase
+      .from("performance_review_images")
+      .delete()
+      .eq("id", imageId)
+      .eq("user_id", user.id);
+    setExistingImages((prev) => prev.filter((item) => item.id !== imageId));
   };
 
   const handleSubmit = async () => {
@@ -89,26 +150,24 @@ export default function PerformanceReviewNewPage() {
     }
 
     setSaving(true);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("performance_reviews")
-      .insert({
-        performance_id: performanceId,
-        user_id: user.id,
+      .update({
         rating,
         content: content.trim() ? content.trim() : null,
       })
-      .select("id")
-      .single();
+      .eq("id", reviewId)
+      .eq("user_id", user.id);
 
-    if (error || !data) {
-      toast("리뷰 저장에 실패했습니다.");
+    if (error) {
+      toast("리뷰 수정에 실패했습니다.");
       setSaving(false);
       return;
     }
 
     if (mediaItems.length > 0) {
       for (const item of mediaItems) {
-        const path = `${user.id}/performance-reviews/${data.id}/${getSafeFileName(
+        const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(
           item.file
         )}`;
         const { error: uploadError } = await supabase.storage
@@ -121,7 +180,7 @@ export default function PerformanceReviewNewPage() {
           .from(BUCKET)
           .getPublicUrl(path);
         await supabase.from("performance_review_images").insert({
-          review_id: data.id,
+          review_id: reviewId,
           user_id: user.id,
           url: urlData.publicUrl,
         });
@@ -131,8 +190,7 @@ export default function PerformanceReviewNewPage() {
     router.replace(`/performance/${performanceId}`);
   };
 
-
-  if (loading) {
+  if (loading || fetching) {
     return (
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
@@ -147,7 +205,7 @@ export default function PerformanceReviewNewPage() {
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
           <p className="text-sm text-[#17171c]/70">
-            로그인하면 리뷰를 작성할 수 있어요.
+            로그인하면 리뷰를 수정할 수 있어요.
           </p>
           <Button
             type="button"
@@ -176,7 +234,7 @@ export default function PerformanceReviewNewPage() {
           >
             <ChevronLeft className="size-6" />
           </Button>
-          <h1 className="text-base font-semibold">리뷰 작성</h1>
+          <h1 className="text-base font-semibold">리뷰 수정</h1>
           <div className="w-9" />
         </header>
 
@@ -241,6 +299,26 @@ export default function PerformanceReviewNewPage() {
               >
                 <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
               </button>
+              {existingImages.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+                >
+                  <img
+                    src={item.url}
+                    alt="업로드 이미지"
+                    className="h-full w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                    onClick={() => handleRemoveExisting(item.id)}
+                    aria-label="사진 삭제"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
               {mediaItems.map((item, index) => (
                 <div
                   key={`${item.url}-${index}`}
@@ -254,7 +332,7 @@ export default function PerformanceReviewNewPage() {
                   <button
                     type="button"
                     className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                    onClick={() => handleRemove(index)}
+                    onClick={() => handleRemoveNew(index)}
                     aria-label="사진 삭제"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -280,7 +358,7 @@ export default function PerformanceReviewNewPage() {
             onClick={handleSubmit}
             disabled={saving}
           >
-            등록하기
+            수정하기
           </Button>
         </div>
       </main>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronRight, Info, Search } from "lucide-react";
+import { ChevronRight, Info, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -216,7 +216,7 @@ export default function PerformanceListPage() {
 
   const renderCard = (
     item: PerformanceItem,
-    options?: { badgeLabel?: string | null; metaLabel?: string | null }
+    options?: { badgeLabel?: string | null; metaLabel?: React.ReactNode }
   ) => {
     return (
       <button
@@ -258,7 +258,13 @@ export default function PerformanceListPage() {
 
   const popularCards = sections.popular.map((item) => {
     const rating = ratingMap[item.mt20id];
-    const ratingLabel = rating ? `평균 ★${rating.avg.toFixed(1)}` : null;
+    const ratingLabel = rating ? (
+      <span className="inline-flex items-center gap-1 text-[#ff273d]">
+        평균
+        <Star className="h-3 w-3 fill-current" />
+        {rating.avg.toFixed(1)}
+      </span>
+    ) : null;
     return renderCard(item, { metaLabel: ratingLabel });
   });
 
