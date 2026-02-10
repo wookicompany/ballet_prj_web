@@ -388,6 +388,32 @@ export type Database = {
           },
         ]
       }
+      performance_views: {
+        Row: {
+          created_at: string
+          id: string
+          performance_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          performance_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          performance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_views_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -623,6 +649,16 @@ export type Database = {
       }
     }
     Views: {
+      performance_engagement_summaries: {
+        Row: {
+          comment_count: number | null
+          like_count: number | null
+          performance_id: string | null
+          review_count: number | null
+          view_count: number | null
+        }
+        Relationships: []
+      }
       user_auth_providers: {
         Row: {
           created_at: string | null

@@ -29,6 +29,14 @@ type RatingSummary = {
   avg: number;
 };
 
+type EngagementSummary = {
+  performance_id: string;
+  view_count: number;
+  review_count: number;
+  like_count: number;
+  comment_count: number;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "날짜 미정";
   return value.replace(/-/g, ".");
@@ -69,12 +77,22 @@ export default function PerformanceListPage() {
     const baseSelect =
       "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
 
-    const { data: reviewRows, error: reviewError } = await supabase
-      .from("performance_reviews")
-      .select("performance_id,rating")
-      .is("deleted_at", null);
+    const [
+      { data: reviewRows, error: reviewError },
+      { data: engagementRows, error: engagementError },
+    ] = await Promise.all([
+      supabase
+        .from("performance_reviews")
+        .select("performance_id,rating")
+        .is("deleted_at", null),
+      supabase
+        .from("performance_engagement_summaries")
+        .select(
+          "performance_id,view_count,review_count,like_count,comment_count"
+        ),
+    ]);
 
-    if (reviewError) {
+    if (reviewError || engagementError) {
       shouldWarn = true;
     }
 
@@ -86,13 +104,28 @@ export default function PerformanceListPage() {
       ratingSummary[row.performance_id] = { count: nextCount, avg: nextAvg };
     });
 
-    const popularIds = Object.entries(ratingSummary)
-      .sort(
-        (a, b) =>
-          b[1].count - a[1].count || b[1].avg - a[1].avg
-      )
-      .map(([id]) => id)
-      .slice(0, 6);
+    const engagementList = (engagementRows ?? []) as EngagementSummary[];
+    const engagementScores = engagementList.map((item) => ({
+      id: item.performance_id,
+      score:
+        item.view_count +
+        item.review_count * 3 +
+        item.like_count * 2 +
+        item.comment_count * 2,
+    }));
+    const hasEngagement = engagementScores.some((item) => item.score > 0);
+    const popularIds = hasEngagement
+      ? engagementScores
+          .sort((a, b) => b.score - a.score)
+          .map((item) => item.id)
+          .slice(0, 6)
+      : Object.entries(ratingSummary)
+          .sort(
+            (a, b) =>
+              b[1].count - a[1].count || b[1].avg - a[1].avg
+          )
+          .map(([id]) => id)
+          .slice(0, 6);
 
     const popularQuery = popularIds.length
       ? supabase

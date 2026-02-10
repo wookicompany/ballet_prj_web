@@ -151,6 +151,7 @@ export default function PerformanceDetailPage() {
   const [storyExpanded, setStoryExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
+  const viewTrackedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -208,6 +209,13 @@ export default function PerformanceDetailPage() {
     };
 
     fetchDetail();
+  }, [performanceId]);
+
+  useEffect(() => {
+    if (!performanceId) return;
+    if (viewTrackedRef.current === performanceId) return;
+    viewTrackedRef.current = performanceId;
+    supabase.from("performance_views").insert({ performance_id: performanceId });
   }, [performanceId]);
 
   useEffect(() => {
