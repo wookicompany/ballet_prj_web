@@ -17,9 +17,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import ImageViewer from "@/components/ui/image-viewer";
 import FadeInImage from "@/components/ui/fade-in-image";
@@ -27,6 +32,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
   ChevronLeft,
+  Copy,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -196,7 +202,7 @@ export default function PerformanceDetailPage() {
           supabase
             .from("kopis_performance_details")
             .select(
-              "mt20id,prfcast,prfcrew,prfruntime,prfage,entrpsnm,entrpsnm_p,entrpsnm_a,entrpsnm_h,entrpsnm_s,pcseguidance,sty,child,dtguidance,styurls,relates"
+              "mt20id,mt10id,prfcast,prfcrew,prfruntime,prfage,entrpsnm,entrpsnm_p,entrpsnm_a,entrpsnm_h,entrpsnm_s,pcseguidance,sty,child,dtguidance,styurls,relates"
             )
             .eq("mt20id", performanceId)
             .maybeSingle(),
@@ -610,15 +616,15 @@ export default function PerformanceDetailPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            <section className="relative h-[380px] w-full overflow-hidden bg-black/5">
+            <section className="relative h-[380px] w-full overflow-hidden bg-[#17171c]">
               {detail.poster ? (
                 <>
                   <FadeInImage
                     src={detail.poster}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover blur-2xl"
+                    className="absolute inset-0 h-full w-full object-cover blur-2xl scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-white/5" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
                   <button
                     type="button"
                     className="absolute inset-0 h-full w-full"
@@ -636,16 +642,16 @@ export default function PerformanceDetailPage() {
                   </button>
                 </>
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-[#17171c]/50">
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">
                   포스터 이미지 없음
                 </div>
               )}
-              <header className="relative z-10 flex items-center justify-between px-4 pt-6">
+              <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/40 to-transparent px-4 pt-6 pb-12">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-lg"
-                  className="text-white/80"
+                  className="text-white hover:bg-white/10"
                   onClick={() => router.back()}
                   aria-label="뒤로"
                 >
@@ -655,25 +661,31 @@ export default function PerformanceDetailPage() {
               </header>
             </section>
 
-            <div className="space-y-4 px-4">
-              <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                <h1 className="text-base font-semibold text-[#17171c]">
+            <div className="space-y-5 px-4 pb-2">
+              <section className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+                <h1 className="text-lg font-semibold leading-snug text-[#17171c]">
                   {detail.prfnm || "공연명 미정"}
                 </h1>
-                <div className="mt-2 grid gap-1 text-xs text-[#17171c]/70">
+                <div className="mt-2 flex flex-col gap-0.5 text-sm text-[#17171c]/70">
                   <span>{formatDateRange(detail.prfpdfrom, detail.prfpdto)}</span>
                   <span>{formatOrFallback(detail.fcltynm, "공연장 정보 없음")}</span>
                 </div>
               </section>
-              <section className="space-y-4 rounded-xl border border-black/5 bg-white p-4 text-xs text-[#17171c]">
-                <div className="flex items-center justify-between">
-                  <div className="inline-flex rounded-full bg-black/5 p-1 text-[11px] text-[#17171c]/60">
+              <section className="space-y-4 rounded-2xl border border-black/5 bg-white p-5 text-xs text-[#17171c] shadow-sm">
+                <div className="flex w-full">
+                  <div className="relative flex w-full rounded-xl bg-black/5 p-1.5 text-xs text-[#17171c]/60">
+                    <div
+                      className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 ease-out"
+                      style={{
+                        left: infoTab === "facility" ? "calc(50% + 2px)" : "4px",
+                        width: "calc(50% - 6px)",
+                      }}
+                      aria-hidden
+                    />
                     <button
                       type="button"
-                      className={`rounded-full px-3 py-1 ${
-                        infoTab === "performance"
-                          ? "bg-white text-[#17171c] shadow-sm"
-                          : ""
+                      className={`relative z-10 flex-1 min-w-0 rounded-lg py-2.5 transition-colors duration-200 ${
+                        infoTab === "performance" ? "text-[#17171c]" : "text-[#17171c]/60"
                       }`}
                       onClick={() => setInfoTab("performance")}
                     >
@@ -681,21 +693,19 @@ export default function PerformanceDetailPage() {
                     </button>
                     <button
                       type="button"
-                      className={`rounded-full px-3 py-1 ${
-                        infoTab === "facility"
-                          ? "bg-white text-[#17171c] shadow-sm"
-                          : ""
+                      className={`relative z-10 flex-1 min-w-0 rounded-lg py-2.5 transition-colors duration-200 ${
+                        infoTab === "facility" ? "text-[#17171c]" : "text-[#17171c]/60"
                       }`}
                       onClick={() => setInfoTab("facility")}
                     >
-                      공연 시설
+                      공연 시설 정보
                     </button>
                   </div>
                 </div>
                 {infoTab === "performance" ? (
                   <>
-                    <div className="space-y-2 text-[#17171c]/70">
-                      {[
+                    {(() => {
+                      const perfItems = [
                         { label: "출연진", value: detail.prfcast },
                         { label: "제작진", value: detail.prfcrew },
                         { label: "러닝타임", value: detail.prfruntime },
@@ -712,43 +722,43 @@ export default function PerformanceDetailPage() {
                           label: item.label,
                           value: formatOptionalText(item.value),
                         }))
-                        .filter((item) => item.value)
-                        .map((item) => (
-                          <div
-                            key={item.label}
-                            className="grid grid-cols-[72px_1fr] gap-2"
-                          >
-                            <span className="text-[#17171c]/50">
-                              {item.label}
-                            </span>
-                            <span className="break-words">{item.value}</span>
-                          </div>
-                        ))}
-                      {![
-                        detail.prfcast,
-                        detail.prfcrew,
-                        detail.prfruntime,
-                        detail.prfage,
-                        detail.entrpsnm,
-                        detail.entrpsnmP,
-                        detail.entrpsnmA,
-                        detail.entrpsnmH,
-                        detail.entrpsnmS,
-                        detail.pcseguidance,
-                        detail.dtguidance,
-                      ]
-                        .map(formatOptionalText)
-                        .some(Boolean) ? (
-                        <p className="text-[#17171c]/50">정보 없음</p>
-                      ) : null}
-                    </div>
+                        .filter((item) => item.value);
+
+                      if (!perfItems.length) {
+                        return (
+                          <p className="text-xs text-[#17171c]/50">
+                            정보 없음
+                          </p>
+                        );
+                      }
+
+                      return (
+                        <Table>
+                          <TableBody className="text-[#17171c]/70 text-xs">
+                            {perfItems.map((item) => (
+                            <TableRow
+                              key={item.label}
+                              className="border-black/5 hover:bg-transparent"
+                            >
+                              <TableCell className="text-[#17171c]/50 py-2.5">
+                                {item.label}
+                              </TableCell>
+                              <TableCell className="whitespace-normal break-words py-2.5">
+                                {item.value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          </TableBody>
+                        </Table>
+                      );
+                    })()}
                     {formatOptionalText(detail.sty) ? (
                       <>
-                        <Separator className="bg-black/5" />
+                        <Separator className="my-4 bg-black/5" />
                         <div className="space-y-2">
-                          <h4 className="text-xs font-semibold">줄거리</h4>
+                          <h4 className="text-xs font-semibold text-[#17171c]">줄거리</h4>
                           <p
-                            className={`whitespace-pre-line text-xs text-[#17171c]/70 ${
+                            className={`whitespace-pre-line text-xs leading-relaxed text-[#17171c]/70 ${
                               storyExpanded ? "" : "line-clamp-3"
                             }`}
                           >
@@ -758,7 +768,7 @@ export default function PerformanceDetailPage() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="mt-1 w-full text-[11px] text-[#17171c]/60"
+                            className="mt-1 w-full text-xs text-[#17171c]/60"
                             onClick={() => setStoryExpanded((prev) => !prev)}
                           >
                             {storyExpanded ? "접기" : "더보기"}
@@ -768,112 +778,148 @@ export default function PerformanceDetailPage() {
                     ) : null}
                   </>
                 ) : (
-                  <div className="space-y-2 text-[#17171c]/70">
-                    {(() => {
-                      const facilityUrl = formatOptionalText(
-                        facilityDetail?.relateurl,
+                  (() => {
+                    const facilityUrl = formatOptionalText(
+                      facilityDetail?.relateurl,
+                    );
+                    const facilityUrlHref =
+                      facilityUrl && facilityUrl.startsWith("http")
+                        ? facilityUrl
+                        : facilityUrl
+                          ? `https://${facilityUrl}`
+                          : null;
+                    const items = [
+                      {
+                        label: "주소",
+                        value: formatOptionalText(facilityDetail?.adres),
+                      },
+                      {
+                        label: "전화번호",
+                        value: formatOptionalText(facilityDetail?.telno),
+                      },
+                      {
+                        label: "홈페이지",
+                        value: facilityUrlHref ? (
+                          <a
+                            href={facilityUrlHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="break-words text-[#17171c] underline underline-offset-2"
+                          >
+                            {facilityUrl}
+                          </a>
+                        ) : null,
+                      },
+                      {
+                        label: "주차장",
+                        value: toYesLabel(facilityDetail?.parkinglot),
+                      },
+                      {
+                        label: "레스토랑",
+                        value: toYesLabel(facilityDetail?.restaurant),
+                      },
+                      {
+                        label: "카페",
+                        value: toYesLabel(facilityDetail?.cafe),
+                      },
+                      {
+                        label: "편의점",
+                        value: toYesLabel(facilityDetail?.store),
+                      },
+                      {
+                        label: "놀이방",
+                        value: toYesLabel(facilityDetail?.nolibang),
+                      },
+                      {
+                        label: "수유실",
+                        value: toYesLabel(facilityDetail?.suyu),
+                      },
+                      {
+                        label: "장애시설-주차장",
+                        value: toYesLabel(facilityDetail?.parkbarrier),
+                      },
+                      {
+                        label: "장애시설-화장실",
+                        value: toYesLabel(facilityDetail?.restbarrier),
+                      },
+                      {
+                        label: "장애시설-경사로",
+                        value: toYesLabel(facilityDetail?.runwbarrier),
+                      },
+                      {
+                        label: "장애시설-엘리베이터",
+                        value: toYesLabel(facilityDetail?.elevbarrier),
+                      },
+                    ].filter((item) => item.value);
+
+                    if (!items.length) {
+                      return (
+                        <p className="text-xs text-[#17171c]/50">
+                          정보 없음
+                        </p>
                       );
-                      const facilityUrlHref =
-                        facilityUrl && facilityUrl.startsWith("http")
-                          ? facilityUrl
-                          : facilityUrl
-                            ? `https://${facilityUrl}`
-                            : null;
-                      const items = [
-                        {
-                          label: "주소",
-                          value: formatOptionalText(facilityDetail?.adres),
-                        },
-                        {
-                          label: "전화번호",
-                          value: formatOptionalText(facilityDetail?.telno),
-                        },
-                        {
-                          label: "홈페이지",
-                          value: facilityUrlHref ? (
-                            <a
-                              href={facilityUrlHref}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="break-words text-[#17171c] underline underline-offset-2"
+                    }
+
+                    return (
+                      <Table>
+                        <TableBody className="text-[#17171c]/70 text-xs">
+                          {items.map((item) => (
+                            <TableRow
+                              key={item.label}
+                              className="border-black/5 hover:bg-transparent"
                             >
-                              {facilityUrl}
-                            </a>
-                          ) : null,
-                        },
-                        {
-                          label: "주차장",
-                          value: toYesLabel(facilityDetail?.parkinglot),
-                        },
-                        {
-                          label: "레스토랑",
-                          value: toYesLabel(facilityDetail?.restaurant),
-                        },
-                        {
-                          label: "카페",
-                          value: toYesLabel(facilityDetail?.cafe),
-                        },
-                        {
-                          label: "편의점",
-                          value: toYesLabel(facilityDetail?.store),
-                        },
-                        {
-                          label: "놀이방",
-                          value: toYesLabel(facilityDetail?.nolibang),
-                        },
-                        {
-                          label: "수유실",
-                          value: toYesLabel(facilityDetail?.suyu),
-                        },
-                        {
-                          label: "장애시설-주차장",
-                          value: toYesLabel(facilityDetail?.parkbarrier),
-                        },
-                        {
-                          label: "장애시설-화장실",
-                          value: toYesLabel(facilityDetail?.restbarrier),
-                        },
-                        {
-                          label: "장애시설-경사로",
-                          value: toYesLabel(facilityDetail?.runwbarrier),
-                        },
-                        {
-                          label: "장애시설-엘리베이터",
-                          value: toYesLabel(facilityDetail?.elevbarrier),
-                        },
-                      ].filter((item) => item.value);
-
-                      if (!items.length) {
-                        return <p className="text-[#17171c]/50">정보 없음</p>;
-                      }
-
-                      return items.map((item) => (
-                        <div
-                          key={item.label}
-                          className="grid grid-cols-[96px_1fr] gap-2"
-                        >
-                          <span className="text-[#17171c]/50">
-                            {item.label}
-                          </span>
-                          <span className="break-words">{item.value}</span>
-                        </div>
-                      ));
-                    })()}
-                  </div>
+                              <TableCell className="text-[#17171c]/50 py-2.5">
+                                {item.label}
+                              </TableCell>
+                              <TableCell className="whitespace-normal break-words py-2.5">
+                                {item.label === "주소" &&
+                                typeof item.value === "string" ? (
+                                  <span className="inline-flex items-start gap-2">
+                                    <span className="min-w-0 flex-1 break-words">
+                                      {item.value}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="shrink-0 rounded p-1 text-[#17171c]/50 hover:bg-black/5 hover:text-[#17171c]"
+                                      onClick={() => {
+                                        navigator.clipboard
+                                          .writeText(item.value as string)
+                                          .then(() =>
+                                            toast("주소가 복사되었어요.")
+                                          )
+                                          .catch(() =>
+                                            toast("복사에 실패했어요.")
+                                          );
+                                      }}
+                                      aria-label="주소 복사"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </button>
+                                  </span>
+                                ) : (
+                                  item.value
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    );
+                  })()
                 )}
               </section>
 
               {detail.styurls && detail.styurls.length > 0 ? (
-                <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+                <section className="space-y-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
                   <h3 className="text-sm font-semibold text-[#17171c]">
                     소개 이미지
                   </h3>
-                  <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                  <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
                     {detail.styurls.map((url, index) => (
                       <button
                         key={`${detail.mt20id}-sty-${index}`}
-                      type="button"
-                        className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-black/5"
+                        type="button"
+                        className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-black/5 ring-1 ring-black/5"
                         onClick={() => {
                           setViewerUrl(url);
                           setViewerOpen(true);
@@ -891,14 +937,14 @@ export default function PerformanceDetailPage() {
                 </section>
               ) : null}
 
-              <section className="space-y-5 rounded-xl border border-black/5 bg-white p-4">
+              <section className="space-y-5 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[#17171c]">리뷰</h3>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 text-[#17171c]/70 hover:bg-black/5"
+                    className="h-9 w-9 rounded-lg p-0 text-[#17171c]/70 hover:bg-black/5"
                     onClick={() => {
                       if (!user) {
                         openLoginSheet();
@@ -914,14 +960,14 @@ export default function PerformanceDetailPage() {
                 <div className="flex items-center gap-2 text-sm text-[#17171c]/70">
                   {reviewAverage !== null ? (
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[#ff273d]">
+                      <span className="inline-flex items-center gap-1 font-medium text-[#ff273d]">
                         <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
                         {reviewAverage}점
                       </span>
-                      <span>• 리뷰 {reviewCount}개</span>
+                      <span>리뷰 {reviewCount}개</span>
                     </div>
                   ) : (
-                    <span>아직 리뷰가 없어요.</span>
+                    <span className="text-[#17171c]/60">아직 리뷰가 없어요. 첫 리뷰를 남겨 보세요.</span>
                   )}
                 </div>
                 <div className="space-y-4">
@@ -931,7 +977,7 @@ export default function PerformanceDetailPage() {
                       return (
                         <div
                           key={review.id}
-                          className="rounded-lg border border-black/5 p-3 text-sm text-[#17171c]"
+                          className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
                           role="button"
                           tabIndex={0}
                           onClick={() =>
@@ -948,13 +994,11 @@ export default function PerformanceDetailPage() {
                             }
                           }}
                         >
-                          <div className="flex items-start justify-between gap-2 text-xs text-[#17171c]/60">
-                            <div className="flex items-start gap-2">
-                              <span>
-                                {profile?.nickname || "익명"} ·{" "}
-                                {formatDate(review.created_at)}
-                              </span>
-                            </div>
+                          <div className="flex items-center justify-between gap-2 text-xs text-[#17171c]/60">
+                            <span>
+                              {profile?.nickname || "익명"} ·{" "}
+                              {formatDate(review.created_at)}
+                            </span>
                             {user?.id === review.user_id ? (
                               <Popover>
                                 <PopoverTrigger asChild>
@@ -962,7 +1006,7 @@ export default function PerformanceDetailPage() {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-[#17171c]/60"
+                                    className="h-8 w-8 shrink-0 text-[#17171c]/60"
                                     aria-label="리뷰 메뉴"
                                     onClick={(event) => event.stopPropagation()}
                                   >
@@ -1003,7 +1047,7 @@ export default function PerformanceDetailPage() {
                               </Popover>
                             ) : null}
                           </div>
-                          <div className="mt-2 flex items-center gap-1">
+                          <div className="mt-2.5 flex items-center gap-1">
                             {Array.from({ length: 5 }, (_, index) => {
                               const ratio = getStarFillRatio(
                                 review.rating,
@@ -1031,11 +1075,11 @@ export default function PerformanceDetailPage() {
                               );
                             })}
                           </div>
-                          <p className="mt-3 whitespace-pre-line text-sm text-[#17171c]">
+                          <p className="mt-2.5 whitespace-pre-line text-sm text-[#17171c]">
                             {review.content || "내용이 없어요."}
                           </p>
                           {reviewImages[review.id]?.length ? (
-                            <div className="mt-3 flex gap-2">
+                            <div className="mt-2.5 flex gap-2">
                               {reviewImages[review.id].slice(0, 3).map((url, index) => (
                                 <button
                                   key={`${review.id}-img-${index}`}
@@ -1057,7 +1101,7 @@ export default function PerformanceDetailPage() {
                               ))}
                             </div>
                           ) : null}
-                          <div className="mt-3 flex items-center gap-4 text-xs text-[#17171c]">
+                          <div className="mt-2.5 flex items-center gap-4 text-xs text-[#17171c]">
                             <button
                               type="button"
                               className="inline-flex items-center gap-1"
@@ -1083,11 +1127,11 @@ export default function PerformanceDetailPage() {
                     })
                   )}
                   {loadingReviews ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {Array.from({ length: 2 }).map((_, index) => (
                         <div
                           key={`loading-review-${index}`}
-                          className="rounded-lg border border-black/5 p-3"
+                          className="rounded-xl border border-black/5 bg-black/[0.02] p-4"
                         >
                           <Skeleton className="h-3 w-24" />
                           <Skeleton className="mt-2 h-3 w-full" />
