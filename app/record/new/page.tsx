@@ -18,6 +18,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
@@ -483,7 +484,7 @@ function RecordNewContent() {
                   key={`image-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <img
+                  <FadeInImage
                     src={item.url}
                     alt="업로드 사진"
                     className="h-full w-full object-contain"

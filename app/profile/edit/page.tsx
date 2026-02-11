@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { Camera, ChevronLeft, User } from "lucide-react";
 import { toast } from "sonner";
@@ -141,7 +142,7 @@ export default function ProfileEditPage() {
             <div className="relative">
               <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
                 {avatarUrl ? (
-                  <img
+                  <FadeInImage
                     src={avatarUrl}
                     alt="프로필 이미지"
                     className="h-full w-full object-cover"

@@ -22,6 +22,7 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
@@ -525,7 +526,7 @@ export default function PerformanceReviewDetailPage() {
             <div className="flex items-center gap-3">
               <div className="h-16 w-12 overflow-hidden rounded-lg border border-black/5 bg-black/5">
                 {performance.poster ? (
-                  <img
+                  <FadeInImage
                     src={performance.poster}
                     alt={`${performance.prfnm ?? "공연"} 포스터`}
                     className="h-full w-full object-cover"
@@ -588,7 +589,7 @@ export default function PerformanceReviewDetailPage() {
                     }}
                     aria-label="리뷰 이미지 크게 보기"
                   >
-                    <img
+                    <FadeInImage
                       src={url}
                       alt="리뷰 이미지"
                       className="h-full w-full object-contain"

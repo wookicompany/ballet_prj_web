@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -458,7 +459,7 @@ export default function PerformanceSearchPage() {
                 >
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                     {item.poster ? (
-                      <img
+                      <FadeInImage
                         src={item.poster}
                         alt={`${item.prfnm} 포스터`}
                         className="h-full w-full object-cover"

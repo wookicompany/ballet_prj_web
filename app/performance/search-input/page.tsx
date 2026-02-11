@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -444,7 +445,7 @@ export default function PerformanceSearchInputPage() {
                     className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/5"
                   >
                     {item.poster ? (
-                      <img
+                      <FadeInImage
                         src={item.poster}
                         alt={`${item.title} 포스터`}
                         className="h-full w-full object-cover"
@@ -484,7 +485,7 @@ export default function PerformanceSearchInputPage() {
               >
                 <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                   {item.poster ? (
-                    <img
+                    <FadeInImage
                       src={item.poster}
                       alt={`${item.prfnm} 포스터`}
                       className="h-full w-full object-cover"

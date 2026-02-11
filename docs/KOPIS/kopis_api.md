@@ -150,6 +150,10 @@ http://www.kopis.or.kr/openApi/restful/pblprfr/PF132236?service={SeriveKey}
 | prfruntime | 공연 런타임 | 1시간 30분 |
 | prfage | 공연 관람 연령 | 만 12세 이상 |
 | entrpsnm | 기획제작사 | 극단 피에로(문화제작소) |
+| entrpsnmP | 제작사 | 극단 피에로(문화제작소) |
+| entrpsnmA | 기획사 |  |
+| entrpsnmH | 주최 |  |
+| entrpsnmS | 주관 |  |
 | pcseguidance | 티켓가격 | 전석 30,000원 |
 | poster | 포스터이미지경로 | http://www.kopis.or.kr/upload/pfmPoster/PF_PF132236_160704_142630.gif |
 | area | 지역 | 서울특별시 |
@@ -252,8 +256,23 @@ http://www.kopis.or.kr/openApi/restful/prfplc?service={ServiceKey}&cpage=1&rows=
 | restaurant | 레스토랑 | Y |
 | cafe | 카페 | Y |
 | store | 편의점 | Y |
+| nolibang | 놀이방 | N |
+| suyu | 수유실 | N |
+| parkbarrier | 장애시설-주차장 | N |
+| restbarrier | 장애시설-화장실 | N |
+| runwbarrier | 장애시설-경사로 | N |
+| elevbarrier | 장애시설-엘리베이터 | N |
 | parkinglot | 주차시설 | Y |
 | mt13s | 공연장목록 |  |
+| prfplcnm | 공연장명 | KSPO DOME(체조경기장) |
+| mt13id | MT13_ID(고유식별ID) | FC001247-01 |
+| seatscale | 좌석규모 | 15,000 |
+| stageorchat | 무대시설_오케스트라피트(Y/N/Z/0) | N |
+| stagepracat | 무대시설_연습실 | Y |
+| stagedresat | 무대시설_분장실 | Y |
+| stageoutdrat | 무대시설_야외공연장 | N |
+| disabledseatscale | 장애인시설_관객석(N/000) | 20 |
+| stagearea | 무대시설_무대넓이(000/0X0/00.00) | 15.8X13.3X8.7 |
 
 ### 결과코드
 | 코드 | 설명 |

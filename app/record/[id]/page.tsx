@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { ChevronLeft, Menu, PenLine, Trash2 } from "lucide-react";
@@ -303,7 +304,7 @@ export default function RecordDetailPage() {
                           <source src={item.url} />
                         </video>
                       ) : (
-                        <img
+                        <FadeInImage
                           src={item.url}
                           alt="업로드 사진"
                           className="h-full w-full object-contain"
@@ -373,10 +374,11 @@ export default function RecordDetailPage() {
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
                   <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
-                    <img
+                    <FadeInImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
                       className="h-full w-full object-contain"
+                      loading="eager"
                     />
                   </div>
                 </div>

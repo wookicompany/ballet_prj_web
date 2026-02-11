@@ -1,4 +1,8 @@
+"use client";
+
 import { X } from "lucide-react";
+
+import FadeInImage from "@/components/ui/fade-in-image";
 
 type ImageViewerProps = {
   isOpen: boolean;
@@ -33,10 +37,11 @@ export default function ImageViewer({
       >
         <X className="h-5 w-5" />
       </button>
-      <img
+      <FadeInImage
         src={imageUrl}
         alt={alt ?? "이미지 상세 보기"}
         className="max-h-full max-w-full object-contain"
+        loading="eager"
       />
     </div>
   );

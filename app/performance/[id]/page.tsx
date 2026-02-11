@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
@@ -529,10 +530,9 @@ export default function PerformanceDetailPage() {
             <section className="relative h-[380px] w-full overflow-hidden bg-black/5">
               {detail.poster ? (
                 <>
-                  <img
+                  <FadeInImage
                     src={detail.poster}
                     alt=""
-                    aria-hidden="true"
                     className="absolute inset-0 h-full w-full object-cover blur-2xl"
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-white/5" />
@@ -545,7 +545,7 @@ export default function PerformanceDetailPage() {
                     }}
                     aria-label="포스터 이미지 크게 보기"
                   >
-                    <img
+                    <FadeInImage
                       src={detail.poster}
                       alt={`${detail.prfnm ?? "공연"} 포스터`}
                       className="h-full w-full object-contain"
@@ -672,7 +672,7 @@ export default function PerformanceDetailPage() {
                         }}
                         aria-label="소개 이미지 크게 보기"
                       >
-                        <img
+                        <FadeInImage
                           src={url}
                           alt="소개 이미지"
                           className="h-full w-full object-cover"
@@ -840,7 +840,7 @@ export default function PerformanceDetailPage() {
                                   }}
                                   aria-label="리뷰 이미지 크게 보기"
                                 >
-                                  <img
+                                  <FadeInImage
                                     src={url}
                                     alt="리뷰 이미지"
                                     className="h-full w-full object-contain"

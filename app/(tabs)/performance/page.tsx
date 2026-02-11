@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -255,7 +256,7 @@ export default function PerformanceListPage() {
             </Badge>
           ) : null}
           {item.poster ? (
-            <img
+            <FadeInImage
               src={item.poster}
               alt={`${item.prfnm} 포스터`}
               className="h-full w-full object-cover"
