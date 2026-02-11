@@ -28,7 +28,7 @@ export default function MoodSelector({
             }`}
             onClick={() => onChange(moodValue)}
           >
-            <span className="block aspect-square w-full rounded-full overflow-hidden p-2">
+            <span className="flex aspect-square w-full items-center justify-center rounded-full overflow-hidden p-2">
               <img
                 src={`/mood/cat-${moodValue}.svg`}
                 alt={`기분 ${moodValue}단계`}
