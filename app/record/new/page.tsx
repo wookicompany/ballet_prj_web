@@ -28,7 +28,16 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  Layers,
+  MapPin,
+  Plus,
+  UserRound,
+  X,
+} from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { toast } from "sonner";
 
@@ -101,6 +110,19 @@ type FormState = {
   improve_next: string;
 };
 
+type SavedLocation = {
+  id: string;
+  name: string;
+  address_base: string | null;
+  address_detail: string | null;
+};
+
+type SavedInstructorLevel = {
+  id: string;
+  instructor: string;
+  level: string;
+};
+
 function RecordNewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,6 +138,20 @@ function RecordNewContent() {
   const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
   const [barOrderInput, setBarOrderInput] = useState("");
   const [centerOrderInput, setCenterOrderInput] = useState("");
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const [instructorSheetOpen, setInstructorSheetOpen] = useState(false);
+  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
+  const [savedInstructorLevels, setSavedInstructorLevels] = useState<
+    SavedInstructorLevel[]
+  >([]);
+  const [savedLocationsLoading, setSavedLocationsLoading] = useState(false);
+  const [savedInstructorLoading, setSavedInstructorLoading] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null
+  );
+  const [selectedInstructorId, setSelectedInstructorId] = useState<
+    string | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
@@ -197,6 +233,98 @@ function RecordNewContent() {
     setValue("");
   };
 
+  const getAccessToken = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    let session = sessionData.session ?? null;
+    if (!session) {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      session = refreshData.session ?? null;
+    }
+    if (!session) {
+      openLoginSheet();
+      return null;
+    }
+    return session.access_token;
+  };
+
+  const fetchSavedLocations = async () => {
+    if (!user) return;
+    setSavedLocationsLoading(true);
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setSavedLocationsLoading(false);
+      return;
+    }
+    const response = await fetch("/api/saved-locations", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      setSavedLocationsLoading(false);
+      toast("저장된 장소를 불러오지 못했어요.");
+      return;
+    }
+    const payload = (await response.json()) as { items: SavedLocation[] };
+    setSavedLocations(payload.items ?? []);
+    setSavedLocationsLoading(false);
+  };
+
+  const fetchSavedInstructorLevels = async () => {
+    if (!user) return;
+    setSavedInstructorLoading(true);
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setSavedInstructorLoading(false);
+      return;
+    }
+    const response = await fetch("/api/saved-instructor-levels", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      setSavedInstructorLoading(false);
+      toast("저장된 강사님 & 레벨을 불러오지 못했어요.");
+      return;
+    }
+    const payload = (await response.json()) as {
+      items: SavedInstructorLevel[];
+    };
+    setSavedInstructorLevels(payload.items ?? []);
+    setSavedInstructorLoading(false);
+  };
+
+  const handleApplyLocation = () => {
+    const selected = savedLocations.find((item) => item.id === selectedLocationId);
+    if (!selected) {
+      toast("선택된 장소가 없어요.");
+      return;
+    }
+    setShowLocation(true);
+    setLocationName(selected.name);
+    setLocationBase(selected.address_base ?? "");
+    setLocationDetail(selected.address_detail ?? "");
+    setLocationSheetOpen(false);
+  };
+
+  const handleApplyInstructorLevel = () => {
+    const selected = savedInstructorLevels.find(
+      (item) => item.id === selectedInstructorId
+    );
+    if (!selected) {
+      toast("선택된 강사님 & 레벨이 없어요.");
+      return;
+    }
+    setShowLevelInstructor(true);
+    setForm((prev) => ({
+      ...prev,
+      instructor: selected.instructor,
+      level: selected.level,
+    }));
+    setInstructorSheetOpen(false);
+  };
+
   useEffect(() => {
     const dateParam = searchParams.get("date");
     const isValidParam =
@@ -213,6 +341,18 @@ function RecordNewContent() {
       day: baseDate.getDate(),
     });
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!locationSheetOpen) return;
+    setSelectedLocationId(null);
+    void fetchSavedLocations();
+  }, [locationSheetOpen, user]);
+
+  useEffect(() => {
+    if (!instructorSheetOpen) return;
+    setSelectedInstructorId(null);
+    void fetchSavedInstructorLevels();
+  }, [instructorSheetOpen, user]);
 
   useEffect(() => {
     if (!dateSheetOpen) return;
@@ -651,7 +791,7 @@ function RecordNewContent() {
                 </span>
               </div>
               <Input
-                className="mt-2 text-sm"
+                className="mt-2 h-12 text-base"
                 maxLength={16}
                 value={form.content}
                 onChange={(event) =>
@@ -669,7 +809,7 @@ function RecordNewContent() {
                 오늘 잘했던 점을 남겨볼까요?
               </Label>
               <Textarea
-                className="mt-2 text-sm"
+                className="mt-2 min-h-[120px] text-base"
                 rows={3}
                 value={form.did_well}
                 onChange={(event) =>
@@ -682,7 +822,7 @@ function RecordNewContent() {
                 다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
-                className="mt-2 text-sm"
+                className="mt-2 min-h-[120px] text-base"
                 rows={3}
                 value={form.improve_next}
                 onChange={(event) =>
@@ -776,7 +916,7 @@ function RecordNewContent() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="text-sm placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-base"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={barOrderInput}
                     onChange={(event) => setBarOrderInput(event.target.value)}
@@ -877,7 +1017,7 @@ function RecordNewContent() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="text-sm placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-base"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={centerOrderInput}
                     onChange={(event) => setCenterOrderInput(event.target.value)}
@@ -917,10 +1057,21 @@ function RecordNewContent() {
             </div>
             {showLocation ? (
               <div className="space-y-2">
-                <Label className="text-xs text-[#17171c]/60">장소</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-[#17171c]/60">장소</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs text-[#17171c]/70"
+                    onClick={() => setLocationSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
+                </div>
                 <Input
                   type="text"
-                  className="text-sm placeholder:text-xs"
+                  className="h-12 text-base placeholder:text-base"
                   placeholder="장소 이름을 입력해 주세요"
                   value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
@@ -935,7 +1086,7 @@ function RecordNewContent() {
                 </Button>
                 <Input
                   type="text"
-                  className="text-sm placeholder:text-xs"
+                  className="h-12 text-base placeholder:text-base"
                   placeholder="상세 주소를 입력해 주세요 (선택사항)"
                   value={locationDetail}
                   onChange={(event) => setLocationDetail(event.target.value)}
@@ -962,35 +1113,54 @@ function RecordNewContent() {
                 htmlFor="level-instructor-options"
                 className="text-xs text-[#17171c]/70"
               >
-                강사 &amp; 레벨 입력
+                강사님 &amp; 레벨 입력
               </Label>
             </div>
             {showLevelInstructor ? (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">강사</Label>
-                  <Input
-                    type="text"
-                    className="mt-2"
-                    value={form.instructor}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        instructor: event.target.value,
-                      }))
-                    }
-                  />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-[#17171c]/60">
+                    강사님 &amp; 레벨
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs text-[#17171c]/70"
+                    onClick={() => setInstructorSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                  <Input
-                    type="text"
-                    className="mt-2"
-                    value={form.level}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, level: event.target.value }))
-                    }
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">강사님</Label>
+                    <Input
+                      type="text"
+                      className="mt-2 h-12 text-base"
+                      value={form.instructor}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          instructor: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#17171c]/60">레벨</Label>
+                    <Input
+                      type="text"
+                      className="mt-2 h-12 text-base"
+                      value={form.level}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          level: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -1243,6 +1413,150 @@ function RecordNewContent() {
                 }));
                 setEndSheetOpen(false);
               }}
+            >
+              적용하기
+            </Button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={locationSheetOpen}
+          onOpenChange={setLocationSheetOpen}
+          title="저장된 장소 불러오기"
+        >
+          <div className="space-y-3">
+            {savedLocationsLoading ? (
+              <div className="flex min-h-[120px] items-center justify-center">
+                <Spinner size="lg" />
+              </div>
+            ) : savedLocations.length === 0 ? (
+              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+                <p className="text-sm text-[#17171c]/70">
+                  저장된 장소가 아직 없어요.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() => router.push("/calendar/settings/locations")}
+                >
+                  추가하러 가기
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {savedLocations.map((item) => {
+                  const selected = item.id === selectedLocationId;
+                  return (
+                    <Button
+                      key={item.id}
+                      type="button"
+                      variant="outline"
+                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                        selected
+                          ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedLocationId(item.id)}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4" />
+                          {item.name}
+                        </div>
+                        {item.address_base || item.address_detail ? (
+                          <p className="text-xs text-[#17171c]/70">
+                            {item.address_base}
+                            {item.address_detail
+                              ? ` ${item.address_detail}`
+                              : ""}
+                          </p>
+                        ) : null}
+                      </div>
+                      {selected ? (
+                        <Check className="h-4 w-4 text-[#17171c]" />
+                      ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            <Button
+              type="button"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleApplyLocation}
+              disabled={!selectedLocationId}
+            >
+              적용하기
+            </Button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={instructorSheetOpen}
+          onOpenChange={setInstructorSheetOpen}
+          title="저장된 강사님 & 레벨 불러오기"
+        >
+          <div className="space-y-3">
+            {savedInstructorLoading ? (
+              <div className="flex min-h-[120px] items-center justify-center">
+                <Spinner size="lg" />
+              </div>
+            ) : savedInstructorLevels.length === 0 ? (
+              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+                <p className="text-sm text-[#17171c]/70">
+                  저장된 강사님 & 레벨이 아직 없어요.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    router.push("/calendar/settings/instructor-levels")
+                  }
+                >
+                  추가하러 가기
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {savedInstructorLevels.map((item) => {
+                  const selected = item.id === selectedInstructorId;
+                  return (
+                    <Button
+                      key={item.id}
+                      type="button"
+                      variant="outline"
+                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                        selected
+                          ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedInstructorId(item.id)}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <UserRound className="h-4 w-4" />
+                          {item.instructor}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-[#17171c]/70">
+                          <Layers className="h-3.5 w-3.5" />
+                          {item.level}
+                        </div>
+                      </div>
+                      {selected ? (
+                        <Check className="h-4 w-4 text-[#17171c]" />
+                      ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            <Button
+              type="button"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleApplyInstructorLevel}
+              disabled={!selectedInstructorId}
             >
               적용하기
             </Button>

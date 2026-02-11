@@ -360,7 +360,7 @@ export default function PerformanceSearchInputPage() {
                 setDraft((prev) => ({ ...prev, keyword: event.target.value }))
               }
               placeholder="공연명이나 출연진을 검색해요"
-              className="h-12 rounded-2xl border border-black/5 bg-white pl-9 text-sm shadow-sm"
+              className="h-12 rounded-2xl border border-black/5 bg-white pl-9 text-base shadow-sm"
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onKeyDown={(event) => {

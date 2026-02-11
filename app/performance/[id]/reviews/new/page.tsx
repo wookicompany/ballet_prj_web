@@ -249,7 +249,7 @@ export default function PerformanceReviewNewPage() {
             <Textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              className="min-h-[160px] border-black/5 bg-[#fafafa] text-sm"
+              className="min-h-[200px] border-black/5 bg-[#fafafa] text-base"
               maxLength={300}
             />
           </section>

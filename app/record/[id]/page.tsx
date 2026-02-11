@@ -350,7 +350,7 @@ export default function RecordDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 {record.instructor ? (
                   <div>
-                    <Label className="text-xs text-[#17171c]/60">강사</Label>
+                <Label className="text-xs text-[#17171c]/60">강사님</Label>
                     <div className="mt-2 text-sm text-[#17171c]">
                       {record.instructor}
                     </div>

@@ -14,6 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
+      kopis_facilities: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          fcltychartr: string | null
+          fcltynm: string | null
+          gugunnm: string | null
+          is_active: boolean | null
+          mt10id: string
+          mt13cnt: number | null
+          opende: string | null
+          sidonm: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          gugunnm?: string | null
+          is_active?: boolean | null
+          mt10id: string
+          mt13cnt?: number | null
+          opende?: string | null
+          sidonm?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          gugunnm?: string | null
+          is_active?: boolean | null
+          mt10id?: string
+          mt13cnt?: number | null
+          opende?: string | null
+          sidonm?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      kopis_facility_details: {
+        Row: {
+          adres: string | null
+          cafe: string | null
+          created_at: string | null
+          deleted_at: string | null
+          elevbarrier: string | null
+          fcltychartr: string | null
+          fcltynm: string | null
+          is_active: boolean | null
+          la: number | null
+          lo: number | null
+          mt10id: string
+          mt13cnt: number | null
+          mt13s: Json | null
+          nolibang: string | null
+          opende: string | null
+          parkbarrier: string | null
+          parkinglot: string | null
+          relateurl: string | null
+          restaurant: string | null
+          restbarrier: string | null
+          runwbarrier: string | null
+          seatscale: string | null
+          store: string | null
+          suyu: string | null
+          telno: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          adres?: string | null
+          cafe?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          elevbarrier?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          is_active?: boolean | null
+          la?: number | null
+          lo?: number | null
+          mt10id: string
+          mt13cnt?: number | null
+          mt13s?: Json | null
+          nolibang?: string | null
+          opende?: string | null
+          parkbarrier?: string | null
+          parkinglot?: string | null
+          relateurl?: string | null
+          restaurant?: string | null
+          restbarrier?: string | null
+          runwbarrier?: string | null
+          seatscale?: string | null
+          store?: string | null
+          suyu?: string | null
+          telno?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          adres?: string | null
+          cafe?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          elevbarrier?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          is_active?: boolean | null
+          la?: number | null
+          lo?: number | null
+          mt10id?: string
+          mt13cnt?: number | null
+          mt13s?: Json | null
+          nolibang?: string | null
+          opende?: string | null
+          parkbarrier?: string | null
+          parkinglot?: string | null
+          relateurl?: string | null
+          restaurant?: string | null
+          restbarrier?: string | null
+          runwbarrier?: string | null
+          seatscale?: string | null
+          store?: string | null
+          suyu?: string | null
+          telno?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       kopis_performance_details: {
         Row: {
           area: string | null
@@ -137,6 +266,13 @@ export type Database = {
             referencedRelation: "kopis_performances"
             referencedColumns: ["mt20id"]
           },
+          {
+            foreignKeyName: "kopis_performance_details_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: true
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
         ]
       }
       kopis_performances: {
@@ -186,135 +322,6 @@ export type Database = {
           prfpdfrom?: string | null
           prfpdto?: string | null
           prfstate?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      kopis_facilities: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          fcltychartr: string | null
-          fcltynm: string | null
-          gugunnm: string | null
-          is_active: boolean
-          mt10id: string
-          mt13cnt: number | null
-          opende: string | null
-          sidonm: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          fcltychartr?: string | null
-          fcltynm?: string | null
-          gugunnm?: string | null
-          is_active?: boolean
-          mt10id: string
-          mt13cnt?: number | null
-          opende?: string | null
-          sidonm?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          fcltychartr?: string | null
-          fcltynm?: string | null
-          gugunnm?: string | null
-          is_active?: boolean
-          mt10id?: string
-          mt13cnt?: number | null
-          opende?: string | null
-          sidonm?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      kopis_facility_details: {
-        Row: {
-          adres: string | null
-          cafe: string | null
-          created_at: string
-          deleted_at: string | null
-          elevbarrier: string | null
-          fcltychartr: string | null
-          fcltynm: string | null
-          is_active: boolean
-          la: number | null
-          lo: number | null
-          mt10id: string
-          mt13cnt: number | null
-          mt13s: Json | null
-          nolibang: string | null
-          opende: string | null
-          parkinglot: string | null
-          parkbarrier: string | null
-          relateurl: string | null
-          restaurant: string | null
-          restbarrier: string | null
-          runwbarrier: string | null
-          seatscale: string | null
-          store: string | null
-          suyu: string | null
-          telno: string | null
-          updated_at: string
-        }
-        Insert: {
-          adres?: string | null
-          cafe?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          elevbarrier?: string | null
-          fcltychartr?: string | null
-          fcltynm?: string | null
-          is_active?: boolean
-          la?: number | null
-          lo?: number | null
-          mt10id: string
-          mt13cnt?: number | null
-          mt13s?: Json | null
-          nolibang?: string | null
-          opende?: string | null
-          parkinglot?: string | null
-          parkbarrier?: string | null
-          relateurl?: string | null
-          restaurant?: string | null
-          restbarrier?: string | null
-          runwbarrier?: string | null
-          seatscale?: string | null
-          store?: string | null
-          suyu?: string | null
-          telno?: string | null
-          updated_at?: string
-        }
-        Update: {
-          adres?: string | null
-          cafe?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          elevbarrier?: string | null
-          fcltychartr?: string | null
-          fcltynm?: string | null
-          is_active?: boolean
-          la?: number | null
-          lo?: number | null
-          mt10id?: string
-          mt13cnt?: number | null
-          mt13s?: Json | null
-          nolibang?: string | null
-          opende?: string | null
-          parkinglot?: string | null
-          parkbarrier?: string | null
-          relateurl?: string | null
-          restaurant?: string | null
-          restbarrier?: string | null
-          runwbarrier?: string | null
-          seatscale?: string | null
-          store?: string | null
-          suyu?: string | null
-          telno?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -509,6 +516,13 @@ export type Database = {
             referencedColumns: ["mt20id"]
           },
           {
+            foreignKeyName: "performance_reviews_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
+          {
             foreignKeyName: "performance_reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -540,6 +554,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kopis_performances"
             referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "performance_views_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
           },
         ]
       }
@@ -693,6 +714,79 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_instructor_levels: {
+        Row: {
+          created_at: string
+          id: string
+          instructor: string
+          level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instructor: string
+          level: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instructor?: string
+          level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_instructor_levels_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_locations: {
+        Row: {
+          address_base: string | null
+          address_detail: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_base?: string | null
+          address_detail?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_base?: string | null
+          address_detail?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_locations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_auth_providers"

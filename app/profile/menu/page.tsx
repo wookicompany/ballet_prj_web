@@ -24,6 +24,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Database,
   LogOut,
   MessageCircle,
   ShieldCheck,
@@ -126,6 +127,18 @@ export default function ProfileMenuPage() {
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <Calendar className="h-5 w-5 text-[#17171c]/70" />
               캘린더 설정
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/profile/data-management")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <Database className="h-5 w-5 text-[#17171c]/70" />
+              데이터 관리
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>

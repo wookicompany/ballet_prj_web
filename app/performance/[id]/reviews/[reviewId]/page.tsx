@@ -639,7 +639,7 @@ export default function PerformanceReviewDetailPage() {
                   event.currentTarget.blur();
                 }
               }}
-              className="h-10 min-h-10 flex-1 resize-none rounded-md border border-black/5 bg-white p-2 text-sm placeholder:text-sm text-[#17171c] focus:outline-none"
+              className="h-14 min-h-14 flex-1 resize-none rounded-md border border-black/5 bg-white p-3 text-base placeholder:text-base text-[#17171c] focus:outline-none"
               maxLength={300}
               placeholder="댓글을 입력해 주세요."
             />
@@ -716,7 +716,7 @@ export default function PerformanceReviewDetailPage() {
                           onChange={(event) =>
                             setEditingCommentContent(event.target.value)
                           }
-                          className="min-h-[80px] w-full rounded-md border border-black/5 bg-white p-3 text-sm text-[#17171c] focus:outline-none"
+                          className="min-h-[120px] w-full rounded-md border border-black/5 bg-white p-3 text-base text-[#17171c] focus:outline-none"
                           maxLength={300}
                         />
                         <div className="flex gap-2">
