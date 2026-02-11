@@ -190,6 +190,135 @@ export type Database = {
         }
         Relationships: []
       }
+      kopis_facilities: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          fcltychartr: string | null
+          fcltynm: string | null
+          gugunnm: string | null
+          is_active: boolean
+          mt10id: string
+          mt13cnt: number | null
+          opende: string | null
+          sidonm: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          gugunnm?: string | null
+          is_active?: boolean
+          mt10id: string
+          mt13cnt?: number | null
+          opende?: string | null
+          sidonm?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          gugunnm?: string | null
+          is_active?: boolean
+          mt10id?: string
+          mt13cnt?: number | null
+          opende?: string | null
+          sidonm?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kopis_facility_details: {
+        Row: {
+          adres: string | null
+          cafe: string | null
+          created_at: string
+          deleted_at: string | null
+          elevbarrier: string | null
+          fcltychartr: string | null
+          fcltynm: string | null
+          is_active: boolean
+          la: number | null
+          lo: number | null
+          mt10id: string
+          mt13cnt: number | null
+          mt13s: Json | null
+          nolibang: string | null
+          opende: string | null
+          parkinglot: string | null
+          parkbarrier: string | null
+          relateurl: string | null
+          restaurant: string | null
+          restbarrier: string | null
+          runwbarrier: string | null
+          seatscale: string | null
+          store: string | null
+          suyu: string | null
+          telno: string | null
+          updated_at: string
+        }
+        Insert: {
+          adres?: string | null
+          cafe?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          elevbarrier?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          is_active?: boolean
+          la?: number | null
+          lo?: number | null
+          mt10id: string
+          mt13cnt?: number | null
+          mt13s?: Json | null
+          nolibang?: string | null
+          opende?: string | null
+          parkinglot?: string | null
+          parkbarrier?: string | null
+          relateurl?: string | null
+          restaurant?: string | null
+          restbarrier?: string | null
+          runwbarrier?: string | null
+          seatscale?: string | null
+          store?: string | null
+          suyu?: string | null
+          telno?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adres?: string | null
+          cafe?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          elevbarrier?: string | null
+          fcltychartr?: string | null
+          fcltynm?: string | null
+          is_active?: boolean
+          la?: number | null
+          lo?: number | null
+          mt10id?: string
+          mt13cnt?: number | null
+          mt13s?: Json | null
+          nolibang?: string | null
+          opende?: string | null
+          parkinglot?: string | null
+          parkbarrier?: string | null
+          relateurl?: string | null
+          restaurant?: string | null
+          restbarrier?: string | null
+          runwbarrier?: string | null
+          seatscale?: string | null
+          store?: string | null
+          suyu?: string | null
+          telno?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       performance_review_comment_likes: {
         Row: {
           comment_id: string

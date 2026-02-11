@@ -58,6 +58,41 @@ type KopisDetailItem = {
   relates?: { relate?: unknown } | unknown[] | string;
 };
 
+type KopisFacilityListItem = {
+  fcltynm?: string;
+  mt10id?: string;
+  mt13cnt?: string;
+  fcltychartr?: string;
+  sidonm?: string;
+  gugunnm?: string;
+  opende?: string;
+};
+
+type KopisFacilityDetailItem = {
+  fcltynm?: string;
+  mt10id?: string;
+  mt13cnt?: string;
+  fcltychartr?: string;
+  opende?: string;
+  seatscale?: string;
+  telno?: string;
+  relateurl?: string;
+  adres?: string;
+  la?: string;
+  lo?: string;
+  restaurant?: string;
+  cafe?: string;
+  store?: string;
+  nolibang?: string;
+  suyu?: string;
+  parkbarrier?: string;
+  restbarrier?: string;
+  runwbarrier?: string;
+  elevbarrier?: string;
+  parkinglot?: string;
+  mt13s?: { mt13?: unknown } | unknown[] | unknown;
+};
+
 type KopisListResponse = {
   dbs?: {
     db?: KopisListItem | KopisListItem[];
@@ -67,6 +102,18 @@ type KopisListResponse = {
 type KopisDetailResponse = {
   dbs?: {
     db?: KopisDetailItem | KopisDetailItem[];
+  };
+};
+
+type KopisFacilityListResponse = {
+  dbs?: {
+    db?: KopisFacilityListItem | KopisFacilityListItem[];
+  };
+};
+
+type KopisFacilityDetailResponse = {
+  dbs?: {
+    db?: KopisFacilityDetailItem | KopisFacilityDetailItem[];
   };
 };
 
@@ -83,6 +130,13 @@ const parseKopisDateTime = (value?: string | null) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
+};
+
+const parseKopisNumber = (value?: string | null) => {
+  if (!value) return null;
+  const normalized = String(value).replace(/,/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
 };
 
 const normalizeArray = <T>(value: T | T[] | undefined | null) => {
@@ -120,6 +174,30 @@ const buildListUrl = ({
 
 const buildDetailUrl = (serviceKey: string, performanceId: string) =>
   `${KOPIS_BASE_URL}/pblprfr/${performanceId}?service=${serviceKey}`;
+
+const buildFacilityListUrl = ({
+  serviceKey,
+  page,
+  rows,
+  afterdate,
+}: {
+  serviceKey: string;
+  page: number;
+  rows: number;
+  afterdate?: string;
+}) => {
+  const url = new URL(`${KOPIS_BASE_URL}/prfplc`);
+  url.searchParams.set("service", serviceKey);
+  url.searchParams.set("cpage", String(page));
+  url.searchParams.set("rows", String(rows));
+  if (afterdate) {
+    url.searchParams.set("afterdate", afterdate);
+  }
+  return url.toString();
+};
+
+const buildFacilityDetailUrl = (serviceKey: string, facilityId: string) =>
+  `${KOPIS_BASE_URL}/prfplc/${facilityId}?service=${serviceKey}`;
 
 const parseXml = <T>(xml: string): T => xmlParser.parse(xml) as T;
 
@@ -159,6 +237,38 @@ export const fetchKopisDetail = async (
   return detail ?? null;
 };
 
+export const fetchKopisFacilityListPage = async ({
+  serviceKey,
+  page,
+  rows,
+  afterdate,
+}: {
+  serviceKey: string;
+  page: number;
+  rows: number;
+  afterdate?: string;
+}) => {
+  const url = buildFacilityListUrl({ serviceKey, page, rows, afterdate });
+  const response = await fetch(url, { cache: "no-store" });
+  const xml = await response.text();
+  const data = parseXml<KopisFacilityListResponse>(xml);
+  const list = normalizeArray(data?.dbs?.db);
+  return list.filter((item) => item?.mt10id);
+};
+
+export const fetchKopisFacilityDetail = async (
+  serviceKey: string,
+  facilityId: string,
+) => {
+  const response = await fetch(buildFacilityDetailUrl(serviceKey, facilityId), {
+    cache: "no-store",
+  });
+  const xml = await response.text();
+  const data = parseXml<KopisFacilityDetailResponse>(xml);
+  const detail = normalizeArray(data?.dbs?.db)[0];
+  return detail ?? null;
+};
+
 export const mapKopisListItem = (item: KopisListItem) => ({
   mt20id: item.mt20id ?? null,
   prfnm: item.prfnm ?? null,
@@ -170,6 +280,18 @@ export const mapKopisListItem = (item: KopisListItem) => ({
   genrenm: item.genrenm ?? null,
   openrun: item.openrun ?? null,
   prfstate: item.prfstate ?? null,
+  is_active: true,
+  updated_at: new Date().toISOString(),
+});
+
+export const mapKopisFacilityListItem = (item: KopisFacilityListItem) => ({
+  mt10id: item.mt10id ?? null,
+  fcltynm: item.fcltynm ?? null,
+  mt13cnt: parseKopisNumber(item.mt13cnt),
+  fcltychartr: item.fcltychartr ?? null,
+  sidonm: item.sidonm ?? null,
+  gugunnm: item.gugunnm ?? null,
+  opende: item.opende ?? null,
   is_active: true,
   updated_at: new Date().toISOString(),
 });
@@ -223,6 +345,43 @@ export const mapKopisDetailItem = (item: KopisDetailItem) => {
     mt10id: item.mt10id ?? null,
     dtguidance: item.dtguidance ?? null,
     relates: relatesList,
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  };
+};
+
+export const mapKopisFacilityDetailItem = (item: KopisFacilityDetailItem) => {
+  const mt13List = normalizeArray(
+    Array.isArray(item.mt13s)
+      ? item.mt13s
+      : typeof item.mt13s === "object" && item.mt13s !== null
+        ? (item.mt13s as { mt13?: unknown }).mt13
+        : item.mt13s,
+  );
+
+  return {
+    mt10id: item.mt10id ?? null,
+    fcltynm: item.fcltynm ?? null,
+    mt13cnt: parseKopisNumber(item.mt13cnt),
+    fcltychartr: item.fcltychartr ?? null,
+    opende: item.opende ?? null,
+    seatscale: item.seatscale ?? null,
+    telno: item.telno ?? null,
+    relateurl: item.relateurl ?? null,
+    adres: item.adres ?? null,
+    la: parseKopisNumber(item.la),
+    lo: parseKopisNumber(item.lo),
+    restaurant: item.restaurant ?? null,
+    cafe: item.cafe ?? null,
+    store: item.store ?? null,
+    nolibang: item.nolibang ?? null,
+    suyu: item.suyu ?? null,
+    parkbarrier: item.parkbarrier ?? null,
+    restbarrier: item.restbarrier ?? null,
+    runwbarrier: item.runwbarrier ?? null,
+    elevbarrier: item.elevbarrier ?? null,
+    parkinglot: item.parkinglot ?? null,
+    mt13s: mt13List.length ? mt13List : null,
     is_active: true,
     updated_at: new Date().toISOString(),
   };

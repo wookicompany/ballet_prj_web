@@ -43,6 +43,7 @@ type RelateItem = {
 
 type PerformanceDetail = {
   mt20id: string;
+  mt10id?: string | null;
   prfnm: string | null;
   prfpdfrom: string | null;
   prfpdto: string | null;
@@ -80,6 +81,23 @@ type ProfileSummary = {
   id: string;
   nickname: string | null;
   avatar_url: string | null;
+};
+
+type FacilityDetail = {
+  mt10id: string;
+  adres: string | null;
+  telno: string | null;
+  relateurl: string | null;
+  parkinglot: string | null;
+  restaurant: string | null;
+  cafe: string | null;
+  store: string | null;
+  nolibang: string | null;
+  suyu: string | null;
+  parkbarrier: string | null;
+  restbarrier: string | null;
+  runwbarrier: string | null;
+  elevbarrier: string | null;
 };
 
 const formatOptionalText = (value?: string | null) => {
@@ -130,6 +148,7 @@ const toRelateDisplay = (relate: string | RelateItem) => {
 };
 
 const REVIEW_PAGE_SIZE = 6;
+const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 
 export default function PerformanceDetailPage() {
   const router = useRouter();
@@ -147,6 +166,7 @@ export default function PerformanceDetailPage() {
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
+  const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
   const [reviewPage, setReviewPage] = useState(0);
@@ -154,6 +174,9 @@ export default function PerformanceDetailPage() {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [storyExpanded, setStoryExpanded] = useState(false);
+  const [infoTab, setInfoTab] = useState<"performance" | "facility">(
+    "performance",
+  );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const viewTrackedRef = useRef<string | null>(null);
@@ -182,6 +205,7 @@ export default function PerformanceDetailPage() {
       if (listError || !listData) {
         toast("공연 정보를 불러오지 못했어요.");
         setDetail(null);
+      setFacilityDetail(null);
         setLoading(false);
         return;
       }
@@ -195,6 +219,21 @@ export default function PerformanceDetailPage() {
         entrpsnmS: detailData?.entrpsnm_s ?? null,
       };
       setDetail(merged);
+
+      if (merged.mt10id) {
+        const { data: facilityData } = await supabase
+          .from("kopis_facility_details")
+          .select(
+            "mt10id,adres,telno,relateurl,parkinglot,restaurant,cafe,store,nolibang,suyu,parkbarrier,restbarrier,runwbarrier,elevbarrier",
+          )
+          .eq("mt10id", merged.mt10id)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .maybeSingle();
+        setFacilityDetail((facilityData as FacilityDetail) ?? null);
+      } else {
+        setFacilityDetail(null);
+      }
 
       const { data: ratings } = await supabase
         .from("performance_reviews")
@@ -260,6 +299,8 @@ export default function PerformanceDetailPage() {
     setLikedMap({});
     setCommentCounts({});
     setReviewImages({});
+    setFacilityDetail(null);
+    setInfoTab("performance");
     setHasMoreReviews(true);
     setReviewPage(1);
     requestedPagesRef.current = new Set();
@@ -626,75 +667,200 @@ export default function PerformanceDetailPage() {
               </section>
               <section className="space-y-4 rounded-xl border border-black/5 bg-white p-4 text-xs text-[#17171c]">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">공연 정보</h3>
+                  <div className="inline-flex rounded-full bg-black/5 p-1 text-[11px] text-[#17171c]/60">
+                    <button
+                      type="button"
+                      className={`rounded-full px-3 py-1 ${
+                        infoTab === "performance"
+                          ? "bg-white text-[#17171c] shadow-sm"
+                          : ""
+                      }`}
+                      onClick={() => setInfoTab("performance")}
+                    >
+                      공연 정보
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded-full px-3 py-1 ${
+                        infoTab === "facility"
+                          ? "bg-white text-[#17171c] shadow-sm"
+                          : ""
+                      }`}
+                      onClick={() => setInfoTab("facility")}
+                    >
+                      공연 시설
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-2 text-[#17171c]/70">
-                  {[
-                    { label: "출연진", value: detail.prfcast },
-                    { label: "제작진", value: detail.prfcrew },
-                    { label: "러닝타임", value: detail.prfruntime },
-                    { label: "관람 연령", value: detail.prfage },
-                    { label: "기획제작", value: detail.entrpsnm },
-                    { label: "제작사", value: detail.entrpsnmP },
-                    { label: "기획사", value: detail.entrpsnmA },
-                    { label: "주최", value: detail.entrpsnmH },
-                    { label: "주관", value: detail.entrpsnmS },
-                    { label: "티켓가격", value: detail.pcseguidance },
-                    { label: "공연시간", value: detail.dtguidance },
-                  ]
-                    .map((item) => ({
-                      label: item.label,
-                      value: formatOptionalText(item.value),
-                    }))
-                    .filter((item) => item.value)
-                    .map((item) => (
-                      <div key={item.label} className="grid grid-cols-[72px_1fr] gap-2">
-                        <span className="text-[#17171c]/50">{item.label}</span>
-                        <span className="break-words">{item.value}</span>
-                      </div>
-                    ))}
-                  {![
-                    detail.prfcast,
-                    detail.prfcrew,
-                    detail.prfruntime,
-                    detail.prfage,
-                    detail.entrpsnm,
-                    detail.entrpsnmP,
-                    detail.entrpsnmA,
-                    detail.entrpsnmH,
-                    detail.entrpsnmS,
-                    detail.pcseguidance,
-                    detail.dtguidance,
-                  ]
-                    .map(formatOptionalText)
-                    .some(Boolean) ? (
-                    <p className="text-[#17171c]/50">정보 없음</p>
-                  ) : null}
-                </div>
-                {formatOptionalText(detail.sty) ? (
+                {infoTab === "performance" ? (
                   <>
-                    <Separator className="bg-black/5" />
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-semibold">줄거리</h4>
-                      <p
-                        className={`whitespace-pre-line text-xs text-[#17171c]/70 ${
-                          storyExpanded ? "" : "line-clamp-3"
-                        }`}
-                      >
-                        {formatOptionalText(detail.sty)}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-1 w-full text-[11px] text-[#17171c]/60"
-                        onClick={() => setStoryExpanded((prev) => !prev)}
-                      >
-                        {storyExpanded ? "접기" : "더보기"}
-                      </Button>
+                    <div className="space-y-2 text-[#17171c]/70">
+                      {[
+                        { label: "출연진", value: detail.prfcast },
+                        { label: "제작진", value: detail.prfcrew },
+                        { label: "러닝타임", value: detail.prfruntime },
+                        { label: "관람 연령", value: detail.prfage },
+                        { label: "기획제작", value: detail.entrpsnm },
+                        { label: "제작사", value: detail.entrpsnmP },
+                        { label: "기획사", value: detail.entrpsnmA },
+                        { label: "주최", value: detail.entrpsnmH },
+                        { label: "주관", value: detail.entrpsnmS },
+                        { label: "티켓가격", value: detail.pcseguidance },
+                        { label: "공연시간", value: detail.dtguidance },
+                      ]
+                        .map((item) => ({
+                          label: item.label,
+                          value: formatOptionalText(item.value),
+                        }))
+                        .filter((item) => item.value)
+                        .map((item) => (
+                          <div
+                            key={item.label}
+                            className="grid grid-cols-[72px_1fr] gap-2"
+                          >
+                            <span className="text-[#17171c]/50">
+                              {item.label}
+                            </span>
+                            <span className="break-words">{item.value}</span>
+                          </div>
+                        ))}
+                      {![
+                        detail.prfcast,
+                        detail.prfcrew,
+                        detail.prfruntime,
+                        detail.prfage,
+                        detail.entrpsnm,
+                        detail.entrpsnmP,
+                        detail.entrpsnmA,
+                        detail.entrpsnmH,
+                        detail.entrpsnmS,
+                        detail.pcseguidance,
+                        detail.dtguidance,
+                      ]
+                        .map(formatOptionalText)
+                        .some(Boolean) ? (
+                        <p className="text-[#17171c]/50">정보 없음</p>
+                      ) : null}
                     </div>
+                    {formatOptionalText(detail.sty) ? (
+                      <>
+                        <Separator className="bg-black/5" />
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold">줄거리</h4>
+                          <p
+                            className={`whitespace-pre-line text-xs text-[#17171c]/70 ${
+                              storyExpanded ? "" : "line-clamp-3"
+                            }`}
+                          >
+                            {formatOptionalText(detail.sty)}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-1 w-full text-[11px] text-[#17171c]/60"
+                            onClick={() => setStoryExpanded((prev) => !prev)}
+                          >
+                            {storyExpanded ? "접기" : "더보기"}
+                          </Button>
+                        </div>
+                      </>
+                    ) : null}
                   </>
-                ) : null}
+                ) : (
+                  <div className="space-y-2 text-[#17171c]/70">
+                    {(() => {
+                      const facilityUrl = formatOptionalText(
+                        facilityDetail?.relateurl,
+                      );
+                      const facilityUrlHref =
+                        facilityUrl && facilityUrl.startsWith("http")
+                          ? facilityUrl
+                          : facilityUrl
+                            ? `https://${facilityUrl}`
+                            : null;
+                      const items = [
+                        {
+                          label: "주소",
+                          value: formatOptionalText(facilityDetail?.adres),
+                        },
+                        {
+                          label: "전화번호",
+                          value: formatOptionalText(facilityDetail?.telno),
+                        },
+                        {
+                          label: "홈페이지",
+                          value: facilityUrlHref ? (
+                            <a
+                              href={facilityUrlHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="break-words text-[#17171c] underline underline-offset-2"
+                            >
+                              {facilityUrl}
+                            </a>
+                          ) : null,
+                        },
+                        {
+                          label: "주차장",
+                          value: toYesLabel(facilityDetail?.parkinglot),
+                        },
+                        {
+                          label: "레스토랑",
+                          value: toYesLabel(facilityDetail?.restaurant),
+                        },
+                        {
+                          label: "카페",
+                          value: toYesLabel(facilityDetail?.cafe),
+                        },
+                        {
+                          label: "편의점",
+                          value: toYesLabel(facilityDetail?.store),
+                        },
+                        {
+                          label: "놀이방",
+                          value: toYesLabel(facilityDetail?.nolibang),
+                        },
+                        {
+                          label: "수유실",
+                          value: toYesLabel(facilityDetail?.suyu),
+                        },
+                        {
+                          label: "장애시설-주차장",
+                          value: toYesLabel(facilityDetail?.parkbarrier),
+                        },
+                        {
+                          label: "장애시설-화장실",
+                          value: toYesLabel(facilityDetail?.restbarrier),
+                        },
+                        {
+                          label: "장애시설-경사로",
+                          value: toYesLabel(facilityDetail?.runwbarrier),
+                        },
+                        {
+                          label: "장애시설-엘리베이터",
+                          value: toYesLabel(facilityDetail?.elevbarrier),
+                        },
+                      ].filter((item) => item.value);
+
+                      if (!items.length) {
+                        return <p className="text-[#17171c]/50">정보 없음</p>;
+                      }
+
+                      return items.map((item) => (
+                        <div
+                          key={item.label}
+                          className="grid grid-cols-[96px_1fr] gap-2"
+                        >
+                          <span className="text-[#17171c]/50">
+                            {item.label}
+                          </span>
+                          <span className="break-words">{item.value}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
               </section>
 
               {detail.styurls && detail.styurls.length > 0 ? (
