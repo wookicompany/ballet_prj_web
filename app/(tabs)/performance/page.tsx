@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
@@ -332,8 +332,8 @@ export default function PerformanceListPage() {
           <header className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-0">
               <h1 className="text-lg font-semibold">공연</h1>
-              <HoverCard>
-                <HoverCardTrigger asChild>
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     type="button"
                     variant="ghost"
@@ -343,13 +343,13 @@ export default function PerformanceListPage() {
                   >
                     <Info className="size-4" strokeWidth={2.5} />
                   </Button>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-72 text-sm font-semibold text-[#17171c]">
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm font-semibold text-[#17171c]">
                   공연 정보는 KOPIS 데이터를 바탕으로 안내드리고 있어요.
                   출처는 (재)예술경영지원센터 공연예술통합전산망이에요.
                   사이트 주소는 www.kopis.or.kr이에요.
-                </HoverCardContent>
-              </HoverCard>
+                </PopoverContent>
+              </Popover>
             </div>
             <Button
               type="button"
@@ -379,8 +379,8 @@ export default function PerformanceListPage() {
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-lg font-semibold">공연</h1>
-            <HoverCard>
-              <HoverCardTrigger asChild>
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
@@ -390,13 +390,13 @@ export default function PerformanceListPage() {
                 >
                   <Info className="size-4" strokeWidth={2.5} />
                 </Button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-72 text-sm font-semibold text-[#17171c]">
+              </PopoverTrigger>
+              <PopoverContent className="w-72 text-sm font-semibold text-[#17171c]">
                 공연 정보는 KOPIS(공연예술통합전산망) API 데이터를 기반으로 제공해요.
                 <br />
                 KOPIS는 (재)예술경영지원센터가 운영하는 공식 공연 정보 서비스예요.
-              </HoverCardContent>
-            </HoverCard>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button
             type="button"
