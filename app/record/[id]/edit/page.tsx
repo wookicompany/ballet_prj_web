@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
@@ -134,6 +142,8 @@ export default function RecordEditPage() {
   const [showLevelInstructor, setShowLevelInstructor] = useState(false);
   const [barOrderTags, setBarOrderTags] = useState<string[]>([]);
   const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
+  const [barOrderInput, setBarOrderInput] = useState("");
+  const [centerOrderInput, setCenterOrderInput] = useState("");
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string }>
   >([]);
@@ -271,6 +281,37 @@ export default function RecordEditPage() {
     did_well: "",
     improve_next: "",
   });
+
+  const addOrderTags = (
+    rawValue: string,
+    setTags: Dispatch<SetStateAction<string[]>>
+  ) => {
+    const nextTags = rawValue
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (nextTags.length === 0) return;
+    setTags((prev) => {
+      const merged = [...prev];
+      nextTags.forEach((tag) => {
+        if (!merged.includes(tag)) merged.push(tag);
+      });
+      return merged;
+    });
+  };
+
+  const handleOrderInputKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    value: string,
+    setValue: Dispatch<SetStateAction<string>>,
+    setTags: Dispatch<SetStateAction<string[]>>
+  ) => {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addOrderTags(value, setTags);
+    setValue("");
+  };
 
   useEffect(() => {
     const fetchRecord = async () => {
@@ -784,6 +825,7 @@ export default function RecordEditPage() {
                   setShowBarOrder(next);
                   if (!next) {
                     setBarOrderTags([]);
+                    setBarOrderInput("");
                   }
                 }}
               />
@@ -853,6 +895,24 @@ export default function RecordEditPage() {
                     );
                   })}
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Input
+                    type="text"
+                    className="text-sm placeholder:text-xs"
+                    placeholder="직접 입력하고 Enter로 추가해 주세요"
+                    value={barOrderInput}
+                    onChange={(event) => setBarOrderInput(event.target.value)}
+                    onKeyDown={(event) =>
+                      handleOrderInputKeyDown(
+                        event,
+                        barOrderInput,
+                        setBarOrderInput,
+                        setBarOrderTags
+                      )
+                    }
+                  />
+                </div>
               </div>
             ) : null}
             <div className="flex items-center gap-2">
@@ -864,6 +924,7 @@ export default function RecordEditPage() {
                   setShowCenterOrder(next);
                   if (!next) {
                     setCenterOrderTags([]);
+                    setCenterOrderInput("");
                   }
                 }}
               />
@@ -934,6 +995,24 @@ export default function RecordEditPage() {
                       </Button>
                     );
                   })}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Input
+                    type="text"
+                    className="text-sm placeholder:text-xs"
+                    placeholder="직접 입력하고 Enter로 추가해 주세요"
+                    value={centerOrderInput}
+                    onChange={(event) => setCenterOrderInput(event.target.value)}
+                    onKeyDown={(event) =>
+                      handleOrderInputKeyDown(
+                        event,
+                        centerOrderInput,
+                        setCenterOrderInput,
+                        setCenterOrderTags
+                      )
+                    }
+                  />
                 </div>
               </div>
             ) : null}

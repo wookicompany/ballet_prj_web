@@ -1,6 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
@@ -105,6 +114,8 @@ function RecordNewContent() {
   const [showLevelInstructor, setShowLevelInstructor] = useState(false);
   const [barOrderTags, setBarOrderTags] = useState<string[]>([]);
   const [centerOrderTags, setCenterOrderTags] = useState<string[]>([]);
+  const [barOrderInput, setBarOrderInput] = useState("");
+  const [centerOrderInput, setCenterOrderInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [startSheetOpen, setStartSheetOpen] = useState(false);
@@ -154,6 +165,37 @@ function RecordNewContent() {
     did_well: "",
     improve_next: "",
   });
+
+  const addOrderTags = (
+    rawValue: string,
+    setTags: Dispatch<SetStateAction<string[]>>
+  ) => {
+    const nextTags = rawValue
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (nextTags.length === 0) return;
+    setTags((prev) => {
+      const merged = [...prev];
+      nextTags.forEach((tag) => {
+        if (!merged.includes(tag)) merged.push(tag);
+      });
+      return merged;
+    });
+  };
+
+  const handleOrderInputKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    value: string,
+    setValue: Dispatch<SetStateAction<string>>,
+    setTags: Dispatch<SetStateAction<string[]>>
+  ) => {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addOrderTags(value, setTags);
+    setValue("");
+  };
 
   useEffect(() => {
     const dateParam = searchParams.get("date");
@@ -660,6 +702,7 @@ function RecordNewContent() {
                   setShowBarOrder(next);
                   if (!next) {
                     setBarOrderTags([]);
+                    setBarOrderInput("");
                   }
                 }}
               />
@@ -673,7 +716,7 @@ function RecordNewContent() {
             {showBarOrder ? (
               <div className="space-y-3">
                 <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px] flex items-center">
                   {barOrderTags.length === 0 ? (
                     <p className="text-[11px] text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -729,6 +772,24 @@ function RecordNewContent() {
                     );
                   })}
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Input
+                    type="text"
+                    className="text-sm placeholder:text-xs"
+                    placeholder="직접 입력하고 Enter로 추가해 주세요"
+                    value={barOrderInput}
+                    onChange={(event) => setBarOrderInput(event.target.value)}
+                    onKeyDown={(event) =>
+                      handleOrderInputKeyDown(
+                        event,
+                        barOrderInput,
+                        setBarOrderInput,
+                        setBarOrderTags
+                      )
+                    }
+                  />
+                </div>
               </div>
             ) : null}
             <div className="flex items-center gap-2">
@@ -740,6 +801,7 @@ function RecordNewContent() {
                   setShowCenterOrder(next);
                   if (!next) {
                     setCenterOrderTags([]);
+                    setCenterOrderInput("");
                   }
                 }}
               />
@@ -755,7 +817,7 @@ function RecordNewContent() {
                 <Label className="text-xs text-[#17171c]/60">
                   센터(center) 순서
                 </Label>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px] flex items-center">
                   {centerOrderTags.length === 0 ? (
                     <p className="text-[11px] text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -810,6 +872,24 @@ function RecordNewContent() {
                       </Button>
                     );
                   })}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Input
+                    type="text"
+                    className="text-sm placeholder:text-xs"
+                    placeholder="직접 입력하고 Enter로 추가해 주세요"
+                    value={centerOrderInput}
+                    onChange={(event) => setCenterOrderInput(event.target.value)}
+                    onKeyDown={(event) =>
+                      handleOrderInputKeyDown(
+                        event,
+                        centerOrderInput,
+                        setCenterOrderInput,
+                        setCenterOrderTags
+                      )
+                    }
+                  />
                 </div>
               </div>
             ) : null}

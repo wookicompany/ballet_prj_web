@@ -874,7 +874,7 @@ export default function PerformanceDetailPage() {
                               <TableCell className="whitespace-normal break-words py-2.5">
                                 {item.label === "주소" &&
                                 typeof item.value === "string" ? (
-                                  <span className="inline-flex items-start gap-2">
+                                  <span className="inline-flex items-center gap-2">
                                     <span className="min-w-0 flex-1 break-words">
                                       {item.value}
                                     </span>
