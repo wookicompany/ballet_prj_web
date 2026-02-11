@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# KOPIS 시설 테이블 DDL (스키마는 Supabase 마이그레이션으로 관리)
+docs/KOPIS/kopis_facilities.sql
