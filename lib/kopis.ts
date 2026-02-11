@@ -351,13 +351,23 @@ export const mapKopisDetailItem = (item: KopisDetailItem) => {
 };
 
 export const mapKopisFacilityDetailItem = (item: KopisFacilityDetailItem) => {
-  const mt13List = normalizeArray(
+  const mt13RawList = normalizeArray(
     Array.isArray(item.mt13s)
       ? item.mt13s
       : typeof item.mt13s === "object" && item.mt13s !== null
         ? (item.mt13s as { mt13?: unknown }).mt13
         : item.mt13s,
   );
+  const mt13List = mt13RawList.flatMap((value) => {
+    if (typeof value === "string") return [value];
+    if (typeof value === "number") return [String(value)];
+    if (value && typeof value === "object" && "mt13" in value) {
+      const inner = (value as { mt13?: unknown }).mt13;
+      if (typeof inner === "string") return [inner];
+      if (typeof inner === "number") return [String(inner)];
+    }
+    return [];
+  });
 
   return {
     mt10id: item.mt10id ?? null,
