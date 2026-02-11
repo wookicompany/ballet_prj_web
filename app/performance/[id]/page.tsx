@@ -20,8 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import ImageViewer from "@/components/ui/image-viewer";
-import { Spinner } from "@/components/ui/spinner";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
@@ -518,8 +518,50 @@ export default function PerformanceDetailPage() {
     <MobileContainer>
       <main className="pb-12">
         {loading ? (
-          <div className="flex min-h-[240px] items-center justify-center">
-            <Spinner size="lg" />
+          <div className="space-y-5">
+            <section className="relative h-[380px] w-full overflow-hidden bg-black/5">
+              <Skeleton className="h-full w-full" />
+            </section>
+            <div className="space-y-4 px-4">
+              <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+                <Skeleton className="h-5 w-2/3" />
+                <div className="mt-2 space-y-2">
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </section>
+              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+                <Skeleton className="h-4 w-20" />
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              </section>
+              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+                <Skeleton className="h-4 w-20" />
+                <div className="flex gap-2">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={`sty-skeleton-${index}`} className="h-24 w-24" />
+                  ))}
+                </div>
+              </section>
+              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+                <Skeleton className="h-4 w-16" />
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div
+                      key={`review-skeleton-${index}`}
+                      className="rounded-lg border border-black/5 p-3"
+                    >
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="mt-2 h-3 w-full" />
+                      <Skeleton className="mt-2 h-3 w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
         ) : !detail ? (
           <div className="flex min-h-[240px] items-center justify-center text-sm text-[#17171c]/60">
@@ -875,8 +917,17 @@ export default function PerformanceDetailPage() {
                     })
                   )}
                   {loadingReviews ? (
-                    <div className="flex justify-center py-2">
-                      <Spinner size="sm" />
+                    <div className="space-y-3">
+                      {Array.from({ length: 2 }).map((_, index) => (
+                        <div
+                          key={`loading-review-${index}`}
+                          className="rounded-lg border border-black/5 p-3"
+                        >
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="mt-2 h-3 w-full" />
+                          <Skeleton className="mt-2 h-3 w-2/3" />
+                        </div>
+                      ))}
                     </div>
                   ) : null}
                   <div ref={sentinelRef} />
