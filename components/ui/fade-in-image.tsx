@@ -1,6 +1,6 @@
  "use client";
  
- import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
  
  type FadeInImageProps = {
    src: string;
@@ -20,13 +20,22 @@
    ariaLabel,
  }: FadeInImageProps) {
    const [loaded, setLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
  
    useEffect(() => {
      setLoaded(false);
    }, [src]);
  
+  useEffect(() => {
+    const img = imageRef.current;
+    if (img && img.complete) {
+      setLoaded(true);
+    }
+  }, [src]);
+
    return (
      <img
+      ref={imageRef}
        src={src}
        alt={alt}
        loading={loading}

@@ -247,7 +247,7 @@ export default function PerformanceListPage() {
         key={item.mt20id}
         type="button"
         onClick={() => router.push(`/performance/${item.mt20id}`)}
-        className="w-[140px] shrink-0 snap-start text-left"
+        className="w-[140px] shrink-0 snap-start text-left transition-opacity duration-200 active:opacity-70"
       >
         <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-black/5">
           {options?.badgeLabel ? (

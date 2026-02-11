@@ -18,7 +18,6 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { CalendarDays, ChevronLeft, Plus, X } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
@@ -607,7 +606,7 @@ export default function RecordEditPage() {
                   key={`image-${item.type === "existing" ? item.id : index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <FadeInImage
+                  <img
                     src={item.url}
                     alt="업로드 사진"
                     className="h-full w-full object-contain"

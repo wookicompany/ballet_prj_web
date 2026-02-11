@@ -7,7 +7,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus } from "lucide-react";
 
@@ -228,11 +227,10 @@ export default function DayPage() {
               >
                 <div className="flex h-full w-full items-center justify-between gap-3">
                   {record.mood ? (
-                    <FadeInImage
+                    <img
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
                       className="h-10 w-10 shrink-0"
-                      loading="eager"
                     />
                   ) : (
                     <div className="h-10 w-10 shrink-0 rounded-full bg-black/5" />
@@ -244,7 +242,7 @@ export default function DayPage() {
                   </div>
                   {media?.url ? (
                     <div className="relative h-12 w-12 shrink-0 rounded-xl bg-black/5">
-                      <FadeInImage
+                      <img
                         src={media.url}
                         alt="기록 미디어"
                         className="h-full w-full rounded-xl object-cover"

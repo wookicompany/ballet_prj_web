@@ -9,7 +9,6 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
 
@@ -113,15 +112,22 @@ export default function ProfilePage() {
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .is("deleted_at", null);
-      setReviewCount(count ?? 0);
+      const nextCount = count ?? 0;
+      setReviewCount(nextCount);
 
       setReviews([]);
       setReviewLikeCounts({});
       setReviewCommentCounts({});
       setReviewImages({});
-      setHasMoreReviews(true);
-      setShowMoreReviews(false);
-      setReviewPage(1);
+      if (nextCount === 0) {
+        setHasMoreReviews(false);
+        setShowMoreReviews(false);
+        setReviewPage(0);
+      } else {
+        setHasMoreReviews(true);
+        setShowMoreReviews(false);
+        setReviewPage(1);
+      }
       requestedPagesRef.current = new Set();
     };
 
@@ -327,7 +333,7 @@ export default function ProfilePage() {
               disabled={!profile.avatar_url}
             >
               {profile.avatar_url ? (
-                <FadeInImage
+                <img
                   src={profile.avatar_url}
                   alt="프로필 이미지"
                   className="h-full w-full object-cover"
@@ -401,7 +407,7 @@ export default function ProfilePage() {
                     aria-label="리뷰 상세 보기"
                   >
                     {review.performancePoster ? (
-                      <FadeInImage
+                      <img
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
                         className="h-full w-full object-cover"
@@ -474,7 +480,7 @@ export default function ProfilePage() {
                         {formatReviewDate(review.createdAt)}
                       </div>
                       <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
-                        <FadeInImage
+                        <img
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
                           className="h-full w-full object-contain"
