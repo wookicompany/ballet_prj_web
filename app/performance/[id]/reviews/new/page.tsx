@@ -13,6 +13,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -275,7 +276,7 @@ export default function PerformanceReviewNewPage() {
                   key={`${item.url}-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <img
+                  <FadeInImage
                     src={item.url}
                     alt="업로드 이미지"
                     className="h-full w-full object-contain"

@@ -112,15 +112,22 @@ export default function ProfilePage() {
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .is("deleted_at", null);
-      setReviewCount(count ?? 0);
+      const nextCount = count ?? 0;
+      setReviewCount(nextCount);
 
       setReviews([]);
       setReviewLikeCounts({});
       setReviewCommentCounts({});
       setReviewImages({});
-      setHasMoreReviews(true);
-      setShowMoreReviews(false);
-      setReviewPage(1);
+      if (nextCount === 0) {
+        setHasMoreReviews(false);
+        setShowMoreReviews(false);
+        setReviewPage(0);
+      } else {
+        setHasMoreReviews(true);
+        setShowMoreReviews(false);
+        setReviewPage(1);
+      }
       requestedPagesRef.current = new Set();
     };
 

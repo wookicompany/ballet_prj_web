@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -438,8 +439,24 @@ function PerformanceSearchContent() {
 
         <section className="mt-6 space-y-1">
           {loading ? (
-            <div className="flex min-h-[200px] items-center justify-center">
-              <Spinner size="lg" />
+            <div className="space-y-4">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={`performance-skeleton-${index}`}
+                  className="flex w-full gap-3 border-b border-black/5 py-4"
+                >
+                  <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-2/3" />
+                    <div className="flex items-center gap-3 pt-1">
+                      <Skeleton className="h-3 w-10" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : items.length === 0 ? (
             <div className="flex min-h-[200px] items-center justify-center text-sm text-[#17171c]/60">
@@ -458,7 +475,7 @@ function PerformanceSearchContent() {
                 >
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                     {item.poster ? (
-                      <img
+                      <FadeInImage
                         src={item.poster}
                         alt={`${item.prfnm} 포스터`}
                         className="h-full w-full object-cover"
@@ -492,8 +509,24 @@ function PerformanceSearchContent() {
           )}
         </section>
         {loadingMore ? (
-          <div className="flex justify-center py-4">
-            <Spinner size="sm" />
+          <div className="space-y-4 py-4">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div
+                key={`performance-skeleton-more-${index}`}
+                className="flex w-full gap-3 border-b border-black/5 py-4"
+              >
+                <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <div className="flex items-center gap-3 pt-1">
+                    <Skeleton className="h-3 w-10" />
+                    <Skeleton className="h-3 w-10" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
         <div ref={sentinelRef} className="h-6" />

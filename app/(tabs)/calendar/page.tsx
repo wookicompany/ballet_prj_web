@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
@@ -304,10 +305,11 @@ export default function CalendarPage() {
               <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
                 {moodValue ? (
                   <div className="relative h-full w-full overflow-visible">
-                    <img
+                    <FadeInImage
                       src={`/mood/cat-${moodValue}.svg`}
                       alt={`기분 ${moodValue}단계`}
                       className="h-full w-full max-h-[52px] object-contain"
+                      loading="eager"
                     />
                     {count >= 2 ? (
                       <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-[11px] text-white">

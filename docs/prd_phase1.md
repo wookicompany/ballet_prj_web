@@ -92,6 +92,8 @@ Product Requirement Document (Phase 1)
   - `styurls`: 소개이미지목록 (모든 소개이미지)
   - `dtguidance`: 공연시간
   - `relates`: 예매처목록 (모든 예매처 정보)
+- 공연 시설 정보: **공연 정보** / **공연 시설** 탭으로 전환해 볼 수 있음. 공연 시설 탭에는 시설 상세 출력 필드만 사용하며, 값이 없으면 해당 항목은 숨긴다.
+  - 노출 필드(우선순위 순): 주소, 전화번호, 홈페이지, 주차장, 레스토랑, 카페, 편의점, 놀이방, 수유실, 장애시설(주차장/화장실/경사로/엘리베이터)
 - 리뷰 요약(평균 별점, 리뷰 수)
 
 4) 리뷰/평점
@@ -111,7 +113,7 @@ Product Requirement Document (Phase 1)
 
 - KOPIS OpenAPI
 - 상세 엔드포인트/요청 파라미터는 `docs/KOPIS/kopis_api.md` 참조
-- 공연목록/공연상세만 DB에 적재하여 사용 (공연시설 데이터는 Phase 1 범위 제외)
+- 공연목록/공연상세·공연시설 목록/상세를 DB에 적재하여 사용
 
 ---
 
@@ -135,6 +137,13 @@ Product Requirement Document (Phase 1)
 - **R**: DB에 적재된 상세만 조회
 - **U**: `updatedate`가 최신이거나 재수집 시 upsert로 덮어쓰기
 - **D**: 실 삭제하지 않고 비활성 처리(소프트 삭제) 후 유지
+
+3) 공연 시설 (KOPIS 공연시설목록/공연시설상세)
+
+- 공연 목록/상세와 **분리된 크론 라우트**로 동기화
+- 저장 테이블: `kopis_facilities`(목록), `kopis_facility_details`(상세)
+- 동기화 라우트: `POST /api/cron/kopis-sync-facilities` (쿼리 `afterdate`로 증분 동기화 가능)
+- 화면: 공연 상세에서 `kopis_performance_details.mt10id`로 `kopis_facility_details`를 조회해 공연 시설 탭에 노출
 
 ---
 
