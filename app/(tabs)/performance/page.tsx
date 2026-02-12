@@ -328,7 +328,7 @@ export default function PerformanceListPage() {
 
   if (loading) {
     return (
-      <main className="px-4 pb-16 pt-8">
+      <main className="px-4 pb-16 pt-0">
           <header className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-0">
               <h1 className="text-lg font-semibold">공연</h1>
@@ -373,7 +373,7 @@ export default function PerformanceListPage() {
   }
 
   return (
-    <main className="px-4 pb-16 pt-8">
+    <main className="px-4 pb-16 pt-0">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-lg font-semibold">공연</h1>

@@ -862,7 +862,7 @@ export default function RecordEditPage() {
   return (
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
-      <main className="px-4 pb-12 pt-6">
+      <main className="px-4 pb-12 pt-0">
         <header className="mb-6 flex items-center justify-between">
           <Button
             type="button"

@@ -193,7 +193,7 @@ export default function PerformanceReviewNewPage() {
   return (
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
-      <main className="px-4 pb-16 pt-6">
+      <main className="px-4 pb-16 pt-0">
         <header className="mb-5 flex items-center justify-between">
           <Button
             type="button"
