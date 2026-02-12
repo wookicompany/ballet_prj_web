@@ -219,6 +219,17 @@
 - 리뷰/댓글 좋아요 기능 제공
 - 공연 좋아요 기능 제공
 
+#### 공연 리뷰 댓글
+
+- 리뷰 단위로 댓글 작성·수정·삭제 (작성자 본인만 수정/삭제 가능)
+- 로그인 사용자만 댓글 작성/수정/삭제 가능 (비로그인은 읽기만 가능, spec 공통 비기능과 동일)
+- 노출: 공연 리뷰 상세 화면(`/performance/[id]/reviews/[reviewId]`)에서 해당 리뷰의 댓글 목록 노출
+- API
+  - `POST /api/review-comments`: 댓글 생성 (body: `review_id`, `content`)
+  - `PATCH /api/review-comments/[id]`: 본인 댓글 수정
+  - `DELETE /api/review-comments/[id]/delete`: 본인 댓글 삭제
+- 댓글 좋아요: 리뷰/평점 섹션의 “리뷰/댓글 좋아요”에 포함
+
 ## 5) 프로필
 
 ### 프로필/통계
