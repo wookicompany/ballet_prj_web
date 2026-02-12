@@ -7,7 +7,14 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronLeft, ChevronRight, MapPin, UserRound } from "lucide-react";
+import {
+  Circle,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  MapPin,
+  UserRound,
+} from "lucide-react";
 
 export default function DataManagementPage() {
   const router = useRouter();
@@ -83,6 +90,30 @@ export default function DataManagementPage() {
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <UserRound className="h-5 w-5 text-[#17171c]/70" />
               강사님 & 레벨 관리
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/calendar/settings/bar-orders")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <GripVertical className="h-5 w-5 text-[#17171c]/70" />
+              바 순서 관리
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/calendar/settings/center-orders")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <Circle className="h-5 w-5 text-[#17171c]/70" />
+              센터 순서 관리
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>

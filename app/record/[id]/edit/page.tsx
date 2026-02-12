@@ -150,6 +150,18 @@ type SavedInstructorLevel = {
   level: string;
 };
 
+type SavedBarOrder = {
+  id: string;
+  name: string;
+  order_text: string;
+};
+
+type SavedCenterOrder = {
+  id: string;
+  name: string;
+  order_text: string;
+};
+
 export default function RecordEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -178,6 +190,21 @@ export default function RecordEditPage() {
     null
   );
   const [selectedInstructorId, setSelectedInstructorId] = useState<
+    string | null
+  >(null);
+  const [barOrderSheetOpen, setBarOrderSheetOpen] = useState(false);
+  const [centerOrderSheetOpen, setCenterOrderSheetOpen] = useState(false);
+  const [savedBarOrders, setSavedBarOrders] = useState<SavedBarOrder[]>([]);
+  const [savedCenterOrders, setSavedCenterOrders] = useState<
+    SavedCenterOrder[]
+  >([]);
+  const [savedBarOrdersLoading, setSavedBarOrdersLoading] = useState(false);
+  const [savedCenterOrdersLoading, setSavedCenterOrdersLoading] =
+    useState(false);
+  const [selectedBarOrderId, setSelectedBarOrderId] = useState<string | null>(
+    null
+  );
+  const [selectedCenterOrderId, setSelectedCenterOrderId] = useState<
     string | null
   >(null);
   const [existingMedia, setExistingMedia] = useState<
@@ -427,6 +454,88 @@ export default function RecordEditPage() {
     setInstructorSheetOpen(false);
   };
 
+  const fetchSavedBarOrders = async () => {
+    if (!user) return;
+    setSavedBarOrdersLoading(true);
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) {
+      setSavedBarOrdersLoading(false);
+      return;
+    }
+    const response = await fetch("/api/saved-bar-orders", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      setSavedBarOrdersLoading(false);
+      toast("저장된 바 순서를 불러오지 못했어요.");
+      return;
+    }
+    const payload = (await response.json()) as { items: SavedBarOrder[] };
+    setSavedBarOrders(payload.items ?? []);
+    setSavedBarOrdersLoading(false);
+  };
+
+  const fetchSavedCenterOrders = async () => {
+    if (!user) return;
+    setSavedCenterOrdersLoading(true);
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) {
+      setSavedCenterOrdersLoading(false);
+      return;
+    }
+    const response = await fetch("/api/saved-center-orders", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      setSavedCenterOrdersLoading(false);
+      toast("저장된 센터 순서를 불러오지 못했어요.");
+      return;
+    }
+    const payload = (await response.json()) as {
+      items: SavedCenterOrder[];
+    };
+    setSavedCenterOrders(payload.items ?? []);
+    setSavedCenterOrdersLoading(false);
+  };
+
+  const handleApplyBarOrder = () => {
+    const selected = savedBarOrders.find(
+      (item) => item.id === selectedBarOrderId
+    );
+    if (!selected) {
+      toast("선택된 바 순서가 없어요.");
+      return;
+    }
+    const tags = selected.order_text
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setShowBarOrder(true);
+    setBarOrderTags(tags);
+    setBarOrderSheetOpen(false);
+  };
+
+  const handleApplyCenterOrder = () => {
+    const selected = savedCenterOrders.find(
+      (item) => item.id === selectedCenterOrderId
+    );
+    if (!selected) {
+      toast("선택된 센터 순서가 없어요.");
+      return;
+    }
+    const tags = selected.order_text
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setShowCenterOrder(true);
+    setCenterOrderTags(tags);
+    setCenterOrderSheetOpen(false);
+  };
+
   useEffect(() => {
     const fetchRecord = async () => {
       if (authLoading) return;
@@ -509,6 +618,18 @@ export default function RecordEditPage() {
     setSelectedInstructorId(null);
     void fetchSavedInstructorLevels();
   }, [instructorSheetOpen, user?.id]);
+
+  useEffect(() => {
+    if (!barOrderSheetOpen) return;
+    setSelectedBarOrderId(null);
+    void fetchSavedBarOrders();
+  }, [barOrderSheetOpen, user?.id]);
+
+  useEffect(() => {
+    if (!centerOrderSheetOpen) return;
+    setSelectedCenterOrderId(null);
+    void fetchSavedCenterOrders();
+  }, [centerOrderSheetOpen, user?.id]);
 
   const handleSubmit = async () => {
     if (!user || authLoading) return;
@@ -964,7 +1085,20 @@ export default function RecordEditPage() {
             </div>
             {showBarOrder ? (
               <div className="space-y-3">
-                <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-[#17171c]/60">
+                    바(bar) 순서
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 px-3 text-xs"
+                    onClick={() => setBarOrderSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
+                </div>
                 <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
                   {barOrderTags.length === 0 ? (
                     <p className="text-[11px] text-[#17171c]/40">
@@ -1063,9 +1197,20 @@ export default function RecordEditPage() {
             </div>
             {showCenterOrder ? (
               <div className="space-y-3">
-                <Label className="text-xs text-[#17171c]/60">
-                  센터(center) 순서
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-[#17171c]/60">
+                    센터(center) 순서
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 px-3 text-xs"
+                    onClick={() => setCenterOrderSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
+                </div>
                 <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px]">
                   {centerOrderTags.length === 0 ? (
                     <p className="text-[11px] text-[#17171c]/40">
@@ -1170,9 +1315,9 @@ export default function RecordEditPage() {
                   <Label className="text-xs text-[#17171c]/60">장소</Label>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-8 px-2 text-xs text-[#17171c]/70"
+                    className="h-8 shrink-0 px-3 text-xs"
                     onClick={() => setLocationSheetOpen(true)}
                   >
                     불러오기
@@ -1227,49 +1372,45 @@ export default function RecordEditPage() {
             </div>
             {showLevelInstructor ? (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-[#17171c]/60">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[#17171c]/80">
                     강사님 &amp; 레벨
-                  </Label>
+                  </span>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-8 px-2 text-xs text-[#17171c]/70"
+                    className="h-8 shrink-0 px-3 text-xs"
                     onClick={() => setInstructorSheetOpen(true)}
                   >
                     불러오기
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs text-[#17171c]/60">강사님</Label>
-                    <Input
-                      type="text"
-                      className="mt-2 h-12 text-base"
-                      value={form.instructor}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          instructor: event.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                    <Input
-                      type="text"
-                      className="mt-2 h-12 text-base"
-                      value={form.level}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          level: event.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    className="h-12 text-base placeholder:text-sm"
+                    placeholder="강사님을 입력해 주세요"
+                    value={form.instructor}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        instructor: event.target.value,
+                      }))
+                    }
+                  />
+                  <Input
+                    type="text"
+                    className="h-12 text-base placeholder:text-sm"
+                    placeholder="레벨을 입력해 주세요"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        level: event.target.value,
+                      }))
+                    }
+                  />
                 </div>
               </div>
             ) : null}
@@ -1656,6 +1797,148 @@ export default function RecordEditPage() {
               className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
               onClick={handleApplyInstructorLevel}
               disabled={!selectedInstructorId}
+            >
+              적용하기
+            </Button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={barOrderSheetOpen}
+          onOpenChange={setBarOrderSheetOpen}
+        >
+          <div className="space-y-3">
+            {savedBarOrdersLoading ? (
+              <div className="flex min-h-[120px] items-center justify-center">
+                <Spinner size="lg" />
+              </div>
+            ) : savedBarOrders.length === 0 ? (
+              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+                <p className="text-sm text-[#17171c]/70">
+                  저장된 바 순서가 아직 없어요.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    router.push("/calendar/settings/bar-orders")
+                  }
+                >
+                  추가하러 가기
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {savedBarOrders.map((item) => {
+                  const selected = item.id === selectedBarOrderId;
+                  return (
+                    <Button
+                      key={item.id}
+                      type="button"
+                      variant="outline"
+                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                        selected
+                          ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedBarOrderId(item.id)}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Layers className="h-4 w-4" />
+                          {item.name}
+                        </div>
+                        {item.order_text ? (
+                          <p className="text-xs text-[#17171c]/70 line-clamp-2">
+                            {item.order_text}
+                          </p>
+                        ) : null}
+                      </div>
+                      {selected ? (
+                        <Check className="h-4 w-4 text-[#17171c]" />
+                      ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            <Button
+              type="button"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleApplyBarOrder}
+              disabled={!selectedBarOrderId}
+            >
+              적용하기
+            </Button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={centerOrderSheetOpen}
+          onOpenChange={setCenterOrderSheetOpen}
+        >
+          <div className="space-y-3">
+            {savedCenterOrdersLoading ? (
+              <div className="flex min-h-[120px] items-center justify-center">
+                <Spinner size="lg" />
+              </div>
+            ) : savedCenterOrders.length === 0 ? (
+              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+                <p className="text-sm text-[#17171c]/70">
+                  저장된 센터 순서가 아직 없어요.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    router.push("/calendar/settings/center-orders")
+                  }
+                >
+                  추가하러 가기
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {savedCenterOrders.map((item) => {
+                  const selected = item.id === selectedCenterOrderId;
+                  return (
+                    <Button
+                      key={item.id}
+                      type="button"
+                      variant="outline"
+                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                        selected
+                          ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedCenterOrderId(item.id)}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Layers className="h-4 w-4" />
+                          {item.name}
+                        </div>
+                        {item.order_text ? (
+                          <p className="text-xs text-[#17171c]/70 line-clamp-2">
+                            {item.order_text}
+                          </p>
+                        ) : null}
+                      </div>
+                      {selected ? (
+                        <Check className="h-4 w-4 text-[#17171c]" />
+                      ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            <Button
+              type="button"
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleApplyCenterOrder}
+              disabled={!selectedCenterOrderId}
             >
               적용하기
             </Button>

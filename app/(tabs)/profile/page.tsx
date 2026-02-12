@@ -7,6 +7,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
+import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
@@ -407,7 +408,7 @@ export default function ProfilePage() {
                     aria-label="리뷰 상세 보기"
                   >
                     {review.performancePoster ? (
-                      <img
+                      <FadeInImage
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
                         className="h-full w-full object-cover"
