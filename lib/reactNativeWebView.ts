@@ -24,3 +24,13 @@ export function sendHapticToApp(): void {
     JSON.stringify({ type: "haptic" })
   );
 }
+
+/** WebView일 때만 앱에 auth_token 전달. 브라우저에서는 no-op */
+export function sendAuthTokenToApp(accessToken: string): void {
+  if (typeof window === "undefined") return;
+  const trimmedToken = accessToken.trim();
+  if (!trimmedToken) return;
+  window.ReactNativeWebView?.postMessage(
+    JSON.stringify({ type: "auth_token", access_token: trimmedToken })
+  );
+}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabaseClient";
+import { sendAuthTokenToApp } from "@/lib/reactNativeWebView";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -27,6 +28,12 @@ export default function AuthCallbackPage() {
           return;
         }
 
+        const { data: sessionData } = await supabase.auth.getSession();
+        const exchangedAccessToken = sessionData.session?.access_token ?? "";
+        if (exchangedAccessToken) {
+          sendAuthTokenToApp(exchangedAccessToken);
+        }
+
         router.replace("/calendar");
         return;
       }
@@ -42,6 +49,8 @@ export default function AuthCallbackPage() {
           return;
         }
 
+        sendAuthTokenToApp(accessToken);
+
         router.replace("/calendar");
         return;
       }
@@ -51,6 +60,10 @@ export default function AuthCallbackPage() {
       if (!data.session) {
         toast("로그인 처리 중 오류가 발생했습니다. (로그인 세션이 없습니다.)");
         return;
+      }
+
+      if (data.session.access_token) {
+        sendAuthTokenToApp(data.session.access_token);
       }
 
       router.replace("/calendar");
