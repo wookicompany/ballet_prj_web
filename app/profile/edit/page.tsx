@@ -173,16 +173,18 @@ export default function ProfileEditPage() {
           </section>
 
           <section className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">닉네임</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-[#17171c]/60">닉네임</Label>
+              <span className="text-[11px] text-[#17171c]/40">
+                {nickname.length}/12
+              </span>
+            </div>
             <Input
               type="text"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
               maxLength={12}
             />
-            <p className="text-[11px] text-[#17171c]/40">
-              {nickname.length}/12
-            </p>
           </section>
 
           <Button
