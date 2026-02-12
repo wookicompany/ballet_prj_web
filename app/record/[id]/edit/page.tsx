@@ -938,7 +938,7 @@ export default function RecordEditPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="mt-2 w-full justify-start gap-2 text-left text-xs font-normal"
+                className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
                   const baseDate = form.record_date
                     ? new Date(form.record_date)
@@ -965,7 +965,7 @@ export default function RecordEditPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-2 w-full justify-start text-left text-xs font-normal"
+                  className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
                   onClick={() => {
                     const nextDraft = form.start_time
                       ? { hour: startHour, minute: startMinute }
@@ -984,7 +984,7 @@ export default function RecordEditPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-2 w-full justify-start text-left text-xs font-normal"
+                  className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
                   onClick={() => {
                     const nextDraft = form.end_time
                       ? { hour: endHour, minute: endMinute }

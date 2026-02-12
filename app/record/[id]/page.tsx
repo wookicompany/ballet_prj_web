@@ -21,10 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { ChevronLeft, Menu, PenLine, Trash2 } from "lucide-react";
@@ -332,7 +330,7 @@ export default function RecordDetailPage() {
 
           <section className="space-y-4">
             <Label className="text-xs text-[#17171c]/60">날짜와 시간</Label>
-            <div className="pt-0 text-sm text-[#17171c]">
+            <div className="mt-2 text-sm text-[#17171c]">
               <div>{formatDateLabel(record.record_date)}</div>
               <div>
                 {formatTimeRangeLine(record.start_time, record.end_time)}
@@ -419,21 +417,21 @@ export default function RecordDetailPage() {
                   </div>
                 ) : null}
                 {barOrderTags.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label className="text-xs text-[#17171c]/60">
                       바(bar) 순서
                     </Label>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {barOrderTags.map((tag, index) => (
                         <div
                           key={`bar-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
                             {tag}
                           </span>
                           {index < barOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">
+                            <span className="text-sm text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
@@ -443,21 +441,21 @@ export default function RecordDetailPage() {
                   </div>
                 ) : null}
                 {centerOrderTags.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label className="text-xs text-[#17171c]/60">
                       센터(center) 순서
                     </Label>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {centerOrderTags.map((tag, index) => (
                         <div
                           key={`center-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
                             {tag}
                           </span>
                           {index < centerOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">
+                            <span className="text-sm text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
@@ -478,19 +476,19 @@ export default function RecordDetailPage() {
             <Button
               type="button"
               variant="outline"
-            className="h-12 w-full justify-start"
+              className="h-12 w-full justify-start text-sm"
               onClick={() => {
                 setMenuOpen(false);
                 router.push(`/record/${record.id}/edit`);
               }}
             >
-            <PenLine className="mr-2 h-4 w-4" />
-            편집하기
+              <PenLine className="mr-2 h-4 w-4" />
+              수정하기
             </Button>
             <Button
               type="button"
               variant="outline"
-            className="h-12 w-full justify-start text-red-500 hover:text-red-500"
+              className="h-12 w-full justify-start text-sm text-red-500 hover:text-red-500"
               onClick={() => {
                 setMenuOpen(false);
                 setDeleteDialogOpen(true);
