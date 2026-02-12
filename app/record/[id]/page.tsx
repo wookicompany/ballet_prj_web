@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
+import FadeInImage from "@/components/ui/fade-in-image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -301,7 +302,7 @@ export default function RecordDetailPage() {
                           <source src={item.url} />
                         </video>
                       ) : (
-                        <img
+                        <FadeInImage
                           src={item.url}
                           alt="업로드 사진"
                           className="h-full w-full object-contain"
@@ -371,7 +372,7 @@ export default function RecordDetailPage() {
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
                   <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
-                    <img
+                    <FadeInImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
                       className="h-full w-full object-contain"
