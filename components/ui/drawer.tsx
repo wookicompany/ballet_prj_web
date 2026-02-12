@@ -2,6 +2,7 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
+import { sendHapticToApp } from "@/lib/reactNativeWebView"
 
 function Drawer({
   ...props
@@ -10,9 +11,19 @@ function Drawer({
 }
 
 function DrawerTrigger({
+  onClick,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
-  return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />
+  return (
+    <DrawerPrimitive.Trigger
+      data-slot="drawer-trigger"
+      onClick={(e) => {
+        sendHapticToApp()
+        onClick?.(e)
+      }}
+      {...props}
+    />
+  )
 }
 
 function DrawerPortal({
@@ -22,9 +33,19 @@ function DrawerPortal({
 }
 
 function DrawerClose({
+  onClick,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
-  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
+  return (
+    <DrawerPrimitive.Close
+      data-slot="drawer-close"
+      onClick={(e) => {
+        sendHapticToApp()
+        onClick?.(e)
+      }}
+      {...props}
+    />
+  )
 }
 
 function DrawerOverlay({

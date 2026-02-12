@@ -2,6 +2,7 @@ import * as React from "react"
 import { HoverCard as HoverCardPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { sendHapticToApp } from "@/lib/reactNativeWebView"
 
 function HoverCard({
   ...props
@@ -10,10 +11,18 @@ function HoverCard({
 }
 
 function HoverCardTrigger({
+  onClick,
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
   return (
-    <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
+    <HoverCardPrimitive.Trigger
+      data-slot="hover-card-trigger"
+      onClick={(e) => {
+        sendHapticToApp()
+        onClick?.(e)
+      }}
+      {...props}
+    />
   )
 }
 

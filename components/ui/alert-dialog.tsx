@@ -3,6 +3,7 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { sendHapticToApp } from "@/lib/reactNativeWebView"
 
 function AlertDialog({
   ...props
@@ -11,10 +12,18 @@ function AlertDialog({
 }
 
 function AlertDialogTrigger({
+  onClick,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
   return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+    <AlertDialogPrimitive.Trigger
+      data-slot="alert-dialog-trigger"
+      onClick={(e) => {
+        sendHapticToApp()
+        onClick?.(e)
+      }}
+      {...props}
+    />
   )
 }
 

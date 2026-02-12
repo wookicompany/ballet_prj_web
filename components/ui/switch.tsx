@@ -2,16 +2,22 @@ import * as React from "react"
 import { Switch as SwitchPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { sendHapticToApp } from "@/lib/reactNativeWebView"
 
 function Switch({
   className,
   size = "default",
+  onCheckedChange,
   ...props
 }: React.ComponentProps<typeof SwitchPrimitive.Root> & {
   size?: "sm" | "default" | "lg"
 }) {
   return (
     <SwitchPrimitive.Root
+      onCheckedChange={(checked) => {
+        sendHapticToApp()
+        onCheckedChange?.(checked)
+      }}
       data-slot="switch"
       data-size={size}
       className={cn(

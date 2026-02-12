@@ -2,6 +2,7 @@ import * as React from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { sendHapticToApp } from "@/lib/reactNativeWebView"
 
 function Popover({
   ...props
@@ -10,9 +11,19 @@ function Popover({
 }
 
 function PopoverTrigger({
+  onClick,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      onClick={(e) => {
+        sendHapticToApp()
+        onClick?.(e)
+      }}
+      {...props}
+    />
+  )
 }
 
 function PopoverContent({

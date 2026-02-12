@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 
 import FadeInImage from "@/components/ui/fade-in-image";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 type ImageViewerProps = {
   isOpen: boolean;
@@ -22,7 +23,10 @@ export default function ImageViewer({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
-      onClick={onClose}
+      onClick={() => {
+        sendHapticToApp()
+        onClose()
+      }}
       role="dialog"
       aria-modal="true"
     >
@@ -30,8 +34,9 @@ export default function ImageViewer({
         type="button"
         className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white"
         onClick={(event) => {
-          event.stopPropagation();
-          onClose();
+          event.stopPropagation()
+          sendHapticToApp()
+          onClose()
         }}
         aria-label="닫기"
       >

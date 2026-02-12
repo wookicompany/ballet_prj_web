@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { sendFCMToUser } from "@/lib/fcm";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (request: Request) => {
@@ -36,7 +37,7 @@ export const POST = async (request: Request) => {
 
   const { data: review, error: reviewError } = await supabaseAdmin
     .from("performance_reviews")
-    .select("id")
+    .select("id, user_id, performance_id")
     .eq("id", reviewId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -69,6 +70,18 @@ export const POST = async (request: Request) => {
       { message: "Failed to create comment" },
       { status: 500 }
     );
+  }
+
+  if (
+    review.user_id &&
+    review.user_id !== userData.user.id &&
+    review.performance_id
+  ) {
+    void sendFCMToUser(review.user_id, {
+      title: "새 댓글",
+      body: "누군가 리뷰에 댓글을 남겼어요",
+      link: `https://www.myballet.co.kr/performance/${review.performance_id}/reviews/${reviewId}`,
+    });
   }
 
   return NextResponse.json(data);

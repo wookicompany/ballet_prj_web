@@ -456,10 +456,13 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("performance_review_comment_likes")
-      .insert({ comment_id: commentId, user_id: user.id });
-    if (error) {
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const res = await fetch(`/api/review-comments/${commentId}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
       setCommentLikedMap((prev) => ({ ...prev, [commentId]: false }));
       setCommentLikeCounts((prev) => ({
         ...prev,

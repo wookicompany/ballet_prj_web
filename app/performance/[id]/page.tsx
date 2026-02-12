@@ -497,11 +497,13 @@ export default function PerformanceDetailPage() {
       return;
     }
 
-    const { error } = await supabase.from("performance_review_likes").insert({
-      review_id: reviewId,
-      user_id: user.id,
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const res = await fetch(`/api/reviews/${reviewId}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    if (error) {
+    if (!res.ok) {
       toast("좋아요를 남기지 못했어요.");
       setLikedMap((prev) => ({ ...prev, [reviewId]: false }));
       setLikeCounts((prev) => ({

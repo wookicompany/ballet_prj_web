@@ -1,8 +1,10 @@
- "use client";
- 
+"use client";
+
 import { useEffect, useRef, useState } from "react";
- 
- type FadeInImageProps = {
+
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
+
+type FadeInImageProps = {
    src: string;
    alt: string;
    className?: string;
@@ -40,7 +42,10 @@ import { useEffect, useRef, useState } from "react";
        alt={alt}
        loading={loading}
        aria-label={ariaLabel}
-       onClick={onClick}
+       onClick={() => {
+         sendHapticToApp()
+         onClick?.()
+       }}
        className={`${className ?? ""} transition-opacity duration-500 ${
          loaded ? "opacity-100" : "opacity-0"
        }`}
