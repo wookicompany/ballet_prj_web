@@ -1159,7 +1159,7 @@ export default function RecordEditPage() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-base"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={barOrderInput}
                     onChange={(event) => setBarOrderInput(event.target.value)}
@@ -1271,7 +1271,7 @@ export default function RecordEditPage() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-base"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={centerOrderInput}
                     onChange={(event) => setCenterOrderInput(event.target.value)}
@@ -1325,7 +1325,7 @@ export default function RecordEditPage() {
                 </div>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-base"
+                  className="h-12 text-base placeholder:text-sm"
                   placeholder="장소 이름을 입력해 주세요"
                   value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
@@ -1340,7 +1340,7 @@ export default function RecordEditPage() {
                 </Button>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-base"
+                  className="h-12 text-base placeholder:text-sm"
                   placeholder="상세 주소를 입력해 주세요 (선택사항)"
                   value={locationDetail}
                   onChange={(event) => setLocationDetail(event.target.value)}

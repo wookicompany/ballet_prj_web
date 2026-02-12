@@ -378,7 +378,7 @@ export default function CalendarPage() {
         </div>
         <div className="mt-4">
           <Button
-            className="w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             onClick={() => {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)

@@ -33,6 +33,7 @@ import {
   Check,
   ChevronLeft,
   Layers,
+  ListOrdered,
   MapPin,
   Plus,
   UserRound,
@@ -728,7 +729,7 @@ function RecordNewContent() {
     return (
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
-          <p className="text-sm text-[#17171c]/70">
+          <p className="text-xs text-[#17171c]/70">
             로그인하면 기록을 작성할 수 있어요.
           </p>
         </main>
@@ -795,7 +796,7 @@ function RecordNewContent() {
               className="hidden"
               onChange={handleMediaSelect}
             />
-            <p className="text-[11px] text-[#17171c]/50">
+            <p className="text-[10px] text-[#17171c]/50">
               사진은 최대 3장까지 업로드할 수 있어요.
             </p>
           </section>
@@ -810,7 +811,7 @@ function RecordNewContent() {
               <Button
                 type="button"
                 variant="outline"
-                className="mt-2 w-full justify-start gap-2 text-left font-normal"
+                className="mt-2 w-full justify-start gap-2 text-left text-xs font-normal"
                 onClick={() => {
                   const baseDate = form.record_date
                     ? new Date(form.record_date)
@@ -839,7 +840,7 @@ function RecordNewContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-2 w-full justify-start text-left font-normal"
+                  className="mt-2 w-full justify-start text-left text-xs font-normal"
                   onClick={() => {
                     const nextDraft = form.start_time
                       ? { hour: startHour, minute: startMinute }
@@ -860,7 +861,7 @@ function RecordNewContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-2 w-full justify-start text-left font-normal"
+                  className="mt-2 w-full justify-start text-left text-xs font-normal"
                   onClick={() => {
                     const nextDraft = form.end_time
                       ? { hour: endHour, minute: endMinute }
@@ -910,7 +911,7 @@ function RecordNewContent() {
 
           <Separator />
 
-          <section className="space-y-4">
+          <section className="space-y-6">
             <div>
               <Label className="text-xs text-[#17171c]/60">
                 오늘 잘했던 점을 남겨볼까요?
@@ -961,7 +962,7 @@ function RecordNewContent() {
               </Label>
             </div>
             {showBarOrder ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-[#17171c]/60">
                     바(bar) 순서
@@ -970,15 +971,15 @@ function RecordNewContent() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 shrink-0 px-3 text-xs"
+                    className="h-10 shrink-0 px-4 text-xs"
                     onClick={() => setBarOrderSheetOpen(true)}
                   >
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
                   {barOrderTags.length === 0 ? (
-                    <p className="text-[11px] text-[#17171c]/40">
+                    <p className="text-xs text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
                     </p>
                   ) : (
@@ -992,7 +993,7 @@ function RecordNewContent() {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-7 rounded-full px-2 text-xs"
+                            className="h-9 rounded-full px-3 text-xs"
                             onClick={() =>
                               setBarOrderTags((prev) =>
                                 prev.filter((_, idx) => idx !== index)
@@ -1018,7 +1019,7 @@ function RecordNewContent() {
                         type="button"
                         variant={selected ? "default" : "outline"}
                         size="sm"
-                        className="h-7 rounded-full px-3 text-xs"
+                        className="h-9 rounded-full px-3 text-xs"
                         onClick={() =>
                           setBarOrderTags((prev) =>
                             selected
@@ -1036,7 +1037,7 @@ function RecordNewContent() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-base"
+                    className="h-12 text-base placeholder:text-xs"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={barOrderInput}
                     onChange={(event) => setBarOrderInput(event.target.value)}
@@ -1073,7 +1074,7 @@ function RecordNewContent() {
               </Label>
             </div>
             {showCenterOrder ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-[#17171c]/60">
                     센터(center) 순서
@@ -1082,15 +1083,15 @@ function RecordNewContent() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 shrink-0 px-3 text-xs"
+                    className="h-10 shrink-0 px-4 text-xs"
                     onClick={() => setCenterOrderSheetOpen(true)}
                   >
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-2 min-h-[44px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
                   {centerOrderTags.length === 0 ? (
-                    <p className="text-[11px] text-[#17171c]/40">
+                    <p className="text-xs text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
                     </p>
                   ) : (
@@ -1104,7 +1105,7 @@ function RecordNewContent() {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-7 rounded-full px-2 text-xs"
+                            className="h-9 rounded-full px-3 text-xs"
                             onClick={() =>
                               setCenterOrderTags((prev) =>
                                 prev.filter((_, idx) => idx !== index)
@@ -1130,7 +1131,7 @@ function RecordNewContent() {
                         type="button"
                         variant={selected ? "default" : "outline"}
                         size="sm"
-                        className="h-7 rounded-full px-3 text-xs"
+                        className="h-9 rounded-full px-3 text-xs"
                         onClick={() =>
                           setCenterOrderTags((prev) =>
                             selected
@@ -1148,7 +1149,7 @@ function RecordNewContent() {
                   <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-base"
+                    className="h-12 text-base placeholder:text-xs"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={centerOrderInput}
                     onChange={(event) => setCenterOrderInput(event.target.value)}
@@ -1187,14 +1188,14 @@ function RecordNewContent() {
               </Label>
             </div>
             {showLocation ? (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-[#17171c]/60">장소</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 shrink-0 px-3 text-xs"
+                    className="h-10 shrink-0 px-4 text-xs"
                     onClick={() => setLocationSheetOpen(true)}
                   >
                     불러오기
@@ -1202,7 +1203,7 @@ function RecordNewContent() {
                 </div>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-base"
+                  className="h-12 text-base placeholder:text-xs"
                   placeholder="장소 이름을 입력해 주세요"
                   value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
@@ -1210,14 +1211,14 @@ function RecordNewContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full justify-start text-left text-[11px] font-normal"
+                  className="h-12 w-full justify-start text-left text-xs font-normal"
                   onClick={handleSearchAddress}
                 >
                   {locationBase || "주소 검색하기"}
                 </Button>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-base"
+                  className="h-12 text-base placeholder:text-xs"
                   placeholder="상세 주소를 입력해 주세요 (선택사항)"
                   value={locationDetail}
                   onChange={(event) => setLocationDetail(event.target.value)}
@@ -1248,7 +1249,7 @@ function RecordNewContent() {
               </Label>
             </div>
             {showLevelInstructor ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-medium text-[#17171c]/80">
                     강사님 &amp; 레벨
@@ -1257,16 +1258,16 @@ function RecordNewContent() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 shrink-0 px-3 text-xs"
+                    className="h-10 shrink-0 px-4 text-xs"
                     onClick={() => setInstructorSheetOpen(true)}
                   >
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-sm"
+                    className="h-12 text-base placeholder:text-xs"
                     placeholder="강사님을 입력해 주세요"
                     value={form.instructor}
                     onChange={(event) =>
@@ -1278,7 +1279,7 @@ function RecordNewContent() {
                   />
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-sm"
+                    className="h-12 text-base placeholder:text-xs"
                     placeholder="레벨을 입력해 주세요"
                     value={form.level}
                     onChange={(event) =>
@@ -1554,13 +1555,13 @@ function RecordNewContent() {
               </div>
             ) : savedLocations.length === 0 ? (
               <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
-                <p className="text-sm text-[#17171c]/70">
+                <p className="text-xs text-[#17171c]/70">
                   저장된 장소가 아직 없어요.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-4 w-full"
+                  className="mt-4 w-full text-xs"
                   onClick={() => router.push("/calendar/settings/locations")}
                 >
                   추가하러 가기
@@ -1606,7 +1607,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
               onClick={handleApplyLocation}
               disabled={!selectedLocationId}
             >
@@ -1626,13 +1627,13 @@ function RecordNewContent() {
               </div>
             ) : savedInstructorLevels.length === 0 ? (
               <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
-                <p className="text-sm text-[#17171c]/70">
+                <p className="text-xs text-[#17171c]/70">
                   저장된 강사님 & 레벨이 아직 없어요.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-4 w-full"
+                  className="mt-4 w-full text-xs"
                   onClick={() =>
                     router.push("/calendar/settings/instructor-levels")
                   }
@@ -1676,7 +1677,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
               onClick={handleApplyInstructorLevel}
               disabled={!selectedInstructorId}
             >
@@ -1696,13 +1697,13 @@ function RecordNewContent() {
               </div>
             ) : savedBarOrders.length === 0 ? (
               <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
-                <p className="text-sm text-[#17171c]/70">
+                <p className="text-xs text-[#17171c]/70">
                   저장된 바 순서가 아직 없어요.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-4 w-full"
+                  className="mt-4 w-full text-xs"
                   onClick={() =>
                     router.push("/calendar/settings/bar-orders")
                   }
@@ -1714,31 +1715,53 @@ function RecordNewContent() {
               <div className="space-y-2">
                 {savedBarOrders.map((item) => {
                   const selected = item.id === selectedBarOrderId;
+                  const barTags = item.order_text
+                    ? item.order_text
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    : [];
                   return (
                     <Button
                       key={item.id}
                       type="button"
                       variant="outline"
-                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                      className={`h-auto w-full flex-col items-stretch gap-0 px-4 py-3 text-left ${
                         selected
                           ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
                           : ""
                       }`}
                       onClick={() => setSelectedBarOrderId(item.id)}
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Layers className="h-4 w-4" />
-                          {item.name}
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <ListOrdered className="h-4 w-4 shrink-0 text-[#17171c]/50" />
+                          <span className="truncate text-sm font-medium">
+                            {item.name}
+                          </span>
                         </div>
-                        {item.order_text ? (
-                          <p className="text-xs text-[#17171c]/70 line-clamp-2">
-                            {item.order_text}
-                          </p>
+                        {selected ? (
+                          <Check className="h-4 w-4 shrink-0 text-[#17171c]" />
                         ) : null}
                       </div>
-                      {selected ? (
-                        <Check className="h-4 w-4 text-[#17171c]" />
+                      {barTags.length > 0 ? (
+                        <div className="mt-2 flex w-full flex-wrap items-center gap-2">
+                          {barTags.map((tag, index, arr) => (
+                            <div
+                              key={`${item.id}-${tag}-${index}`}
+                              className="flex items-center gap-2"
+                            >
+                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-xs">
+                                {tag}
+                              </span>
+                              {index < arr.length - 1 ? (
+                                <span className="text-xs text-[#17171c]/40">
+                                  &gt;
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       ) : null}
                     </Button>
                   );
@@ -1747,7 +1770,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
               onClick={handleApplyBarOrder}
               disabled={!selectedBarOrderId}
             >
@@ -1767,13 +1790,13 @@ function RecordNewContent() {
               </div>
             ) : savedCenterOrders.length === 0 ? (
               <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
-                <p className="text-sm text-[#17171c]/70">
+                <p className="text-xs text-[#17171c]/70">
                   저장된 센터 순서가 아직 없어요.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-4 w-full"
+                  className="mt-4 w-full text-xs"
                   onClick={() =>
                     router.push("/calendar/settings/center-orders")
                   }
@@ -1785,31 +1808,53 @@ function RecordNewContent() {
               <div className="space-y-2">
                 {savedCenterOrders.map((item) => {
                   const selected = item.id === selectedCenterOrderId;
+                  const centerTags = item.order_text
+                    ? item.order_text
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    : [];
                   return (
                     <Button
                       key={item.id}
                       type="button"
                       variant="outline"
-                      className={`h-auto w-full justify-between px-4 py-3 text-left ${
+                      className={`h-auto w-full flex-col items-stretch gap-0 px-4 py-3 text-left ${
                         selected
                           ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
                           : ""
                       }`}
                       onClick={() => setSelectedCenterOrderId(item.id)}
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Layers className="h-4 w-4" />
-                          {item.name}
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <ListOrdered className="h-4 w-4 shrink-0 text-[#17171c]/50" />
+                          <span className="truncate text-sm font-medium">
+                            {item.name}
+                          </span>
                         </div>
-                        {item.order_text ? (
-                          <p className="text-xs text-[#17171c]/70 line-clamp-2">
-                            {item.order_text}
-                          </p>
+                        {selected ? (
+                          <Check className="h-4 w-4 shrink-0 text-[#17171c]" />
                         ) : null}
                       </div>
-                      {selected ? (
-                        <Check className="h-4 w-4 text-[#17171c]" />
+                      {centerTags.length > 0 ? (
+                        <div className="mt-2 flex w-full flex-wrap items-center gap-2">
+                          {centerTags.map((tag, index, arr) => (
+                            <div
+                              key={`${item.id}-${tag}-${index}`}
+                              className="flex items-center gap-2"
+                            >
+                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-xs">
+                                {tag}
+                              </span>
+                              {index < arr.length - 1 ? (
+                                <span className="text-xs text-[#17171c]/40">
+                                  &gt;
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       ) : null}
                     </Button>
                   );
@@ -1818,7 +1863,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
               onClick={handleApplyCenterOrder}
               disabled={!selectedCenterOrderId}
             >
