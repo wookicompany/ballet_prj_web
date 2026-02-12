@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyBallet",
-  description: "MyBallet",
+  title: "마이발레",
+  description: "발레의 순간을 기록하고 공연의 감동을 나누다",
 };
 
 export default function RootLayout({

@@ -4,6 +4,12 @@
 
 ## 1) 공통
 
+### 브랜딩
+
+- 앱 이름: **마이발레**
+- 부제: 발레의 순간을 기록하고 공연의 감동을 나누다
+- 메타데이터: 루트 레이아웃 `title` / `description`에 위 내용 사용
+
 ### 화면/라우팅
 
 - 기본 진입 경로: `/calendar`
@@ -18,13 +24,23 @@
   - `/profile`: 프로필 탭
   - `/profile/edit`: 프로필 편집
   - `/profile/menu`: 프로필 설정 메뉴
+  - `/profile/data-management`: 데이터 관리
   - `/support`: 고객지원
   - `/policy`: 정책 목록
   - `/policy/privacy`: 개인정보 처리방침
   - `/policy/terms`: 이용약관
+  - `/calendar/settings`: 캘린더 설정
+  - `/calendar/settings/bar-orders`: 바 주문 목록 설정
+  - `/calendar/settings/center-orders`: 센터 주문 목록 설정
+  - `/calendar/settings/instructor-levels`: 강사 레벨 설정
+  - `/calendar/settings/locations`: 장소 설정
   - `/performance`: 공연 목록
+  - `/performance/search`: 공연 검색
+  - `/performance/search-input`: 공연 검색 입력
   - `/performance/[id]`: 공연 상세
   - `/performance/[id]/reviews/new`: 공연 리뷰 작성
+  - `/performance/[id]/reviews/[reviewId]`: 리뷰 상세
+  - `/performance/[id]/reviews/[reviewId]/edit`: 리뷰 수정
 - 네비게이션
   - 하단 탭: `캘린더` / `공연` / `프로필`
   - 플로팅 버튼: 기록 생성(`/record/new`)
@@ -124,14 +140,17 @@
 
 ### 데이터 적재/배치 및 CRUD 기준
 
-- 현재는 **수동 적재만 지원** (Vercel Cron은 이후 단계에서 적용)
-- **BBBC 전체 공연**을 수동 호출 시점에 수집
-- 공연목록/공연상세를 Supabase에 upsert 저장
+- Vercel Cron으로 **3일 주기 배치** 실행 (PRD Phase 1 기준)
+- **BBBC(무용: 서양/한국무용) 전체 공연**을 매 배치마다 수집
+- 배치 작업은 KOPIS 공연목록/공연상세를 수집해 Supabase에 upsert 저장
 - 서비스는 KOPIS 실시간 호출 없이 DB 데이터만 사용
-- 수동 호출: `POST /api/cron/kopis-sync`
+- 공연 동기화: `POST /api/cron/kopis-sync`
   - 쿼리: `stdate=YYYYMMDD`, `eddate=YYYYMMDD`, `afterdate=YYYYMMDD` (선택)
   - 헤더: `x-cron-secret`에 `CRON_SECRET` 값 전달 (설정된 경우)
   - 기본값: `stdate`는 30일 전, `eddate`는 365일 후, `afterdate`는 3일 전
+- 공연 시설 동기화: `POST /api/cron/kopis-sync-facilities` (공연 목록/상세와 분리된 크론 라우트)
+  - 저장 테이블: `kopis_facilities`(목록), `kopis_facility_details`(상세)
+  - 쿼리 `afterdate`로 증분 동기화 가능
 
 #### 공연 목록 (KOPIS `pblprfr`)
 - **C**: `mt20id`가 DB에 없으면 생성
@@ -216,3 +235,5 @@
 - 가입일: 표시하지 않음
 - 통계: 총 기록 개수, 누적 발레 시간(시간/분)
 - 회원탈퇴: 설정 화면에 포함
+- 데이터 관리: `/profile/data-management`에서 안내
+- 캘린더 설정: 캘린더 설정 진입 후 바 주문/센터 주문/강사 레벨/장소 목록 관리 (각각 CRUD API: `saved-bar-orders`, `saved-center-orders`, `saved-instructor-levels`, `saved-locations`)
