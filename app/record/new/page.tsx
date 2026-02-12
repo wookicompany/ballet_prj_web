@@ -18,7 +18,7 @@ import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import { ensureSessionOrLogin } from "@/lib/authSession";
+import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -233,24 +233,10 @@ function RecordNewContent() {
     setValue("");
   };
 
-  const getAccessToken = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    let session = sessionData.session ?? null;
-    if (!session) {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      session = refreshData.session ?? null;
-    }
-    if (!session) {
-      openLoginSheet();
-      return null;
-    }
-    return session.access_token;
-  };
-
   const fetchSavedLocations = async () => {
     if (!user) return;
     setSavedLocationsLoading(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setSavedLocationsLoading(false);
       return;
@@ -273,7 +259,7 @@ function RecordNewContent() {
   const fetchSavedInstructorLevels = async () => {
     if (!user) return;
     setSavedInstructorLoading(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setSavedInstructorLoading(false);
       return;
@@ -346,13 +332,13 @@ function RecordNewContent() {
     if (!locationSheetOpen) return;
     setSelectedLocationId(null);
     void fetchSavedLocations();
-  }, [locationSheetOpen, user]);
+  }, [locationSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!instructorSheetOpen) return;
     setSelectedInstructorId(null);
     void fetchSavedInstructorLevels();
-  }, [instructorSheetOpen, user]);
+  }, [instructorSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!dateSheetOpen) return;
@@ -1178,7 +1164,6 @@ function RecordNewContent() {
         <BottomSheet
           open={dateSheetOpen}
           onOpenChange={setDateSheetOpen}
-          title="날짜를 선택해 주세요"
         >
           <div className="grid grid-cols-3 gap-3">
             <div
@@ -1268,7 +1253,6 @@ function RecordNewContent() {
         <BottomSheet
           open={startSheetOpen}
           onOpenChange={setStartSheetOpen}
-          title="시작 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-3 gap-3">
             <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
@@ -1345,7 +1329,6 @@ function RecordNewContent() {
         <BottomSheet
           open={endSheetOpen}
           onOpenChange={setEndSheetOpen}
-          title="종료 시간을 선택해 주세요"
         >
           <div className="mt-2 grid grid-cols-3 gap-3">
             <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
@@ -1422,7 +1405,6 @@ function RecordNewContent() {
         <BottomSheet
           open={locationSheetOpen}
           onOpenChange={setLocationSheetOpen}
-          title="저장된 장소 불러오기"
         >
           <div className="space-y-3">
             {savedLocationsLoading ? (
@@ -1495,7 +1477,6 @@ function RecordNewContent() {
         <BottomSheet
           open={instructorSheetOpen}
           onOpenChange={setInstructorSheetOpen}
-          title="저장된 강사님 & 레벨 불러오기"
         >
           <div className="space-y-3">
             {savedInstructorLoading ? (

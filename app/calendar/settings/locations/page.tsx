@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { getAccessToken } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -89,24 +90,10 @@ export default function SavedLocationsPage() {
     }).open();
   };
 
-  const getAccessToken = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    let session = sessionData.session ?? null;
-    if (!session) {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      session = refreshData.session ?? null;
-    }
-    if (!session) {
-      openLoginSheet();
-      return null;
-    }
-    return session.access_token;
-  };
-
   const fetchItems = async () => {
     if (!user) return;
     setListLoading(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setListLoading(false);
       return;
@@ -129,7 +116,7 @@ export default function SavedLocationsPage() {
   useEffect(() => {
     if (!user) return;
     void fetchItems();
-  }, [user]);
+  }, [user?.id]);
 
   const addressLine = useMemo(() => {
     const base = form.address_base.trim();
@@ -161,7 +148,7 @@ export default function SavedLocationsPage() {
       return;
     }
     setSaving(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setSaving(false);
       return;
@@ -194,7 +181,7 @@ export default function SavedLocationsPage() {
 
   const handleDelete = async () => {
     if (!user || !deleteTarget) return;
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) return;
     const response = await fetch(`/api/saved-locations/${deleteTarget.id}`, {
       method: "DELETE",
@@ -333,7 +320,6 @@ export default function SavedLocationsPage() {
           setSheetOpen(open);
           if (!open) resetForm();
         }}
-        title={editingId ? "장소 수정" : "새 장소 추가"}
       >
         <div className="space-y-4">
           <div className="space-y-2">

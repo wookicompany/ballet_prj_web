@@ -473,7 +473,6 @@ export default function RecordDetailPage() {
         <BottomSheet
           open={menuOpen}
           onOpenChange={setMenuOpen}
-        title="메뉴"
         >
           <div className="space-y-2">
             <Button

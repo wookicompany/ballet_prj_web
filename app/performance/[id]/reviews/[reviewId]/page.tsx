@@ -779,7 +779,6 @@ export default function PerformanceReviewDetailPage() {
       <BottomSheet
         open={actionSheetOpen}
         onOpenChange={setActionSheetOpen}
-        title="리뷰 메뉴"
       >
         {user?.id === review.user_id ? (
           <div className="space-y-2">

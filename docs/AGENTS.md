@@ -32,9 +32,15 @@
 - 테이블 생성/변경은 MCP의 SQL 실행 또는 마이그레이션을 우선 사용한다.
 - 타입 생성이 필요하면 MCP 도구(`generate_typescript_types`)를 사용한다.
 - CRUD는 서버 라우트에서 권한 검증 후 service role로 처리한다. (특히 INSERT/UPDATE/DELETE)
+- PATCH/DELETE 시 해당 행을 먼저 조회한 뒤, 없으면 404, 타인 소유면 403을 반환한 다음 수정/삭제한다.
 - `deleted_at` 기준으로 조회/수정/이미지·미디어 추가를 모두 차단한다.
 - 평점(1~10), mood(1~5) 같은 범위는 서버에서 최종 검증한다.
 - 파일 업로드는 클라이언트에서 처리하고, 메타데이터 저장은 서버 API로 통일한다.
+
+## 인증
+
+- API 라우트에서 사용자 인증은 `lib/apiAuth.ts`의 `getUserFromRequest`를 사용한다. (공통화 유지)
+- 클라이언트에서 API 호출용 액세스 토큰 취득은 `lib/authSession.ts`의 `getAccessToken(openLoginSheet)`를 사용한다. (공통화 유지)
 
 ## 프로젝트 구조
 

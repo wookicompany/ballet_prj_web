@@ -331,7 +331,6 @@ export default function CalendarPage() {
       <BottomSheet
         open={monthSheetOpen}
         onOpenChange={setMonthSheetOpen}
-        title="연월을 선택해 주세요"
       >
         <div className="grid grid-cols-2 gap-3">
           <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">

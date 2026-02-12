@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { getAccessToken } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -49,24 +50,10 @@ export default function SavedInstructorLevelsPage() {
     setEditingId(null);
   };
 
-  const getAccessToken = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    let session = sessionData.session ?? null;
-    if (!session) {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      session = refreshData.session ?? null;
-    }
-    if (!session) {
-      openLoginSheet();
-      return null;
-    }
-    return session.access_token;
-  };
-
   const fetchItems = async () => {
     if (!user) return;
     setListLoading(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setListLoading(false);
       return;
@@ -91,7 +78,7 @@ export default function SavedInstructorLevelsPage() {
   useEffect(() => {
     if (!user) return;
     void fetchItems();
-  }, [user]);
+  }, [user?.id]);
 
   const handleOpenCreate = () => {
     resetForm();
@@ -111,7 +98,7 @@ export default function SavedInstructorLevelsPage() {
       return;
     }
     setSaving(true);
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
       setSaving(false);
       return;
@@ -145,7 +132,7 @@ export default function SavedInstructorLevelsPage() {
 
   const handleDelete = async () => {
     if (!user || !deleteTarget) return;
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) return;
     const response = await fetch(
       `/api/saved-instructor-levels/${deleteTarget.id}`,
@@ -283,7 +270,6 @@ export default function SavedInstructorLevelsPage() {
           setSheetOpen(open);
           if (!open) resetForm();
         }}
-        title={editingId ? "강사님 & 레벨 수정" : "새 강사님 & 레벨 추가"}
       >
         <div className="space-y-4">
           <div className="space-y-2">

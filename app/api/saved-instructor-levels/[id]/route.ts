@@ -1,44 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-
-const getUserFromRequest = async (request: Request) => {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return {
-      user: null,
-      supabaseAdmin: null,
-      errorResponse: NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return {
-      user: null,
-      supabaseAdmin: null,
-      errorResponse: NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      ),
-    };
-  }
-
-  return { user: userData.user, supabaseAdmin, errorResponse: null };
-};
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 export const PATCH = async (
   request: Request,
@@ -48,6 +10,19 @@ export const PATCH = async (
   const auth = await getUserFromRequest(request);
   if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
     return auth.errorResponse;
+  }
+
+  const existing = await auth.supabaseAdmin
+    .from("saved_instructor_levels")
+    .select("id, user_id")
+    .eq("id", id)
+    .single();
+
+  if (existing.error || !existing.data) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+  if (existing.data.user_id !== auth.user.id) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   const body = await request.json();
@@ -88,8 +63,17 @@ export const DELETE = async (
     return auth.errorResponse;
   }
 
-  if (!id) {
-    return NextResponse.json({ message: "Bad request" }, { status: 400 });
+  const existing = await auth.supabaseAdmin
+    .from("saved_instructor_levels")
+    .select("id, user_id")
+    .eq("id", id)
+    .single();
+
+  if (existing.error || !existing.data) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+  if (existing.data.user_id !== auth.user.id) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   const { error } = await auth.supabaseAdmin
