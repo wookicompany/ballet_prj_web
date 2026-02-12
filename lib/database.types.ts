@@ -721,6 +721,70 @@ export type Database = {
           },
         ]
       }
+      saved_bar_orders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          order_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          order_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          order_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_bar_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_center_orders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          order_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          order_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          order_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_center_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       saved_instructor_levels: {
         Row: {
           created_at: string
