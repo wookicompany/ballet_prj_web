@@ -134,6 +134,10 @@ const formatDate = (value: string) => {
   return date.toLocaleDateString("ko-KR");
 };
 
+const formatRatingText = (value: number) => {
+  return value.toFixed(1);
+};
+
 const getStarFillRatio = (rating10: number, starIndex: number) => {
   const value = rating10 / 2 - (starIndex - 1);
   return value >= 1 ? 1 : 0;
@@ -185,12 +189,14 @@ export default function PerformanceDetailPage() {
   const [reviewPage, setReviewPage] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [activeVisualIndex, setActiveVisualIndex] = useState(0);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [storyExpanded, setStoryExpanded] = useState(false);
   const [infoTab, setInfoTab] = useState<"performance" | "facility">(
     "performance",
   );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const visualScrollRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const viewTrackedRef = useRef<string | null>(null);
 
@@ -322,10 +328,11 @@ export default function PerformanceDetailPage() {
     setCommentCounts({});
     setReviewImages({});
     setFacilityDetail(null);
-      setAwardDetail(null);
+    setAwardDetail(null);
     setInfoTab("performance");
     setHasMoreReviews(true);
     setReviewPage(1);
+    setActiveVisualIndex(0);
     requestedPagesRef.current = new Set();
   }, [performanceId]);
 
@@ -591,6 +598,27 @@ export default function PerformanceDetailPage() {
       .filter(Boolean);
   }, [awardDetail?.awards]);
 
+  const visualSlides = useMemo(() => {
+    if (!detail) return [];
+    const slides: Array<{ id: string; url: string; alt: string }> = [];
+    if (detail.poster) {
+      slides.push({
+        id: `${detail.mt20id}-poster`,
+        url: detail.poster,
+        alt: `${detail.prfnm ?? "공연"} 포스터`,
+      });
+    }
+    (detail.styurls ?? []).forEach((url, index) => {
+      if (!url) return;
+      slides.push({
+        id: `${detail.mt20id}-sty-${index}`,
+        url,
+        alt: `${detail.prfnm ?? "공연"} 소개 이미지 ${index + 1}`,
+      });
+    });
+    return slides;
+  }, [detail]);
+
   return (
     <MobileContainer>
       <main className="pb-12">
@@ -647,29 +675,59 @@ export default function PerformanceDetailPage() {
         ) : (
           <div className="space-y-5">
             <section className="relative h-[380px] w-full overflow-hidden bg-[#17171c]">
-              {detail.poster ? (
+              {visualSlides.length ? (
                 <>
-                  <FadeInImage
-                    src={detail.poster}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover blur-2xl scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-                  <button
-                    type="button"
-                    className="absolute inset-0 h-full w-full"
-                    onClick={() => {
-                      setViewerUrl(detail.poster);
-                      setViewerOpen(true);
+                  <div
+                    ref={visualScrollRef}
+                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto"
+                    onScroll={() => {
+                      const container = visualScrollRef.current;
+                      if (!container) return;
+                      const width = container.clientWidth;
+                      if (!width) return;
+                      const nextIndex = Math.round(container.scrollLeft / width);
+                      setActiveVisualIndex((prev) =>
+                        prev === nextIndex ? prev : nextIndex
+                      );
                     }}
-                    aria-label="포스터 이미지 크게 보기"
                   >
-                    <FadeInImage
-                      src={detail.poster}
-                      alt={`${detail.prfnm ?? "공연"} 포스터`}
-                      className="h-full w-full object-contain"
-                    />
-                  </button>
+                    {visualSlides.map((slide) => (
+                      <button
+                        key={slide.id}
+                        type="button"
+                        className="relative min-w-full shrink-0 snap-center snap-always"
+                        onClick={() => {
+                          setViewerUrl(slide.url);
+                          setViewerOpen(true);
+                        }}
+                        aria-label="공연 이미지 크게 보기"
+                      >
+                        <FadeInImage
+                          src={slide.url}
+                          alt=""
+                          className="absolute inset-0 h-full w-full scale-105 object-cover blur-2xl"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+                        <FadeInImage
+                          src={slide.url}
+                          alt={slide.alt}
+                          className="relative h-full w-full object-contain"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {visualSlides.length > 1 ? (
+                    <div className="absolute inset-x-0 bottom-4 z-10 flex items-center justify-center gap-1.5">
+                      {visualSlides.map((slide, index) => (
+                        <span
+                          key={`visual-dot-${slide.id}`}
+                          className={`h-1.5 w-1.5 rounded-full transition ${
+                            index === activeVisualIndex ? "bg-white" : "bg-white/35"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">
@@ -700,6 +758,30 @@ export default function PerformanceDetailPage() {
                   <span>{formatDateRange(detail.prfpdfrom, detail.prfpdto)}</span>
                   <span>{formatOrFallback(detail.fcltynm, "공연장 정보 없음")}</span>
                 </div>
+                {reviewAverage !== null ? (
+                  <div className="mt-2 flex items-center gap-1.5 text-sm text-[#17171c]/70">
+                    {Array.from({ length: 5 }, (_, index) => {
+                      const ratio = getStarFillRatio(reviewAverage, index + 1);
+                      return (
+                        <div
+                          key={`summary-star-${index}`}
+                          className="relative h-4 w-4"
+                        >
+                          <Star className="h-4 w-4 text-[#ff273d]" fill="none" />
+                          <div
+                            className="absolute inset-0 overflow-hidden"
+                            style={{ width: `${ratio * 100}%` }}
+                          >
+                            <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <span className="text-[#ff273d]">
+                      {formatRatingText(reviewAverage)}점
+                    </span>
+                  </div>
+                ) : null}
                 {awardLines.length ? (
                   <div className="mt-3 space-y-1">
                     <ul className="space-y-1">
@@ -960,34 +1042,6 @@ export default function PerformanceDetailPage() {
                 )}
               </section>
 
-              {detail.styurls && detail.styurls.length > 0 ? (
-                <section className="space-y-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-[#17171c]">
-                    소개 이미지
-                  </h3>
-                  <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-                    {detail.styurls.map((url, index) => (
-                      <button
-                        key={`${detail.mt20id}-sty-${index}`}
-                        type="button"
-                        className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-black/5 ring-1 ring-black/5"
-                        onClick={() => {
-                          setViewerUrl(url);
-                          setViewerOpen(true);
-                        }}
-                        aria-label="소개 이미지 크게 보기"
-                      >
-                        <FadeInImage
-                          src={url}
-                          alt="소개 이미지"
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-
               <section className="space-y-5 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[#17171c]">리뷰</h3>
@@ -1011,11 +1065,13 @@ export default function PerformanceDetailPage() {
                 <div className="flex items-center gap-2 text-sm text-[#17171c]/70">
                   {reviewAverage !== null ? (
                     <div className="flex items-center gap-2">
+                      <span className="text-[#ff273d]">평균</span>
                       <span className="inline-flex items-center gap-1 font-medium text-[#ff273d]">
                         <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
-                        {reviewAverage}점
+                        {formatRatingText(reviewAverage)}점
                       </span>
-                      <span>리뷰 {reviewCount}개</span>
+                      <span className="text-[#17171c]/40">/</span>
+                      <span>총 리뷰 수 {reviewCount}개</span>
                     </div>
                   ) : (
                     <span className="text-[#17171c]/60">아직 리뷰가 없어요. 첫 리뷰를 남겨 보세요.</span>

@@ -274,7 +274,7 @@ export default function PerformanceListPage() {
     item: PerformanceItem,
     options?: {
       badgeLabel?: string | null;
-      metaLabel?: React.ReactNode;
+      rating?: RatingSummary;
     }
   ) => {
     return (
@@ -306,50 +306,53 @@ export default function PerformanceListPage() {
           <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
             {item.prfnm}
           </p>
-          {options?.metaLabel ? (
-            <p className="text-xs text-[#17171c]/70">{options.metaLabel}</p>
-          ) : null}
+          <p className="line-clamp-1 text-xs text-[#17171c]/70">
+            {item.fcltynm || "공연장 정보 없음"}
+          </p>
           <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
+          <div className="min-h-4">
+            {options?.rating ? (
+              <span className="inline-flex items-center gap-1 text-xs text-[#ff273d]">
+                <Star className="h-3 w-3 fill-current" />
+                {options.rating.avg.toFixed(1)}
+              </span>
+            ) : null}
+          </div>
         </div>
       </button>
     );
   };
 
-  const popularCards = sections.popular.map((item) => {
-    const rating = ratingMap[item.mt20id];
-    const ratingLabel = rating ? (
-      <span className="inline-flex items-center gap-1 text-[#ff273d]">
-        <Star className="h-3 w-3 fill-current" />
-        {rating.avg.toFixed(1)}
-      </span>
-    ) : null;
-    return renderCard(item, {
-      metaLabel: ratingLabel,
-    });
-  });
+  const popularCards = sections.popular.map((item) =>
+    renderCard(item, {
+      rating: ratingMap[item.mt20id],
+    })
+  );
 
   const scheduledCards = sections.scheduled.map((item) => {
     const diff = getDaysUntil(item.prfpdfrom);
     const label = diff === null ? null : diff <= 0 ? "D-DAY" : `D-${diff}`;
     return renderCard(item, {
       badgeLabel: label,
-      metaLabel: item.fcltynm,
+      rating: ratingMap[item.mt20id],
     });
   });
 
   const completedCards = sections.completed.map((item) =>
     renderCard(item, {
-      metaLabel: item.fcltynm,
+      rating: ratingMap[item.mt20id],
     })
   );
 
   const awardCards = sections.awards.map((item) =>
-    renderCard(item, { metaLabel: item.fcltynm })
+    renderCard(item, {
+      rating: ratingMap[item.mt20id],
+    })
   );
 
   const visitCards = sections.visit.map((item) =>
     renderCard(item, {
-      metaLabel: item.fcltynm,
+      rating: ratingMap[item.mt20id],
     })
   );
 
