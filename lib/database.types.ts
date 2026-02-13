@@ -275,6 +275,75 @@ export type Database = {
           },
         ]
       }
+      kopis_performance_awards: {
+        Row: {
+          awards: string | null
+          awards_raw: string | null
+          created_at: string
+          deleted_at: string | null
+          fcltynm: string | null
+          genrenm: string | null
+          id: string
+          is_active: boolean
+          mt20id: string
+          poster: string | null
+          prfnm: string | null
+          prfpdfrom: string | null
+          prfpdto: string | null
+          prfstate: string | null
+          updated_at: string
+        }
+        Insert: {
+          awards?: string | null
+          awards_raw?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          id?: string
+          is_active?: boolean
+          mt20id: string
+          poster?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Update: {
+          awards?: string | null
+          awards_raw?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          id?: string
+          is_active?: boolean
+          mt20id?: string
+          poster?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
+        ]
+      }
       kopis_performances: {
         Row: {
           area: string | null

@@ -39,6 +39,7 @@ import {
   MoreHorizontal,
   PenLine,
   Star,
+  Trophy,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -105,6 +106,10 @@ type FacilityDetail = {
   restbarrier: string | null;
   runwbarrier: string | null;
   elevbarrier: string | null;
+};
+
+type AwardDetail = {
+  awards: string | null;
 };
 
 const formatOptionalText = (value?: string | null) => {
@@ -174,6 +179,7 @@ export default function PerformanceDetailPage() {
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
   const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
+  const [awardDetail, setAwardDetail] = useState<AwardDetail | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
   const [reviewPage, setReviewPage] = useState(0);
@@ -212,7 +218,8 @@ export default function PerformanceDetailPage() {
       if (listError || !listData) {
         toast("공연 정보를 불러오지 못했어요.");
         setDetail(null);
-      setFacilityDetail(null);
+        setFacilityDetail(null);
+        setAwardDetail(null);
         setLoading(false);
         return;
       }
@@ -226,6 +233,14 @@ export default function PerformanceDetailPage() {
         entrpsnmS: detailData?.entrpsnm_s ?? null,
       };
       setDetail(merged);
+      const { data: awardData } = await supabase
+        .from("kopis_performance_awards")
+        .select("awards")
+        .eq("mt20id", performanceId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .maybeSingle();
+      setAwardDetail((awardData as AwardDetail) ?? null);
 
       if (merged.mt10id) {
         const { data: facilityData } = await supabase
@@ -307,6 +322,7 @@ export default function PerformanceDetailPage() {
     setCommentCounts({});
     setReviewImages({});
     setFacilityDetail(null);
+      setAwardDetail(null);
     setInfoTab("performance");
     setHasMoreReviews(true);
     setReviewPage(1);
@@ -564,6 +580,17 @@ export default function PerformanceDetailPage() {
     setDeleteTargetId(null);
   };
 
+  const awardLines = useMemo(() => {
+    const raw = awardDetail?.awards;
+    if (!raw) return [];
+    return raw
+      .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }, [awardDetail?.awards]);
+
   return (
     <MobileContainer>
       <main className="pb-12">
@@ -673,6 +700,21 @@ export default function PerformanceDetailPage() {
                   <span>{formatDateRange(detail.prfpdfrom, detail.prfpdto)}</span>
                   <span>{formatOrFallback(detail.fcltynm, "공연장 정보 없음")}</span>
                 </div>
+                {awardLines.length ? (
+                  <div className="mt-3 space-y-1">
+                    <ul className="space-y-1">
+                      {awardLines.map((line, index) => (
+                        <li
+                          key={`${detail.mt20id}-award-${index}`}
+                          className="flex items-start gap-1.5 text-xs leading-relaxed text-[#17171c]"
+                        >
+                          <Trophy className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </section>
               <section className="space-y-4 rounded-2xl border border-black/5 bg-white p-5 text-xs text-[#17171c] shadow-sm">
                 <div className="flex w-full">

@@ -151,6 +151,11 @@
 - 공연 시설 동기화: `POST /api/cron/kopis-sync-facilities` (공연 목록/상세와 분리된 크론 라우트)
   - 저장 테이블: `kopis_facilities`(목록), `kopis_facility_details`(상세)
   - 쿼리 `afterdate`로 증분 동기화 가능
+- 공연 수상작 동기화: `POST /api/cron/kopis-sync-awards` (독립 수동 실행 가능)
+  - 저장 테이블: `kopis_performance_awards`
+  - KOPIS `prfawad` 수집 결과를 `mt20id` 기준 upsert
+  - `awards`는 `<br>`/`&lt;br&gt;` 줄바꿈 문자열을 정규화해 저장
+  - 권장 수동 실행 순서: `kopis-sync` -> `kopis-sync-awards` -> `kopis-sync-facilities`
 
 #### 공연 목록 (KOPIS `pblprfr`)
 - **C**: `mt20id`가 DB에 없으면 생성
@@ -177,6 +182,9 @@
   - `genrenm`: 공연 장르명
   - `prfstate`: 공연상태
   - `area`: 지역
+- 수상작 배지
+  - 카드 우상단 트로피 아이콘 배지 노출
+  - `kopis_performance_awards`에 매칭되는 공연만 표시
 
 #### 공연 목록 섹션 구성 (아이디어)
 
@@ -206,6 +214,9 @@
   - `styurls`: 소개이미지목록 (모든 소개이미지)
   - `dtguidance`: 공연시간
   - `relates`: 예매처목록 (모든 예매처 정보)
+- 수상 정보
+  - 공연 제목 위에 트로피 아이콘 + 수상 목록 노출
+  - 수상 목록은 줄바꿈 문자열(`<br>`, `&lt;br&gt;`) 파싱 후 라인 단위로 렌더링
 - 리뷰 요약(평균 별점, 리뷰 수)
  
 ### 리뷰/평점
@@ -217,7 +228,7 @@
 - 사용자 프로필에서 내가 작성한 리뷰 목록 제공
 - 리뷰에 댓글 작성 가능 (공연 리뷰에 대한 댓글)
 - 리뷰/댓글 좋아요 기능 제공
-- 공연 좋아요 기능 제공
+- 공연 좋아요 기능은 제공하지 않음
 
 #### 공연 리뷰 댓글
 

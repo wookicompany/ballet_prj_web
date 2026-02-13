@@ -93,6 +93,18 @@ type KopisFacilityDetailItem = {
   mt13s?: { mt13?: unknown } | unknown[] | unknown;
 };
 
+type KopisAwardItem = {
+  mt20id?: string;
+  prfnm?: string;
+  prfpdfrom?: string;
+  prfpdto?: string;
+  fcltynm?: string;
+  poster?: string;
+  genrenm?: string;
+  prfstate?: string;
+  awards?: string;
+};
+
 type KopisListResponse = {
   dbs?: {
     db?: KopisListItem | KopisListItem[];
@@ -114,6 +126,12 @@ type KopisFacilityListResponse = {
 type KopisFacilityDetailResponse = {
   dbs?: {
     db?: KopisFacilityDetailItem | KopisFacilityDetailItem[];
+  };
+};
+
+type KopisAwardListResponse = {
+  dbs?: {
+    db?: KopisAwardItem | KopisAwardItem[];
   };
 };
 
@@ -199,6 +217,34 @@ const buildFacilityListUrl = ({
 const buildFacilityDetailUrl = (serviceKey: string, facilityId: string) =>
   `${KOPIS_BASE_URL}/prfplc/${facilityId}?service=${serviceKey}`;
 
+const buildAwardListUrl = ({
+  serviceKey,
+  stdate,
+  eddate,
+  page,
+  rows,
+  afterdate,
+}: {
+  serviceKey: string;
+  stdate: string;
+  eddate: string;
+  page: number;
+  rows: number;
+  afterdate?: string;
+}) => {
+  const url = new URL(`${KOPIS_BASE_URL}/prfawad`);
+  url.searchParams.set("service", serviceKey);
+  url.searchParams.set("stdate", stdate);
+  url.searchParams.set("eddate", eddate);
+  url.searchParams.set("cpage", String(page));
+  url.searchParams.set("rows", String(rows));
+  url.searchParams.set("shcate", KOPIS_GENRE_BBBC);
+  if (afterdate) {
+    url.searchParams.set("afterdate", afterdate);
+  }
+  return url.toString();
+};
+
 const parseXml = <T>(xml: string): T => xmlParser.parse(xml) as T;
 
 export const fetchKopisListPage = async ({
@@ -267,6 +313,36 @@ export const fetchKopisFacilityDetail = async (
   const data = parseXml<KopisFacilityDetailResponse>(xml);
   const detail = normalizeArray(data?.dbs?.db)[0];
   return detail ?? null;
+};
+
+export const fetchKopisAwardsListPage = async ({
+  serviceKey,
+  stdate,
+  eddate,
+  page,
+  rows,
+  afterdate,
+}: {
+  serviceKey: string;
+  stdate: string;
+  eddate: string;
+  page: number;
+  rows: number;
+  afterdate?: string;
+}) => {
+  const url = buildAwardListUrl({
+    serviceKey,
+    stdate,
+    eddate,
+    page,
+    rows,
+    afterdate,
+  });
+  const response = await fetch(url, { cache: "no-store" });
+  const xml = await response.text();
+  const data = parseXml<KopisAwardListResponse>(xml);
+  const list = normalizeArray(data?.dbs?.db);
+  return list.filter((item) => item?.mt20id);
 };
 
 export const mapKopisListItem = (item: KopisListItem) => ({
@@ -392,6 +468,37 @@ export const mapKopisFacilityDetailItem = (item: KopisFacilityDetailItem) => {
     elevbarrier: item.elevbarrier ?? null,
     parkinglot: item.parkinglot ?? null,
     mt13s: mt13List.length ? mt13List : null,
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  };
+};
+
+const normalizeAwardsText = (value?: string | null) => {
+  if (!value) return null;
+  const lines = value
+    .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return null;
+  return Array.from(new Set(lines)).join("\n");
+};
+
+export const mapKopisAwardItem = (item: KopisAwardItem) => {
+  const normalizedAwards = normalizeAwardsText(item.awards);
+  return {
+    mt20id: item.mt20id ?? null,
+    prfnm: item.prfnm ?? null,
+    prfpdfrom: parseKopisDate(item.prfpdfrom),
+    prfpdto: parseKopisDate(item.prfpdto),
+    fcltynm: item.fcltynm ?? null,
+    poster: item.poster ?? null,
+    genrenm: item.genrenm ?? null,
+    prfstate: item.prfstate ?? null,
+    awards: normalizedAwards,
+    awards_raw: item.awards ?? null,
     is_active: true,
     updated_at: new Date().toISOString(),
   };

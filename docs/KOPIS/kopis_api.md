@@ -286,53 +286,99 @@ http://www.kopis.or.kr/openApi/restful/prfplc?service={ServiceKey}&cpage=1&rows=
 ---
 
 ## 수상작 목록
-- **요청 URL**: `http://kopis.or.kr/openApi/restful/prfawad`
-- **요청 서비스**: 검색을 통한 수상작 목록 서비스
-- **제약**: 최대 100건 조회
-
-### 요청 변수
-| 변수명 | 필수 | 크기 | 설명 | 샘플 |
-| --- | --- | --- | --- | --- |
-| service | O | 60 | 발급받은 인증키 |  |
-| stdate | O | 8 | 공연시작일자 | 20160101 |
-| eddate | O | 8 | 공연종료일자 | 20160630 |
-| cpage | O | 3 | 현재페이지 | 1 |
-| rows | O | 3 | 페이지당 목록 수(최대 100) | 10 |
-| shprfnm | X | 100 | 공연명(URLEncoding) | 사랑 |
-| shprfnmfct | X | 100 | 공연시설명(URLEncoding) | 예술의전당 |
-| shcate | X | 4 | 장르코드 | **BBBC** |
-| prfplccd | X | 4 | 공연장코드 | FC000001-01 |
-| signgucode | X | 2 | 지역(시도)코드 | 11 |
-| signgucodesub | X | 4 | 지역(구군)코드 | 1111 |
-| kidstate | X | 1 | 아동공연여부 | Y |
-| prfstate | X | 2 | 공연상태코드 | 01 |
-| afterdate | X | 8 | 해당일자 이후 등록/수정만 출력 | 20230101 |
-
-### 요청 예시
-```
+수상작 목록
+공통코드 다운로드
+개발자가이드 다운로드
+요청서비스
+검색을 통한 수상작 목록 서비스
+※ 최대 100건까지만 조회 제공
+요청 URL
+http://kopis.or.kr/openApi/restful/prfawad
+요청 변수
+변수명 필수 크기 설명 샘플데이터
+service o 60 발급받은 인증키
+stdate o 8 공연시작일자 20160101
+eddate o 8 공연종료일자 20160630
+cpage o 3 현재페이지 1
+rows o 3 페이지당 목록 수 10 (최대 100건)
+shprfnm x 100 공연명 사랑(URLEncoding)
+shprfnmfct x 100 공연시설명 예술의전당(URLEncoding)
+shcate x 4 장르코드 AAAA
+prfplccd x 4 공연장코드 FC000001-01
+signgucode x 2 지역(시도)코드 11
+signgucodesub x 4 지역(구군)코드 1111
+kidstate x 1 아동공연여부 Y(지정안하면 기본은 전체공연)
+prfstate x 2 공연상태코드 01
+afterdate x 8 해당일자 이후 등록/수정된 항목만 출력 20230101
+요청/응답 메세지 예제
+2023년06월01부터 2023년 06월 30일까지 공연중인 지역(시도)코드 11, 지역(구군)코드1111, 수상작 목록을 1페이지 10개 목록 요청
+-요청 URL
 http://www.kopis.or.kr/openApi/restful/prfawad?service={SeriveKey}&stdate=20230601&eddate=20230630&cpage=1&rows=10&prfstate=02&signgucode=11&signgucodesub=1111
-```
-
-### 출력 필드
-| 필드명 | 설명 | 샘플 |
-| --- | --- | --- |
-| mt20id | 공연ID | PF132236 |
-| prfnm | 공연명 | 우리연애할까 |
-| prfpdfrom | 공연시작일 | 2016.05.12 |
-| prfpdto | 공연종료일 | 2016.07.31 |
-| fcltynm | 공연시설명(공연장명) | 피가로아트홀(구 훈아트홀) |
-| poster | 포스터이미지경로 | http://www.kopis.or.kr/upload/pfmPoster/PF_PF132236_160704_142630.gif |
-| genrenm | 공연 장르명 | 연극 |
-| prfstate | 공연상태 | 공연중 |
-| awards | 수상실적 | 2017 대한민국 공감브랜드 대상 교육부문 대상 |
-
-### 결과코드
-| 코드 | 설명 |
-| --- | --- |
-| 00 | NORMAL SERVICE |
-| 01 | INVALID REQUEST PARAMETER ERROR |
-| 02 | SERVICE KEY IS NOT REGISTERED ERROR |
-| 03 | DB_ERROR |
-| 04 | NODATA ERROR |
-| 05 | 최대 31일까지 조회가능합니다. |
-| 06 | 최대 조회수는 100건까지 가능합니다. |
+- 응답 메시
+<?xml version="1.0" encoding="UTF-8"?>
+<dbs>
+<db>
+<mt20id>PF141135</mt20id>
+<prfnm>다함께 다방구</prfnm>
+<prfpdfrom>2017.08.01</prfpdfrom>
+<prfpdto>2019.05.31</prfpdto>
+<fcltynm>대학로 위로홀(구. 몬스터홀)</fcltynm>
+<poster>http://www.kopis.or.kr/upload/pfmPoster/PF_PF141135_180117_140527.jpg</poster>
+<genrenm>뮤지컬</genrenm>
+<prfstate>공연중</prfstate>
+<awards>2017 대한민국 공감브랜드 대상 교육부문 대상</awards>
+</db>
+<db>
+<mt20id>PF139762</mt20id>
+<prfnm>사랑은 비를 타고</prfnm>
+<prfpdfrom>2017.10.07</prfpdfrom>
+<prfpdto>2019.05.31</prfpdto>
+<fcltynm>예술극장 나무와물</fcltynm>
+<poster>http://www.kopis.or.kr/upload/pfmPoster/PF_PF139762_171011_095601.jpg</poster>
+<genrenm>뮤지컬</genrenm>
+<prfstate>공연중</prfstate>
+<awards>제2회 1996 한국뮤지컬대상 남우주연상&lt;br&gt;제2회 1996 한국뮤지컬대상 여우조연상&lt;br&gt;제2회 1996 한국뮤지컬대상 연기상&lt;br&gt;제2회 1996 한국뮤지컬대상 작곡상</awards>
+</db>
+<db>
+<mt20id>PF136878</mt20id>
+<prfnm>오버코트</prfnm>
+<prfpdfrom>2017.02.25</prfpdfrom>
+<prfpdto>2019.06.29</prfpdto>
+<fcltynm>라이트씨어터</fcltynm>
+<poster>http://www.kopis.or.kr/upload/pfmPoster/PF_PF136878_170407_163424.gif</poster>
+<genrenm>연극</genrenm>
+<prfstate>공연중</prfstate>
+<awards>2017 아시테지 서울 어린이 연극상 대상&lt;br&gt;2017 아시테지 서울 어린이 연극상 연출상&lt;br&gt;2017 아시테지 서울 어린이 연극상 최고인기상</awards>
+</db>
+<db>
+<mt20id>PF131898</mt20id>
+<prfnm>김종욱 찾기</prfnm>
+<prfpdfrom>2016.06.17</prfpdfrom>
+<prfpdto>2019.07.14</prfpdto>
+<fcltynm>컬처스페이스 엔유(구. 쁘티첼 씨어터)</fcltynm>
+<poster>http://www.kopis.or.kr/upload/pfmPoster/PF_PF131898_161020_104835.jpg</poster>
+<genrenm>뮤지컬</genrenm>
+<prfstate>공연중</prfstate>
+<awards>제1회 더 뮤지컬 어워즈 남자조연상, 작사/극본상, 남자인기상, 여자인기상&lt;br&gt;제12회 한국뮤지컬대상 여우주연상, 남자인기상&lt;br&gt;제11회 대한민국 국회대상 올해의 뮤지컬상</awards>
+</db>
+</dbs>
+출력결과 필드
+변수명 설명 샘플데이터
+mt20id 공연ID PF132236
+prfnm 공연명 우리연애할까
+prfpdfrom 공연시작일 2016.05.12
+prfpdto 공연종료일 2016.07.31
+fcltynm 공연시설명(공연장명) 피가로아트홀(구 훈아트홀)
+poster 포스터이미지경로 http://www.kopis.or.kr/upload/pfmPoster/PF_PF132236_160704_142630.gif
+genrenm 공연 장르명 연극
+prfstate 공연상태 공연중
+awards 수상실적 2017 대한민국 공감브랜드 대상 교육부문 대상
+결과코드
+결과코드 설명
+00 NORMAL SERVICE
+01 INVALID REQUEST PARAMETER ERROR
+02 SERVICE KEY IS NOT REGISTERED ERROR
+03 DB_ERROR
+04 NODATA ERROR
+05 최대 31일까지 조회가능합니다.
+06 최대 조회수는 100건까지 가능합니다.

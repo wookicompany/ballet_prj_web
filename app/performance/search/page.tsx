@@ -51,6 +51,9 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     title: "곧 만날 수 있는 공연을 모았어요",
     prfstate: "공연예정",
   },
+  awards: {
+    title: "수상작 공연만 모아봤어요",
+  },
   ongoing: {
     title: "지금 바로 관람할 수 있어요",
     prfstate: "공연중",
@@ -60,7 +63,7 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     prfstate: "공연완료",
   },
   visit: {
-    title: "해외 팀이 방문하는 공연만 모았어요",
+    title: "해외 팀이 참여한 공연만 모아봤어요",
     detailFlag: "visit",
   },
   child: {
@@ -220,6 +223,31 @@ function PerformanceSearchContent() {
       return;
     }
 
+    if (sectionKey === "awards") {
+      const { data: awardRows, error: awardError } = await supabase
+        .from("kopis_performance_awards")
+        .select("mt20id,prfpdfrom,updated_at")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("prfpdfrom", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(1000);
+
+      if (awardError) {
+        toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setOrderedIds([]);
+        setOrderedReady(true);
+        return;
+      }
+
+      const awardIds = (awardRows ?? [])
+        .map((row) => row.mt20id)
+        .filter((id): id is string => Boolean(id));
+      setOrderedIds(awardIds);
+      setOrderedReady(true);
+      return;
+    }
+
     setOrderedIds(null);
     setOrderedReady(true);
   }, [sectionConfig, sectionKey]);
@@ -253,6 +281,9 @@ function PerformanceSearchContent() {
         } else {
           query = query.order("updated_at", { ascending: false });
         }
+      } else if (sectionKey === "awards") {
+        sliceIds = (orderedIds ?? []).slice(rangeStart, rangeStart + PAGE_SIZE);
+        useOrderedSlice = true;
       } else if (sectionConfig?.detailFlag) {
         sliceIds = (orderedIds ?? []).slice(rangeStart, rangeStart + PAGE_SIZE);
         useOrderedSlice = true;

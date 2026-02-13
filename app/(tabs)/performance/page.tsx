@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import MobileContainer from "@/components/layout/MobileContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -60,11 +58,13 @@ export default function PerformanceListPage() {
   const [sections, setSections] = useState<{
     popular: PerformanceItem[];
     scheduled: PerformanceItem[];
+    awards: PerformanceItem[];
     completed: PerformanceItem[];
     visit: PerformanceItem[];
   }>({
     popular: [],
     scheduled: [],
+    awards: [],
     completed: [],
     visit: [],
   });
@@ -173,8 +173,22 @@ export default function PerformanceListPage() {
         .order("updatedate", { ascending: false })
         .limit(60),
     ]);
+    const [awardIdsRes] = await Promise.all([
+      supabase
+        .from("kopis_performance_awards")
+        .select("mt20id,prfpdfrom,updated_at")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("prfpdfrom", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(60),
+    ]);
 
     const visitIds = (visitIdsRes.data ?? [])
+      .map((row) => row.mt20id)
+      .filter(Boolean)
+      .slice(0, 12);
+    const awardIds = (awardIdsRes.data ?? [])
       .map((row) => row.mt20id)
       .filter(Boolean)
       .slice(0, 12);
@@ -187,11 +201,20 @@ export default function PerformanceListPage() {
           .eq("is_active", true)
           .in("mt20id", visitIds)
       : null;
-    const [popularRes, scheduledRes, completedRes, visitRes] =
+    const awardsQuery = awardIds.length
+      ? supabase
+          .from("kopis_performances")
+          .select(baseSelect)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .in("mt20id", awardIds)
+      : null;
+    const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
       await Promise.all([
         popularQuery,
         scheduledQuery,
         completedQuery,
+        awardsQuery ?? Promise.resolve({ data: [] }),
         visitQuery ?? Promise.resolve({ data: [] }),
       ]);
 
@@ -199,7 +222,9 @@ export default function PerformanceListPage() {
       popularRes.error ||
       scheduledRes.error ||
       completedRes.error ||
+      awardIdsRes.error ||
       visitIdsRes.error ||
+      (awardsRes as { error?: unknown }).error ||
       (visitRes as { error?: unknown }).error
     ) {
       shouldWarn = true;
@@ -218,12 +243,19 @@ export default function PerformanceListPage() {
           (a, b) => visitIds.indexOf(a.mt20id) - visitIds.indexOf(b.mt20id)
         )
       : visitData;
-
+    const awardsData = ((awardsRes as { data?: PerformanceItem[] }).data ??
+      []) as PerformanceItem[];
+    const orderedAwards = awardIds.length
+      ? awardsData.sort(
+          (a, b) => awardIds.indexOf(a.mt20id) - awardIds.indexOf(b.mt20id)
+        )
+      : awardsData;
     setRatingMap(ratingSummary);
     setSections((prev) => ({
       ...prev,
       popular: orderedPopular,
       scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
+      awards: orderedAwards,
       completed: (completedRes.data ?? []) as PerformanceItem[],
       visit: orderedVisit,
     }));
@@ -240,7 +272,10 @@ export default function PerformanceListPage() {
 
   const renderCard = (
     item: PerformanceItem,
-    options?: { badgeLabel?: string | null; metaLabel?: React.ReactNode }
+    options?: {
+      badgeLabel?: string | null;
+      metaLabel?: React.ReactNode;
+    }
   ) => {
     return (
       <button
@@ -288,21 +323,34 @@ export default function PerformanceListPage() {
         {rating.avg.toFixed(1)}
       </span>
     ) : null;
-    return renderCard(item, { metaLabel: ratingLabel });
+    return renderCard(item, {
+      metaLabel: ratingLabel,
+    });
   });
 
   const scheduledCards = sections.scheduled.map((item) => {
     const diff = getDaysUntil(item.prfpdfrom);
     const label = diff === null ? null : diff <= 0 ? "D-DAY" : `D-${diff}`;
-    return renderCard(item, { badgeLabel: label, metaLabel: item.fcltynm });
+    return renderCard(item, {
+      badgeLabel: label,
+      metaLabel: item.fcltynm,
+    });
   });
 
   const completedCards = sections.completed.map((item) =>
+    renderCard(item, {
+      metaLabel: item.fcltynm,
+    })
+  );
+
+  const awardCards = sections.awards.map((item) =>
     renderCard(item, { metaLabel: item.fcltynm })
   );
 
   const visitCards = sections.visit.map((item) =>
-    renderCard(item, { metaLabel: item.fcltynm })
+    renderCard(item, {
+      metaLabel: item.fcltynm,
+    })
   );
 
   const renderSectionSkeleton = (title: string) => (
@@ -365,6 +413,7 @@ export default function PerformanceListPage() {
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
             {renderSectionSkeleton("scheduled")}
+            {renderSectionSkeleton("awards")}
             {renderSectionSkeleton("visit")}
             {renderSectionSkeleton("completed")}
           </div>
@@ -473,7 +522,36 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    해외 팀이 방문하는 공연만 모았어요
+                    수상작 공연만 모아봤어요
+                  </h2>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-[#17171c]/50"
+                  onClick={() => router.push("/performance/search?section=awards")}
+                  aria-label="수상작 더보기"
+                >
+                  <ChevronRight className="size-5" />
+                </Button>
+              </div>
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                {awardCards.length ? (
+                  awardCards
+                ) : (
+                  <div className="text-sm text-[#17171c]/50">
+                    표시할 공연이 없어요.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    해외 팀이 참여한 공연만 모아봤어요
                   </h2>
                 </div>
                 <Button
@@ -482,7 +560,7 @@ export default function PerformanceListPage() {
                   size="icon"
                   className="text-[#17171c]/50"
                   onClick={() => router.push("/performance/search?section=visit")}
-                  aria-label="내한공연 더보기"
+                  aria-label="해외 팀 공연 더보기"
                 >
                   <ChevronRight className="size-5" />
                 </Button>
