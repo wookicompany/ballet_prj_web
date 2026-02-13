@@ -28,6 +28,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import ImageViewer from "@/components/ui/image-viewer";
 import FadeInImage from "@/components/ui/fade-in-image";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
@@ -689,7 +690,10 @@ export default function PerformanceDetailPage() {
                       className={`relative z-10 flex-1 min-w-0 rounded-lg py-2.5 transition-colors duration-200 ${
                         infoTab === "performance" ? "text-[#17171c]" : "text-[#17171c]/60"
                       }`}
-                      onClick={() => setInfoTab("performance")}
+                      onClick={() => {
+                        sendHapticToApp();
+                        setInfoTab("performance");
+                      }}
                     >
                       공연 정보
                     </button>
@@ -698,7 +702,10 @@ export default function PerformanceDetailPage() {
                       className={`relative z-10 flex-1 min-w-0 rounded-lg py-2.5 transition-colors duration-200 ${
                         infoTab === "facility" ? "text-[#17171c]" : "text-[#17171c]/60"
                       }`}
-                      onClick={() => setInfoTab("facility")}
+                      onClick={() => {
+                        sendHapticToApp();
+                        setInfoTab("facility");
+                      }}
                     >
                       공연 시설 정보
                     </button>

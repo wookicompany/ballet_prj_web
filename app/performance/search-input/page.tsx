@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import FadeInImage from "@/components/ui/fade-in-image";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -401,6 +402,7 @@ export default function PerformanceSearchInputPage() {
                     className="flex w-full items-center py-3 text-left text-sm text-[#17171c]"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
+                      sendHapticToApp();
                       setDraft((prev) => ({ ...prev, keyword: term }));
                       setIsFocused(false);
                       setTimeout(() => handleSearch(term), 0);

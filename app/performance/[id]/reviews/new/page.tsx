@@ -13,6 +13,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
@@ -231,7 +232,10 @@ export default function PerformanceReviewNewPage() {
                       type="button"
                       className="absolute inset-0"
                       aria-label={`${starIndex * 2}점`}
-                      onClick={() => setRating(starIndex * 2)}
+                      onClick={() => {
+                        sendHapticToApp();
+                        setRating(starIndex * 2);
+                      }}
                     />
                   </div>
                 );
