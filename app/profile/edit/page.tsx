@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
+import { getAccessToken } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { Camera, ChevronLeft, User } from "lucide-react";
 import { toast } from "sonner";
@@ -70,15 +71,31 @@ export default function ProfileEditPage() {
       }
     }
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .upsert({
-        id: user.id,
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) {
+      setSaving(false);
+      return;
+    }
+
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
         nickname: nickname || null,
         avatar_url: nextAvatarUrl,
-      });
+      }),
+    });
 
-    if (updateError) {
+    if (response.status === 409) {
+      setSaving(false);
+      toast("중복된 닉네임이에요.");
+      return;
+    }
+
+    if (!response.ok) {
       setSaving(false);
       toast("저장에 실패했습니다.");
       return;
