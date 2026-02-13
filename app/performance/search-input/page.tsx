@@ -342,7 +342,7 @@ export default function PerformanceSearchInputPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16 pt-0">
-        <header className="flex items-center gap-2">
+        <header className="flex items-center gap-2 pt-2">
           <Button
             type="button"
             variant="ghost"
