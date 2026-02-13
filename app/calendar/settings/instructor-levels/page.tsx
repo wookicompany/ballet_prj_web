@@ -275,7 +275,7 @@ export default function SavedInstructorLevelsPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">강사님</Label>
             <Input
-              className="text-sm placeholder:text-xs"
+              className="text-base placeholder:text-xs"
               placeholder="예: 김선생님"
               value={form.instructor}
               onChange={(event) =>
@@ -289,7 +289,7 @@ export default function SavedInstructorLevelsPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">레벨</Label>
             <Input
-              className="text-sm placeholder:text-xs"
+              className="text-base placeholder:text-xs"
               placeholder="예: 초급"
               value={form.level}
               onChange={(event) =>

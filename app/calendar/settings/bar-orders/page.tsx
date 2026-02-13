@@ -333,7 +333,7 @@ export default function SavedBarOrdersPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">이름</Label>
             <Input
-              className="h-12 text-base placeholder:text-sm"
+              className="h-12 text-base placeholder:text-xs"
               placeholder="예: 기본 순서"
               value={form.name}
               onChange={(event) =>
@@ -405,7 +405,7 @@ export default function SavedBarOrdersPage() {
               <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
               <Input
                 type="text"
-                className="h-12 text-base placeholder:text-sm"
+                className="h-12 text-base placeholder:text-xs"
                 placeholder="직접 입력하고 Enter로 추가해 주세요"
                 value={orderInput}
                 onChange={(event) => setOrderInput(event.target.value)}

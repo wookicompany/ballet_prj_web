@@ -325,7 +325,7 @@ export default function SavedLocationsPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">장소 이름</Label>
             <Input
-              className="text-sm placeholder:text-xs"
+              className="text-base placeholder:text-xs"
               placeholder="예: 강남 스튜디오"
               value={form.name}
               onChange={(event) =>
@@ -347,7 +347,7 @@ export default function SavedLocationsPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">상세 주소</Label>
             <Input
-              className="text-sm placeholder:text-xs"
+              className="text-base placeholder:text-xs"
               placeholder="상세 주소를 입력해 주세요"
               value={form.address_detail}
               onChange={(event) =>
