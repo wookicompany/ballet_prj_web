@@ -649,7 +649,7 @@ export default function PerformanceDetailPage() {
                   포스터 이미지 없음
                 </div>
               )}
-              <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/40 to-transparent px-4 pt-0 pb-12">
+              <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/40 to-transparent px-4 pt-2 pb-12">
                 <Button
                   type="button"
                   variant="ghost"
