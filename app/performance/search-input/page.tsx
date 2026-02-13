@@ -498,7 +498,10 @@ export default function PerformanceSearchInputPage() {
               <button
                 key={item.mt20id}
                 type="button"
-                onClick={() => router.push(`/performance/${item.mt20id}`)}
+                onClick={() => {
+                  sendHapticToApp();
+                  router.push(`/performance/${item.mt20id}`);
+                }}
                 className="flex w-full gap-3 border-b border-black/5 px-4 py-4 text-left last:border-b-0"
               >
                 <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">

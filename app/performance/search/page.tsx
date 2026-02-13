@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import FadeInImage from "@/components/ui/fade-in-image";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -471,7 +472,10 @@ function PerformanceSearchContent() {
                 <button
                   key={item.mt20id}
                   type="button"
-                  onClick={() => router.push(`/performance/${item.mt20id}`)}
+                  onClick={() => {
+                    sendHapticToApp();
+                    router.push(`/performance/${item.mt20id}`);
+                  }}
                   className="flex w-full gap-3 border-b border-black/5 py-4 text-left"
                 >
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
