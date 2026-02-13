@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
 
@@ -400,11 +401,12 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5"
-                    onClick={() =>
+                    onClick={() => {
+                      sendHapticToApp();
                       router.push(
                         `/performance/${review.performanceId}/reviews/${review.id}`
-                      )
-                    }
+                      );
+                    }}
                     aria-label="리뷰 상세 보기"
                   >
                     {review.performancePoster ? (
@@ -422,11 +424,12 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     className="flex-1 text-left"
-                    onClick={() =>
+                    onClick={() => {
+                      sendHapticToApp();
                       router.push(
                         `/performance/${review.performanceId}/reviews/${review.id}`
-                      )
-                    }
+                      );
+                    }}
                     aria-label="리뷰 상세 보기"
                   >
                     <div className="flex h-full flex-col">

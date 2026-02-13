@@ -11,6 +11,7 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
+import ImageViewer from "@/components/ui/image-viewer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -135,6 +136,8 @@ export default function RecordDetailPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const mediaScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -302,11 +305,21 @@ export default function RecordDetailPage() {
                           <source src={item.url} />
                         </video>
                       ) : (
-                        <FadeInImage
-                          src={item.url}
-                          alt="업로드 사진"
-                          className="h-full w-full object-contain"
-                        />
+                        <button
+                          type="button"
+                          className="h-full w-full"
+                          onClick={() => {
+                            setViewerUrl(item.url);
+                            setViewerOpen(true);
+                          }}
+                          aria-label="업로드 사진 크게 보기"
+                        >
+                          <FadeInImage
+                            src={item.url}
+                            alt="업로드 사진"
+                            className="h-full w-full object-contain"
+                          />
+                        </button>
                       )}
                     </AspectRatio>
                   </div>
@@ -526,6 +539,12 @@ export default function RecordDetailPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        <ImageViewer
+          isOpen={viewerOpen}
+          imageUrl={viewerUrl}
+          alt="기록 이미지 크게 보기"
+          onClose={() => setViewerOpen(false)}
+        />
       </main>
     </MobileContainer>
   );
