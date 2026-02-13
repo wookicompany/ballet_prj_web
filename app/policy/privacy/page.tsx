@@ -54,7 +54,7 @@ export default function PrivacyPage() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-12 pt-0">
+      <main className="px-4 pb-12 pt-2">
         <header className="mb-6 flex items-center justify-between">
           <Button
             type="button"

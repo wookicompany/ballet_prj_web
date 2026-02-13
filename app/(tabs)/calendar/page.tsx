@@ -211,7 +211,7 @@ export default function CalendarPage() {
   }, [currentDate, weekStartMonday]);
 
   return (
-    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-0">
+    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-2">
       <header className="mb-6 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
