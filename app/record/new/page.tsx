@@ -27,6 +27,11 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  RN_ADDRESS_SELECTED_EVENT,
+  requestAddressSearchFromApp,
+  resolveAddressFromBridgeMessage,
+} from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import {
   CalendarDays,
@@ -543,6 +548,11 @@ function RecordNewContent() {
 
   const handleSearchAddress = () => {
     if (typeof window === "undefined") return;
+
+    if (requestAddressSearchFromApp()) {
+      return;
+    }
+
     const kakao = (window as typeof window & { kakao?: any }).kakao;
     if (!kakao?.Postcode) {
       toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
@@ -564,6 +574,47 @@ function RecordNewContent() {
       },
     }).open();
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const applyAddress = (address: string) => {
+      const trimmedAddress = address.trim();
+      if (!trimmedAddress) return;
+
+      setLocationBase((prev) => {
+        if (trimmedAddress !== prev && locationDetail) {
+          setLocationDetail("");
+        }
+        return trimmedAddress;
+      });
+    };
+
+    const handleWindowMessage = (event: MessageEvent) => {
+      const address = resolveAddressFromBridgeMessage(event.data);
+      if (address) applyAddress(address);
+    };
+
+    const handleCustomAddressEvent = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const address = resolveAddressFromBridgeMessage(customEvent.detail);
+      if (address) applyAddress(address);
+    };
+
+    window.addEventListener("message", handleWindowMessage);
+    window.addEventListener(
+      RN_ADDRESS_SELECTED_EVENT,
+      handleCustomAddressEvent as EventListener
+    );
+
+    return () => {
+      window.removeEventListener("message", handleWindowMessage);
+      window.removeEventListener(
+        RN_ADDRESS_SELECTED_EVENT,
+        handleCustomAddressEvent as EventListener
+      );
+    };
+  }, [locationDetail]);
 
   const startHour = form.start_time ? form.start_time.split(":")[0] : "00";
   const startMinute = form.start_time ? form.start_time.split(":")[1] : "00";

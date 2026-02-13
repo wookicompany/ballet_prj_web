@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -22,6 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  RN_ADDRESS_SELECTED_EVENT,
+  requestAddressSearchFromApp,
+  resolveAddressFromBridgeMessage,
+} from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -67,6 +72,11 @@ export default function SavedLocationsPage() {
 
   const handleSearchAddress = () => {
     if (typeof window === "undefined") return;
+
+    if (requestAddressSearchFromApp()) {
+      return;
+    }
+
     const kakao = (window as typeof window & { kakao?: any }).kakao;
     if (!kakao?.Postcode) {
       toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
@@ -89,6 +99,55 @@ export default function SavedLocationsPage() {
       },
     }).open();
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const applyAddress = (address: string) => {
+      const trimmedAddress = address.trim();
+      if (!trimmedAddress) return;
+
+      setForm((prev) => {
+        if (trimmedAddress !== prev.address_base) {
+          return {
+            ...prev,
+            address_base: trimmedAddress,
+            address_detail: "",
+          };
+        }
+
+        return {
+          ...prev,
+          address_base: trimmedAddress,
+        };
+      });
+    };
+
+    const handleWindowMessage = (event: MessageEvent) => {
+      const address = resolveAddressFromBridgeMessage(event.data);
+      if (address) applyAddress(address);
+    };
+
+    const handleCustomAddressEvent = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const address = resolveAddressFromBridgeMessage(customEvent.detail);
+      if (address) applyAddress(address);
+    };
+
+    window.addEventListener("message", handleWindowMessage);
+    window.addEventListener(
+      RN_ADDRESS_SELECTED_EVENT,
+      handleCustomAddressEvent as EventListener
+    );
+
+    return () => {
+      window.removeEventListener("message", handleWindowMessage);
+      window.removeEventListener(
+        RN_ADDRESS_SELECTED_EVENT,
+        handleCustomAddressEvent as EventListener
+      );
+    };
+  }, []);
 
   const fetchItems = async () => {
     if (!user) return;
@@ -117,14 +176,6 @@ export default function SavedLocationsPage() {
     if (!user) return;
     void fetchItems();
   }, [user?.id]);
-
-  const addressLine = useMemo(() => {
-    const base = form.address_base.trim();
-    const detail = form.address_detail.trim();
-    if (!base && !detail) return "";
-    if (!detail) return base;
-    return `${base} ${detail}`;
-  }, [form.address_base, form.address_detail]);
 
   const handleOpenCreate = () => {
     resetForm();
@@ -277,7 +328,7 @@ export default function SavedLocationsPage() {
                       {item.name}
                     </div>
                     {item.address_base || item.address_detail ? (
-                      <p className="text-xs text-[#17171c]/60">
+                      <p className="text-sm text-[#17171c]/60">
                         {item.address_base}
                         {item.address_detail
                           ? ` ${item.address_detail}`
@@ -323,10 +374,10 @@ export default function SavedLocationsPage() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">장소 이름</Label>
+            <Label className="text-xs text-[#17171c]/60">장소</Label>
             <Input
-              className="text-base placeholder:text-xs"
-              placeholder="예: 강남 스튜디오"
+              className="h-12 text-base placeholder:text-xs"
+              placeholder="장소 이름을 입력해 주세요"
               value={form.name}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, name: event.target.value }))
@@ -338,17 +389,17 @@ export default function SavedLocationsPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full justify-start text-left text-[11px] font-normal"
+              className="h-12 w-full justify-start text-left text-xs font-normal"
               onClick={handleSearchAddress}
             >
-              {form.address_base.trim() || "주소 검색하기"}
+              {form.address_base || "주소 검색하기"}
             </Button>
           </div>
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">상세 주소</Label>
             <Input
-              className="text-base placeholder:text-xs"
-              placeholder="상세 주소를 입력해 주세요"
+              className="h-12 text-base placeholder:text-xs"
+              placeholder="상세 주소를 입력해 주세요 (선택사항)"
               value={form.address_detail}
               onChange={(event) =>
                 setForm((prev) => ({
@@ -358,11 +409,6 @@ export default function SavedLocationsPage() {
               }
             />
           </div>
-          {addressLine ? (
-            <p className="text-xs text-[#17171c]/50">
-              입력된 주소: {addressLine}
-            </p>
-          ) : null}
           <div className="flex gap-2 pt-2">
             <Button
               type="button"

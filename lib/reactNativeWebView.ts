@@ -34,3 +34,77 @@ export function sendAuthTokenToApp(accessToken: string): void {
     JSON.stringify({ type: "auth_token", access_token: trimmedToken })
   );
 }
+
+export const RN_ADDRESS_SELECTED_EVENT = "myballet:address-selected";
+
+type AddressMessagePayload = {
+  type?: string;
+  address?: string;
+  roadAddress?: string;
+  jibunAddress?: string;
+};
+
+/**
+ * WebView 환경에서 RN 앱에 주소 검색 UI 오픈 요청을 보낸다.
+ * 전송 성공 시 true, WebView 환경이 아니면 false를 반환한다.
+ */
+export function requestAddressSearchFromApp(): boolean {
+  if (!isInReactNativeWebView()) return false;
+  window.ReactNativeWebView?.postMessage(
+    JSON.stringify({ type: "open_address_search" })
+  );
+  return true;
+}
+
+/**
+ * RN -> Web 브릿지 메시지에서 선택된 주소를 추출한다.
+ * 지원 형식:
+ * - { type: "address_selected", address: "..." }
+ * - { type: "address_search_result", roadAddress?: "...", jibunAddress?: "..." }
+ * - CustomEvent.detail에 동일 payload 전달
+ */
+export function resolveAddressFromBridgeMessage(raw: unknown): string | null {
+  const payload = normalizeAddressPayload(raw);
+  if (!payload) return null;
+
+  const type = payload.type?.trim();
+  if (
+    type &&
+    type !== "address_selected" &&
+    type !== "address_search_result" &&
+    type !== "kakao_postcode_selected"
+  ) {
+    return null;
+  }
+
+  const address =
+    payload.address?.trim() ||
+    payload.roadAddress?.trim() ||
+    payload.jibunAddress?.trim() ||
+    "";
+
+  return address || null;
+}
+
+function normalizeAddressPayload(raw: unknown): AddressMessagePayload | null {
+  if (raw == null) return null;
+
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    if (!text) return null;
+    try {
+      const parsed = JSON.parse(text);
+      return typeof parsed === "object" && parsed !== null
+        ? (parsed as AddressMessagePayload)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof raw === "object") {
+    return raw as AddressMessagePayload;
+  }
+
+  return null;
+}

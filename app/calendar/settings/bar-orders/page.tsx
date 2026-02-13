@@ -343,9 +343,9 @@ export default function SavedBarOrdersPage() {
           </div>
           <div className="space-y-3">
             <Label className="text-xs text-[#17171c]/60">바(bar) 순서</Label>
-            <div className="min-h-[44px] flex items-center rounded-lg border border-black/10 bg-white p-2">
+            <div className="min-h-12 flex items-center rounded-lg border border-black/10 bg-white p-2">
               {orderTags.length === 0 ? (
-                <p className="text-[11px] text-[#17171c]/40">
+                <p className="text-xs text-[#17171c]/40">
                   선택된 순서가 여기 표시돼요.
                 </p>
               ) : (

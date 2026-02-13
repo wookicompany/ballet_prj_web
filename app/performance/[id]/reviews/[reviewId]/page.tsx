@@ -527,7 +527,12 @@ export default function PerformanceReviewDetailPage() {
         <section className="space-y-4 rounded-xl border border-black/5 bg-white p-4">
           {performance ? (
             <div className="flex items-center gap-3">
-              <div className="h-16 w-12 overflow-hidden rounded-lg border border-black/5 bg-black/5">
+              <button
+                type="button"
+                className="h-24 w-16 overflow-hidden rounded-lg border border-black/5 bg-black/5"
+                onClick={() => router.push(`/performance/${performance.mt20id}`)}
+                aria-label="공연 상세로 이동"
+              >
                 {performance.poster ? (
                   <FadeInImage
                     src={performance.poster}
@@ -539,7 +544,7 @@ export default function PerformanceReviewDetailPage() {
                     이미지 없음
                   </div>
                 )}
-              </div>
+              </button>
               <div className="flex-1">
                 <p className="text-xs text-[#17171c]/60">공연</p>
                 <p className="text-sm font-semibold text-[#17171c]">
