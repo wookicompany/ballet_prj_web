@@ -15,7 +15,7 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithProvider: (provider: "google" | "kakao") => Promise<void>;
+  signInWithProvider: (provider: "google" | "kakao" | "apple") => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithProvider = useCallback(
-    async (provider: "google" | "kakao") => {
+    async (provider: "google" | "kakao" | "apple") => {
       const redirectTo = `${window.location.origin}/auth/callback`;
 
       await supabase.auth.signInWithOAuth({
