@@ -24,7 +24,7 @@ export default function TabBar() {
       <div className="grid h-14 grid-cols-3">
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
             isCalendar ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/calendar")}
@@ -35,7 +35,7 @@ export default function TabBar() {
         </Button>
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
             isPerformance ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/performance")}
@@ -46,7 +46,7 @@ export default function TabBar() {
         </Button>
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
             isProfile ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={async () => {

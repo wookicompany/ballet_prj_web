@@ -25,17 +25,25 @@ function getMonthBounds(date: Date) {
   return { start, end };
 }
 
+function getLocalToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [currentDate, setCurrentDate] = useState(() => getLocalToday());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
-  const [monthDraft, setMonthDraft] = useState(() => ({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-  }));
+  const [monthDraft, setMonthDraft] = useState(() => {
+    const today = getLocalToday();
+    return {
+      year: today.getFullYear(),
+      month: today.getMonth() + 1,
+    };
+  });
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -44,6 +52,10 @@ export default function CalendarPage() {
     () => getMonthBounds(currentDate),
     [currentDate]
   );
+
+  useEffect(() => {
+    setCurrentDate(getLocalToday());
+  }, []);
 
   useEffect(() => {
     const fetchCounts = async () => {

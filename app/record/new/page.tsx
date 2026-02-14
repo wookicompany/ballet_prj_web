@@ -64,6 +64,30 @@ const ORDER_TAGS = [
 const LOCATION_DELIMITER = " | ";
 const ADDRESS_DELIMITER = " || ";
 
+const formatLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateKey = (value: string): Date | null => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+};
+
 const buildLocationValue = (
   name: string,
   base: string,
@@ -432,9 +456,9 @@ function RecordNewContent() {
       !!dateParam &&
       /^\d{4}-\d{2}-\d{2}$/.test(dateParam) &&
       !Number.isNaN(new Date(`${dateParam}T00:00:00`).getTime());
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatLocalDateKey(new Date());
     const resolved = isValidParam ? dateParam : today;
-    const baseDate = new Date(`${resolved}T00:00:00`);
+    const baseDate = parseLocalDateKey(resolved) ?? new Date();
     setForm((prev) => ({ ...prev, record_date: resolved }));
     setDateDraft({
       year: baseDate.getFullYear(),
@@ -865,7 +889,7 @@ function RecordNewContent() {
                 className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
                   const baseDate = form.record_date
-                    ? new Date(form.record_date)
+                    ? parseLocalDateKey(form.record_date) ?? new Date()
                     : new Date();
                   setDateDraft({
                     year: baseDate.getFullYear(),
@@ -877,9 +901,13 @@ function RecordNewContent() {
               >
                 <CalendarDays className="h-4 w-4" />
                 {form.record_date
-                  ? format(new Date(form.record_date), "yyyy년 MM월 dd일(EEE)", {
+                  ? format(
+                      parseLocalDateKey(form.record_date) ?? new Date(),
+                      "yyyy년 MM월 dd일(EEE)",
+                      {
                       locale: ko,
-                    })
+                      }
+                    )
                   : "날짜 선택"}
               </Button>
             </div>
