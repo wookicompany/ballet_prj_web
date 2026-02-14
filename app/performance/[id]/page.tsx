@@ -814,20 +814,10 @@ export default function PerformanceDetailPage() {
                       </button>
                     ))}
                   </div>
-                  {visualSlides.length > 1 ? (
-                    <div className="absolute inset-x-0 bottom-4 z-10 flex items-center justify-center gap-1.5">
-                      {visualSlides.map((slide, index) => (
-                        <span
-                          key={`visual-dot-${slide.id}`}
-                          className={`rounded-full transition-all ${
-                            index === activeVisualIndex
-                              ? "h-1.5 w-4 bg-white"
-                              : "h-1.5 w-1.5 bg-white/35"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
+                  <div className="absolute right-4 bottom-4 z-10 rounded-full bg-black/45 px-2.5 py-1 text-xs text-white">
+                    {Math.min(activeVisualIndex + 1, visualSlides.length)} /{" "}
+                    {visualSlides.length}
+                  </div>
                 </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">
