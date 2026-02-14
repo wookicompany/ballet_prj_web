@@ -428,6 +428,48 @@ export type Database = {
           },
         ]
       }
+      performance_review_comment_reports: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          reason_code: string
+          reason_detail: string | null
+          reporter_user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          reason_code: string
+          reason_detail?: string | null
+          reporter_user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          reason_code?: string
+          reason_detail?: string | null
+          reporter_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_comment_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "performance_review_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_comment_reports_reporter_user_id_fkey"
+            columns: ["reporter_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_review_comments: {
         Row: {
           content: string
@@ -542,6 +584,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_auth_providers"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_review_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason_code: string
+          reason_detail: string | null
+          reporter_user_id: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason_code: string
+          reason_detail?: string | null
+          reporter_user_id: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason_code?: string
+          reason_detail?: string | null
+          reporter_user_id?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_review_reports_reporter_user_id_fkey"
+            columns: ["reporter_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_review_reports_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "performance_reviews"
+            referencedColumns: ["id"]
           },
         ]
       }

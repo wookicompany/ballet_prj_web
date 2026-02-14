@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import BottomSheet from "@/components/sheets/BottomSheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -29,6 +30,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ImageViewer from "@/components/ui/image-viewer";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import {
+  REPORT_REASON_OPTIONS,
+  REPORT_THRESHOLD,
+  type ReportReasonCode,
+} from "@/lib/reports";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
@@ -37,6 +43,7 @@ import {
   Heart,
   MessageCircle,
   MoreHorizontal,
+  Flag,
   PenLine,
   Star,
   Trophy,
@@ -83,6 +90,7 @@ type ReviewItem = {
   content: string | null;
   created_at: string;
   user_id: string;
+  report_count?: number;
 };
 
 type ProfileSummary = {
@@ -166,6 +174,27 @@ const toRelateDisplay = (relate: string | RelateItem) => {
 const REVIEW_PAGE_SIZE = 6;
 const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 
+const fetchPublicProfiles = async (
+  userIds: string[]
+): Promise<Record<string, ProfileSummary>> => {
+  const deduped = Array.from(new Set(userIds.filter(Boolean)));
+  if (deduped.length === 0) return {};
+
+  const response = await fetch("/api/public-profiles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_ids: deduped }),
+  });
+  if (!response.ok) return {};
+
+  const payload = (await response.json()) as { items?: ProfileSummary[] };
+  const next: Record<string, ProfileSummary> = {};
+  (payload.items ?? []).forEach((item) => {
+    next[item.id] = item;
+  });
+  return next;
+};
+
 export default function PerformanceDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -182,6 +211,9 @@ export default function PerformanceDetailPage() {
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
+  const [reviewReportCounts, setReviewReportCounts] = useState<
+    Record<string, number>
+  >({});
   const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
   const [awardDetail, setAwardDetail] = useState<AwardDetail | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -191,6 +223,11 @@ export default function PerformanceDetailPage() {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null);
+  const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReasonCode>("SPAM");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reporting, setReporting] = useState(false);
   const [storyExpanded, setStoryExpanded] = useState(false);
   const [infoTab, setInfoTab] = useState<"performance" | "facility">(
     "performance",
@@ -327,6 +364,7 @@ export default function PerformanceDetailPage() {
     setLikedMap({});
     setCommentCounts({});
     setReviewImages({});
+    setReviewReportCounts({});
     setFacilityDetail(null);
     setAwardDetail(null);
     setInfoTab("performance");
@@ -395,16 +433,14 @@ export default function PerformanceDetailPage() {
 
       if (reviewIds.length > 0) {
         const [
-          { data: profileRows },
+          profileRows,
           { data: likeRows },
           { data: commentRows },
           { data: imageRows },
           { data: likedRows },
+          { data: reportRows },
         ] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id,nickname,avatar_url")
-            .in("id", userIds),
+          fetchPublicProfiles(userIds),
           supabase
             .from("performance_review_likes")
             .select("review_id")
@@ -425,13 +461,13 @@ export default function PerformanceDetailPage() {
                 .eq("user_id", user.id)
                 .in("review_id", reviewIds)
             : Promise.resolve({ data: [] }),
+          supabase
+            .from("performance_review_reports")
+            .select("review_id")
+            .in("review_id", reviewIds),
         ]);
 
-        const nextProfiles: Record<string, ProfileSummary> = {};
-        (profileRows ?? []).forEach((row) => {
-          nextProfiles[row.id] = row as ProfileSummary;
-        });
-        setProfiles((prev) => ({ ...prev, ...nextProfiles }));
+        setProfiles((prev) => ({ ...prev, ...(profileRows ?? {}) }));
 
         const nextLikeCounts: Record<string, number> = {};
         (likeRows ?? []).forEach((row) => {
@@ -466,6 +502,13 @@ export default function PerformanceDetailPage() {
         if (Object.keys(nextImages).length > 0) {
           setReviewImages((prev) => ({ ...prev, ...nextImages }));
         }
+
+        const nextReportCounts: Record<string, number> = {};
+        (reportRows ?? []).forEach((row) => {
+          nextReportCounts[row.review_id] =
+            (nextReportCounts[row.review_id] ?? 0) + 1;
+        });
+        setReviewReportCounts((prev) => ({ ...prev, ...nextReportCounts }));
       }
 
       setLoadingReviews(false);
@@ -583,8 +626,63 @@ export default function PerformanceDetailPage() {
       delete next[deleteTargetId];
       return next;
     });
+    setReviewReportCounts((prev) => {
+      const next = { ...prev };
+      delete next[deleteTargetId];
+      return next;
+    });
     await refreshReviewSummary();
     setDeleteTargetId(null);
+  };
+
+  const openReviewReportSheet = (targetId: string) => {
+    setReportTargetId(targetId);
+    setReportReason("SPAM");
+    setReportDetail("");
+    setReportSheetOpen(true);
+  };
+
+  const handleSubmitReviewReport = async () => {
+    if (!reportTargetId) return;
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+
+    setReporting(true);
+    const response = await fetch(`/api/reviews/${reportTargetId}/report`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reason_code: reportReason,
+        reason_detail: reportDetail.trim() || null,
+      }),
+    });
+
+    if (!response.ok) {
+      toast("신고를 접수하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setReporting(false);
+      return;
+    }
+
+    const payload = (await response.json()) as { report_count?: number };
+    const reportCount = payload.report_count ?? 0;
+
+    setReviewReportCounts((prev) => ({
+      ...prev,
+      [reportTargetId]: reportCount,
+    }));
+    setReviews((prev) =>
+      prev.map((item) =>
+        item.id === reportTargetId ? { ...item, report_count: reportCount } : item
+      )
+    );
+
+    setReporting(false);
+    setReportSheetOpen(false);
+    setReportTargetId(null);
+    toast("신고가 접수되었어요.");
   };
 
   const awardLines = useMemo(() => {
@@ -1081,6 +1179,10 @@ export default function PerformanceDetailPage() {
                   {reviews.length === 0 && !loadingReviews ? null : (
                     reviews.map((review) => {
                       const profile = profiles[review.user_id];
+                      const isMyReview = user?.id === review.user_id;
+                      const isReviewHidden =
+                        (reviewReportCounts[review.id] ?? review.report_count ?? 0) >=
+                        REPORT_THRESHOLD;
                       return (
                         <div
                           key={review.id}
@@ -1106,7 +1208,7 @@ export default function PerformanceDetailPage() {
                               {profile?.nickname || "익명"} ·{" "}
                               {formatDate(review.created_at)}
                             </span>
-                            {user?.id === review.user_id ? (
+                            {user ? (
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
@@ -1124,32 +1226,49 @@ export default function PerformanceDetailPage() {
                                   align="end"
                                   className="w-36 p-1"
                                 >
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="w-full justify-start text-sm"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      router.push(
-                                        `/performance/${detail.mt20id}/reviews/${review.id}/edit`
-                                      );
-                                    }}
-                                  >
-                                    <PenLine className="mr-2 h-4 w-4" />
-                                    수정하기
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="w-full justify-start text-sm text-red-500 hover:text-red-500"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      setDeleteTargetId(review.id);
-                                    }}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    삭제하기
-                                  </Button>
+                                  {isMyReview ? (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="w-full justify-start text-sm"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          router.push(
+                                            `/performance/${detail.mt20id}/reviews/${review.id}/edit`
+                                          );
+                                        }}
+                                      >
+                                        <PenLine className="mr-2 h-4 w-4" />
+                                        수정하기
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="w-full justify-start text-sm text-red-500 hover:text-red-500"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setDeleteTargetId(review.id);
+                                        }}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        삭제하기
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="w-full justify-start text-sm"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openReviewReportSheet(review.id);
+                                      }}
+                                    >
+                                      <Flag className="mr-2 h-4 w-4" />
+                                      신고하기
+                                    </Button>
+                                  )}
                                 </PopoverContent>
                               </Popover>
                             ) : null}
@@ -1183,9 +1302,11 @@ export default function PerformanceDetailPage() {
                             })}
                           </div>
                           <p className="mt-2.5 whitespace-pre-line text-sm text-[#17171c]">
-                            {review.content || "내용이 없어요."}
+                            {isReviewHidden
+                              ? "신고로 인해 숨김 처리되었어요."
+                              : review.content || "내용이 없어요."}
                           </p>
-                          {reviewImages[review.id]?.length ? (
+                          {!isReviewHidden && reviewImages[review.id]?.length ? (
                             <div className="mt-2.5 flex gap-2">
                               {reviewImages[review.id].slice(0, 3).map((url, index) => (
                                 <button
@@ -1262,6 +1383,68 @@ export default function PerformanceDetailPage() {
         alt="소개 이미지 크게 보기"
         onClose={() => setViewerOpen(false)}
       />
+      <BottomSheet
+        open={reportSheetOpen}
+        onOpenChange={(open) => {
+          setReportSheetOpen(open);
+          if (!open) {
+            setReportTargetId(null);
+          }
+        }}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            {REPORT_REASON_OPTIONS.map((option) => {
+              const selected = reportReason === option.code;
+              return (
+                <button
+                  key={option.code}
+                  type="button"
+                  className={`flex h-14 w-full items-center justify-between rounded-lg border px-3 text-left text-sm transition ${
+                    selected
+                      ? "border-[#17171c]/40 bg-black/5 text-[#17171c]"
+                      : "border-black/10 text-[#17171c]/80"
+                  }`}
+                  onClick={() => setReportReason(option.code)}
+                >
+                  <span>{option.label}</span>
+                  {selected ? (
+                    <span className="text-xs text-[#17171c]/60">선택됨</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="space-y-2">
+            <textarea
+              value={reportDetail}
+              onChange={(event) => setReportDetail(event.target.value)}
+              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-xs focus:outline-none"
+              maxLength={400}
+              placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 flex-1"
+              onClick={() => setReportSheetOpen(false)}
+              disabled={reporting}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleSubmitReviewReport}
+              disabled={reporting}
+            >
+              {reporting ? "제출 중..." : "제출하기"}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
       <AlertDialog
         open={Boolean(deleteTargetId)}
         onOpenChange={(open) => {

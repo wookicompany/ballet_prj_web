@@ -29,7 +29,7 @@ export const DELETE = async (
 
   const { data: comment, error: commentError } = await supabaseAdmin
     .from("performance_review_comments")
-    .select("id, user_id")
+    .select("id, user_id, deleted_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,7 +41,7 @@ export const DELETE = async (
     );
   }
 
-  if (!comment) {
+  if (!comment || comment.deleted_at) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
@@ -52,7 +52,8 @@ export const DELETE = async (
   const { error: updateError } = await supabaseAdmin
     .from("performance_review_comments")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .is("deleted_at", null);
 
   if (updateError) {
     console.error("Failed to delete comment", updateError);

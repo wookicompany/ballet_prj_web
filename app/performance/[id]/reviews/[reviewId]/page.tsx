@@ -26,7 +26,13 @@ import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
+  REPORT_REASON_OPTIONS,
+  REPORT_THRESHOLD,
+  type ReportReasonCode,
+} from "@/lib/reports";
+import {
   ChevronLeft,
+  Flag,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -43,6 +49,7 @@ type ReviewDetail = {
   content: string | null;
   created_at: string;
   user_id: string;
+  report_count?: number;
 };
 
 type PerformanceInfo = {
@@ -62,10 +69,32 @@ type CommentItem = {
   content: string;
   created_at: string;
   user_id: string;
+  report_count?: number;
 };
 
 const COMMENT_PAGE_SIZE = 10;
 const COMMENT_INPUT_BASE_HEIGHT = 40;
+
+const fetchPublicProfiles = async (
+  userIds: string[]
+): Promise<Record<string, ProfileSummary>> => {
+  const deduped = Array.from(new Set(userIds.filter(Boolean)));
+  if (deduped.length === 0) return {};
+
+  const response = await fetch("/api/public-profiles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_ids: deduped }),
+  });
+  if (!response.ok) return {};
+
+  const payload = (await response.json()) as { items?: ProfileSummary[] };
+  const next: Record<string, ProfileSummary> = {};
+  (payload.items ?? []).forEach((item) => {
+    next[item.id] = item;
+  });
+  return next;
+};
 
 const formatDate = (value: string) => {
   const date = new Date(value);
@@ -116,6 +145,17 @@ export default function PerformanceReviewDetailPage() {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentReportCounts, setCommentReportCounts] = useState<
+    Record<string, number>
+  >({});
+  const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReasonCode>("SPAM");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+    kind: "review" | "comment";
+    id: string;
+  } | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
@@ -138,25 +178,20 @@ export default function PerformanceReviewDetailPage() {
         return;
       }
 
-      setReview(reviewData as ReviewDetail);
-
       const [
         { data: performanceData },
-        { data: profileData },
+        profileMap,
         { data: imageRows },
         { data: likeRows },
         { count: commentTotal },
+        { count: reviewReportCount },
       ] = await Promise.all([
         supabase
           .from("kopis_performances")
           .select("mt20id,prfnm,poster")
           .eq("mt20id", performanceId)
           .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("id,nickname,avatar_url")
-          .eq("id", reviewData.user_id)
-          .maybeSingle(),
+        fetchPublicProfiles([reviewData.user_id]),
         supabase
           .from("performance_review_images")
           .select("url")
@@ -170,10 +205,18 @@ export default function PerformanceReviewDetailPage() {
           .select("id", { count: "exact", head: true })
           .eq("review_id", reviewId)
           .is("deleted_at", null),
+        supabase
+          .from("performance_review_reports")
+          .select("id", { count: "exact", head: true })
+          .eq("review_id", reviewId),
       ]);
 
+      setReview({
+        ...(reviewData as ReviewDetail),
+        report_count: reviewReportCount ?? 0,
+      });
       setPerformance(performanceData as PerformanceInfo | null);
-      setProfile(profileData as ProfileSummary | null);
+      setProfile(profileMap[reviewData.user_id] ?? null);
       setImages((imageRows ?? []).map((row) => row.url).filter(Boolean));
       setLikeCount((likeRows ?? []).length);
       setCommentCount(commentTotal ?? 0);
@@ -186,6 +229,7 @@ export default function PerformanceReviewDetailPage() {
   useEffect(() => {
     setComments([]);
     setCommentProfiles({});
+    setCommentReportCounts({});
     setHasMoreComments(true);
     setCommentPage(1);
     requestedPagesRef.current = new Set();
@@ -237,20 +281,13 @@ export default function PerformanceReviewDetailPage() {
 
       const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
       if (userIds.length > 0) {
-        const { data: profileRows } = await supabase
-          .from("profiles")
-          .select("id,nickname,avatar_url")
-          .in("id", userIds);
-        const nextProfiles: Record<string, ProfileSummary> = {};
-        (profileRows ?? []).forEach((row) => {
-          nextProfiles[row.id] = row as ProfileSummary;
-        });
+        const nextProfiles = await fetchPublicProfiles(userIds);
         setCommentProfiles((prev) => ({ ...prev, ...nextProfiles }));
       }
 
       const commentIds = nextRows.map((row) => row.id);
       if (commentIds.length > 0) {
-        const [likeRows, likedRows] = await Promise.all([
+        const [likeRows, likedRows, reportRows] = await Promise.all([
           supabase
             .from("performance_review_comment_likes")
             .select("comment_id")
@@ -262,6 +299,10 @@ export default function PerformanceReviewDetailPage() {
                 .eq("user_id", user.id)
                 .in("comment_id", commentIds)
             : Promise.resolve({ data: [] }),
+          supabase
+            .from("performance_review_comment_reports")
+            .select("comment_id")
+            .in("comment_id", commentIds),
         ]);
 
         const nextLikeCounts: Record<string, number> = {};
@@ -278,6 +319,13 @@ export default function PerformanceReviewDetailPage() {
           });
           setCommentLikedMap((prev) => ({ ...prev, ...nextLiked }));
         }
+
+        const nextReportCounts: Record<string, number> = {};
+        (reportRows.data ?? []).forEach((row) => {
+          nextReportCounts[row.comment_id] =
+            (nextReportCounts[row.comment_id] ?? 0) + 1;
+        });
+        setCommentReportCounts((prev) => ({ ...prev, ...nextReportCounts }));
       }
 
       setLoadingComments(false);
@@ -303,6 +351,15 @@ export default function PerformanceReviewDetailPage() {
     () => (commentCount > 0 ? `댓글 ${commentCount}개` : ""),
     [commentCount]
   );
+
+  const isReviewHidden = (review?.report_count ?? 0) >= REPORT_THRESHOLD;
+
+  const openReportSheet = (kind: "review" | "comment", id: string) => {
+    setReportTarget({ kind, id });
+    setReportReason("SPAM");
+    setReportDetail("");
+    setReportSheetOpen(true);
+  };
 
   const handleSubmitComment = async () => {
     if (!user) {
@@ -349,15 +406,11 @@ export default function PerformanceReviewDetailPage() {
     setNewComment("");
 
     if (!commentProfiles[user.id]) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id,nickname,avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (profileData) {
+      const profileMap = await fetchPublicProfiles([user.id]);
+      if (profileMap[user.id]) {
         setCommentProfiles((prev) => ({
           ...prev,
-          [user.id]: profileData as ProfileSummary,
+          [user.id]: profileMap[user.id],
         }));
       }
     }
@@ -471,6 +524,60 @@ export default function PerformanceReviewDetailPage() {
     }
   };
 
+  const handleSubmitReport = async () => {
+    if (!reportTarget) return;
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+
+    setReporting(true);
+    const endpoint =
+      reportTarget.kind === "review"
+        ? `/api/reviews/${reportTarget.id}/report`
+        : `/api/review-comments/${reportTarget.id}/report`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reason_code: reportReason,
+        reason_detail: reportDetail.trim() || null,
+      }),
+    });
+
+    if (!response.ok) {
+      toast("신고를 접수하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setReporting(false);
+      return;
+    }
+
+    const payload = (await response.json()) as { report_count?: number };
+    const reportCount = payload.report_count ?? 0;
+
+    if (reportTarget.kind === "review") {
+      setReview((prev) =>
+        prev
+          ? {
+              ...prev,
+              report_count: reportCount,
+            }
+          : prev
+      );
+    } else {
+      setCommentReportCounts((prev) => ({
+        ...prev,
+        [reportTarget.id]: reportCount,
+      }));
+    }
+
+    setReporting(false);
+    setReportSheetOpen(false);
+    setReportTarget(null);
+    toast("신고가 접수되었어요.");
+  };
+
   if (loading) {
     return (
       <MobileContainer>
@@ -582,9 +689,11 @@ export default function PerformanceReviewDetailPage() {
               })}
             </div>
             <p className="whitespace-pre-line text-sm text-[#17171c]">
-              {review.content || "내용이 없어요."}
+              {isReviewHidden
+                ? "신고로 인해 숨김 처리되었어요."
+                : review.content || "내용이 없어요."}
             </p>
-            {images.length > 0 ? (
+            {!isReviewHidden && images.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {images.map((url, index) => (
                   <button
@@ -666,6 +775,9 @@ export default function PerformanceReviewDetailPage() {
             ) : (
               comments.map((comment) => {
                 const author = commentProfiles[comment.user_id];
+                const isMyComment = user?.id === comment.user_id;
+                const isCommentHidden =
+                  (commentReportCounts[comment.id] ?? 0) >= REPORT_THRESHOLD;
                 return (
                   <div
                     key={comment.id}
@@ -676,7 +788,7 @@ export default function PerformanceReviewDetailPage() {
                         {author?.nickname || "익명"} ·{" "}
                         {formatDate(comment.created_at)}
                       </span>
-                      {user?.id === comment.user_id ? (
+                      {user ? (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -689,28 +801,42 @@ export default function PerformanceReviewDetailPage() {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent align="end" className="w-32 p-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="w-full justify-start text-sm"
-                              onClick={() => {
-                                setEditingCommentId(comment.id);
-                                setEditingCommentContent(comment.content);
-                              }}
-                            >
-                              <PenLine className="mr-2 h-4 w-4" />
-                              수정하기
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="w-full justify-start text-sm text-red-500 hover:text-red-500"
-                              onClick={() => setDeleteCommentId(comment.id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              삭제하기
-                            </Button>
+                          <PopoverContent align="end" className="w-36 p-1">
+                            {isMyComment ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="w-full justify-start text-sm"
+                                  onClick={() => {
+                                    setEditingCommentId(comment.id);
+                                    setEditingCommentContent(comment.content);
+                                  }}
+                                >
+                                  <PenLine className="mr-2 h-4 w-4" />
+                                  수정하기
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="w-full justify-start text-sm text-red-500 hover:text-red-500"
+                                  onClick={() => setDeleteCommentId(comment.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  삭제하기
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full justify-start text-sm"
+                                onClick={() => openReportSheet("comment", comment.id)}
+                              >
+                                <Flag className="mr-2 h-4 w-4" />
+                                신고하기
+                              </Button>
+                            )}
                           </PopoverContent>
                         </Popover>
                       ) : (
@@ -752,22 +878,26 @@ export default function PerformanceReviewDetailPage() {
                     ) : (
                       <>
                         <p className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
-                          {comment.content}
+                          {isCommentHidden
+                            ? "신고로 인해 숨김 처리되었어요."
+                            : comment.content}
                         </p>
-                        <button
-                          type="button"
-                          className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#17171c]"
-                          onClick={() => handleToggleCommentLike(comment.id)}
-                          aria-label="댓글 좋아요"
-                        >
-                          <Heart
-                            className="h-4 w-4 text-[#17171c]"
-                            fill={
-                              commentLikedMap[comment.id] ? "#17171c" : "none"
-                            }
-                          />
-                          {commentLikeCounts[comment.id] ?? 0}
-                        </button>
+                        {!isCommentHidden ? (
+                          <button
+                            type="button"
+                            className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#17171c]"
+                            onClick={() => handleToggleCommentLike(comment.id)}
+                            aria-label="댓글 좋아요"
+                          >
+                            <Heart
+                              className="h-4 w-4 text-[#17171c]"
+                              fill={
+                                commentLikedMap[comment.id] ? "#17171c" : "none"
+                              }
+                            />
+                            {commentLikeCounts[comment.id] ?? 0}
+                          </button>
+                        ) : null}
                       </>
                     )}
                   </div>
@@ -818,10 +948,82 @@ export default function PerformanceReviewDetailPage() {
             </Button>
           </div>
         ) : (
-          <div className="text-sm text-[#17171c]/60">
-            내 리뷰에서만 사용할 수 있어요.
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 w-full justify-start"
+            onClick={() => {
+              setActionSheetOpen(false);
+              openReportSheet("review", review.id);
+            }}
+          >
+            <Flag className="mr-2 h-4 w-4" />
+            신고하기
+          </Button>
         )}
+      </BottomSheet>
+
+      <BottomSheet
+        open={reportSheetOpen}
+        onOpenChange={(open) => {
+          setReportSheetOpen(open);
+          if (!open) {
+            setReportTarget(null);
+          }
+        }}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            {REPORT_REASON_OPTIONS.map((option) => {
+              const selected = reportReason === option.code;
+              return (
+                <button
+                  key={option.code}
+                  type="button"
+                  className={`flex h-14 w-full items-center justify-between rounded-lg border px-3 text-left text-sm transition ${
+                    selected
+                      ? "border-[#17171c]/40 bg-black/5 text-[#17171c]"
+                      : "border-black/10 text-[#17171c]/80"
+                  }`}
+                  onClick={() => setReportReason(option.code)}
+                >
+                  <span>{option.label}</span>
+                  {selected ? (
+                    <span className="text-xs text-[#17171c]/60">선택됨</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="space-y-2">
+            <textarea
+              value={reportDetail}
+              onChange={(event) => setReportDetail(event.target.value)}
+              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-xs focus:outline-none"
+              maxLength={400}
+              placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 flex-1"
+              onClick={() => setReportSheetOpen(false)}
+              disabled={reporting}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleSubmitReport}
+              disabled={reporting}
+            >
+              {reporting ? "제출 중..." : "제출하기"}
+            </Button>
+          </div>
+        </div>
       </BottomSheet>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
