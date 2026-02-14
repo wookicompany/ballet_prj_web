@@ -24,29 +24,29 @@ export default function TabBar() {
       <div className="grid h-14 grid-cols-3">
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
             isCalendar ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/calendar")}
           type="button"
         >
-          <Calendar className="h-6 w-6" />
+          <Calendar className="size-5" />
           캘린더
         </Button>
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
             isPerformance ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/performance")}
           type="button"
         >
-          <Theater className="h-6 w-6" />
+          <Theater className="size-5" />
           공연
         </Button>
         <Button
           variant="ghost"
-          className={`h-full flex-col gap-1 rounded-none text-xs hover:bg-transparent active:bg-transparent ${
+          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
             isProfile ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={async () => {
@@ -60,7 +60,7 @@ export default function TabBar() {
           }}
           type="button"
         >
-          <User className="h-6 w-6" />
+          <User className="size-5" />
           프로필
         </Button>
       </div>
