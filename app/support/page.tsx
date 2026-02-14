@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -21,7 +21,12 @@ export default function SupportPage() {
   const { openLoginSheet } = useLoginSheet();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [replyEmail, setReplyEmail] = useState("");
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setReplyEmail(user?.email ?? "");
+  }, [user?.email]);
 
   const handleSubmit = async () => {
     if (loading) return;
@@ -29,8 +34,14 @@ export default function SupportPage() {
       openLoginSheet();
       return;
     }
-    if (!title.trim() || !content.trim()) {
-      toast("제목과 내용을 입력해 주세요.");
+    const trimmedEmail = replyEmail.trim();
+    if (!trimmedEmail || !title.trim() || !content.trim()) {
+      toast("답변을 받으실 이메일과 제목, 내용을 입력해 주세요.");
+      return;
+    }
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+    if (!isValidEmail) {
+      toast("이메일 형식을 확인해 주세요.");
       return;
     }
     setSending(true);
@@ -43,7 +54,7 @@ export default function SupportPage() {
 
       const { error } = await supabase.from("support_inquiries").insert({
         user_id: user.id,
-        email: user.email ?? null,
+        email: trimmedEmail,
         nickname: profile?.nickname ?? null,
         title: title.trim(),
         content: content.trim(),
@@ -61,7 +72,7 @@ export default function SupportPage() {
     }
   };
 
-  const isDisabled = !title.trim() || !content.trim() || sending;
+  const isDisabled = !replyEmail.trim() || !title.trim() || !content.trim() || sending;
 
   return (
     <MobileContainer>
@@ -84,9 +95,20 @@ export default function SupportPage() {
 
         <div className="space-y-6">
           <section className="space-y-2">
+            <Label className="text-xs text-[#17171c]/60">답변을 받으실 이메일</Label>
+            <Input
+              type="email"
+              className="mt-2 h-12 text-base placeholder:text-xs"
+              value={replyEmail}
+              onChange={(event) => setReplyEmail(event.target.value)}
+              placeholder="답변을 받으실 이메일을 입력해 주세요."
+            />
+          </section>
+
+          <section className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">제목</Label>
             <Input
-              className="placeholder:text-xs"
+              className="mt-2 h-12 text-base placeholder:text-xs"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={50}
@@ -97,7 +119,7 @@ export default function SupportPage() {
           <section className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">내용</Label>
             <Textarea
-              className="placeholder:text-xs"
+              className="mt-2 min-h-[120px] text-base placeholder:text-xs"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               rows={6}
