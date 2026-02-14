@@ -722,7 +722,7 @@ export default function PerformanceDetailPage() {
       <main className="pb-12">
         {loading ? (
           <div className="space-y-5">
-            <section className="relative h-[380px] w-full overflow-hidden bg-black/5">
+            <section className="relative h-[400px] w-full overflow-hidden bg-black/5">
               <Skeleton className="h-full w-full" />
             </section>
             <div className="space-y-4 px-4">
@@ -772,12 +772,12 @@ export default function PerformanceDetailPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            <section className="relative h-[380px] w-full overflow-hidden bg-[#17171c]">
+            <section className="relative h-[400px] w-full overflow-hidden bg-[#17171c]">
               {visualSlides.length ? (
                 <>
                   <div
                     ref={visualScrollRef}
-                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto touch-pan-x overscroll-y-none"
+                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden touch-pan-x overscroll-none"
                     onScroll={() => {
                       const container = visualScrollRef.current;
                       if (!container) return;
@@ -793,7 +793,7 @@ export default function PerformanceDetailPage() {
                       <button
                         key={slide.id}
                         type="button"
-                        className="relative min-w-full shrink-0 snap-center snap-always"
+                        className="relative h-full min-w-full shrink-0 snap-center snap-always overflow-hidden"
                         onClick={() => {
                           setViewerUrl(slide.url);
                           setViewerOpen(true);
@@ -819,8 +819,10 @@ export default function PerformanceDetailPage() {
                       {visualSlides.map((slide, index) => (
                         <span
                           key={`visual-dot-${slide.id}`}
-                          className={`h-1.5 w-1.5 rounded-full transition ${
-                            index === activeVisualIndex ? "bg-white" : "bg-white/35"
+                          className={`rounded-full transition-all ${
+                            index === activeVisualIndex
+                              ? "h-1.5 w-4 bg-white"
+                              : "h-1.5 w-1.5 bg-white/35"
                           }`}
                         />
                       ))}
