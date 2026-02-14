@@ -46,6 +46,15 @@ export default function PolicyPage() {
             <span className="text-sm text-[#17171c]">개인정보 처리방침</span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/policy/community-rules")}
+          >
+            <span className="text-sm text-[#17171c]">공연 커뮤니티 이용규칙</span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
         </section>
       </main>
     </MobileContainer>
