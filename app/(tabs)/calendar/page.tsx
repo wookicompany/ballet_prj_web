@@ -105,7 +105,7 @@ export default function CalendarPage() {
         .from("profiles")
         .select("calendar_week_start_monday,calendar_highlight_weekend")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         setWeekStartMonday(false);
