@@ -112,6 +112,16 @@
 - 유효성: `date`, `start_time`, `end_time`, `mood` 누락 시 저장 불가
 - 시간 유효성: `end_time < start_time`인 경우 저장 불가 + 오류 메시지 표시
 
+### 주소 검색(WebView 브릿지)
+
+- 적용 화면: `/record/new`, `/record/[id]/edit`, `/calendar/settings/locations`
+- 일반 브라우저: 기존 Kakao Postcode 팝업 흐름 사용
+- React Native WebView:
+  - 웹 -> RN: `open_address_search` 메시지 전송
+  - RN -> 웹: `address_selected` 메시지 전송 (`address`, `roadAddress`, `jibunAddress`)
+  - 웹 반영 우선순위: `address` -> `roadAddress` -> `jibunAddress`
+  - 주소가 변경되면 상세 주소(`address_detail`)는 초기화
+
 ### 미디어 처리
 
 - 저장 위치: Supabase Storage
@@ -229,6 +239,38 @@
 - 리뷰에 댓글 작성 가능 (공연 리뷰에 대한 댓글)
 - 리뷰/댓글 좋아요 기능 제공
 - 공연 좋아요 기능은 제공하지 않음
+
+#### 공개 프로필 노출(리뷰/댓글 작성자)
+
+- 타 사용자 리뷰/댓글 작성자 표시는 공개 프로필 API로 조회
+- API: `POST /api/public-profiles` (body: `user_ids`)
+- 응답 필드: `id`, `nickname`, `avatar_url`
+
+#### 리뷰/댓글 신고 및 숨김 처리
+
+- 대상: 본인 작성물이 아닌 리뷰/댓글
+- 진입: 더보기(점 3개) 액션에서 `신고하기` 노출
+- 신고 사유 코드:
+  - `SPAM` (광고/도배성 콘텐츠예요.)
+  - `ABUSE` (욕설/혐오/괴롭힘이 포함된 내용이에요.)
+  - `SEXUAL` (음란하거나 성적으로 불쾌감을 주는 내용이에요.)
+  - `FALSE_INFO` (사실과 다른 허위 정보예요.)
+  - `OTHER` (기타 사유예요.)
+- 추가 입력(`detail`)은 선택사항
+- 본인 콘텐츠 신고 불가
+- 동일 사용자의 중복 신고는 1건으로 처리(업서트)
+- 숨김 기준: 아이템(리뷰/댓글)별 `고유 신고자 수 >= 3`
+  - 공연 단위 합산이 아닌, 각 리뷰/댓글 ID별로 독립 판정
+- 숨김 시 노출:
+  - 본문 텍스트 대신 `신고로 인해 숨김 처리되었어요.` 문구 노출
+  - 리뷰는 본문뿐 아니라 첨부 이미지도 함께 숨김
+- 숨김 적용 화면: 공연 상세(`/performance/[id]`), 리뷰 상세(`/performance/[id]/reviews/[reviewId]`)
+- `deleted_at`은 삭제(소프트 삭제) 여부이며, 신고 숨김 여부와 별개
+- API:
+  - `POST /api/reviews/[id]/report`: 리뷰 신고
+  - `POST /api/review-comments/[id]/report`: 댓글 신고
+  - 요청 body: `reason_code`, `detail?`
+  - 응답: `report_count`, `is_hidden`
 
 #### 공연 리뷰 댓글
 
