@@ -41,6 +41,7 @@ type FadeInImageProps = {
        src={src}
        alt={alt}
        loading={loading}
+      draggable={false}
        aria-label={ariaLabel}
        onClick={() => {
          sendHapticToApp()

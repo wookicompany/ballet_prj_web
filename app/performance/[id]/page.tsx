@@ -777,7 +777,7 @@ export default function PerformanceDetailPage() {
                 <>
                   <div
                     ref={visualScrollRef}
-                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto"
+                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto touch-pan-x overscroll-y-none"
                     onScroll={() => {
                       const container = visualScrollRef.current;
                       if (!container) return;

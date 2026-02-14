@@ -282,9 +282,9 @@ export default function PerformanceListPage() {
         key={item.mt20id}
         type="button"
         onClick={() => router.push(`/performance/${item.mt20id}`)}
-        className="w-[140px] shrink-0 snap-start text-left transition-opacity duration-200 active:opacity-70"
+        className="flex w-[140px] shrink-0 snap-start flex-col text-left transition-opacity duration-200 active:opacity-70"
       >
-        <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-black/5">
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
           {options?.badgeLabel ? (
             <Badge className="absolute left-2 top-2 rounded-md bg-black/70 text-white">
               {options.badgeLabel}
@@ -302,7 +302,7 @@ export default function PerformanceListPage() {
             </div>
           )}
         </div>
-        <div className="mt-2 space-y-1">
+        <div className="mt-2 flex min-h-[72px] flex-col space-y-1">
           <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
             {item.prfnm}
           </p>
@@ -310,13 +310,18 @@ export default function PerformanceListPage() {
             {item.fcltynm || "공연장 정보 없음"}
           </p>
           <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
-          <div className="min-h-4">
+          <div className="h-4">
             {options?.rating ? (
               <span className="inline-flex items-center gap-1 text-xs text-[#ff273d]">
                 <Star className="h-3 w-3 fill-current" />
                 {options.rating.avg.toFixed(1)}
               </span>
-            ) : null}
+            ) : (
+              <span className="invisible inline-flex items-center gap-1 text-xs">
+                <Star className="h-3 w-3" />
+                0.0
+              </span>
+            )}
           </div>
         </div>
       </button>
