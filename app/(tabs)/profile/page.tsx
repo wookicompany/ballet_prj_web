@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -269,33 +268,27 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
-        </main>
-      </MobileContainer>
+      <main className="flex min-h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </main>
     );
   }
 
   if (!user) {
     return (
-      <MobileContainer>
-        <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
-          <p className="text-sm text-[#17171c]/70">
-            프로필을 보려면 로그인이 필요해요.
-          </p>
-        </main>
-      </MobileContainer>
+      <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-sm text-[#17171c]/70">
+          프로필을 보려면 로그인이 필요해요.
+        </p>
+      </main>
     );
   }
 
   if (!profile) {
     return (
-      <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
-        </main>
-      </MobileContainer>
+      <main className="flex min-h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </main>
     );
   }
 
@@ -304,7 +297,7 @@ export default function ProfilePage() {
   const displayName = profile.nickname ?? "마이발레";
 
   return (
-    <MobileContainer>
+    <>
       <main className="px-4 pb-10 pt-2">
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-lg font-semibold">프로필</h1>
@@ -536,6 +529,6 @@ export default function ProfilePage() {
         alt="프로필 이미지 크게 보기"
         onClose={() => setAvatarOpen(false)}
       />
-    </MobileContainer>
+    </>
   );
 }
