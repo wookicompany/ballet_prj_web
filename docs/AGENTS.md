@@ -24,7 +24,9 @@
 
 ## shadcn/ui 사용 규칙
 
-- 컴포넌트 추가는 반드시 CLI 명령어로 수행한다.
+- shadcn 관련 구현(검색/추가/예시 확인)은 Cursor의 shadcn MCP를 우선 사용한다.
+- 컴포넌트 추가는 기본적으로 MCP를 통해 수행하고, 필요 시에만 CLI를 직접 사용한다.
+- CLI를 직접 사용할 때는 반드시 shadcn 공식 명령어를 사용한다.
   - 예: `npx shadcn@latest add button`
 - 추가된 컴포넌트는 `components/ui/` 아래에 위치한다.
 - 이 프로젝트의 shadcn/ui 컴포넌트는 `components/ui/` 경로에서 관리한다.
