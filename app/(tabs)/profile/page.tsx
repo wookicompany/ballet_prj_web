@@ -393,7 +393,9 @@ export default function ProfilePage() {
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const displayName = profile.nickname ?? "마이발레";
+  const displayName = profile.nickname?.trim()
+    ? profile.nickname
+    : user.id.slice(0, 8);
 
   return (
     <>

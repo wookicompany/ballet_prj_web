@@ -476,17 +476,19 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
 
+    setComments((prev) => [data as CommentItem, ...prev]);
     setCommentCount((prev) => prev + 1);
     setNewComment("");
-    setComments([]);
-    setCommentLikeCounts({});
-    setCommentLikedMap({});
-    setCommentReportCounts({});
-    setHasMoreComments(true);
-    setCommentPage(1);
-    setOrderedCommentIds([]);
-    setCommentOrderReady(false);
-    requestedPagesRef.current = new Set();
+
+    if (!commentProfiles[user.id]) {
+      const profileMap = await fetchPublicProfiles([user.id]);
+      if (profileMap[user.id]) {
+        setCommentProfiles((prev) => ({
+          ...prev,
+          [user.id]: profileMap[user.id],
+        }));
+      }
+    }
     setSubmittingComment(false);
   };
 
