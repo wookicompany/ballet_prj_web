@@ -182,7 +182,7 @@ const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
   const trimmed = nickname?.trim();
   if (trimmed) return trimmed;
-  return `사용자(${userId.slice(0, 8)})`;
+  return userId.slice(0, 8);
 };
 
 const fetchPublicProfiles = async (
