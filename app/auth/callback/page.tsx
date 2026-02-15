@@ -12,8 +12,8 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const failAndExit = (message: string) => {
-      toast(message);
+    const failAndExit = () => {
+      toast("로그인 처리를 완료하지 못했어요. 다시 로그인해 주세요.");
       router.replace("/calendar");
     };
 
@@ -50,7 +50,7 @@ export default function AuthCallbackPage() {
           await supabase.auth.exchangeCodeForSession(url.toString());
 
         if (exchangeError) {
-          failAndExit(`로그인 처리 중 오류가 발생했습니다. (${exchangeError.message})`);
+          failAndExit();
           return;
         }
 
@@ -61,7 +61,7 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        failAndExit("로그인 처리 중 오류가 발생했습니다. (액세스 토큰이 없습니다.)");
+        failAndExit();
         return;
       }
 
@@ -72,7 +72,7 @@ export default function AuthCallbackPage() {
         });
 
         if (sessionError) {
-          failAndExit(`로그인 처리 중 오류가 발생했습니다. (${sessionError.message})`);
+          failAndExit();
           return;
         }
 
@@ -89,9 +89,7 @@ export default function AuthCallbackPage() {
       const { data: refreshedData, error: refreshError } =
         await supabase.auth.refreshSession();
       if (refreshError) {
-        failAndExit(
-          `로그인 처리 중 오류가 발생했습니다. (${refreshError.message})`
-        );
+        failAndExit();
         return;
       }
 
@@ -100,7 +98,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      failAndExit("로그인 처리 중 오류가 발생했습니다. (로그인 세션이 없습니다.)");
+      failAndExit();
     };
 
     handleCallback();

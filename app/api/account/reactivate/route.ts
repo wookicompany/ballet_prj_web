@@ -42,6 +42,7 @@ export const POST = async (request: Request) => {
   const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
     user.id,
     {
+      ban_duration: "none",
       user_metadata: removeSoftDeletedAt(metadata),
     }
   );

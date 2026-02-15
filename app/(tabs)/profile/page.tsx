@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
@@ -49,6 +49,7 @@ const getStarFillRatio = (rating10: number, starIndex: number) => {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -77,6 +78,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (loading) return;
+      if (pathname !== "/profile") return;
       if (!user) {
         openLoginSheet();
         return;
@@ -136,10 +138,11 @@ export default function ProfilePage() {
     };
 
     fetchProfile();
-  }, [user, router, loading, openLoginSheet]);
+  }, [user, pathname, loading, openLoginSheet]);
 
   useEffect(() => {
     const fetchReviewOrder = async () => {
+      if (pathname !== "/profile") return;
       if (!user) return;
       setReviewOrderReady(false);
 
@@ -205,7 +208,7 @@ export default function ProfilePage() {
     };
 
     fetchReviewOrder();
-  }, [user]);
+  }, [user, pathname]);
 
   useEffect(() => {
     if (!showMoreReviews) return;
