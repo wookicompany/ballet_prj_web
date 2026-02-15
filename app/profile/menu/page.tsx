@@ -93,8 +93,14 @@ export default function ProfileMenuPage() {
       toast(errorMessage);
       return;
     }
-    await signOut();
-    router.replace("/calendar");
+
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // 회원탈퇴 성공 후에는 로컬 세션 정리가 실패해도 화면 전환을 우선한다.
+    } finally {
+      router.replace("/calendar");
+    }
   };
 
   if (loading) {

@@ -73,7 +73,7 @@ export const POST = async (request: Request) => {
   }
 
   for (const { table, userColumn } of USER_SOFT_DELETE_TARGETS) {
-    const { error } = await (supabaseAdmin as any)
+    const { error } = await supabaseAdmin
       .from(table)
       .update({ deleted_at: nowIso })
       .eq(userColumn, user.id)
@@ -88,7 +88,7 @@ export const POST = async (request: Request) => {
     }
   }
 
-  const { error: profileSoftDeleteError } = await (supabaseAdmin as any)
+  const { error: profileSoftDeleteError } = await supabaseAdmin
     .from("profiles")
     .update({
       deleted_at: nowIso,
@@ -107,10 +107,9 @@ export const POST = async (request: Request) => {
     );
   }
 
-  const { error: banError } = await (supabaseAdmin.auth.admin as any).updateUserById(
+  const { error: markDeletedError } = await supabaseAdmin.auth.admin.updateUserById(
     user.id,
     {
-      ban_duration: "720h",
       user_metadata: {
         ...user.user_metadata,
         soft_deleted_at: nowIso,
@@ -118,8 +117,8 @@ export const POST = async (request: Request) => {
     }
   );
 
-  if (banError) {
-    console.error("Failed to block auth user", banError);
+  if (markDeletedError) {
+    console.error("Failed to mark auth user soft-deleted", markDeletedError);
     return NextResponse.json(
       { message: "회원탈퇴 처리 중 오류가 발생했어요." },
       { status: 500 }
