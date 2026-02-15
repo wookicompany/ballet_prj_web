@@ -76,6 +76,12 @@ type CommentItem = {
 const COMMENT_PAGE_SIZE = 10;
 const COMMENT_INPUT_BASE_HEIGHT = 40;
 
+const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
+  const trimmed = nickname?.trim();
+  if (trimmed) return trimmed;
+  return `사용자(${userId.slice(0, 8)})`;
+};
+
 const fetchPublicProfiles = async (
   userIds: string[]
 ): Promise<Record<string, ProfileSummary>> => {
@@ -665,7 +671,8 @@ export default function PerformanceReviewDetailPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-[#17171c]/60">
               <span>
-                {profile?.nickname || "익명"} · {formatDate(review.created_at)}
+                {getDisplayNickname(profile?.nickname, review.user_id)} ·{" "}
+                {formatDate(review.created_at)}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -784,7 +791,7 @@ export default function PerformanceReviewDetailPage() {
                   >
                     <div className="flex items-center justify-between text-[11px] text-[#17171c]/60">
                       <span>
-                        {author?.nickname || "익명"} ·{" "}
+                        {getDisplayNickname(author?.nickname, comment.user_id)} ·{" "}
                         {formatDate(comment.created_at)}
                       </span>
                       {user ? (

@@ -179,6 +179,12 @@ const toRelateDisplay = (relate: string | RelateItem) => {
 const REVIEW_PAGE_SIZE = 6;
 const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 
+const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
+  const trimmed = nickname?.trim();
+  if (trimmed) return trimmed;
+  return `사용자(${userId.slice(0, 8)})`;
+};
+
 const fetchPublicProfiles = async (
   userIds: string[]
 ): Promise<Record<string, ProfileSummary>> => {
@@ -1214,7 +1220,7 @@ export default function PerformanceDetailPage() {
                         >
                           <div className="flex items-center justify-between gap-2 text-xs text-[#17171c]/60">
                             <span>
-                              {profile?.nickname || "익명"} ·{" "}
+                              {getDisplayNickname(profile?.nickname, review.user_id)} ·{" "}
                               {formatDate(review.created_at)}
                             </span>
                             {user ? (
