@@ -68,6 +68,8 @@ export default function ProfilePage() {
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showMoreReviews, setShowMoreReviews] = useState(false);
+  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
+  const [reviewOrderReady, setReviewOrderReady] = useState(false);
 
   const reviewSentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
@@ -119,6 +121,8 @@ export default function ProfilePage() {
       setReviewLikeCounts({});
       setReviewCommentCounts({});
       setReviewImages({});
+      setOrderedReviewIds([]);
+      setReviewOrderReady(false);
       if (nextCount === 0) {
         setHasMoreReviews(false);
         setShowMoreReviews(false);
@@ -135,6 +139,74 @@ export default function ProfilePage() {
   }, [user, router, loading, openLoginSheet]);
 
   useEffect(() => {
+    const fetchReviewOrder = async () => {
+      if (!user) return;
+      setReviewOrderReady(false);
+
+      const { data: reviewRows, error: reviewError } = await supabase
+        .from("performance_reviews")
+        .select("id,created_at")
+        .eq("user_id", user.id)
+        .is("deleted_at", null);
+
+      if (reviewError) {
+        setOrderedReviewIds([]);
+        setHasMoreReviews(false);
+        setReviewOrderReady(true);
+        return;
+      }
+
+      const rows = (reviewRows ?? []) as Array<{ id: string; created_at: string }>;
+      if (rows.length === 0) {
+        setOrderedReviewIds([]);
+        setHasMoreReviews(false);
+        setReviewOrderReady(true);
+        return;
+      }
+
+      const reviewIds = rows.map((row) => row.id);
+      const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
+        supabase
+          .from("performance_review_likes")
+          .select("review_id")
+          .in("review_id", reviewIds),
+        supabase
+          .from("performance_review_comments")
+          .select("review_id")
+          .in("review_id", reviewIds)
+          .is("deleted_at", null),
+      ]);
+
+      const likeCountByReviewId: Record<string, number> = {};
+      (likeRows ?? []).forEach((row) => {
+        likeCountByReviewId[row.review_id] =
+          (likeCountByReviewId[row.review_id] ?? 0) + 1;
+      });
+
+      const commentCountByReviewId: Record<string, number> = {};
+      (commentRows ?? []).forEach((row) => {
+        commentCountByReviewId[row.review_id] =
+          (commentCountByReviewId[row.review_id] ?? 0) + 1;
+      });
+
+      const sorted = [...rows].sort((a, b) => {
+        const scoreA =
+          (likeCountByReviewId[a.id] ?? 0) + (commentCountByReviewId[a.id] ?? 0);
+        const scoreB =
+          (likeCountByReviewId[b.id] ?? 0) + (commentCountByReviewId[b.id] ?? 0);
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setOrderedReviewIds(sorted.map((row) => row.id));
+      setHasMoreReviews(true);
+      setReviewOrderReady(true);
+    };
+
+    fetchReviewOrder();
+  }, [user]);
+
+  useEffect(() => {
     if (!showMoreReviews) return;
     if (!reviewSentinelRef.current || loadingReviews || !hasMoreReviews) return;
     const observer = new IntersectionObserver((entries) => {
@@ -148,7 +220,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchReviewsPage = async () => {
-      if (!user || reviewPage === 0 || !hasMoreReviews) return;
+      if (!user || !reviewOrderReady || reviewPage === 0 || !hasMoreReviews) return;
       if (requestedPagesRef.current.has(reviewPage)) return;
       requestedPagesRef.current.add(reviewPage);
       setLoadingReviews(true);
@@ -158,21 +230,26 @@ export default function ProfilePage() {
         : REVIEW_PAGE_SIZE_INITIAL;
       const from = (reviewPage - 1) * pageSize;
       const to = from + pageSize - 1;
+      const pageReviewIds = orderedReviewIds.slice(from, to + 1);
+      if (pageReviewIds.length === 0) {
+        setHasMoreReviews(false);
+        setLoadingReviews(false);
+        return;
+      }
 
       const { data: reviewRows, error } = await supabase
         .from("performance_reviews")
         .select("id,performance_id,rating,content,created_at")
-        .eq("user_id", user.id)
+        .in("id", pageReviewIds)
         .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .range(from, to);
+        .eq("user_id", user.id);
 
       if (error) {
         setLoadingReviews(false);
         return;
       }
 
-      const nextRows = (reviewRows ?? []) as Array<{
+      const fetchedRows = (reviewRows ?? []) as Array<{
         id: string;
         performance_id: string;
         rating: number;
@@ -180,7 +257,22 @@ export default function ProfilePage() {
         created_at: string;
       }>;
 
-      if (nextRows.length < pageSize) {
+      const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
+      const nextRows = pageReviewIds
+        .map((reviewId) => rowMap.get(reviewId))
+        .filter(
+          (
+            row
+          ): row is {
+            id: string;
+            performance_id: string;
+            rating: number;
+            content: string | null;
+            created_at: string;
+          } => Boolean(row)
+        );
+
+      if (to >= orderedReviewIds.length - 1) {
         setHasMoreReviews(false);
       }
 
@@ -264,7 +356,14 @@ export default function ProfilePage() {
     };
 
     fetchReviewsPage();
-  }, [reviewPage, user, hasMoreReviews, showMoreReviews]);
+  }, [
+    reviewPage,
+    user,
+    hasMoreReviews,
+    showMoreReviews,
+    orderedReviewIds,
+    reviewOrderReady,
+  ]);
 
   if (loading) {
     return (

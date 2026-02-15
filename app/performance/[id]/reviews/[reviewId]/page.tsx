@@ -73,7 +73,7 @@ type CommentItem = {
   report_count?: number;
 };
 
-const COMMENT_PAGE_SIZE = 10;
+const COMMENT_PAGE_SIZE = 12;
 const COMMENT_INPUT_BASE_HEIGHT = 40;
 
 const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
@@ -146,6 +146,8 @@ export default function PerformanceReviewDetailPage() {
   const [commentPage, setCommentPage] = useState(0);
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [orderedCommentIds, setOrderedCommentIds] = useState<string[]>([]);
+  const [commentOrderReady, setCommentOrderReady] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -237,7 +239,60 @@ export default function PerformanceReviewDetailPage() {
     setCommentReportCounts({});
     setHasMoreComments(true);
     setCommentPage(1);
+    setOrderedCommentIds([]);
+    setCommentOrderReady(false);
     requestedPagesRef.current = new Set();
+  }, [reviewId]);
+
+  useEffect(() => {
+    const fetchCommentOrder = async () => {
+      setCommentOrderReady(false);
+      const { data: commentRows, error: commentError } = await supabase
+        .from("performance_review_comments")
+        .select("id,created_at")
+        .eq("review_id", reviewId)
+        .is("deleted_at", null);
+
+      if (commentError) {
+        setOrderedCommentIds([]);
+        setHasMoreComments(false);
+        setCommentOrderReady(true);
+        return;
+      }
+
+      const rows = (commentRows ?? []) as Array<{ id: string; created_at: string }>;
+      if (rows.length === 0) {
+        setOrderedCommentIds([]);
+        setHasMoreComments(false);
+        setCommentOrderReady(true);
+        return;
+      }
+
+      const commentIds = rows.map((row) => row.id);
+      const { data: likeRows } = await supabase
+        .from("performance_review_comment_likes")
+        .select("comment_id")
+        .in("comment_id", commentIds);
+
+      const likeCountByCommentId: Record<string, number> = {};
+      (likeRows ?? []).forEach((row) => {
+        likeCountByCommentId[row.comment_id] =
+          (likeCountByCommentId[row.comment_id] ?? 0) + 1;
+      });
+
+      const sorted = [...rows].sort((a, b) => {
+        const likeA = likeCountByCommentId[a.id] ?? 0;
+        const likeB = likeCountByCommentId[b.id] ?? 0;
+        if (likeA !== likeB) return likeB - likeA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setOrderedCommentIds(sorted.map((row) => row.id));
+      setHasMoreComments(true);
+      setCommentOrderReady(true);
+    };
+
+    fetchCommentOrder();
   }, [reviewId]);
 
   useEffect(() => {
@@ -253,34 +308,42 @@ export default function PerformanceReviewDetailPage() {
 
   useEffect(() => {
     const fetchCommentsPage = async () => {
-      if (commentPage === 0 || !hasMoreComments) return;
+      if (!commentOrderReady || commentPage === 0 || !hasMoreComments) return;
       if (requestedPagesRef.current.has(commentPage)) return;
       requestedPagesRef.current.add(commentPage);
       setLoadingComments(true);
 
       const from = (commentPage - 1) * COMMENT_PAGE_SIZE;
       const to = from + COMMENT_PAGE_SIZE - 1;
+      const pageCommentIds = orderedCommentIds.slice(from, to + 1);
+      if (pageCommentIds.length === 0) {
+        setHasMoreComments(false);
+        setLoadingComments(false);
+        return;
+      }
 
       const { data: commentRows, error } = await supabase
         .from("performance_review_comments")
         .select("id,content,created_at,user_id")
-        .eq("review_id", reviewId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .range(from, to);
+        .in("id", pageCommentIds)
+        .is("deleted_at", null);
 
       if (error) {
         setLoadingComments(false);
         return;
       }
 
-      const nextRows = (commentRows as CommentItem[]) ?? [];
+      const fetchedRows = (commentRows as CommentItem[]) ?? [];
+      const commentMap = new Map(fetchedRows.map((row) => [row.id, row]));
+      const nextRows = pageCommentIds
+        .map((commentId) => commentMap.get(commentId))
+        .filter((row): row is CommentItem => Boolean(row));
       setComments((prev) => {
         const existing = new Set(prev.map((row) => row.id));
         return [...prev, ...nextRows.filter((row) => !existing.has(row.id))];
       });
 
-      if (nextRows.length < COMMENT_PAGE_SIZE) {
+      if (to >= orderedCommentIds.length - 1) {
         setHasMoreComments(false);
       }
 
@@ -337,7 +400,14 @@ export default function PerformanceReviewDetailPage() {
     };
 
     fetchCommentsPage();
-  }, [commentPage, reviewId, hasMoreComments]);
+  }, [
+    commentPage,
+    reviewId,
+    hasMoreComments,
+    orderedCommentIds,
+    commentOrderReady,
+    user,
+  ]);
 
   useEffect(() => {
     if (!newCommentRef.current) return;
@@ -406,19 +476,17 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
 
-    setComments((prev) => [data as CommentItem, ...prev]);
     setCommentCount((prev) => prev + 1);
     setNewComment("");
-
-    if (!commentProfiles[user.id]) {
-      const profileMap = await fetchPublicProfiles([user.id]);
-      if (profileMap[user.id]) {
-        setCommentProfiles((prev) => ({
-          ...prev,
-          [user.id]: profileMap[user.id],
-        }));
-      }
-    }
+    setComments([]);
+    setCommentLikeCounts({});
+    setCommentLikedMap({});
+    setCommentReportCounts({});
+    setHasMoreComments(true);
+    setCommentPage(1);
+    setOrderedCommentIds([]);
+    setCommentOrderReady(false);
+    requestedPagesRef.current = new Set();
     setSubmittingComment(false);
   };
 

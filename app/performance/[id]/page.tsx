@@ -176,7 +176,7 @@ const toRelateDisplay = (relate: string | RelateItem) => {
   return null;
 };
 
-const REVIEW_PAGE_SIZE = 6;
+const REVIEW_PAGE_SIZE = 12;
 const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 
 const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
@@ -230,6 +230,8 @@ export default function PerformanceDetailPage() {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
   const [reviewPage, setReviewPage] = useState(0);
+  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
+  const [reviewOrderReady, setReviewOrderReady] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
@@ -381,8 +383,77 @@ export default function PerformanceDetailPage() {
     setInfoTab("performance");
     setHasMoreReviews(true);
     setReviewPage(1);
+    setOrderedReviewIds([]);
+    setReviewOrderReady(false);
     setActiveVisualIndex(0);
     requestedPagesRef.current = new Set();
+  }, [performanceId]);
+
+  useEffect(() => {
+    const fetchReviewOrder = async () => {
+      setReviewOrderReady(false);
+      const { data: reviewRows, error: reviewError } = await supabase
+        .from("performance_reviews")
+        .select("id,created_at")
+        .eq("performance_id", performanceId)
+        .is("deleted_at", null);
+
+      if (reviewError) {
+        toast("리뷰를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setOrderedReviewIds([]);
+        setHasMoreReviews(false);
+        setReviewOrderReady(true);
+        return;
+      }
+
+      const rows = (reviewRows ?? []) as Array<{ id: string; created_at: string }>;
+      if (rows.length === 0) {
+        setOrderedReviewIds([]);
+        setHasMoreReviews(false);
+        setReviewOrderReady(true);
+        return;
+      }
+
+      const reviewIds = rows.map((row) => row.id);
+      const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
+        supabase
+          .from("performance_review_likes")
+          .select("review_id")
+          .in("review_id", reviewIds),
+        supabase
+          .from("performance_review_comments")
+          .select("review_id")
+          .in("review_id", reviewIds)
+          .is("deleted_at", null),
+      ]);
+
+      const likeCountByReviewId: Record<string, number> = {};
+      (likeRows ?? []).forEach((row) => {
+        likeCountByReviewId[row.review_id] =
+          (likeCountByReviewId[row.review_id] ?? 0) + 1;
+      });
+
+      const commentCountByReviewId: Record<string, number> = {};
+      (commentRows ?? []).forEach((row) => {
+        commentCountByReviewId[row.review_id] =
+          (commentCountByReviewId[row.review_id] ?? 0) + 1;
+      });
+
+      const sorted = [...rows].sort((a, b) => {
+        const scoreA =
+          (likeCountByReviewId[a.id] ?? 0) + (commentCountByReviewId[a.id] ?? 0);
+        const scoreB =
+          (likeCountByReviewId[b.id] ?? 0) + (commentCountByReviewId[b.id] ?? 0);
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setOrderedReviewIds(sorted.map((row) => row.id));
+      setHasMoreReviews(true);
+      setReviewOrderReady(true);
+    };
+
+    fetchReviewOrder();
   }, [performanceId]);
 
   useEffect(() => {
@@ -404,20 +475,24 @@ export default function PerformanceDetailPage() {
 
   useEffect(() => {
     const fetchReviewsPage = async () => {
-      if (reviewPage === 0 || !hasMoreReviews) return;
+      if (!reviewOrderReady || reviewPage === 0 || !hasMoreReviews) return;
       if (requestedPagesRef.current.has(reviewPage)) return;
       requestedPagesRef.current.add(reviewPage);
       setLoadingReviews(true);
 
       const from = (reviewPage - 1) * REVIEW_PAGE_SIZE;
       const to = from + REVIEW_PAGE_SIZE - 1;
+      const pageReviewIds = orderedReviewIds.slice(from, to + 1);
+      if (pageReviewIds.length === 0) {
+        setHasMoreReviews(false);
+        setLoadingReviews(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("performance_reviews")
         .select("id,rating,content,created_at,user_id")
-        .eq("performance_id", performanceId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .range(from, to);
+        .in("id", pageReviewIds)
+        .is("deleted_at", null);
 
       if (error) {
         toast("리뷰를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -425,7 +500,11 @@ export default function PerformanceDetailPage() {
         return;
       }
 
-      const nextRows = (data as ReviewItem[]) ?? [];
+      const fetchedRows = (data as ReviewItem[]) ?? [];
+      const reviewMap = new Map(fetchedRows.map((row) => [row.id, row]));
+      const nextRows = pageReviewIds
+        .map((reviewId) => reviewMap.get(reviewId))
+        .filter((row): row is ReviewItem => Boolean(row));
       setReviews((prev) => {
         const merged = [...prev, ...nextRows];
         const seen = new Set<string>();
@@ -435,7 +514,7 @@ export default function PerformanceDetailPage() {
           return true;
         });
       });
-      if (nextRows.length < REVIEW_PAGE_SIZE) {
+      if (to >= orderedReviewIds.length - 1) {
         setHasMoreReviews(false);
       }
 
@@ -526,7 +605,13 @@ export default function PerformanceDetailPage() {
     };
 
     fetchReviewsPage();
-  }, [reviewPage, performanceId, hasMoreReviews, user]);
+  }, [
+    reviewPage,
+    hasMoreReviews,
+    user,
+    orderedReviewIds,
+    reviewOrderReady,
+  ]);
 
   const refreshReviewSummary = async () => {
     const { data: ratings } = await supabase
