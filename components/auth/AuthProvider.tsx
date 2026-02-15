@@ -10,10 +10,12 @@ import {
   useState,
 } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { getOAuthProvider, type OAuthProvider } from "@/lib/oauthProvider";
 
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
+  provider: OAuthProvider;
   loading: boolean;
   signInWithProvider: (provider: "google" | "kakao" | "apple") => Promise<void>;
   signOut: () => Promise<void>;
@@ -67,7 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, session, loading, signInWithProvider, signOut }),
+    () => ({
+      user,
+      session,
+      provider: getOAuthProvider(user),
+      loading,
+      signInWithProvider,
+      signOut,
+    }),
     [user, session, loading, signInWithProvider, signOut]
   );
 

@@ -169,7 +169,8 @@ export default function ProfilePage() {
         supabase
           .from("performance_review_likes")
           .select("review_id")
-          .in("review_id", reviewIds),
+          .in("review_id", reviewIds)
+          .is("deleted_at", null),
         supabase
           .from("performance_review_comments")
           .select("review_id")
@@ -313,7 +314,8 @@ export default function ProfilePage() {
           supabase
             .from("performance_review_likes")
             .select("review_id")
-            .in("review_id", reviewIds),
+            .in("review_id", reviewIds)
+            .is("deleted_at", null),
           supabase
             .from("performance_review_comments")
             .select("review_id")
@@ -323,7 +325,8 @@ export default function ProfilePage() {
             .from("performance_review_images")
             .select("review_id,url")
             .in("review_id", reviewIds)
-            .eq("user_id", user.id),
+            .eq("user_id", user.id)
+            .is("deleted_at", null),
         ]);
 
         const nextLikeCounts: Record<string, number> = {};

@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { buildKakaoAccountLogoutUrl } from "@/lib/oauthProvider";
 import {
   Calendar,
   ChevronLeft,
@@ -34,12 +35,30 @@ import { toast } from "sonner";
 
 export default function ProfileMenuPage() {
   const router = useRouter();
-  const { user, loading, signOut } = useAuth();
+  const { user, provider, loading, signOut } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleLogout = async () => {
     if (!user || loading) return;
+    if (provider === "kakao") {
+      const restApiKey = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY;
+      if (!restApiKey) {
+        toast("카카오 로그아웃 설정을 확인해 주세요.");
+        return;
+      }
+
+      await signOut();
+      const logoutRedirectUri = `${window.location.origin}/auth/kakao/logout/callback`;
+      const logoutUrl = buildKakaoAccountLogoutUrl({
+        restApiKey,
+        logoutRedirectUri,
+        state: String(Date.now()),
+      });
+      window.location.assign(logoutUrl);
+      return;
+    }
+
     await supabase.auth.signOut({ scope: "local" });
     router.replace("/calendar");
   };
@@ -53,25 +72,14 @@ export default function ProfileMenuPage() {
     }
     const accessToken = session.access_token;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
-      toast("설정 정보를 찾을 수 없어요. 다시 시도해 주세요.");
-      return;
-    }
-
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/delete-account`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          apikey: supabaseAnonKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      }
-    );
+    const response = await fetch("/api/account/delete", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
     if (!response.ok) {
       let errorMessage = "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.";
       try {

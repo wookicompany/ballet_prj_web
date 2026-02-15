@@ -72,6 +72,7 @@ export default function DayPage() {
         .from("record_media")
         .select("record_id,url,created_at")
         .in("record_id", recordIds)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true });
 
       const nextMedia: Record<string, { url: string | null; count: number }> = {};

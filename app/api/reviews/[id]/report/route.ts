@@ -68,7 +68,8 @@ export const POST = async (
   const { count, error: countError } = await auth.supabaseAdmin
     .from("performance_review_reports")
     .select("id", { count: "exact", head: true })
-    .eq("review_id", id);
+    .eq("review_id", id)
+    .is("deleted_at", null);
 
   if (countError) {
     console.error("Failed to count review reports", countError);

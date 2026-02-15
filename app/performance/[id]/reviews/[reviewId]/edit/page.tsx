@@ -99,7 +99,8 @@ export default function PerformanceReviewEditPage() {
       const { data: images } = await supabase
         .from("performance_review_images")
         .select("id,url")
-        .eq("review_id", reviewId);
+        .eq("review_id", reviewId)
+        .is("deleted_at", null);
       setExistingImages((images ?? []) as ExistingImage[]);
       setFetching(false);
     };

@@ -202,11 +202,13 @@ export default function PerformanceReviewDetailPage() {
         supabase
           .from("performance_review_images")
           .select("url")
-          .eq("review_id", reviewId),
+          .eq("review_id", reviewId)
+          .is("deleted_at", null),
         supabase
           .from("performance_review_likes")
           .select("review_id")
-          .eq("review_id", reviewId),
+          .eq("review_id", reviewId)
+          .is("deleted_at", null),
         supabase
           .from("performance_review_comments")
           .select("id", { count: "exact", head: true })
@@ -215,7 +217,8 @@ export default function PerformanceReviewDetailPage() {
         supabase
           .from("performance_review_reports")
           .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId),
+          .eq("review_id", reviewId)
+          .is("deleted_at", null),
       ]);
 
       setReview({
@@ -272,7 +275,8 @@ export default function PerformanceReviewDetailPage() {
       const { data: likeRows } = await supabase
         .from("performance_review_comment_likes")
         .select("comment_id")
-        .in("comment_id", commentIds);
+        .in("comment_id", commentIds)
+        .is("deleted_at", null);
 
       const likeCountByCommentId: Record<string, number> = {};
       (likeRows ?? []).forEach((row) => {
@@ -359,18 +363,21 @@ export default function PerformanceReviewDetailPage() {
           supabase
             .from("performance_review_comment_likes")
             .select("comment_id")
-            .in("comment_id", commentIds),
+            .in("comment_id", commentIds)
+            .is("deleted_at", null),
           user
             ? supabase
                 .from("performance_review_comment_likes")
                 .select("comment_id")
                 .eq("user_id", user.id)
                 .in("comment_id", commentIds)
+                .is("deleted_at", null)
             : Promise.resolve({ data: [] }),
           supabase
             .from("performance_review_comment_reports")
             .select("comment_id")
-            .in("comment_id", commentIds),
+            .in("comment_id", commentIds)
+            .is("deleted_at", null),
         ]);
 
         const nextLikeCounts: Record<string, number> = {};
