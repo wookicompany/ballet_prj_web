@@ -19,6 +19,14 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
+import {
+  formatSeoulDateKey,
+  getSeoulDateParts,
+  getSeoulTodayDate,
+  getSeoulTimeParts,
+  isValidDateKey,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -31,6 +39,7 @@ import {
   RN_ADDRESS_SELECTED_EVENT,
   requestAddressSearchFromApp,
   resolveAddressFromBridgeMessage,
+  sendHapticToApp,
 } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -63,30 +72,6 @@ const ORDER_TAGS = [
 
 const LOCATION_DELIMITER = " | ";
 const ADDRESS_DELIMITER = " || ";
-
-const formatLocalDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const parseLocalDateKey = (value: string): Date | null => {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const parsed = new Date(year, month - 1, day);
-  if (
-    parsed.getFullYear() !== year ||
-    parsed.getMonth() !== month - 1 ||
-    parsed.getDate() !== day
-  ) {
-    return null;
-  }
-  return parsed;
-};
 
 const buildLocationValue = (
   name: string,
@@ -222,11 +207,7 @@ function RecordNewContent() {
   const endMinuteListRef = useRef<HTMLDivElement>(null);
   const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
   const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
-  const [dateDraft, setDateDraft] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    day: new Date().getDate(),
-  });
+  const [dateDraft, setDateDraft] = useState(() => getSeoulDateParts());
   const [locationName, setLocationName] = useState("");
   const [locationBase, setLocationBase] = useState("");
   const [locationDetail, setLocationDetail] = useState("");
@@ -239,7 +220,7 @@ function RecordNewContent() {
     []
   );
   const years = useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getSeoulDateParts().year;
     return Array.from({ length: 6 }, (_, idx) => currentYear - 2 + idx);
   }, []);
   const months = useMemo(() => Array.from({ length: 12 }, (_, idx) => idx + 1), []);
@@ -452,13 +433,10 @@ function RecordNewContent() {
 
   useEffect(() => {
     const dateParam = searchParams.get("date");
-    const isValidParam =
-      !!dateParam &&
-      /^\d{4}-\d{2}-\d{2}$/.test(dateParam) &&
-      !Number.isNaN(new Date(`${dateParam}T00:00:00`).getTime());
-    const today = formatLocalDateKey(new Date());
+    const isValidParam = !!dateParam && isValidDateKey(dateParam);
+    const today = formatSeoulDateKey();
     const resolved = isValidParam ? dateParam : today;
-    const baseDate = parseLocalDateKey(resolved) ?? new Date();
+    const baseDate = parseDateKey(resolved) ?? getSeoulTodayDate();
     setForm((prev) => ({ ...prev, record_date: resolved }));
     setDateDraft({
       year: baseDate.getFullYear(),
@@ -567,6 +545,7 @@ function RecordNewContent() {
   };
 
   const handleRemoveImage = (index: number) => {
+    sendHapticToApp();
     setImages((prev) => prev.filter((_, idx) => idx !== index));
   };
 
@@ -654,9 +633,9 @@ function RecordNewContent() {
   const formatTimeDisplay = (hour: string, minute: string) =>
     `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
   const getClampedNowTime = () => {
-    const now = new Date();
-    const hourValue = Math.max(now.getHours(), 6);
-    const minuteValue = now.getMinutes();
+    const { hour, minute } = getSeoulTimeParts();
+    const hourValue = Math.max(hour, 6);
+    const minuteValue = minute;
     return {
       hour: String(hourValue).padStart(2, "0"),
       minute: String(minuteValue).padStart(2, "0"),
@@ -889,8 +868,8 @@ function RecordNewContent() {
                 className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
                   const baseDate = form.record_date
-                    ? parseLocalDateKey(form.record_date) ?? new Date()
-                    : new Date();
+                    ? parseDateKey(form.record_date) ?? getSeoulTodayDate()
+                    : getSeoulTodayDate();
                   setDateDraft({
                     year: baseDate.getFullYear(),
                     month: baseDate.getMonth() + 1,
@@ -902,10 +881,10 @@ function RecordNewContent() {
                 <CalendarDays className="h-4 w-4" />
                 {form.record_date
                   ? format(
-                      parseLocalDateKey(form.record_date) ?? new Date(),
+                      parseDateKey(form.record_date) ?? getSeoulTodayDate(),
                       "yyyy년 MM월 dd일(EEE)",
                       {
-                      locale: ko,
+                        locale: ko,
                       }
                     )
                   : "날짜 선택"}

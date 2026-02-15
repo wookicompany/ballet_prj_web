@@ -27,9 +27,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import ImageViewer from "@/components/ui/image-viewer";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import {
   REPORT_REASON_OPTIONS,
   REPORT_THRESHOLD,
@@ -137,9 +144,7 @@ const formatDateRange = (from?: string | null, to?: string | null) => {
 };
 
 const formatDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("ko-KR");
+  return formatIsoToSeoulDate(value, "ko-KR");
 };
 
 const formatRatingText = (value: number) => {
@@ -222,6 +227,7 @@ export default function PerformanceDetailPage() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
+  const [visualApi, setVisualApi] = useState<CarouselApi>();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [reportTargetId, setReportTargetId] = useState<string | null>(null);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
@@ -233,7 +239,6 @@ export default function PerformanceDetailPage() {
     "performance",
   );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const visualScrollRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const viewTrackedRef = useRef<string | null>(null);
 
@@ -717,6 +722,28 @@ export default function PerformanceDetailPage() {
     return slides;
   }, [detail]);
 
+  const sharedVisualBackgroundUrl = useMemo(() => {
+    if (!detail) return null;
+    return detail.poster ?? detail.styurls?.[0] ?? null;
+  }, [detail]);
+
+  useEffect(() => {
+    if (!visualApi) return;
+
+    const onSelect = () => {
+      setActiveVisualIndex(visualApi.selectedScrollSnap());
+    };
+
+    onSelect();
+    visualApi.on("select", onSelect);
+    visualApi.on("reInit", onSelect);
+
+    return () => {
+      visualApi.off("select", onSelect);
+      visualApi.off("reInit", onSelect);
+    };
+  }, [visualApi]);
+
   return (
     <MobileContainer>
       <main className="pb-12">
@@ -742,14 +769,6 @@ export default function PerformanceDetailPage() {
                 </div>
               </section>
               <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
-                <Skeleton className="h-4 w-20" />
-                <div className="flex gap-2">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={`sty-skeleton-${index}`} className="h-24 w-24" />
-                  ))}
-                </div>
-              </section>
-              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
                 <Skeleton className="h-4 w-16" />
                 <div className="space-y-3">
                   {Array.from({ length: 2 }).map((_, index) => (
@@ -772,48 +791,46 @@ export default function PerformanceDetailPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            <section className="relative h-[400px] w-full overflow-hidden bg-[#17171c]">
+            <section className="relative h-[400px] w-full overflow-hidden bg-black">
               {visualSlides.length ? (
                 <>
-                  <div
-                    ref={visualScrollRef}
-                    className="no-scrollbar absolute inset-0 z-0 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden touch-pan-x overscroll-none"
-                    onScroll={() => {
-                      const container = visualScrollRef.current;
-                      if (!container) return;
-                      const width = container.clientWidth;
-                      if (!width) return;
-                      const nextIndex = Math.round(container.scrollLeft / width);
-                      setActiveVisualIndex((prev) =>
-                        prev === nextIndex ? prev : nextIndex
-                      );
-                    }}
+                  <Carousel
+                    setApi={setVisualApi}
+                    opts={{ align: "start" }}
+                    className="absolute inset-0 z-0"
                   >
-                    {visualSlides.map((slide) => (
-                      <button
-                        key={slide.id}
-                        type="button"
-                        className="relative h-full min-w-full shrink-0 snap-center snap-always overflow-hidden"
-                        onClick={() => {
-                          setViewerUrl(slide.url);
-                          setViewerOpen(true);
-                        }}
-                        aria-label="공연 이미지 크게 보기"
-                      >
-                        <FadeInImage
-                          src={slide.url}
-                          alt=""
-                          className="absolute inset-0 h-full w-full scale-105 object-cover blur-2xl"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-                        <FadeInImage
-                          src={slide.url}
-                          alt={slide.alt}
-                          className="relative h-full w-full object-contain"
-                        />
-                      </button>
-                    ))}
-                  </div>
+                    <CarouselContent className="h-full">
+                      {visualSlides.map((slide) => (
+                        <CarouselItem key={slide.id} className="h-full">
+                          <button
+                            type="button"
+                            className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black"
+                            onClick={() => {
+                              setViewerUrl(slide.url);
+                              setViewerOpen(true);
+                            }}
+                            aria-label="공연 이미지 크게 보기"
+                          >
+                            {sharedVisualBackgroundUrl ? (
+                              <FadeInImage
+                                src={sharedVisualBackgroundUrl}
+                                alt=""
+                                className="absolute inset-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
+                              />
+                            ) : null}
+                            <div className="absolute inset-0 bg-black/30" />
+                            <div className="absolute inset-0 z-10 flex items-center justify-center">
+                              <FadeInImage
+                                src={slide.url}
+                                alt={slide.alt}
+                                className="block max-h-full max-w-full object-contain object-center"
+                              />
+                            </div>
+                          </button>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
                   <div className="absolute right-4 bottom-4 z-10 rounded-full bg-black/45 px-2.5 py-1 text-xs text-white">
                     {Math.min(activeVisualIndex + 1, visualSlides.length)} /{" "}
                     {visualSlides.length}

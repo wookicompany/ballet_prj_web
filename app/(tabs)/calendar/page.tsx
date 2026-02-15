@@ -9,6 +9,10 @@ import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
+import {
+  formatSeoulDateKey,
+  getSeoulTodayDate,
+} from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
@@ -25,20 +29,15 @@ function getMonthBounds(date: Date) {
   return { start, end };
 }
 
-function getLocalToday() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [currentDate, setCurrentDate] = useState(() => getLocalToday());
+  const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => {
-    const today = getLocalToday();
+    const today = getSeoulTodayDate();
     return {
       year: today.getFullYear(),
       month: today.getMonth() + 1,
@@ -52,10 +51,6 @@ export default function CalendarPage() {
     () => getMonthBounds(currentDate),
     [currentDate]
   );
-
-  useEffect(() => {
-    setCurrentDate(getLocalToday());
-  }, []);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -162,7 +157,7 @@ export default function CalendarPage() {
   const monthLabel = `${currentDate.getFullYear()}년 ${
     currentDate.getMonth() + 1
   }월`;
-  const todayStr = formatDate(new Date());
+  const todayStr = formatSeoulDateKey();
   const yearOptions = useMemo(() => {
     const currentYear = currentDate.getFullYear();
     const startYear = 2025;

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import FadeInImage from "@/components/ui/fade-in-image";
+import { parseDateKey } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Search, Star } from "lucide-react";
@@ -246,8 +247,8 @@ export default function PerformanceSearchInputPage() {
         (item) => getEngagementScore(item.mt20id) > 0
       );
       const ordered = [...fetched].sort((a, b) => {
-        const dateA = a.prfpdfrom ? new Date(`${a.prfpdfrom}T00:00:00`) : null;
-        const dateB = b.prfpdfrom ? new Date(`${b.prfpdfrom}T00:00:00`) : null;
+        const dateA = a.prfpdfrom ? parseDateKey(a.prfpdfrom) : null;
+        const dateB = b.prfpdfrom ? parseDateKey(b.prfpdfrom) : null;
         const timeA = dateA && !Number.isNaN(dateA.getTime()) ? dateA.getTime() : 0;
         const timeB = dateB && !Number.isNaN(dateB.getTime()) ? dateB.getTime() : 0;
         if (timeA !== timeB) return timeB - timeA;

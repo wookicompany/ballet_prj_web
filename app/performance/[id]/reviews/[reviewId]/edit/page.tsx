@@ -13,6 +13,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
@@ -123,6 +124,7 @@ export default function PerformanceReviewEditPage() {
   };
 
   const handleRemoveNew = (index: number) => {
+    sendHapticToApp();
     setMediaItems((prev) => {
       const next = [...prev];
       const removed = next.splice(index, 1);
@@ -132,6 +134,7 @@ export default function PerformanceReviewEditPage() {
   };
 
   const handleRemoveExisting = async (imageId: string) => {
+    sendHapticToApp();
     if (!user) {
       openLoginSheet();
       return;

@@ -8,6 +8,11 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
+import {
+  formatSeoulDateKey,
+  getSeoulTimeParts,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus } from "lucide-react";
 
@@ -38,13 +43,7 @@ export default function DayPage() {
 
   const dateStr = params.date;
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
-  const todayKey = useMemo(() => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }, []);
+  const todayKey = useMemo(() => formatSeoulDateKey(), []);
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -102,8 +101,8 @@ export default function DayPage() {
       return;
     }
     const updateNow = () => {
-      const now = new Date();
-      setNowMinutes(now.getHours() * 60 + now.getMinutes());
+      const { hour, minute } = getSeoulTimeParts();
+      setNowMinutes(hour * 60 + minute);
     };
     updateNow();
     const interval = window.setInterval(updateNow, 60 * 1000);
@@ -130,8 +129,8 @@ export default function DayPage() {
   }, [dateStr, todayKey, nowMinutes, records.length]);
 
   const dayStrip = useMemo(() => {
-    const base = new Date(`${dateStr}T00:00:00`);
-    if (Number.isNaN(base.getTime())) return [];
+    const base = parseDateKey(dateStr);
+    if (!base || Number.isNaN(base.getTime())) return [];
     return Array.from({ length: 7 }, (_, idx) => {
       const offset = idx - 3;
       const nextDate = new Date(base);

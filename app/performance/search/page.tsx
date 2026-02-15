@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import FadeInImage from "@/components/ui/fade-in-image";
+import {
+  formatSeoulDateKey,
+  getSeoulTodayDate,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
@@ -86,16 +91,12 @@ function PerformanceSearchContent() {
   const searchParams = useSearchParams();
   const sectionKey = searchParams.get("section") ?? "";
   const sectionConfig = SECTION_CONFIG[sectionKey] ?? null;
-  const today = useMemo(() => new Date(), []);
-  const defaultStart = useMemo(
-    () => today.toISOString().slice(0, 10),
-    [today]
-  );
+  const defaultStart = useMemo(() => formatSeoulDateKey(), []);
   const defaultEnd = useMemo(() => {
-    const next = new Date(today);
+    const next = parseDateKey(defaultStart) ?? getSeoulTodayDate();
     next.setMonth(next.getMonth() + 3);
-    return next.toISOString().slice(0, 10);
-  }, [today]);
+    return formatSeoulDateKey(next);
+  }, [defaultStart]);
 
   const [filters, setFilters] = useState(() => ({
     startDate: sectionConfig ? "" : defaultStart,

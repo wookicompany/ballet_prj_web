@@ -73,6 +73,7 @@ export default function PerformanceReviewNewPage() {
   };
 
   const handleRemove = (index: number) => {
+    sendHapticToApp();
     setMediaItems((prev) => {
       const next = [...prev];
       const removed = next.splice(index, 1);

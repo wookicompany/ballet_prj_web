@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
+import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
@@ -39,9 +40,7 @@ function toMinutes(time: string) {
 }
 
 const formatReviewDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("ko-KR");
+  return formatIsoToSeoulDate(value, "ko-KR");
 };
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {

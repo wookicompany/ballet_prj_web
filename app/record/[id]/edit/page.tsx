@@ -18,6 +18,12 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
+import {
+  getSeoulDateParts,
+  getSeoulTodayDate,
+  getSeoulTimeParts,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,6 +36,7 @@ import {
   RN_ADDRESS_SELECTED_EVENT,
   requestAddressSearchFromApp,
   resolveAddressFromBridgeMessage,
+  sendHapticToApp,
 } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -230,11 +237,7 @@ export default function RecordEditPage() {
   const endMinuteListRef = useRef<HTMLDivElement>(null);
   const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
   const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
-  const [dateDraft, setDateDraft] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    day: new Date().getDate(),
-  });
+  const [dateDraft, setDateDraft] = useState(() => getSeoulDateParts());
   const [locationName, setLocationName] = useState("");
   const [locationBase, setLocationBase] = useState("");
   const [locationDetail, setLocationDetail] = useState("");
@@ -247,7 +250,7 @@ export default function RecordEditPage() {
     []
   );
   const years = useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getSeoulDateParts().year;
     return Array.from({ length: 6 }, (_, idx) => currentYear - 2 + idx);
   }, []);
   const months = useMemo(() => Array.from({ length: 12 }, (_, idx) => idx + 1), []);
@@ -843,6 +846,7 @@ export default function RecordEditPage() {
     index: number,
     item: { type: "existing"; id: string } | { type: "new" }
   ) => {
+    sendHapticToApp();
     if (item.type === "existing") {
       setRemovedMediaIds((prev) =>
         prev.includes(item.id) ? prev : [...prev, item.id]
@@ -869,9 +873,9 @@ export default function RecordEditPage() {
   const formatTimeDisplay = (hour: string, minute: string) =>
     `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
   const getClampedNowTime = () => {
-    const now = new Date();
-    const hourValue = Math.max(now.getHours(), 6);
-    const minuteValue = now.getMinutes();
+    const { hour, minute } = getSeoulTimeParts();
+    const hourValue = Math.max(hour, 6);
+    const minuteValue = minute;
     return {
       hour: String(hourValue).padStart(2, "0"),
       minute: String(minuteValue).padStart(2, "0"),
@@ -992,8 +996,8 @@ export default function RecordEditPage() {
                 className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
                   const baseDate = form.record_date
-                    ? new Date(form.record_date)
-                    : new Date();
+                    ? parseDateKey(form.record_date) ?? getSeoulTodayDate()
+                    : getSeoulTodayDate();
                   setDateDraft({
                     year: baseDate.getFullYear(),
                     month: baseDate.getMonth() + 1,
@@ -1004,9 +1008,13 @@ export default function RecordEditPage() {
               >
                 <CalendarDays className="h-4 w-4" />
                 {form.record_date
-                  ? format(new Date(form.record_date), "yyyy년 MM월 dd일(EEE)", {
-                      locale: ko,
-                    })
+                  ? format(
+                      parseDateKey(form.record_date) ?? getSeoulTodayDate(),
+                      "yyyy년 MM월 dd일(EEE)",
+                      {
+                        locale: ko,
+                      }
+                    )
                   : "날짜 선택"}
               </Button>
             </div>

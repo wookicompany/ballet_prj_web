@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import FadeInImage from "@/components/ui/fade-in-image";
+import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
@@ -97,9 +98,7 @@ const fetchPublicProfiles = async (
 };
 
 const formatDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("ko-KR");
+  return formatIsoToSeoulDate(value, "ko-KR");
 };
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {

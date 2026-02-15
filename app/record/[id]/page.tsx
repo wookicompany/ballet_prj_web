@@ -25,6 +25,7 @@ import {
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { ChevronLeft, Menu, PenLine, Trash2 } from "lucide-react";
@@ -75,8 +76,8 @@ const calculateDuration = (start: string, end: string) => {
 };
 
 const formatDateLabel = (dateStr: string) => {
-  const date = new Date(`${dateStr}T00:00:00`);
-  const weekdayLabel = Number.isNaN(date.getTime())
+  const date = parseDateKey(dateStr);
+  const weekdayLabel = !date || Number.isNaN(date.getTime())
     ? ""
     : format(date, "yyyy년 MM월 dd일(EEE)", { locale: ko });
   return weekdayLabel || dateStr;

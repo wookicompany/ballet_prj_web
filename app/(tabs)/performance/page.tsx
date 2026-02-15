@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getDateKeyDiffDays } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -43,12 +44,7 @@ const formatDate = (value?: string | null) => {
 
 const getDaysUntil = (value?: string | null) => {
   if (!value) return null;
-  const target = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffMs = target.getTime() - today.getTime();
-  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return getDateKeyDiffDays(value);
 };
 
 export default function PerformanceListPage() {
