@@ -144,6 +144,14 @@ export default function ProfilePage() {
     const fetchReviewOrder = async () => {
       if (pathname !== "/profile") return;
       if (!user) return;
+
+      if (reviewCount === 0) {
+        setOrderedReviewIds([]);
+        setHasMoreReviews(false);
+        setReviewOrderReady(true);
+        return;
+      }
+
       setReviewOrderReady(false);
 
       const { data: reviewRows, error: reviewError } = await supabase
@@ -208,7 +216,7 @@ export default function ProfilePage() {
     };
 
     fetchReviewOrder();
-  }, [user, pathname]);
+  }, [user, pathname, reviewCount]);
 
   useEffect(() => {
     if (!showMoreReviews) return;
