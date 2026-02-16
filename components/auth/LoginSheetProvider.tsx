@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useState } from "react";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toast } from "sonner";
 
 type LoginSheetContextValue = {
   openLoginSheet: () => void;
@@ -31,6 +32,16 @@ export function LoginSheetProvider({
 
   const openLoginSheet = useCallback(() => setOpen(true), []);
   const closeLoginSheet = useCallback(() => setOpen(false), []);
+  const handleSocialLogin = useCallback(
+    async (provider: "kakao" | "apple" | "google") => {
+      try {
+        await signInWithProvider(provider);
+      } catch {
+        toast("로그인 연결에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      }
+    },
+    [signInWithProvider]
+  );
 
   return (
     <LoginSheetContext.Provider value={{ openLoginSheet, closeLoginSheet }}>
@@ -46,15 +57,15 @@ export function LoginSheetProvider({
             <Button
               className={`${SOCIAL_BUTTON_BASE_CLASS} bg-[#FEE500] text-black hover:bg-[#FEE500]/90`}
               disabled={loading}
-              onClick={() => signInWithProvider("kakao")}
+              onClick={() => void handleSocialLogin("kakao")}
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-                  <path
-                    fill="currentColor"
-                    d="M12 3.5c-5.2 0-9.5 3.3-9.5 7.4 0 2.7 1.7 5 4.5 6.3l-1 3.5c-.1.3.2.6.5.4l4-2.6c.3 0 .9.1 1.5.1 5.2 0 9.5-3.3 9.5-7.4S17.2 3.5 12 3.5z"
-                  />
-                </svg>
+                <img
+                  src="/icons/kakao-logo.svg"
+                  alt=""
+                  className="h-5 w-5 object-contain"
+                  aria-hidden="true"
+                />
               </span>
               카카오로 시작하기
             </Button>
@@ -63,13 +74,13 @@ export function LoginSheetProvider({
             <Button
               className={`${SOCIAL_BUTTON_BASE_CLASS} bg-black text-white hover:bg-black/90`}
               disabled={loading}
-              onClick={() => signInWithProvider("apple")}
+              onClick={() => void handleSocialLogin("apple")}
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
                 <img
-                  src="/images/apple-logo.svg"
+                  src="/icons/apple-logo.svg"
                   alt=""
-                  className="h-4 w-4 object-contain"
+                  className="h-5 w-5 object-contain"
                   aria-hidden="true"
                 />
               </span>
@@ -81,7 +92,7 @@ export function LoginSheetProvider({
               variant="outline"
               className={`${SOCIAL_BUTTON_BASE_CLASS} bg-white text-[#17171c] hover:bg-black/5`}
               disabled={loading}
-              onClick={() => signInWithProvider("google")}
+              onClick={() => void handleSocialLogin("google")}
             >
               <span className="inline-flex h-5 w-5 items-center justify-center">
                 <svg viewBox="0 0 24 24" aria-hidden="true">

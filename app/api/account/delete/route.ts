@@ -56,6 +56,7 @@ export const POST = async (request: Request) => {
     );
   }
 
+  // 현재 정책: Kakao만 unlink를 수행하고 Apple revoke는 추후 단계로 유예한다.
   const provider = getOAuthProvider(user);
   const nowIso = new Date().toISOString();
 

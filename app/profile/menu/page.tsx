@@ -61,6 +61,12 @@ export default function ProfileMenuPage() {
       return;
     }
 
+    if (provider === "apple" || provider === "google" || provider === "unknown") {
+      await supabase.auth.signOut({ scope: "local" });
+      router.replace("/calendar");
+      return;
+    }
+
     await supabase.auth.signOut({ scope: "local" });
     router.replace("/calendar");
   };

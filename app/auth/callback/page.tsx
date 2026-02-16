@@ -12,8 +12,8 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const failAndExit = () => {
-      toast("로그인 처리를 완료하지 못했어요. 다시 로그인해 주세요.");
+    const failAndExit = (message?: string) => {
+      toast(message ?? "로그인 처리를 완료하지 못했어요. 다시 로그인해 주세요.");
       router.replace("/calendar");
     };
 
@@ -39,66 +39,80 @@ export default function AuthCallbackPage() {
     };
 
     const handleCallback = async () => {
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
-      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-
-      if (code) {
-        const { error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(url.toString());
-
-        if (exchangeError) {
+      try {
+        const url = new URL(window.location.href);
+        const oauthError = url.searchParams.get("error");
+        if (oauthError) {
+          if (oauthError === "access_denied") {
+            failAndExit("로그인을 취소했어요. 다시 시도해 주세요.");
+            return;
+          }
           failAndExit();
           return;
         }
 
-        const { data: sessionData } = await supabase.auth.getSession();
-        const exchangedAccessToken = sessionData.session?.access_token ?? "";
-        if (exchangedAccessToken) {
-          await finishLogin(exchangedAccessToken);
-          return;
-        }
+        const code = url.searchParams.get("code");
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
 
-        failAndExit();
-        return;
-      }
+        if (code) {
+          const { error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(url.toString());
 
-      if (accessToken && refreshToken) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+          if (exchangeError) {
+            failAndExit();
+            return;
+          }
 
-        if (sessionError) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const exchangedAccessToken = sessionData.session?.access_token ?? "";
+          if (exchangedAccessToken) {
+            await finishLogin(exchangedAccessToken);
+            return;
+          }
+
           failAndExit();
           return;
         }
 
-        await finishLogin(accessToken);
-        return;
-      }
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
 
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.access_token) {
-        await finishLogin(data.session.access_token);
-        return;
-      }
+          if (sessionError) {
+            failAndExit();
+            return;
+          }
 
-      const { data: refreshedData, error: refreshError } =
-        await supabase.auth.refreshSession();
-      if (refreshError) {
+          await finishLogin(accessToken);
+          return;
+        }
+
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.access_token) {
+          await finishLogin(data.session.access_token);
+          return;
+        }
+
+        const { data: refreshedData, error: refreshError } =
+          await supabase.auth.refreshSession();
+        if (refreshError) {
+          failAndExit();
+          return;
+        }
+
+        if (refreshedData.session?.access_token) {
+          await finishLogin(refreshedData.session.access_token);
+          return;
+        }
+
         failAndExit();
-        return;
+      } catch {
+        failAndExit();
       }
-
-      if (refreshedData.session?.access_token) {
-        await finishLogin(refreshedData.session.access_token);
-        return;
-      }
-
-      failAndExit();
     };
 
     handleCallback();

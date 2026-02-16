@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,11 +56,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithProvider = useCallback(
     async (provider: "google" | "kakao" | "apple") => {
       const redirectTo = `${window.location.origin}/auth/callback`;
-
-      await supabase.auth.signInWithOAuth({
+      setOauthLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo },
       });
+      if (error) {
+        setOauthLoading(false);
+        throw error;
+      }
+      if (!data?.url) {
+        setOauthLoading(false);
+      }
     },
     []
   );
@@ -73,11 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       provider: getOAuthProvider(user),
-      loading,
+      loading: loading || oauthLoading,
       signInWithProvider,
       signOut,
     }),
-    [user, session, loading, signInWithProvider, signOut]
+    [user, session, loading, oauthLoading, signInWithProvider, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
