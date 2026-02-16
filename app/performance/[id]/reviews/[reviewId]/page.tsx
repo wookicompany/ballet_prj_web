@@ -889,7 +889,7 @@ export default function PerformanceReviewDetailPage() {
                 return (
                   <div
                     key={comment.id}
-                    className="rounded-lg border border-black/5 p-3 text-sm text-[#17171c]"
+                    className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
                   >
                     <div className="flex items-center justify-between text-[11px] text-[#17171c]/60">
                       <span>

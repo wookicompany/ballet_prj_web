@@ -1319,7 +1319,7 @@ export default function PerformanceDetailPage() {
                       return (
                         <div
                           key={review.id}
-                          className="rounded-xl border border-black/5 p-3 text-sm text-[#17171c] transition-colors"
+                          className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
                           role="button"
                           tabIndex={0}
                           onClick={() => {
