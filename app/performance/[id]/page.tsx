@@ -179,9 +179,14 @@ const toRelateDisplay = (relate: string | RelateItem) => {
 const REVIEW_PAGE_SIZE = 12;
 const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 
-const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
+const getDisplayNickname = (
+  nickname: string | null | undefined,
+  userId: string,
+  isProfileResolved: boolean,
+) => {
   const trimmed = nickname?.trim();
   if (trimmed) return trimmed;
+  if (!isProfileResolved) return "";
   return userId.slice(0, 8);
 };
 
@@ -218,6 +223,9 @@ export default function PerformanceDetailPage() {
   const [reviewAverage, setReviewAverage] = useState<number | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileSummary>>({});
+  const [profileResolvedMap, setProfileResolvedMap] = useState<
+    Record<string, boolean>
+  >({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
@@ -373,6 +381,7 @@ export default function PerformanceDetailPage() {
   useEffect(() => {
     setReviews([]);
     setProfiles({});
+    setProfileResolvedMap({});
     setLikeCounts({});
     setLikedMap({});
     setCommentCounts({});
@@ -523,6 +532,16 @@ export default function PerformanceDetailPage() {
       const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
 
       if (reviewIds.length > 0) {
+        if (userIds.length > 0) {
+          setProfileResolvedMap((prev) => {
+            const next = { ...prev };
+            userIds.forEach((id) => {
+              if (!(id in next)) next[id] = false;
+            });
+            return next;
+          });
+        }
+
         const [
           profileRows,
           { data: likeRows },
@@ -563,6 +582,15 @@ export default function PerformanceDetailPage() {
         ]);
 
         setProfiles((prev) => ({ ...prev, ...(profileRows ?? {}) }));
+        if (userIds.length > 0) {
+          setProfileResolvedMap((prev) => {
+            const next = { ...prev };
+            userIds.forEach((id) => {
+              next[id] = true;
+            });
+            return next;
+          });
+        }
 
         const nextLikeCounts: Record<string, number> = {};
         (likeRows ?? []).forEach((row) => {
@@ -1311,7 +1339,11 @@ export default function PerformanceDetailPage() {
                         >
                           <div className="flex items-center justify-between gap-2 text-xs text-[#17171c]/60">
                             <span>
-                              {getDisplayNickname(profile?.nickname, review.user_id)} ·{" "}
+                              {getDisplayNickname(
+                                profile?.nickname,
+                                review.user_id,
+                                !!profileResolvedMap[review.user_id],
+                              )} ·{" "}
                               {formatDate(review.created_at)}
                             </span>
                             {user ? (

@@ -76,9 +76,14 @@ type CommentItem = {
 const COMMENT_PAGE_SIZE = 12;
 const COMMENT_INPUT_BASE_HEIGHT = 40;
 
-const getDisplayNickname = (nickname: string | null | undefined, userId: string) => {
+const getDisplayNickname = (
+  nickname: string | null | undefined,
+  userId: string,
+  isProfileResolved: boolean,
+) => {
   const trimmed = nickname?.trim();
   if (trimmed) return trimmed;
+  if (!isProfileResolved) return "";
   return userId.slice(0, 8);
 };
 
@@ -130,6 +135,9 @@ export default function PerformanceReviewDetailPage() {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentProfiles, setCommentProfiles] = useState<
     Record<string, ProfileSummary>
+  >({});
+  const [commentProfileResolvedMap, setCommentProfileResolvedMap] = useState<
+    Record<string, boolean>
   >({});
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -239,6 +247,7 @@ export default function PerformanceReviewDetailPage() {
   useEffect(() => {
     setComments([]);
     setCommentProfiles({});
+    setCommentProfileResolvedMap({});
     setCommentReportCounts({});
     setHasMoreComments(true);
     setCommentPage(1);
@@ -353,7 +362,21 @@ export default function PerformanceReviewDetailPage() {
 
       const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
       if (userIds.length > 0) {
+        setCommentProfileResolvedMap((prev) => {
+          const next = { ...prev };
+          userIds.forEach((id) => {
+            if (!(id in next)) next[id] = false;
+          });
+          return next;
+        });
         const nextProfiles = await fetchPublicProfiles(userIds);
+        setCommentProfileResolvedMap((prev) => {
+          const next = { ...prev };
+          userIds.forEach((id) => {
+            next[id] = true;
+          });
+          return next;
+        });
         setCommentProfiles((prev) => ({ ...prev, ...nextProfiles }));
       }
 
@@ -488,7 +511,9 @@ export default function PerformanceReviewDetailPage() {
     setNewComment("");
 
     if (!commentProfiles[user.id]) {
+      setCommentProfileResolvedMap((prev) => ({ ...prev, [user.id]: false }));
       const profileMap = await fetchPublicProfiles([user.id]);
+      setCommentProfileResolvedMap((prev) => ({ ...prev, [user.id]: true }));
       if (profileMap[user.id]) {
         setCommentProfiles((prev) => ({
           ...prev,
@@ -748,7 +773,7 @@ export default function PerformanceReviewDetailPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-[#17171c]/60">
               <span>
-                {getDisplayNickname(profile?.nickname, review.user_id)} ·{" "}
+                {getDisplayNickname(profile?.nickname, review.user_id, true)} ·{" "}
                 {formatDate(review.created_at)}
               </span>
             </div>
@@ -868,7 +893,11 @@ export default function PerformanceReviewDetailPage() {
                   >
                     <div className="flex items-center justify-between text-[11px] text-[#17171c]/60">
                       <span>
-                        {getDisplayNickname(author?.nickname, comment.user_id)} ·{" "}
+                        {getDisplayNickname(
+                          author?.nickname,
+                          comment.user_id,
+                          !!commentProfileResolvedMap[comment.user_id],
+                        )} ·{" "}
                         {formatDate(comment.created_at)}
                       </span>
                       {user ? (
