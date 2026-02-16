@@ -41,5 +41,5 @@ yarn-error.log*
 *.tsbuildinfo
 
 # local auth secrets
-docs/AuthKey_NMYYZNUS3R.p8
-docs/apple_client_secret.txt
+AuthKey_*.p8
+apple_client_secret.txt
