@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
@@ -38,6 +39,7 @@ export default function ProfileMenuPage() {
   const { user, provider, loading, signOut } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = async () => {
     if (!user || loading) return;
@@ -64,42 +66,47 @@ export default function ProfileMenuPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user || loading) return;
-    const session = await ensureSessionOrLogin(openLoginSheet);
-    if (!session) {
-      toast("로그인 정보가 없어요. 다시 로그인해 주세요.");
-      return;
-    }
-    const accessToken = session.access_token;
-
-    const response = await fetch("/api/account/delete", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    });
-    if (!response.ok) {
-      let errorMessage = "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-      try {
-        const errorBody = await response.json();
-        if (errorBody?.message) {
-          errorMessage = `회원탈퇴에 실패했습니다. (${errorBody.message})`;
-        }
-      } catch {
-        // ignore parse errors
-      }
-      toast(errorMessage);
-      return;
-    }
-
+    if (!user || loading || isDeleting) return;
+    setIsDeleting(true);
     try {
-      await supabase.auth.signOut({ scope: "local" });
-    } catch {
-      // 회원탈퇴 성공 후에는 로컬 세션 정리가 실패해도 화면 전환을 우선한다.
+      const session = await ensureSessionOrLogin(openLoginSheet);
+      if (!session) {
+        toast("로그인 정보가 없어요. 다시 로그인해 주세요.");
+        return;
+      }
+      const accessToken = session.access_token;
+
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) {
+        let errorMessage = "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+        try {
+          const errorBody = await response.json();
+          if (errorBody?.message) {
+            errorMessage = `회원탈퇴에 실패했습니다. (${errorBody.message})`;
+          }
+        } catch {
+          // ignore parse errors
+        }
+        toast(errorMessage);
+        return;
+      }
+
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // 회원탈퇴 성공 후에는 로컬 세션 정리가 실패해도 화면 전환을 우선한다.
+      } finally {
+        router.replace("/calendar");
+      }
     } finally {
-      router.replace("/calendar");
+      setIsDeleting(false);
     }
   };
 
@@ -115,6 +122,7 @@ export default function ProfileMenuPage() {
 
   return (
     <MobileContainer>
+      {isDeleting ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12 pt-2">
         <header className="mb-6 flex items-center justify-between">
           <Button
@@ -201,6 +209,7 @@ export default function ProfileMenuPage() {
             type="button"
             variant="ghost"
             className="h-14 w-full justify-between px-4"
+            disabled={isDeleting}
             onClick={() => setDeleteDialogOpen(true)}
           >
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
@@ -212,7 +221,10 @@ export default function ProfileMenuPage() {
         </section>
         <AlertDialog
           open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
+          onOpenChange={(open) => {
+            if (isDeleting) return;
+            setDeleteDialogOpen(open);
+          }}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -222,10 +234,13 @@ export default function ProfileMenuPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex flex-row gap-2">
-              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogCancel className="flex-1" disabled={isDeleting}>
+                취소
+              </AlertDialogCancel>
               <AlertDialogAction
                 variant="outline"
                 className="flex-1 text-red-500 hover:text-red-500"
+                disabled={isDeleting}
                 onClick={async () => {
                   setDeleteDialogOpen(false);
                   await handleDeleteAccount();

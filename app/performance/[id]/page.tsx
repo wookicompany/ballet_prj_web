@@ -1291,14 +1291,15 @@ export default function PerformanceDetailPage() {
                       return (
                         <div
                           key={review.id}
-                          className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
+                          className="rounded-xl border border-black/5 p-3 text-sm text-[#17171c] transition-colors"
                           role="button"
                           tabIndex={0}
-                          onClick={() =>
+                          onClick={() => {
+                            sendHapticToApp();
                             router.push(
                               `/performance/${detail.mt20id}/reviews/${review.id}`
-                            )
-                          }
+                            );
+                          }}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
