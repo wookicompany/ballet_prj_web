@@ -78,8 +78,7 @@ export const POST = async (request: Request) => {
     review.performance_id
   ) {
     void sendFCMToUser(review.user_id, {
-      title: "새 댓글",
-      body: "누군가 리뷰에 댓글을 남겼어요",
+      title: "내 리뷰에 댓글이 달렸어요",
       link: `https://www.myballet.co.kr/performance/${review.performance_id}/reviews/${reviewId}`,
     });
   }

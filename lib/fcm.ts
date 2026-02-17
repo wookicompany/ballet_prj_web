@@ -10,7 +10,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type FCMPayload = {
   title: string;
-  body: string;
+  body?: string;
   link?: string;
 };
 
@@ -61,9 +61,15 @@ export async function sendFCMToUser(
     if (!token || typeof token !== "string" || token.trim() === "") return;
 
     const messaging = admin.messaging();
+    const notification: { title: string; body?: string } = {
+      title: payload.title,
+    };
+    if (payload.body && payload.body.trim() !== "") {
+      notification.body = payload.body;
+    }
     await messaging.send({
       token,
-      notification: { title: payload.title, body: payload.body },
+      notification,
       data: payload.link ? { link: payload.link } : undefined,
     });
   } catch (err) {
