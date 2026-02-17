@@ -243,12 +243,15 @@ export default function CalendarPage() {
 
       <section className="grid grid-cols-7 gap-0 pb-2 text-center text-xs text-[#17171c]/60">
         {weekLabels.map((day, index) => {
-          const isWeekend =
-            index === (weekStartMonday ? 5 : 0) || index === 6;
+          const isSaturday = day === "토";
+          const isSunday = day === "일";
+          const isWeekend = isSaturday || isSunday;
           const weekendClass = highlightWeekend
-            ? index === (weekStartMonday ? 5 : 0)
+            ? isSaturday
               ? "text-blue-600"
-              : "text-red-500"
+              : isSunday
+                ? "text-red-500"
+                : ""
             : "";
           return (
             <span
@@ -269,17 +272,16 @@ export default function CalendarPage() {
           const count = recordCounts[dateStr] ?? 0;
           const moodValue = moodAverages[dateStr];
           const isToday = dateStr === todayStr;
-          const weekendIndex = cell.date
-            ? weekStartMonday
-              ? (cell.date.getDay() + 6) % 7
-              : cell.date.getDay()
-            : null;
-          const isWeekend =
-            weekendIndex === (weekStartMonday ? 5 : 0) || weekendIndex === 6;
+          const dayOfWeek = cell.date ? cell.date.getDay() : null;
+          const isSaturday = dayOfWeek === 6;
+          const isSunday = dayOfWeek === 0;
+          const isWeekend = isSaturday || isSunday;
           const weekendClass = highlightWeekend
-            ? weekendIndex === (weekStartMonday ? 5 : 0)
+            ? isSaturday
               ? "text-blue-600"
-              : "text-red-500"
+              : isSunday
+                ? "text-red-500"
+                : ""
             : "";
 
           return (
