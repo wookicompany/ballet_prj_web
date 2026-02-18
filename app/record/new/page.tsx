@@ -812,7 +812,7 @@ function RecordNewContent() {
 
         <div className="space-y-8">
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
+            <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
@@ -859,7 +859,7 @@ function RecordNewContent() {
 
           <section className="space-y-4">
             <div className="pt-0">
-              <Label className="text-xs text-[#17171c]/60">
+              <Label className="text-sm text-[#17171c]/60">
                 날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
               </Label>
               <Button
@@ -892,7 +892,7 @@ function RecordNewContent() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
-                <Label className="text-xs text-[#17171c]/60">
+                <Label className="text-sm text-[#17171c]/60">
                   시작 시간<span className="-ml-[1px] text-[#17171c]/50">*</span>
                 </Label>
                 <Button
@@ -913,7 +913,7 @@ function RecordNewContent() {
                 </Button>
               </div>
               <div>
-                <Label className="text-xs text-[#17171c]/60">
+                <Label className="text-sm text-[#17171c]/60">
                   종료 시간<span className="-ml-[1px] text-[#17171c]/50">*</span>
                 </Label>
                 <Button
@@ -935,7 +935,7 @@ function RecordNewContent() {
               </div>
             </div>
             <div className="pt-2">
-              <Label className="text-xs text-[#17171c]/60">
+              <Label className="text-sm text-[#17171c]/60">
                 오늘 발레는 어땠나요?<span className="-ml-[1px] text-[#17171c]/50">*</span>
               </Label>
               <div className="mt-2">
@@ -949,7 +949,7 @@ function RecordNewContent() {
             </div>
             <div className="pt-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-[#17171c]/60">
+                <Label className="text-sm text-[#17171c]/60">
                   오늘의 발레를 한줄로 남겨보아요.
                 </Label>
                 <span className="text-[11px] text-[#17171c]/50">
@@ -971,7 +971,7 @@ function RecordNewContent() {
 
           <section className="space-y-6">
             <div>
-              <Label className="text-xs text-[#17171c]/60">
+              <Label className="text-sm text-[#17171c]/60">
                 오늘 잘했던 점을 남겨볼까요?
               </Label>
               <Textarea
@@ -984,7 +984,7 @@ function RecordNewContent() {
               />
             </div>
             <div>
-              <Label className="text-xs text-[#17171c]/60">
+              <Label className="text-sm text-[#17171c]/60">
                 다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
@@ -1014,7 +1014,7 @@ function RecordNewContent() {
               />
               <Label
                 htmlFor="bar-order-options"
-                className="text-xs text-[#17171c]/70"
+                className="text-sm text-[#17171c]/70"
               >
                 바 순서 입력
               </Label>
@@ -1022,7 +1022,7 @@ function RecordNewContent() {
             {showBarOrder ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-[#17171c]/60">
+                  <Label className="text-sm text-[#17171c]/60">
                     바(bar) 순서
                   </Label>
                   <Button
@@ -1037,7 +1037,7 @@ function RecordNewContent() {
                 </div>
                 <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
                   {barOrderTags.length === 0 ? (
-                    <p className="text-xs text-[#17171c]/40">
+                    <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
                     </p>
                   ) : (
@@ -1092,10 +1092,10 @@ function RecordNewContent() {
                   })}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={barOrderInput}
                     onChange={(event) => setBarOrderInput(event.target.value)}
@@ -1126,7 +1126,7 @@ function RecordNewContent() {
               />
               <Label
                 htmlFor="center-order-options"
-                className="text-xs text-[#17171c]/70"
+                className="text-sm text-[#17171c]/70"
               >
                 센터 순서 입력
               </Label>
@@ -1134,7 +1134,7 @@ function RecordNewContent() {
             {showCenterOrder ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-[#17171c]/60">
+                  <Label className="text-sm text-[#17171c]/60">
                     센터(center) 순서
                   </Label>
                   <Button
@@ -1149,7 +1149,7 @@ function RecordNewContent() {
                 </div>
                 <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
                   {centerOrderTags.length === 0 ? (
-                    <p className="text-xs text-[#17171c]/40">
+                    <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
                     </p>
                   ) : (
@@ -1204,10 +1204,10 @@ function RecordNewContent() {
                   })}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+                  <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="직접 입력하고 Enter로 추가해 주세요"
                     value={centerOrderInput}
                     onChange={(event) => setCenterOrderInput(event.target.value)}
@@ -1240,7 +1240,7 @@ function RecordNewContent() {
               />
               <Label
                 htmlFor="location-options"
-                className="text-xs text-[#17171c]/70"
+                className="text-sm text-[#17171c]/70"
               >
                 장소 입력
               </Label>
@@ -1248,7 +1248,7 @@ function RecordNewContent() {
             {showLocation ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-[#17171c]/60">장소</Label>
+                  <Label className="text-sm text-[#17171c]/60">장소</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -1261,7 +1261,7 @@ function RecordNewContent() {
                 </div>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-xs"
+                  className="h-12 text-base placeholder:text-sm"
                   placeholder="장소 이름을 입력해 주세요"
                   value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
@@ -1269,14 +1269,14 @@ function RecordNewContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-12 w-full justify-start text-left text-xs font-normal"
+                  className="h-12 w-full justify-start text-left text-sm font-normal"
                   onClick={handleSearchAddress}
                 >
                   {locationBase || "주소 검색하기"}
                 </Button>
                 <Input
                   type="text"
-                  className="h-12 text-base placeholder:text-xs"
+                  className="h-12 text-base placeholder:text-sm"
                   placeholder="상세 주소를 입력해 주세요 (선택사항)"
                   value={locationDetail}
                   onChange={(event) => setLocationDetail(event.target.value)}
@@ -1301,7 +1301,7 @@ function RecordNewContent() {
               />
               <Label
                 htmlFor="level-instructor-options"
-                className="text-xs text-[#17171c]/70"
+                className="text-sm text-[#17171c]/70"
               >
                 강사님 &amp; 레벨 입력
               </Label>
@@ -1309,7 +1309,7 @@ function RecordNewContent() {
             {showLevelInstructor ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-[#17171c]/80">
+                  <span className="text-sm text-[#17171c]/60">
                     강사님 &amp; 레벨
                   </span>
                   <Button
@@ -1325,7 +1325,7 @@ function RecordNewContent() {
                 <div className="space-y-3">
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="강사님을 입력해 주세요"
                     value={form.instructor}
                     onChange={(event) =>
@@ -1337,7 +1337,7 @@ function RecordNewContent() {
                   />
                   <Input
                     type="text"
-                    className="h-12 text-base placeholder:text-xs"
+                    className="h-12 text-base placeholder:text-sm"
                     placeholder="레벨을 입력해 주세요"
                     value={form.level}
                     onChange={(event) =>
