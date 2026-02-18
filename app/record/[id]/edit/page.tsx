@@ -38,6 +38,7 @@ import {
   resolveAddressFromBridgeMessage,
   sendHapticToApp,
 } from "@/lib/reactNativeWebView";
+import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { supabase } from "@/lib/supabaseClient";
 import {
   CalendarDays,
@@ -55,17 +56,6 @@ import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
-const ORDER_TAGS = [
-  "그랑 바뜨망",
-  "롱드잠 아떼르",
-  "롱드잠 앙레르",
-  "아다지오",
-  "제떼",
-  "탄듀",
-  "프라페",
-  "플리에",
-  "퐁듀",
-];
 
 const LOCATION_DELIMITER = " | ";
 const ADDRESS_DELIMITER = " || ";
@@ -1193,7 +1183,7 @@ export default function RecordEditPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {ORDER_TAGS.map((tag) => {
+                  {BAR_ORDER_TAGS.map((tag) => {
                     const selected = barOrderTags.includes(tag);
                     return (
                       <Button
@@ -1305,7 +1295,7 @@ export default function RecordEditPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {ORDER_TAGS.map((tag) => {
+                  {CENTER_ORDER_TAGS.map((tag) => {
                     const selected = centerOrderTags.includes(tag);
                     return (
                       <Button

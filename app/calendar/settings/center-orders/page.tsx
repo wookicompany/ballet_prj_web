@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
-import { ORDER_TAGS } from "@/lib/orderTags";
+import { CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -389,7 +389,7 @@ export default function SavedCenterOrdersPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {ORDER_TAGS.map((tag) => {
+              {CENTER_ORDER_TAGS.map((tag) => {
                 const selected = orderTags.includes(tag);
                 return (
                   <Button
