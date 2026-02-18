@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabaseClient";
+import { sendLogoutToApp } from "@/lib/reactNativeWebView";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function KakaoLogoutCallbackPage() {
@@ -12,6 +13,7 @@ export default function KakaoLogoutCallbackPage() {
   useEffect(() => {
     const finishLogout = async () => {
       await supabase.auth.signOut({ scope: "local" });
+      sendLogoutToApp();
       router.replace("/calendar");
     };
 

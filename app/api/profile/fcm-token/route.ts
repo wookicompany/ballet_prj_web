@@ -15,17 +15,23 @@ export const POST = async (request: Request) => {
   const body = await request.json();
   const fcmToken =
     typeof body?.fcm_token === "string" ? body.fcm_token.trim() : "";
+  const action = fcmToken ? "register_or_refresh" : "unregister";
 
-  const { error } = await auth.supabaseAdmin
+  const { data, error } = await auth.supabaseAdmin
     .from("profiles")
     .update({ fcm_token: fcmToken || null })
-    .eq("id", auth.user.id);
+    .eq("id", auth.user.id)
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("Failed to update fcm_token", error);
+  if (error || !data) {
+    console.error(`[FCM_TOKEN] ${action} failed`, {
+      userId: auth.user.id,
+      error,
+    });
     return NextResponse.json(
       { message: "Failed to update fcm token" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

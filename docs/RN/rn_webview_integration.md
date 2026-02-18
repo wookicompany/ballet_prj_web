@@ -53,11 +53,32 @@ RN 앱에서 마이발레 웹을 WebView로 붙일 때 참고할 내용이다.
 
 **채택 이유:** 웹에서 버튼·스위치 등 액션 시 앱에서 **햅틱(진동)** 을 울리려면 웹→RN 신호가 필요함.
 
-- **웹**: 액션 컴포넌트(버튼, 스위치 등) 탭 시 `window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'haptic' }))` 호출. (웹 쪽에 연동 코드 추가 필요.)
+- **웹**: 액션 컴포넌트(버튼, 스위치 등) 탭 시 `window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'haptic' }))` 호출.
 - **RN**: `onMessage` 로 수신 후 `type === 'haptic'` 이면 네이티브 햅틱 API 호출.
 - **기타**: RN→웹은 `injectJavaScript` 로 전역 함수/이벤트 전달. 딥링크·공유 등 추가 이벤트는 필요 시 `type` 확장.
 
+### 4.1 로그아웃/회원탈퇴 해제 이벤트 (고정 스펙)
+
+- **허용 타입(대소문자 고정):**
+  - `logout`
+  - `account_deleted`
+- **고정 포맷:** `{ "type": "<type>", "version": 1 }`
+- **발신 시점(웹 기준):**
+  - `logout`: 로그아웃 성공 직후(로컬 세션 정리 성공 후)
+  - `account_deleted`: 회원탈퇴 API 성공 직후(로컬 세션 정리 직후)
+- **웹 구현 지점:**
+  - 일반 provider 로그아웃/회원탈퇴: `app/profile/menu/page.tsx`
+  - 카카오 로그아웃: `app/auth/kakao/logout/callback/page.tsx`에서만 송신(중복 송신 방지)
+- **RN 수신 규칙:**
+  - 위 두 타입 + `version: 1`만 처리
+  - 처리 시 공통으로 `POST /api/profile/fcm-token` with `{ "fcm_token": "" }` 호출
+  - 스펙 외 타입/버전은 무시하고 경고 로그만 남김
+
 **알림 배너(댓글/좋아요) 구현 (확정):** postMessage 아님. **마이발레 Vercel API** 에서 댓글/좋아요 생성 시 수신자 `fcm_token`을 Supabase에서 조회한 뒤 **FCM API 호출**. Supabase는 DB·토큰 저장만 사용. RN은 FCM 토큰을 등록하고 푸시 수신 시 배너 표시·탭 시 해당 URL로 WebView 이동.
+
+- RN 토큰 등록 API: `POST /api/profile/fcm-token`
+- 요청 본문: `{ "fcm_token": "<token>" }` (`""` 전송 시 토큰 제거)
+- 현재 알림 payload는 제목 중심으로 전송됨 (body는 선택값).
 
 ---
 
@@ -68,7 +89,7 @@ RN 앱에서 마이발레 웹을 WebView로 붙일 때 참고할 내용이다.
 | 라이브러리 | `react-native-webview` |
 | URL / 진입 | 프로덕션 `https://www.myballet.co.kr/` · **상황별 (확정)** 기본 `/calendar`, 푸시·딥링크 시 payload URL로 로드 |
 | 로그인 | **WebView 내 OAuth (확정)** · 콜백 `https://www.myballet.co.kr/auth/callback` |
-| postMessage | **함 (확정)** · 웹→RN 햅틱용. 알림 배너는 **마이발레 Vercel API + FCM** 별도 구현 |
+| postMessage | **함 (확정)** · 햅틱 + 해제 이벤트(`logout`, `account_deleted`, `version:1`) |
 | 세션 | WebView 스토리지에 자동 저장, RN에서 별도 토큰 전달 불필요 |
 | iOS | `http` 사용 시 ATS 예외, OAuth 도메인 허용 |
 | Android | `http` 사용 시 cleartext/네트워크 보안 설정 |

@@ -35,6 +35,22 @@ export function sendAuthTokenToApp(accessToken: string): void {
   );
 }
 
+/** WebView일 때만 앱에 로그아웃 이벤트 전달. 브라우저에서는 no-op */
+export function sendLogoutToApp(): void {
+  if (typeof window === "undefined") return;
+  window.ReactNativeWebView?.postMessage(
+    JSON.stringify({ type: "logout", version: 1 })
+  );
+}
+
+/** WebView일 때만 앱에 회원탈퇴 이벤트 전달. 브라우저에서는 no-op */
+export function sendAccountDeletedToApp(): void {
+  if (typeof window === "undefined") return;
+  window.ReactNativeWebView?.postMessage(
+    JSON.stringify({ type: "account_deleted", version: 1 })
+  );
+}
+
 export const RN_ADDRESS_SELECTED_EVENT = "myballet:address-selected";
 
 type AddressMessagePayload = {

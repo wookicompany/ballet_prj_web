@@ -19,6 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  sendAccountDeletedToApp,
+  sendLogoutToApp,
+} from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { buildKakaoAccountLogoutUrl } from "@/lib/oauthProvider";
@@ -63,11 +67,13 @@ export default function ProfileMenuPage() {
 
     if (provider === "apple" || provider === "google" || provider === "unknown") {
       await supabase.auth.signOut({ scope: "local" });
+      sendLogoutToApp();
       router.replace("/calendar");
       return;
     }
 
     await supabase.auth.signOut({ scope: "local" });
+    sendLogoutToApp();
     router.replace("/calendar");
   };
 
@@ -104,11 +110,16 @@ export default function ProfileMenuPage() {
         return;
       }
 
+      let signedOut = false;
       try {
         await supabase.auth.signOut({ scope: "local" });
+        signedOut = true;
       } catch {
         // 회원탈퇴 성공 후에는 로컬 세션 정리가 실패해도 화면 전환을 우선한다.
       } finally {
+        if (signedOut) {
+          sendAccountDeletedToApp();
+        }
         router.replace("/calendar");
       }
     } finally {
