@@ -188,7 +188,7 @@ export default function RecordDetailPage() {
     return (
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
-          <p className="text-sm text-[#17171c]/70">
+          <p className="text-xs text-[#17171c]/70">
             로그인하면 기록을 확인할 수 있어요.
           </p>
         </main>
@@ -344,8 +344,8 @@ export default function RecordDetailPage() {
           ) : null}
 
           <section className="space-y-4">
-            <Label className="text-xs text-[#17171c]/60">날짜와 시간</Label>
-            <div className="mt-2 text-sm text-[#17171c]">
+            <Label className="text-sm text-[#17171c]/60">날짜와 시간</Label>
+            <div className="mt-2 text-base text-[#17171c]">
               <div>{formatDateLabel(record.record_date)}</div>
               <div>
                 {formatTimeRangeLine(record.start_time, record.end_time)}
@@ -353,8 +353,8 @@ export default function RecordDetailPage() {
             </div>
             {record.location && locationDisplay ? (
               <div className="pt-2">
-                <Label className="text-xs text-[#17171c]/60">장소</Label>
-                <div className="mt-2 text-sm text-[#17171c]">
+                <Label className="text-sm text-[#17171c]/60">장소</Label>
+                <div className="mt-2 text-base text-[#17171c]">
                   {locationDisplay}
                 </div>
               </div>
@@ -363,16 +363,16 @@ export default function RecordDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 {record.instructor ? (
                   <div>
-                <Label className="text-xs text-[#17171c]/60">강사님</Label>
-                    <div className="mt-2 text-sm text-[#17171c]">
+                <Label className="text-sm text-[#17171c]/60">강사님</Label>
+                    <div className="mt-2 text-base text-[#17171c]">
                       {record.instructor}
                     </div>
                   </div>
                 ) : null}
                 {record.level ? (
                   <div>
-                    <Label className="text-xs text-[#17171c]/60">레벨</Label>
-                    <div className="mt-2 text-sm text-[#17171c]">
+                    <Label className="text-sm text-[#17171c]/60">레벨</Label>
+                    <div className="mt-2 text-base text-[#17171c]">
                       {record.level}
                     </div>
                   </div>
@@ -381,7 +381,7 @@ export default function RecordDetailPage() {
             ) : null}
             {record.mood ? (
               <div className="pt-2">
-                <Label className="text-xs text-[#17171c]/60">
+                <Label className="text-sm text-[#17171c]/60">
                   오늘 발레는 어땠나요?
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
@@ -397,10 +397,10 @@ export default function RecordDetailPage() {
             ) : null}
             {record.content ? (
               <div className="pt-2">
-                <Label className="text-xs text-[#17171c]/60">
+                <Label className="text-sm text-[#17171c]/60">
                   오늘의 발레를 한줄로 남겨보아요.
                 </Label>
-                <div className="mt-2 text-sm text-[#17171c]">
+                <div className="mt-2 text-base text-[#17171c]">
                   {record.content}
                 </div>
               </div>
@@ -413,27 +413,27 @@ export default function RecordDetailPage() {
               <section className="space-y-4">
                 {record.did_well ? (
                   <div>
-                    <Label className="text-xs text-[#17171c]/60">
+                    <Label className="text-sm text-[#17171c]/60">
                       오늘 잘했던 점을 남겨볼까요?
                     </Label>
-                    <div className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                    <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                       {record.did_well}
                     </div>
                   </div>
                 ) : null}
                 {record.improve_next ? (
                   <div>
-                    <Label className="text-xs text-[#17171c]/60">
+                    <Label className="text-sm text-[#17171c]/60">
                       다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
                     </Label>
-                    <div className="mt-2 whitespace-pre-line text-sm text-[#17171c]">
+                    <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                       {record.improve_next}
                     </div>
                   </div>
                 ) : null}
                 {barOrderTags.length > 0 ? (
                   <div className="space-y-3">
-                    <Label className="text-xs text-[#17171c]/60">
+                    <Label className="text-sm text-[#17171c]/60">
                       바(bar) 순서
                     </Label>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -442,11 +442,11 @@ export default function RecordDetailPage() {
                           key={`bar-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
                             {tag}
                           </span>
                           {index < barOrderTags.length - 1 ? (
-                            <span className="text-sm text-[#17171c]/40">
+                            <span className="text-xs text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
@@ -457,7 +457,7 @@ export default function RecordDetailPage() {
                 ) : null}
                 {centerOrderTags.length > 0 ? (
                   <div className="space-y-3">
-                    <Label className="text-xs text-[#17171c]/60">
+                    <Label className="text-sm text-[#17171c]/60">
                       센터(center) 순서
                     </Label>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -466,11 +466,11 @@ export default function RecordDetailPage() {
                           key={`center-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
                             {tag}
                           </span>
                           {index < centerOrderTags.length - 1 ? (
-                            <span className="text-sm text-[#17171c]/40">
+                            <span className="text-xs text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
