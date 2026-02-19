@@ -233,10 +233,10 @@ export default function DayPage() {
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
                       animation="none"
-                      className="h-8 w-8 shrink-0"
+                      className="h-9 w-9 shrink-0"
                     />
                   ) : (
-                    <div className="h-8 w-8 shrink-0 rounded-full bg-black/5" />
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-black/5" />
                   )}
                   <div className="min-w-0 flex-1 text-center">
                     <p className="line-clamp-1 text-xs font-semibold text-[#17171c]">

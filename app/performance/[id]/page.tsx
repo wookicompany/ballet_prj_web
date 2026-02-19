@@ -906,7 +906,7 @@ export default function PerformanceDetailPage() {
                     <FadeInImage
                       src={sharedVisualBackgroundUrl}
                       alt=""
-                      animation="none"
+                      animation="strong"
                       className="absolute inset-0 z-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
                     />
                   ) : null}
@@ -932,7 +932,7 @@ export default function PerformanceDetailPage() {
                               <FadeInImage
                                 src={slide.url}
                                 alt={slide.alt}
-                                animation="none"
+                                animation="strong"
                                 className="block max-h-full max-w-full object-contain object-center"
                               />
                             </div>
@@ -1447,7 +1447,7 @@ export default function PerformanceDetailPage() {
                                   <FadeInImage
                                     src={url}
                                     alt="리뷰 이미지"
-                                    animation="none"
+                                    animation="strong"
                                     className="h-full w-full object-contain"
                                   />
                                 </button>

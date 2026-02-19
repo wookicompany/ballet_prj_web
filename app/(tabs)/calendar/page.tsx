@@ -318,7 +318,7 @@ export default function CalendarPage() {
                     <FadeInImage
                       src={`/mood/cat-${moodValue}.svg`}
                       alt={`기분 ${moodValue}단계`}
-                      animation="none"
+                      animation="strong"
                       className="h-full w-full max-h-[52px] object-contain"
                       loading="eager"
                     />

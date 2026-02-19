@@ -304,6 +304,7 @@ export default function PerformanceListPage() {
     options?: {
       badgeLabel?: string | null;
       rating?: RatingSummary;
+      animation?: "none" | "soft" | "strong";
     }
   ) => {
     return (
@@ -323,7 +324,7 @@ export default function PerformanceListPage() {
             <FadeInImage
               src={item.poster}
               alt={`${item.prfnm} 포스터`}
-              animation="none"
+              animation={options?.animation ?? "strong"}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -361,6 +362,7 @@ export default function PerformanceListPage() {
   const popularCards = sections.popular.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
+      animation: "strong",
     })
   );
 
@@ -370,24 +372,28 @@ export default function PerformanceListPage() {
     return renderCard(item, {
       badgeLabel: label,
       rating: ratingMap[item.mt20id],
+      animation: "strong",
     });
   });
 
   const completedCards = sections.completed.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
+      animation: "none",
     })
   );
 
   const awardCards = sections.awards.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
+      animation: "strong",
     })
   );
 
   const visitCards = sections.visit.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
+      animation: "none",
     })
   );
 

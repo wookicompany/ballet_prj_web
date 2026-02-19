@@ -7,63 +7,73 @@ import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 const revealedSrcCache = new Set<string>();
 
+const getCanonicalSrc = (src: string) => {
+  const [base] = src.split("?");
+  return base || src;
+};
+
 type FadeInImageProps = {
-   src: string;
-   alt: string;
-   className?: string;
-   loading?: "eager" | "lazy";
+  src: string;
+  alt: string;
+  className?: string;
+  loading?: "eager" | "lazy";
   // none: immediate render, soft: immediate render (reserved), strong: load-gated fade
   animation?: "none" | "soft" | "strong";
-   onClick?: () => void;
-   ariaLabel?: string;
- };
- 
- export default function FadeInImage({
+  onClick?: () => void;
+  ariaLabel?: string;
+};
+
+export default function FadeInImage({
    src,
    alt,
    className,
    loading = "lazy",
-  animation = "none",
+  animation = "soft",
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
-  const isStrongAnimation = animation === "strong";
+  const canonicalSrc = getCanonicalSrc(src);
+  const isStrong = animation === "strong";
+  const isSoft = animation === "soft";
   const [isLoaded, setIsLoaded] = useState(() =>
-    isStrongAnimation ? revealedSrcCache.has(src) : true
+    isStrong ? revealedSrcCache.has(canonicalSrc) : true
   );
 
   useEffect(() => {
-    const seen = revealedSrcCache.has(src);
-    if (isStrongAnimation) {
-      setIsLoaded(seen);
+    if (!isStrong) {
+      setIsLoaded(true);
       return;
     }
-    setIsLoaded(true);
-  }, [isStrongAnimation, src]);
+    setIsLoaded(revealedSrcCache.has(canonicalSrc));
+  }, [canonicalSrc, isStrong]);
 
   const reveal = useCallback(() => {
-    if (!isStrongAnimation) return;
-    revealedSrcCache.add(src);
+    if (!isStrong) return;
+    revealedSrcCache.add(canonicalSrc);
     setIsLoaded(true);
-  }, [isStrongAnimation, src]);
+  }, [canonicalSrc, isStrong]);
 
-  const handleLoaded = () => {
-    reveal();
-  };
+  const revealWithNextFrame = useCallback(() => {
+    if (!isStrong) return;
+    window.requestAnimationFrame(() => {
+      revealedSrcCache.add(canonicalSrc);
+      setIsLoaded(true);
+    });
+  }, [canonicalSrc, isStrong]);
 
   const handleRef = useCallback(
     (node: HTMLImageElement | null) => {
-      if (!isStrongAnimation) return;
+      if (!isStrong) return;
       if (!node) return;
       if (!node.complete) return;
-      reveal();
+      revealWithNextFrame();
     },
-    [isStrongAnimation, reveal]
+    [isStrong, revealWithNextFrame]
   );
 
   return (
     <Image
-      ref={isStrongAnimation ? handleRef : undefined}
+      ref={isStrong ? handleRef : undefined}
       src={src}
       alt={alt}
       width={1600}
@@ -77,14 +87,18 @@ type FadeInImageProps = {
         onClick?.();
       }}
       className={`${className ?? ""} ${
-        animation === "strong"
-          ? `transition-opacity duration-200 ease-out will-change-[opacity] ${
+        isStrong || isSoft
+          ? `transition-opacity duration-300 ease-out motion-reduce:transition-none ${
               isLoaded ? "opacity-100" : "opacity-0"
             }`
           : "opacity-100"
       }`}
-      onLoad={isStrongAnimation ? handleLoaded : undefined}
-      onError={isStrongAnimation ? handleLoaded : undefined}
+      onLoadingComplete={() => {
+        if (isStrong) reveal();
+      }}
+      onError={() => {
+        if (isStrong) reveal();
+      }}
     />
   );
 }
