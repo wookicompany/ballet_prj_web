@@ -20,8 +20,8 @@ export default function AnimatedImage({
         onLoad?.(event);
       }}
       className={cn(
-        "transition-all duration-500 ease-out motion-reduce:transition-none",
-        loaded ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]",
+        "transition-opacity duration-500 ease-out motion-reduce:transition-none",
+        loaded ? "opacity-100" : "opacity-0",
         className
       )}
     />
