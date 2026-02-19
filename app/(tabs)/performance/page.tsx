@@ -13,6 +13,7 @@ import {
   getPerformanceHomeCache,
   setPerformanceHomeCache,
 } from "@/lib/performanceHomeCache";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -315,7 +316,10 @@ export default function PerformanceListPage() {
       <button
         key={item.mt20id}
         type="button"
-        onClick={() => router.push(`/performance/${item.mt20id}`)}
+        onClick={() => {
+          sendHapticToApp();
+          router.push(`/performance/${item.mt20id}`);
+        }}
         className="flex w-[140px] shrink-0 snap-start flex-col text-left transition-opacity duration-200 active:opacity-70"
       >
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
