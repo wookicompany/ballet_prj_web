@@ -314,7 +314,7 @@ export default function PerformanceListPage() {
       >
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
           {options?.badgeLabel ? (
-            <Badge className="absolute left-2 top-2 rounded-md bg-black/70 text-white">
+            <Badge className="absolute left-2 top-2 z-10 rounded-md bg-black/70 text-white">
               {options.badgeLabel}
             </Badge>
           ) : null}
