@@ -985,7 +985,7 @@ export default function RecordEditPage() {
               className="hidden"
               onChange={handleMediaSelect}
             />
-            <p className="text-[10px] text-[#17171c]/50">
+            <p className="text-xs text-[#17171c]/50">
               사진은 최대 3장까지 업로드할 수 있어요.
             </p>
           </section>
