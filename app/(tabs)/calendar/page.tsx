@@ -243,7 +243,7 @@ export default function CalendarPage() {
       </header>
 
       <section className="grid grid-cols-7 gap-0 pb-2 text-center text-xs text-[#17171c]/60">
-        {weekLabels.map((day, index) => {
+        {weekLabels.map((day) => {
           const isSaturday = day === "토";
           const isSunday = day === "일";
           const isWeekend = isSaturday || isSunday;

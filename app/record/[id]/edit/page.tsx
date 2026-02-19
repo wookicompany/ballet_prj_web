@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -10,6 +11,7 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
@@ -432,7 +434,7 @@ export default function RecordEditPage() {
     setValue("");
   };
 
-  const fetchSavedLocations = async () => {
+  const fetchSavedLocations = useCallback(async () => {
     if (!user) return;
     setSavedLocationsLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -453,9 +455,9 @@ export default function RecordEditPage() {
     const payload = (await response.json()) as { items: SavedLocation[] };
     setSavedLocations(payload.items ?? []);
     setSavedLocationsLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
-  const fetchSavedInstructorLevels = async () => {
+  const fetchSavedInstructorLevels = useCallback(async () => {
     if (!user) return;
     setSavedInstructorLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -478,7 +480,7 @@ export default function RecordEditPage() {
     };
     setSavedInstructorLevels(payload.items ?? []);
     setSavedInstructorLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   const handleApplyLocation = () => {
     const selected = savedLocations.find((item) => item.id === selectedLocationId);
@@ -510,7 +512,7 @@ export default function RecordEditPage() {
     setInstructorSheetOpen(false);
   };
 
-  const fetchSavedBarOrders = async () => {
+  const fetchSavedBarOrders = useCallback(async () => {
     if (!user) return;
     setSavedBarOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -531,9 +533,9 @@ export default function RecordEditPage() {
     const payload = (await response.json()) as { items: SavedBarOrder[] };
     setSavedBarOrders(payload.items ?? []);
     setSavedBarOrdersLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
-  const fetchSavedCenterOrders = async () => {
+  const fetchSavedCenterOrders = useCallback(async () => {
     if (!user) return;
     setSavedCenterOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -556,7 +558,7 @@ export default function RecordEditPage() {
     };
     setSavedCenterOrders(payload.items ?? []);
     setSavedCenterOrdersLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   const handleApplyBarOrder = () => {
     const selected = savedBarOrders.find(
@@ -667,25 +669,25 @@ export default function RecordEditPage() {
     if (!locationSheetOpen) return;
     setSelectedLocationId(null);
     void fetchSavedLocations();
-  }, [locationSheetOpen, user?.id]);
+  }, [fetchSavedLocations, locationSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!instructorSheetOpen) return;
     setSelectedInstructorId(null);
     void fetchSavedInstructorLevels();
-  }, [instructorSheetOpen, user?.id]);
+  }, [fetchSavedInstructorLevels, instructorSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!barOrderSheetOpen) return;
     setSelectedBarOrderId(null);
     void fetchSavedBarOrders();
-  }, [barOrderSheetOpen, user?.id]);
+  }, [barOrderSheetOpen, fetchSavedBarOrders, user?.id]);
 
   useEffect(() => {
     if (!centerOrderSheetOpen) return;
     setSelectedCenterOrderId(null);
     void fetchSavedCenterOrders();
-  }, [centerOrderSheetOpen, user?.id]);
+  }, [centerOrderSheetOpen, fetchSavedCenterOrders, user?.id]);
 
   const handleSubmit = async () => {
     if (!user || authLoading) return;
@@ -951,10 +953,12 @@ export default function RecordEditPage() {
                   key={`image-${item.type === "existing" ? item.id : index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <img
+                  <Image
                     src={item.url}
                     alt="업로드 사진"
-                    className="h-full w-full object-contain"
+                    fill
+                    unoptimized
+                    className="object-contain"
                   />
                   <button
                     type="button"

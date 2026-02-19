@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -23,7 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
-import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,7 +50,7 @@ export default function SavedInstructorLevelsPage() {
     setEditingId(null);
   };
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) return;
     setListLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -74,12 +73,12 @@ export default function SavedInstructorLevelsPage() {
     };
     setItems(payload.items ?? []);
     setListLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
     void fetchItems();
-  }, [user?.id]);
+  }, [fetchItems, user]);
 
   const handleOpenCreate = () => {
     resetForm();

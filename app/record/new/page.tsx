@@ -3,6 +3,7 @@
 
 import {
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -11,6 +12,7 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
@@ -268,7 +270,7 @@ function RecordNewContent() {
     setValue("");
   };
 
-  const fetchSavedLocations = async () => {
+  const fetchSavedLocations = useCallback(async () => {
     if (!user) return;
     setSavedLocationsLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -289,9 +291,9 @@ function RecordNewContent() {
     const payload = (await response.json()) as { items: SavedLocation[] };
     setSavedLocations(payload.items ?? []);
     setSavedLocationsLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
-  const fetchSavedInstructorLevels = async () => {
+  const fetchSavedInstructorLevels = useCallback(async () => {
     if (!user) return;
     setSavedInstructorLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -314,7 +316,7 @@ function RecordNewContent() {
     };
     setSavedInstructorLevels(payload.items ?? []);
     setSavedInstructorLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   const handleApplyLocation = () => {
     const selected = savedLocations.find((item) => item.id === selectedLocationId);
@@ -346,7 +348,7 @@ function RecordNewContent() {
     setInstructorSheetOpen(false);
   };
 
-  const fetchSavedBarOrders = async () => {
+  const fetchSavedBarOrders = useCallback(async () => {
     if (!user) return;
     setSavedBarOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -367,9 +369,9 @@ function RecordNewContent() {
     const payload = (await response.json()) as { items: SavedBarOrder[] };
     setSavedBarOrders(payload.items ?? []);
     setSavedBarOrdersLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
-  const fetchSavedCenterOrders = async () => {
+  const fetchSavedCenterOrders = useCallback(async () => {
     if (!user) return;
     setSavedCenterOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -392,7 +394,7 @@ function RecordNewContent() {
     };
     setSavedCenterOrders(payload.items ?? []);
     setSavedCenterOrdersLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   const handleApplyBarOrder = () => {
     const selected = savedBarOrders.find(
@@ -446,25 +448,25 @@ function RecordNewContent() {
     if (!locationSheetOpen) return;
     setSelectedLocationId(null);
     void fetchSavedLocations();
-  }, [locationSheetOpen, user?.id]);
+  }, [fetchSavedLocations, locationSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!instructorSheetOpen) return;
     setSelectedInstructorId(null);
     void fetchSavedInstructorLevels();
-  }, [instructorSheetOpen, user?.id]);
+  }, [fetchSavedInstructorLevels, instructorSheetOpen, user?.id]);
 
   useEffect(() => {
     if (!barOrderSheetOpen) return;
     setSelectedBarOrderId(null);
     void fetchSavedBarOrders();
-  }, [barOrderSheetOpen, user?.id]);
+  }, [barOrderSheetOpen, fetchSavedBarOrders, user?.id]);
 
   useEffect(() => {
     if (!centerOrderSheetOpen) return;
     setSelectedCenterOrderId(null);
     void fetchSavedCenterOrders();
-  }, [centerOrderSheetOpen, user?.id]);
+  }, [centerOrderSheetOpen, fetchSavedCenterOrders, user?.id]);
 
   useEffect(() => {
     if (!dateSheetOpen) return;
@@ -828,10 +830,12 @@ function RecordNewContent() {
                   key={`image-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <img
+                  <Image
                     src={item.url}
                     alt="업로드 사진"
-                    className="h-full w-full object-contain"
+                    fill
+                    unoptimized
+                    className="object-contain"
                   />
                   <button
                     type="button"

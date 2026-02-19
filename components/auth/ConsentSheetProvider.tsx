@@ -1,7 +1,13 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import BottomSheet from "@/components/sheets/BottomSheet";
@@ -32,14 +38,13 @@ export function ConsentSheetProvider({
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
-  const [consentOk, setConsentOk] = useState<boolean | null>(null);
   const [termsChecked, setTermsChecked] = useState(false);
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const openConsentSheet = () => setOpen(true);
 
-  const fetchConsentStatus = async () => {
+  const fetchConsentStatus = useCallback(async () => {
     if (!user) return false;
     const { data } = await supabase
       .from("user_consents")
@@ -51,12 +56,11 @@ export function ConsentSheetProvider({
       data?.terms_version === TERMS_VERSION &&
       data?.privacy_version === PRIVACY_VERSION
     );
-  };
+  }, [user]);
 
   const ensureConsent = async () => {
     if (loading || !user) return false;
     const ok = await fetchConsentStatus();
-    setConsentOk(ok);
     if (!ok) setOpen(true);
     return ok;
   };
@@ -83,7 +87,6 @@ export function ConsentSheetProvider({
     const checkConsent = async () => {
       const ok = await fetchConsentStatus();
       if (!isActive) return;
-      setConsentOk(ok);
       setOpen(!ok);
     };
 
@@ -91,7 +94,7 @@ export function ConsentSheetProvider({
     return () => {
       isActive = false;
     };
-  }, [user, loading, pathname]);
+  }, [fetchConsentStatus, user, loading, pathname]);
 
   const handleSubmit = async () => {
     if (loading) return;

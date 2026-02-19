@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import {
+  useCallback,
   useEffect,
   useState,
   type Dispatch,
@@ -91,7 +92,7 @@ export default function SavedBarOrdersPage() {
     setEditingId(null);
   };
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) return;
     setListLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -112,12 +113,12 @@ export default function SavedBarOrdersPage() {
     const payload = (await response.json()) as { items: SavedBarOrder[] };
     setItems(payload.items ?? []);
     setListLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
     void fetchItems();
-  }, [user?.id]);
+  }, [fetchItems, user]);
 
   const handleOpenCreate = () => {
     resetForm();

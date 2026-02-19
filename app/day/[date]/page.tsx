@@ -39,11 +39,9 @@ export default function DayPage() {
   const [mediaByRecord, setMediaByRecord] = useState<
     Record<string, { url: string | null; count: number }>
   >({});
-  const dayStripRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const dateStr = params.date;
-  const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
   const todayKey = useMemo(() => formatSeoulDateKey(), []);
 
   useEffect(() => {
@@ -131,6 +129,7 @@ export default function DayPage() {
   }, [dateStr, todayKey, nowMinutes, records.length]);
 
   const dayStrip = useMemo(() => {
+    const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
     const base = parseDateKey(dateStr);
     if (!base || Number.isNaN(base.getTime())) return [];
     return Array.from({ length: 7 }, (_, idx) => {
@@ -146,7 +145,7 @@ export default function DayPage() {
         date: String(nextDate.getDate()),
       };
     });
-  }, [dateStr, weekDays]);
+  }, [dateStr]);
 
   return (
     <MobileContainer>

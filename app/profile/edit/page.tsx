@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -158,10 +159,12 @@ export default function ProfileEditPage() {
             <div className="relative">
               <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={avatarUrl}
                     alt="프로필 이미지"
-                    className="h-full w-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[#17171c]/40">

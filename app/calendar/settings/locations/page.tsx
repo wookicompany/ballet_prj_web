@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -28,7 +28,6 @@ import {
   requestAddressSearchFromApp,
   resolveAddressFromBridgeMessage,
 } from "@/lib/reactNativeWebView";
-import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -160,7 +159,7 @@ export default function SavedLocationsPage() {
     };
   }, []);
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) return;
     setListLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
@@ -181,12 +180,12 @@ export default function SavedLocationsPage() {
     const payload = (await response.json()) as { items: SavedLocation[] };
     setItems(payload.items ?? []);
     setListLoading(false);
-  };
+  }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
     void fetchItems();
-  }, [user?.id]);
+  }, [fetchItems, user]);
 
   const handleOpenCreate = () => {
     resetForm();

@@ -28,12 +28,26 @@ async function getFirebaseAdmin(): Promise<typeof import("firebase-admin") | nul
       const adminModule = await import("firebase-admin");
       const admin = (adminModule.default ?? adminModule) as typeof import("firebase-admin");
       if (!admin.apps?.length) {
-        const cred = JSON.parse(key) as {
-          client_email?: string;
-          private_key?: string;
-          project_id?: string;
-        };
-        admin.initializeApp({ credential: admin.credential.cert(cred) });
+        const parsed = JSON.parse(key) as Record<string, unknown>;
+        const clientEmail =
+          typeof parsed.client_email === "string" ? parsed.client_email : "";
+        const privateKeyRaw =
+          typeof parsed.private_key === "string" ? parsed.private_key : "";
+        const projectId =
+          typeof parsed.project_id === "string" ? parsed.project_id : "";
+
+        if (!clientEmail || !privateKeyRaw || !projectId) {
+          return null;
+        }
+
+        const privateKey = privateKeyRaw.replace(/\\n/g, "\n");
+        admin.initializeApp({
+          credential: admin.credential.cert({
+            clientEmail,
+            privateKey,
+            projectId,
+          }),
+        });
       }
       firebaseAdmin = admin;
       return admin;

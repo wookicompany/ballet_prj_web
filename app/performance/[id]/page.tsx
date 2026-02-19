@@ -160,23 +160,6 @@ const getStarFillRatio = (rating10: number, starIndex: number) => {
 const RECENT_STORAGE_KEY = "recent_performances";
 const RECENT_LIMIT = 12;
 
-const toRelateDisplay = (relate: string | RelateItem) => {
-  if (typeof relate === "string") {
-    const trimmed = relate.trim();
-    return trimmed ? { label: trimmed, url: null } : null;
-  }
-  if (relate && typeof relate === "object") {
-    const label =
-      typeof relate.relatenm === "string" ? relate.relatenm.trim() : "";
-    const url =
-      typeof relate.relateurl === "string" ? relate.relateurl.trim() : "";
-    if (label || url) {
-      return { label: label || url, url: url || null };
-    }
-  }
-  return null;
-};
-
 const REVIEW_PAGE_SIZE = 12;
 const toYesLabel = (value?: string | null) => (value === "Y" ? "있음" : null);
 

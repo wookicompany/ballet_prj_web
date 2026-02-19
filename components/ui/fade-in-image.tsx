@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
@@ -22,37 +23,31 @@ type FadeInImageProps = {
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
-   const [loaded, setLoaded] = useState(false);
-  const imageRef = useRef<HTMLImageElement | null>(null);
- 
-   useEffect(() => {
-     setLoaded(false);
-   }, [src]);
- 
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
-    const img = imageRef.current;
-    if (img && img.complete) {
-      setLoaded(true);
-    }
+    setLoaded(false);
   }, [src]);
 
-   return (
-     <img
-      ref={imageRef}
-       src={src}
-       alt={alt}
-       loading={loading}
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={1600}
+      height={1600}
+      unoptimized
+      loading={loading}
       draggable={false}
-       aria-label={ariaLabel}
-       onClick={() => {
-         sendHapticToApp()
-         onClick?.()
-       }}
-       className={`${className ?? ""} transition-opacity duration-500 ${
-         loaded ? "opacity-100" : "opacity-0"
-       }`}
-       onLoad={() => setLoaded(true)}
-       onError={() => setLoaded(true)}
-     />
-   );
- }
+      aria-label={ariaLabel}
+      onClick={() => {
+        sendHapticToApp();
+        onClick?.();
+      }}
+      className={`${className ?? ""} transition-opacity duration-500 ${
+        loaded ? "opacity-100" : "opacity-0"
+      }`}
+      onLoad={() => setLoaded(true)}
+      onError={() => setLoaded(true)}
+    />
+  );
+}

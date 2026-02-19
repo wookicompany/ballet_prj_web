@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useState } from "react";
+import Image from "next/image";
 
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
@@ -60,10 +61,12 @@ export function LoginSheetProvider({
               onClick={() => void handleSocialLogin("kakao")}
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
-                <img
+                <Image
                   src="/icons/kakao-logo.svg"
                   alt=""
-                  className="h-5 w-5 object-contain"
+                  width={20}
+                  height={20}
+                  className="object-contain"
                   aria-hidden="true"
                 />
               </span>
@@ -77,10 +80,12 @@ export function LoginSheetProvider({
               onClick={() => void handleSocialLogin("apple")}
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
-                <img
+                <Image
                   src="/icons/apple-logo.svg"
                   alt=""
-                  className="h-5 w-5 object-contain"
+                  width={20}
+                  height={20}
+                  className="object-contain"
                   aria-hidden="true"
                 />
               </span>

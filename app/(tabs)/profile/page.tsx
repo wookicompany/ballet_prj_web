@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -442,10 +443,12 @@ export default function ProfilePage() {
               disabled={!profile.avatar_url}
             >
               {profile.avatar_url ? (
-                <img
+                <Image
                   src={profile.avatar_url}
                   alt="프로필 이미지"
-                  className="h-full w-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#17171c]/60">
@@ -591,10 +594,12 @@ export default function ProfilePage() {
                         {formatReviewDate(review.createdAt)}
                       </div>
                       <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
-                        <img
+                        <Image
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
-                          className="h-full w-full object-contain"
+                          fill
+                          unoptimized
+                          className="object-contain"
                         />
                         {reviewImages[review.id].length > 1 ? (
                           <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
