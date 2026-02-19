@@ -144,6 +144,7 @@ export default function ProfilePage() {
         setHasMoreReviews(false);
         setShowMoreReviews(false);
         setReviewPage(0);
+        setReviewOrderReady(true);
       } else {
         setHasMoreReviews(true);
         setShowMoreReviews(false);
