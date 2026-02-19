@@ -72,6 +72,7 @@ export default function ProfilePage() {
   const [showMoreReviews, setShowMoreReviews] = useState(false);
   const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
   const [reviewOrderReady, setReviewOrderReady] = useState(false);
+  const [reviewSectionLoading, setReviewSectionLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
 
   const reviewSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -86,6 +87,7 @@ export default function ProfilePage() {
         return;
       }
       setProfileLoading(true);
+      setReviewSectionLoading(true);
 
       const { data } = await supabase
         .from("profiles")
@@ -133,6 +135,7 @@ export default function ProfilePage() {
         setShowMoreReviews(false);
         setReviewPage(0);
         setReviewOrderReady(true);
+        setReviewSectionLoading(false);
       } else {
         setHasMoreReviews(true);
         setShowMoreReviews(false);
@@ -149,15 +152,18 @@ export default function ProfilePage() {
     const fetchReviewOrder = async () => {
       if (pathname !== "/profile") return;
       if (!user) return;
+      if (profileLoading) return;
 
       if (reviewCount === 0) {
         setOrderedReviewIds([]);
         setHasMoreReviews(false);
         setReviewOrderReady(true);
+        setReviewSectionLoading(false);
         return;
       }
 
       setReviewOrderReady(false);
+      setReviewSectionLoading(true);
 
       const { data: reviewRows, error: reviewError } = await supabase
         .from("performance_reviews")
@@ -169,6 +175,7 @@ export default function ProfilePage() {
         setOrderedReviewIds([]);
         setHasMoreReviews(false);
         setReviewOrderReady(true);
+        setReviewSectionLoading(false);
         return;
       }
 
@@ -177,6 +184,7 @@ export default function ProfilePage() {
         setOrderedReviewIds([]);
         setHasMoreReviews(false);
         setReviewOrderReady(true);
+        setReviewSectionLoading(false);
         return;
       }
 
@@ -221,7 +229,7 @@ export default function ProfilePage() {
     };
 
     fetchReviewOrder();
-  }, [user, pathname, reviewCount]);
+  }, [user, pathname, reviewCount, profileLoading]);
 
   useEffect(() => {
     if (!showMoreReviews) return;
@@ -241,137 +249,139 @@ export default function ProfilePage() {
       if (requestedPagesRef.current.has(reviewPage)) return;
       requestedPagesRef.current.add(reviewPage);
       setLoadingReviews(true);
+      try {
+        const pageSize = showMoreReviews
+          ? REVIEW_PAGE_SIZE_MORE
+          : REVIEW_PAGE_SIZE_INITIAL;
+        const from = (reviewPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        const pageReviewIds = orderedReviewIds.slice(from, to + 1);
+        if (pageReviewIds.length === 0) {
+          setHasMoreReviews(false);
+          return;
+        }
 
-      const pageSize = showMoreReviews
-        ? REVIEW_PAGE_SIZE_MORE
-        : REVIEW_PAGE_SIZE_INITIAL;
-      const from = (reviewPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-      const pageReviewIds = orderedReviewIds.slice(from, to + 1);
-      if (pageReviewIds.length === 0) {
-        setHasMoreReviews(false);
-        setLoadingReviews(false);
-        return;
-      }
+        const { data: reviewRows, error } = await supabase
+          .from("performance_reviews")
+          .select("id,performance_id,rating,content,created_at")
+          .in("id", pageReviewIds)
+          .is("deleted_at", null)
+          .eq("user_id", user.id);
 
-      const { data: reviewRows, error } = await supabase
-        .from("performance_reviews")
-        .select("id,performance_id,rating,content,created_at")
-        .in("id", pageReviewIds)
-        .is("deleted_at", null)
-        .eq("user_id", user.id);
+        if (error) {
+          return;
+        }
 
-      if (error) {
-        setLoadingReviews(false);
-        return;
-      }
+        const fetchedRows = (reviewRows ?? []) as Array<{
+          id: string;
+          performance_id: string;
+          rating: number;
+          content: string | null;
+          created_at: string;
+        }>;
 
-      const fetchedRows = (reviewRows ?? []) as Array<{
-        id: string;
-        performance_id: string;
-        rating: number;
-        content: string | null;
-        created_at: string;
-      }>;
+        const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
+        const nextRows = pageReviewIds
+          .map((reviewId) => rowMap.get(reviewId))
+          .filter(
+            (
+              row
+            ): row is {
+              id: string;
+              performance_id: string;
+              rating: number;
+              content: string | null;
+              created_at: string;
+            } => Boolean(row)
+          );
 
-      const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
-      const nextRows = pageReviewIds
-        .map((reviewId) => rowMap.get(reviewId))
-        .filter(
-          (
-            row
-          ): row is {
-            id: string;
-            performance_id: string;
-            rating: number;
-            content: string | null;
-            created_at: string;
-          } => Boolean(row)
+        if (to >= orderedReviewIds.length - 1) {
+          setHasMoreReviews(false);
+        }
+
+        const performanceIds = Array.from(
+          new Set(nextRows.map((row) => row.performance_id))
         );
+        const { data: performanceRows } = await supabase
+          .from("kopis_performances")
+          .select("mt20id,prfnm,poster")
+          .in("mt20id", performanceIds);
 
-      if (to >= orderedReviewIds.length - 1) {
-        setHasMoreReviews(false);
-      }
-
-      const performanceIds = Array.from(
-        new Set(nextRows.map((row) => row.performance_id))
-      );
-      const { data: performanceRows } = await supabase
-        .from("kopis_performances")
-        .select("mt20id,prfnm,poster")
-        .in("mt20id", performanceIds);
-
-      const performanceMap = new Map<
-        string,
-        { name: string | null; poster: string | null }
-      >();
-      (performanceRows ?? []).forEach((row) => {
-        performanceMap.set(row.mt20id, { name: row.prfnm, poster: row.poster });
-      });
-
-      const mapped = nextRows.map((row) => ({
-        id: row.id,
-        performanceId: row.performance_id,
-        performanceName: performanceMap.get(row.performance_id)?.name ?? null,
-        performancePoster: performanceMap.get(row.performance_id)?.poster ?? null,
-        rating: row.rating,
-        content: row.content,
-        createdAt: row.created_at,
-      }));
-
-      setReviews((prev) => {
-        const existing = new Set(prev.map((row) => row.id));
-        return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
-      });
-
-      const reviewIds = nextRows.map((row) => row.id);
-      if (reviewIds.length > 0) {
-        const [likeRes, commentRes, imageRes] = await Promise.all([
-          supabase
-            .from("performance_review_likes")
-            .select("review_id")
-            .in("review_id", reviewIds)
-            .is("deleted_at", null),
-          supabase
-            .from("performance_review_comments")
-            .select("review_id")
-            .in("review_id", reviewIds)
-            .is("deleted_at", null),
-          supabase
-            .from("performance_review_images")
-            .select("review_id,url")
-            .in("review_id", reviewIds)
-            .eq("user_id", user.id)
-            .is("deleted_at", null),
-        ]);
-
-        const nextLikeCounts: Record<string, number> = {};
-        (likeRes.data ?? []).forEach((row) => {
-          nextLikeCounts[row.review_id] =
-            (nextLikeCounts[row.review_id] ?? 0) + 1;
+        const performanceMap = new Map<
+          string,
+          { name: string | null; poster: string | null }
+        >();
+        (performanceRows ?? []).forEach((row) => {
+          performanceMap.set(row.mt20id, { name: row.prfnm, poster: row.poster });
         });
-        setReviewLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
 
-        const nextCommentCounts: Record<string, number> = {};
-        (commentRes.data ?? []).forEach((row) => {
-          nextCommentCounts[row.review_id] =
-            (nextCommentCounts[row.review_id] ?? 0) + 1;
-        });
-        setReviewCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
+        const mapped = nextRows.map((row) => ({
+          id: row.id,
+          performanceId: row.performance_id,
+          performanceName: performanceMap.get(row.performance_id)?.name ?? null,
+          performancePoster: performanceMap.get(row.performance_id)?.poster ?? null,
+          rating: row.rating,
+          content: row.content,
+          createdAt: row.created_at,
+        }));
 
-        const nextImages: Record<string, string[]> = {};
-        (imageRes.data ?? []).forEach((row) => {
-          nextImages[row.review_id] = [
-            ...(nextImages[row.review_id] ?? []),
-            row.url,
-          ];
+        setReviews((prev) => {
+          const existing = new Set(prev.map((row) => row.id));
+          return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
         });
-        if (Object.keys(nextImages).length > 0) {
-          setReviewImages((prev) => ({ ...prev, ...nextImages }));
+
+        const reviewIds = nextRows.map((row) => row.id);
+        if (reviewIds.length > 0) {
+          const [likeRes, commentRes, imageRes] = await Promise.all([
+            supabase
+              .from("performance_review_likes")
+              .select("review_id")
+              .in("review_id", reviewIds)
+              .is("deleted_at", null),
+            supabase
+              .from("performance_review_comments")
+              .select("review_id")
+              .in("review_id", reviewIds)
+              .is("deleted_at", null),
+            supabase
+              .from("performance_review_images")
+              .select("review_id,url")
+              .in("review_id", reviewIds)
+              .eq("user_id", user.id)
+              .is("deleted_at", null),
+          ]);
+
+          const nextLikeCounts: Record<string, number> = {};
+          (likeRes.data ?? []).forEach((row) => {
+            nextLikeCounts[row.review_id] =
+              (nextLikeCounts[row.review_id] ?? 0) + 1;
+          });
+          setReviewLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
+
+          const nextCommentCounts: Record<string, number> = {};
+          (commentRes.data ?? []).forEach((row) => {
+            nextCommentCounts[row.review_id] =
+              (nextCommentCounts[row.review_id] ?? 0) + 1;
+          });
+          setReviewCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
+
+          const nextImages: Record<string, string[]> = {};
+          (imageRes.data ?? []).forEach((row) => {
+            nextImages[row.review_id] = [
+              ...(nextImages[row.review_id] ?? []),
+              row.url,
+            ];
+          });
+          if (Object.keys(nextImages).length > 0) {
+            setReviewImages((prev) => ({ ...prev, ...nextImages }));
+          }
+        }
+      } finally {
+        setLoadingReviews(false);
+        if (reviewPage === 1) {
+          setReviewSectionLoading(false);
         }
       }
-
-      setLoadingReviews(false);
     };
 
     fetchReviewsPage();
@@ -408,8 +418,7 @@ export default function ProfilePage() {
     ? profile.nickname
     : user.id.slice(0, 8);
   const shouldShowProfileSkeleton = profileLoading || !profile;
-  const shouldShowReviewCardSkeleton =
-    profileLoading || !reviewOrderReady || (reviews.length === 0 && loadingReviews);
+  const shouldShowReviewCardSkeleton = profileLoading || reviewSectionLoading;
 
   return (
     <>
@@ -669,6 +678,7 @@ export default function ProfilePage() {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
+                    setReviewSectionLoading(true);
                     setShowMoreReviews(true);
                     setReviews([]);
                     setHasMoreReviews(true);
