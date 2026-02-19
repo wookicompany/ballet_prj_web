@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import {
   REPORT_REASON_OPTIONS,
   REPORT_THRESHOLD,
@@ -1177,6 +1178,7 @@ export default function PerformanceReviewDetailPage() {
                   toast("리뷰를 삭제하지 못했어요.");
                   return;
                 }
+                invalidatePerformanceHomeCache();
                 router.replace(`/performance/${performanceId}`);
               }}
             >

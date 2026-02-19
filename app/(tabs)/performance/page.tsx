@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDateKeyDiffDays } from "@/lib/kstDateTime";
+import {
+  getPerformanceHomeCache,
+  setPerformanceHomeCache,
+} from "@/lib/performanceHomeCache";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Info, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -59,7 +63,6 @@ const EMPTY_SECTIONS: SectionBuckets = {
   visit: [],
 };
 
-let performanceHomeCache: PerformanceHomePayload | null = null;
 let performanceHomeInFlight: Promise<PerformanceHomePayload> | null = null;
 
 const formatDate = (value?: string | null) => {
@@ -74,18 +77,21 @@ const getDaysUntil = (value?: string | null) => {
 
 export default function PerformanceListPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(() => !performanceHomeCache);
+  const [loading, setLoading] = useState(
+    () => !getPerformanceHomeCache<PerformanceHomePayload>()
+  );
   const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>(
-    () => performanceHomeCache?.ratingMap ?? {}
+    () => getPerformanceHomeCache<PerformanceHomePayload>()?.ratingMap ?? {}
   );
   const [sections, setSections] = useState<SectionBuckets>(
-    () => performanceHomeCache?.sections ?? EMPTY_SECTIONS
+    () => getPerformanceHomeCache<PerformanceHomePayload>()?.sections ?? EMPTY_SECTIONS
   );
 
   const fetchSections = useCallback(async () => {
-    if (performanceHomeCache) {
-      setRatingMap(performanceHomeCache.ratingMap);
-      setSections(performanceHomeCache.sections);
+    const cached = getPerformanceHomeCache<PerformanceHomePayload>();
+    if (cached) {
+      setRatingMap(cached.ratingMap);
+      setSections(cached.sections);
       setLoading(false);
       return;
     }
@@ -278,7 +284,7 @@ export default function PerformanceListPage() {
     setLoading(true);
     try {
       const result = await performanceHomeInFlight;
-      performanceHomeCache = result;
+      setPerformanceHomeCache(result);
       setRatingMap(result.ratingMap);
       setSections(result.sections);
       setLoading(false);

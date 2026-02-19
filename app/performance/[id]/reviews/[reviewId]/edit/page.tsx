@@ -14,6 +14,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
@@ -220,6 +221,7 @@ export default function PerformanceReviewEditPage() {
       }
     }
 
+    invalidatePerformanceHomeCache();
     router.replace(`/performance/${performanceId}`);
   };
 

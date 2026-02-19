@@ -38,6 +38,7 @@ import {
 import ImageViewer from "@/components/ui/image-viewer";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import {
   REPORT_REASON_OPTIONS,
   REPORT_THRESHOLD,
@@ -718,6 +719,7 @@ export default function PerformanceDetailPage() {
       return;
     }
 
+    invalidatePerformanceHomeCache();
     setReviews((prev) => prev.filter((review) => review.id !== deleteTargetId));
     setLikeCounts((prev) => {
       const next = { ...prev };
