@@ -162,7 +162,7 @@ export default function ProfileEditPage() {
                   <FadeInImage
                     src={avatarUrl}
                     alt="프로필 이미지"
-                    animation="soft"
+                    animation="none"
                     className="h-full w-full object-cover"
                   />
                 ) : (

@@ -12,7 +12,7 @@ type FadeInImageProps = {
    alt: string;
    className?: string;
    loading?: "eager" | "lazy";
-  // none: immediate render, soft: immediate + tiny transform, strong: load-gated fade
+  // none: immediate render, soft: immediate render (reserved), strong: load-gated fade
   animation?: "none" | "soft" | "strong";
    onClick?: () => void;
    ariaLabel?: string;
@@ -23,7 +23,7 @@ type FadeInImageProps = {
    alt,
    className,
    loading = "lazy",
-  animation = "soft",
+  animation = "none",
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
@@ -31,25 +31,20 @@ type FadeInImageProps = {
   const [isLoaded, setIsLoaded] = useState(() =>
     isStrongAnimation ? revealedSrcCache.has(src) : true
   );
-  const [isSoftEntered, setIsSoftEntered] = useState(false);
 
   useEffect(() => {
     const seen = revealedSrcCache.has(src);
-    setIsLoaded(isStrongAnimation ? seen : true);
-    setIsSoftEntered(false);
-    window.requestAnimationFrame(() => {
-      setIsSoftEntered(true);
-    });
+    if (isStrongAnimation) {
+      setIsLoaded(seen);
+      return;
+    }
+    setIsLoaded(true);
   }, [isStrongAnimation, src]);
 
   const reveal = useCallback(() => {
     if (!isStrongAnimation) return;
     revealedSrcCache.add(src);
     setIsLoaded(true);
-    setIsSoftEntered(false);
-    window.requestAnimationFrame(() => {
-      setIsSoftEntered(true);
-    });
   }, [isStrongAnimation, src]);
 
   const handleLoaded = () => {
@@ -82,17 +77,11 @@ type FadeInImageProps = {
         onClick?.();
       }}
       className={`${className ?? ""} ${
-        animation === "none"
-          ? "opacity-100"
-          : animation === "strong"
-          // Strong mode is only for large hero visuals that can tolerate fade-in.
-          ? `transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] ${
+        animation === "strong"
+          ? `transition-opacity duration-200 ease-out will-change-[opacity] ${
               isLoaded ? "opacity-100" : "opacity-0"
-            } ${isSoftEntered ? "scale-100" : "scale-[1.01]"}`
-          // Soft mode keeps immediate visibility to avoid list flicker.
-          : `opacity-100 transition-transform duration-180 ease-out will-change-transform ${
-              isSoftEntered ? "scale-100" : "scale-[0.996]"
             }`
+          : "opacity-100"
       }`}
       onLoad={isStrongAnimation ? handleLoaded : undefined}
       onError={isStrongAnimation ? handleLoaded : undefined}
