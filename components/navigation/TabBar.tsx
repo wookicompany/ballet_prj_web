@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Theater, User } from "lucide-react";
 
 const PERFORMANCE_TAB_ENTRY_KEY = "performance_tab_entry_token";
-const CALENDAR_TAB_ENTRY_KEY = "calendar_tab_entry_token";
 const PROFILE_TAB_ENTRY_KEY = "profile_tab_entry_token";
 
 export default function TabBar() {
@@ -31,15 +30,7 @@ export default function TabBar() {
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
             isCalendar ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.sessionStorage.setItem(
-                CALENDAR_TAB_ENTRY_KEY,
-                `${Date.now()}`
-              );
-            }
-            router.push("/calendar");
-          }}
+          onClick={() => router.push("/calendar")}
           type="button"
         >
           <Calendar className="size-5" />

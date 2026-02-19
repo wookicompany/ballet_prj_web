@@ -17,16 +17,6 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
-const CALENDAR_TAB_ENTRY_KEY = "calendar_tab_entry_token";
-
-const consumeCalendarTabEntryToken = () => {
-  if (typeof window === "undefined") return null;
-  const token = window.sessionStorage.getItem(CALENDAR_TAB_ENTRY_KEY);
-  if (!token) return null;
-  window.sessionStorage.removeItem(CALENDAR_TAB_ENTRY_KEY);
-  return token;
-};
-
 function formatDate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -43,9 +33,7 @@ function getMonthBounds(date: Date) {
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [tabEntryToken] = useState<string | null>(() =>
-    consumeCalendarTabEntryToken()
-  );
+  const [entryReplayToken] = useState(() => `${Date.now()}`);
   const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
@@ -331,8 +319,8 @@ export default function CalendarPage() {
                     <FadeInImage
                       src={`/mood/cat-${moodValue}.svg`}
                       alt={`기분 ${moodValue}단계`}
-                      animation={tabEntryToken ? "strong" : "none"}
-                      replayToken={tabEntryToken}
+                      animation="strong"
+                      replayToken={entryReplayToken}
                       className="h-full w-full max-h-[52px] object-contain"
                       loading="eager"
                     />
