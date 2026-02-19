@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -903,7 +903,7 @@ export default function PerformanceDetailPage() {
               {visualSlides.length ? (
                 <>
                   {sharedVisualBackgroundUrl ? (
-                    <Image
+                    <AnimatedImage
                       src={sharedVisualBackgroundUrl}
                       alt=""
                       width={1600}
@@ -932,7 +932,7 @@ export default function PerformanceDetailPage() {
                             aria-label="공연 이미지 크게 보기"
                           >
                             <div className="absolute inset-0 z-10 flex items-center justify-center">
-                              <Image
+                              <AnimatedImage
                                 src={slide.url}
                                 alt={slide.alt}
                                 width={1600}
@@ -1450,7 +1450,7 @@ export default function PerformanceDetailPage() {
                                   }}
                                   aria-label="리뷰 이미지 크게 보기"
                                 >
-                                  <Image
+                                  <AnimatedImage
                                     src={url}
                                     alt="리뷰 이미지"
                                     width={1600}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -319,7 +319,7 @@ export default function PerformanceListPage() {
             </Badge>
           ) : null}
           {item.poster ? (
-            <Image
+            <AnimatedImage
               src={item.poster}
               alt={`${item.prfnm} 포스터`}
               width={1600}

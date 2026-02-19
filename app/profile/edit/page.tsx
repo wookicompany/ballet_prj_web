@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -159,7 +159,7 @@ export default function ProfileEditPage() {
             <div className="relative">
               <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
                 {avatarUrl ? (
-                  <Image
+                  <AnimatedImage
                     src={avatarUrl}
                     alt="프로필 이미지"
                     width={1600}

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -229,7 +229,7 @@ export default function DayPage() {
               >
                 <div className="flex h-full w-full items-center justify-between gap-2">
                   {record.mood ? (
-                    <Image
+                    <AnimatedImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
                       width={1600}
@@ -248,7 +248,7 @@ export default function DayPage() {
                   </div>
                   {media?.url ? (
                     <div className="relative h-9 w-9 shrink-0 rounded-lg bg-black/5">
-                      <Image
+                      <AnimatedImage
                         src={media.url}
                         alt="기록 미디어"
                         width={1600}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
@@ -315,7 +315,7 @@ export default function RecordDetailPage() {
                           }}
                           aria-label="업로드 사진 크게 보기"
                         >
-                          <Image
+                          <AnimatedImage
                             src={item.url}
                             alt="업로드 사진"
                             width={1600}
@@ -390,7 +390,7 @@ export default function RecordDetailPage() {
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
                   <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
-                    <Image
+                    <AnimatedImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
                       width={1600}

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -449,7 +449,7 @@ export default function PerformanceSearchInputPage() {
                     className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/5"
                   >
                     {item.poster ? (
-                      <Image
+                      <AnimatedImage
                         src={item.poster}
                         alt={`${item.title} 포스터`}
                         width={1600}
@@ -512,7 +512,7 @@ export default function PerformanceSearchInputPage() {
               >
                 <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                   {item.poster ? (
-                    <Image
+                    <AnimatedImage
                       src={item.poster}
                       alt={`${item.prfnm} 포스터`}
                       width={1600}

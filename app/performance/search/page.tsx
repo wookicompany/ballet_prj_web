@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -513,7 +513,7 @@ function PerformanceSearchContent() {
                 >
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                     {item.poster ? (
-                      <Image
+                      <AnimatedImage
                         src={item.poster}
                         alt={`${item.prfnm} 포스터`}
                         width={1600}

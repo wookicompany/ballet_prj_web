@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
@@ -315,7 +315,7 @@ export default function CalendarPage() {
               <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
                 {moodValue ? (
                   <div className="relative h-full w-full overflow-visible">
-                    <Image
+                    <AnimatedImage
                       src={`/mood/cat-${moodValue}.svg`}
                       alt={`기분 ${moodValue}단계`}
                       width={1600}

@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
@@ -830,7 +830,7 @@ function RecordNewContent() {
                   key={`image-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <Image
+                  <AnimatedImage
                     src={item.url}
                     alt="업로드 사진"
                     width={1600}

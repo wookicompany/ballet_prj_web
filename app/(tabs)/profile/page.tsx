@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -457,7 +457,7 @@ export default function ProfilePage() {
                   disabled={!profile.avatar_url}
                 >
                   {profile.avatar_url ? (
-                    <Image
+                    <AnimatedImage
                       src={profile.avatar_url}
                       alt="프로필 이미지"
                       width={1600}
@@ -560,7 +560,7 @@ export default function ProfilePage() {
                     aria-label="리뷰 상세 보기"
                   >
                     {review.performancePoster ? (
-                      <Image
+                      <AnimatedImage
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
                         width={1600}
@@ -638,7 +638,7 @@ export default function ProfilePage() {
                         {formatReviewDate(review.createdAt)}
                       </div>
                       <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
-                        <Image
+                        <AnimatedImage
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
                           width={1600}

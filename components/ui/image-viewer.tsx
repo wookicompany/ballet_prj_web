@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { X } from "lucide-react";
+import AnimatedImage from "@/components/ui/animated-image";
 
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
@@ -42,7 +42,7 @@ export default function ImageViewer({
       >
         <X className="h-5 w-5" />
       </button>
-      <Image
+      <AnimatedImage
         src={imageUrl}
         alt={alt ?? "이미지 상세 보기"}
         width={1600}
