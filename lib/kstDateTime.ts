@@ -6,6 +6,11 @@ export type DateKeyParts = {
   day: number;
 };
 
+export type YearMonthParts = {
+  year: number;
+  month: number;
+};
+
 const getFormatterParts = (
   date: Date,
   options: Intl.DateTimeFormatOptions
@@ -27,6 +32,13 @@ export const getSeoulDateParts = (date: Date = new Date()): DateKeyParts => {
     month: Number(parts.find((part) => part.type === "month")?.value ?? "1"),
     day: Number(parts.find((part) => part.type === "day")?.value ?? "1"),
   };
+};
+
+export const getSeoulYearMonthParts = (
+  date: Date = new Date()
+): YearMonthParts => {
+  const { year, month } = getSeoulDateParts(date);
+  return { year, month };
 };
 
 export const formatSeoulDateKey = (date: Date = new Date()): string => {
@@ -106,4 +118,32 @@ export const formatIsoToSeoulDate = (
   return new Intl.DateTimeFormat(locale, {
     timeZone: KST_TIME_ZONE,
   }).format(date);
+};
+
+export const formatCareerDuration = (
+  startDateKeyOrDate: string | Date
+): string | null => {
+  const startDate =
+    typeof startDateKeyOrDate === "string"
+      ? parseDateKey(startDateKeyOrDate)
+      : startDateKeyOrDate;
+  if (!startDate) return null;
+
+  const today = getSeoulTodayDate();
+  if (startDate.getTime() > today.getTime()) return null;
+
+  let totalMonths =
+    (today.getFullYear() - startDate.getFullYear()) * 12 +
+    (today.getMonth() - startDate.getMonth());
+
+  if (today.getDate() < startDate.getDate()) {
+    totalMonths -= 1;
+  }
+  if (totalMonths < 0) return null;
+
+  if (totalMonths < 12) return `${totalMonths}개월`;
+
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  return `${years}년 ${months}개월`;
 };

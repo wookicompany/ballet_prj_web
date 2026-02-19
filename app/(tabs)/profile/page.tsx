@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
@@ -19,6 +19,7 @@ type Profile = {
   id: string;
   nickname: string | null;
   avatar_url: string | null;
+  ballet_started_at: string | null;
 };
 
 type ReviewSummary = {
@@ -91,13 +92,18 @@ export default function ProfilePage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("id,nickname,avatar_url")
+        .select("id,nickname,avatar_url,ballet_started_at")
         .eq("id", user.id)
         .single();
 
       if (!data) {
         await supabase.from("profiles").insert({ id: user.id });
-        setProfile({ id: user.id, nickname: null, avatar_url: null });
+        setProfile({
+          id: user.id,
+          nickname: null,
+          avatar_url: null,
+          ballet_started_at: null,
+        });
       } else {
         setProfile(data as Profile);
       }
@@ -419,6 +425,9 @@ export default function ProfilePage() {
     : user.id.slice(0, 8);
   const shouldShowProfileSkeleton = profileLoading || !profile;
   const shouldShowReviewCardSkeleton = profileLoading || reviewSectionLoading;
+  const careerDuration = profile?.ballet_started_at
+    ? formatCareerDuration(profile.ballet_started_at)
+    : null;
 
   return (
     <>
@@ -483,6 +492,14 @@ export default function ProfilePage() {
                 </button>
                 <div className="flex-1">
                   <p className="text-base font-semibold">{displayName}</p>
+                  {careerDuration ? (
+                    <p className="mt-1 text-xs text-[#17171c]/70">
+                      발레 경력{" "}
+                      <span className="font-semibold text-[#17171c]">
+                        {careerDuration}
+                      </span>
+                    </p>
+                  ) : null}
                 </div>
               </div>
 

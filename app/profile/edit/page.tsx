@@ -13,12 +13,24 @@ import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import { getSeoulDateParts, parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
-import { Camera, ChevronLeft, User } from "lucide-react";
+import BottomSheet from "@/components/sheets/BottomSheet";
+import { CalendarDays, Camera, ChevronLeft, User } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
+const MIN_CAREER_YEAR = 1950;
+
+const formatCareerDateLabel = (value: string | null): string => {
+  if (!value) return "날짜 선택";
+  const parsed = parseDateKey(value);
+  if (!parsed) return "날짜 선택";
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  return `${year}년 ${month}월`;
+};
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -28,6 +40,12 @@ export default function ProfileEditPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
+  const [balletStartedAt, setBalletStartedAt] = useState<string | null>(null);
+  const [dateDraft, setDateDraft] = useState(() => {
+    const { year, month } = getSeoulDateParts();
+    return { year, month };
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -38,13 +56,14 @@ export default function ProfileEditPage() {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("nickname,avatar_url")
+        .select("nickname,avatar_url,ballet_started_at")
         .eq("id", user.id)
         .single();
 
       if (data) {
         setNickname(data.nickname ?? "");
         setAvatarUrl(data.avatar_url ?? null);
+        setBalletStartedAt(data.ballet_started_at ?? null);
       }
     };
 
@@ -87,6 +106,7 @@ export default function ProfileEditPage() {
       body: JSON.stringify({
         nickname: nickname || null,
         avatar_url: nextAvatarUrl,
+        ballet_started_at: balletStartedAt,
       }),
     });
 
@@ -134,6 +154,16 @@ export default function ProfileEditPage() {
       </MobileContainer>
     );
   }
+
+  const {
+    year: currentYear,
+    month: currentMonth,
+  } = getSeoulDateParts();
+  const years = Array.from(
+    { length: currentYear - MIN_CAREER_YEAR + 1 },
+    (_, idx) => currentYear - idx
+  );
+  const months = Array.from({ length: 12 }, (_, idx) => idx + 1);
 
   return (
     <MobileContainer>
@@ -203,11 +233,46 @@ export default function ProfileEditPage() {
             </div>
             <Input
               type="text"
-              className="text-base"
+              className="h-10 text-base"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
               maxLength={12}
             />
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-[#17171c]/60">발레 시작 날짜</Label>
+              {balletStartedAt ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto px-1 text-[11px] text-[#17171c]/40 hover:text-[#17171c]/70"
+                  onClick={() => setBalletStartedAt(null)}
+                >
+                  초기화
+                </Button>
+              ) : (
+                <span className="text-[11px] text-[#17171c]/40" />
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 w-full justify-start gap-2 text-left text-base font-normal"
+              onClick={() => {
+                const parsed = balletStartedAt ? parseDateKey(balletStartedAt) : null;
+                const { year, month } = getSeoulDateParts();
+                setDateDraft({
+                  year: parsed?.getFullYear() ?? year,
+                  month: parsed ? parsed.getMonth() + 1 : month,
+                });
+                setDateSheetOpen(true);
+              }}
+            >
+              <CalendarDays className="h-4 w-4" />
+              {formatCareerDateLabel(balletStartedAt)}
+            </Button>
           </section>
 
           <Button
@@ -219,6 +284,61 @@ export default function ProfileEditPage() {
             저장하기
           </Button>
         </div>
+        <BottomSheet open={dateSheetOpen} onOpenChange={setDateSheetOpen}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+              {years.map((year) => (
+                <Button
+                  key={`career-year-${year}`}
+                  type="button"
+                  variant={dateDraft.year === year ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setDateDraft((prev) => {
+                      if (year === currentYear && prev.month > currentMonth) {
+                        return { year, month: currentMonth };
+                      }
+                      return { ...prev, year };
+                    });
+                  }}
+                >
+                  {year}년
+                </Button>
+              ))}
+            </div>
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+              {months.map((month) => {
+                const value = String(month).padStart(2, "0");
+                const isFutureMonth =
+                  dateDraft.year === currentYear && month > currentMonth;
+                return (
+                  <Button
+                    key={`career-month-${month}`}
+                    type="button"
+                    variant={dateDraft.month === month ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setDateDraft((prev) => ({ ...prev, month }))}
+                    disabled={isFutureMonth}
+                  >
+                    {value}월
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-4">
+            <Button
+              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={() => {
+                const paddedMonth = String(dateDraft.month).padStart(2, "0");
+                setBalletStartedAt(`${dateDraft.year}-${paddedMonth}-01`);
+                setDateSheetOpen(false);
+              }}
+            >
+              적용하기
+            </Button>
+          </div>
+        </BottomSheet>
       </main>
     </MobileContainer>
   );

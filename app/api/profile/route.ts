@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/apiAuth";
+import { getSeoulDateParts, parseDateKey } from "@/lib/kstDateTime";
 
 type ProfileUpdateBody = {
   nickname?: string | null;
   avatar_url?: string | null;
+  ballet_started_at?: string | null;
 };
 
 export const PATCH = async (request: Request) => {
@@ -27,6 +29,11 @@ export const PATCH = async (request: Request) => {
     typeof body.avatar_url === "string"
       ? body.avatar_url.trim() || null
       : null;
+  const hasBalletStartedAt = Object.prototype.hasOwnProperty.call(
+    body,
+    "ballet_started_at"
+  );
+  let nextBalletStartedAt: string | null | undefined = undefined;
 
   if (normalizedNickname.length > 12) {
     return NextResponse.json(
@@ -57,13 +64,58 @@ export const PATCH = async (request: Request) => {
     }
   }
 
+  if (hasBalletStartedAt) {
+    if (body.ballet_started_at === null) {
+      nextBalletStartedAt = null;
+    } else if (typeof body.ballet_started_at === "string") {
+      const normalizedStartDate = body.ballet_started_at.trim();
+      if (!normalizedStartDate) {
+        nextBalletStartedAt = null;
+      } else {
+        const isDateKeyFormat = /^\d{4}-\d{2}-\d{2}$/.test(normalizedStartDate);
+        const parsed = parseDateKey(normalizedStartDate);
+        if (!isDateKeyFormat || !parsed) {
+          return NextResponse.json(
+            { message: "발레 시작일 형식이 올바르지 않습니다." },
+            { status: 400 }
+          );
+        }
+
+        const { year, month, day } = getSeoulDateParts();
+        const today = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        if (normalizedStartDate > today) {
+          return NextResponse.json(
+            { message: "발레 시작일은 미래 날짜로 설정할 수 없습니다." },
+            { status: 400 }
+          );
+        }
+        nextBalletStartedAt = normalizedStartDate;
+      }
+    } else {
+      return NextResponse.json(
+        { message: "발레 시작일 형식이 올바르지 않습니다." },
+        { status: 400 }
+      );
+    }
+  }
+
+  const payload: {
+    id: string;
+    nickname: string | null;
+    avatar_url: string | null;
+    ballet_started_at?: string | null;
+  } = {
+    id: auth.user.id,
+    nickname: nextNickname,
+    avatar_url: nextAvatarUrl,
+  };
+  if (nextBalletStartedAt !== undefined) {
+    payload.ballet_started_at = nextBalletStartedAt;
+  }
+
   const { error: updateError } = await auth.supabaseAdmin
     .from("profiles")
-    .upsert({
-      id: auth.user.id,
-      nickname: nextNickname,
-      avatar_url: nextAvatarUrl,
-    });
+    .upsert(payload);
 
   if (updateError) {
     console.error("Failed to update profile", updateError);
