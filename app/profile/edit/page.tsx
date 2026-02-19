@@ -193,13 +193,14 @@ export default function ProfileEditPage() {
 
           <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-[#17171c]/60">닉네임</Label>
+              <Label className="text-sm text-[#17171c]/60">닉네임</Label>
               <span className="text-[11px] text-[#17171c]/40">
                 {nickname.length}/12
               </span>
             </div>
             <Input
               type="text"
+              className="text-base"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
               maxLength={12}
@@ -208,7 +209,7 @@ export default function ProfileEditPage() {
 
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-[52px] w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
             onClick={handleSave}
             disabled={saving}
           >
