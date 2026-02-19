@@ -32,6 +32,15 @@ type ReviewSummary = {
 
 const REVIEW_PAGE_SIZE_INITIAL = 5;
 const REVIEW_PAGE_SIZE_MORE = 12;
+const PROFILE_TAB_ENTRY_KEY = "profile_tab_entry_token";
+
+const consumeProfileTabEntryToken = () => {
+  if (typeof window === "undefined") return null;
+  const token = window.sessionStorage.getItem(PROFILE_TAB_ENTRY_KEY);
+  if (!token) return null;
+  window.sessionStorage.removeItem(PROFILE_TAB_ENTRY_KEY);
+  return token;
+};
 
 function toMinutes(time: string) {
   const [hh, mm, ss] = time.split(":").map((value) => Number(value));
@@ -52,6 +61,9 @@ export default function ProfilePage() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
+  const [tabEntryToken] = useState<string | null>(() =>
+    consumeProfileTabEntryToken()
+  );
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
@@ -445,7 +457,8 @@ export default function ProfilePage() {
                 <FadeInImage
                   src={profile.avatar_url}
                   alt="프로필 이미지"
-                  animation="strong"
+                  animation={tabEntryToken ? "strong" : "none"}
+                  replayToken={tabEntryToken}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -521,7 +534,8 @@ export default function ProfilePage() {
                       <FadeInImage
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
-                        animation="strong"
+                        animation={tabEntryToken ? "strong" : "none"}
+                        replayToken={tabEntryToken}
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -596,7 +610,8 @@ export default function ProfilePage() {
                         <FadeInImage
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
-                          animation="strong"
+                          animation={tabEntryToken ? "strong" : "none"}
+                          replayToken={tabEntryToken}
                           className="h-full w-full object-contain"
                         />
                         {reviewImages[review.id].length > 1 ? (

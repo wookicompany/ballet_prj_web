@@ -19,6 +19,7 @@ type FadeInImageProps = {
   loading?: "eager" | "lazy";
   // none: immediate render, soft: immediate render (reserved), strong: load-gated fade
   animation?: "none" | "soft" | "strong";
+  replayToken?: string | number | null;
   onClick?: () => void;
   ariaLabel?: string;
 };
@@ -29,14 +30,16 @@ export default function FadeInImage({
    className,
    loading = "lazy",
   animation = "soft",
+  replayToken = null,
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
   const canonicalSrc = getCanonicalSrc(src);
   const isStrong = animation === "strong";
+  const shouldForceStrongReplay = isStrong && replayToken !== null;
   const isSoft = animation === "soft";
   const [isLoaded, setIsLoaded] = useState(() =>
-    isStrong ? revealedSrcCache.has(canonicalSrc) : true
+    shouldForceStrongReplay ? false : isStrong ? revealedSrcCache.has(canonicalSrc) : true
   );
 
   useEffect(() => {
@@ -44,8 +47,12 @@ export default function FadeInImage({
       setIsLoaded(true);
       return;
     }
+    if (shouldForceStrongReplay) {
+      setIsLoaded(false);
+      return;
+    }
     setIsLoaded(revealedSrcCache.has(canonicalSrc));
-  }, [canonicalSrc, isStrong]);
+  }, [canonicalSrc, isStrong, shouldForceStrongReplay]);
 
   const reveal = useCallback(() => {
     if (!isStrong) return;
