@@ -8,6 +8,7 @@ import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
@@ -391,12 +392,30 @@ export default function ProfilePage() {
     reviewOrderReady,
   ]);
 
+  const profileHomeSkeleton = (
+    <main className="px-4 pb-10 pt-2">
+      <header className="mb-6 flex items-center justify-between">
+        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-10 w-10 rounded-md" />
+      </header>
+
+      <section className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <Skeleton className="mt-4 h-10 w-full rounded-md" />
+      </section>
+    </main>
+  );
+
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" />
-      </main>
-    );
+    return profileHomeSkeleton;
   }
 
   if (!user) {
@@ -410,11 +429,7 @@ export default function ProfilePage() {
   }
 
   if (!profile) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" />
-      </main>
-    );
+    return profileHomeSkeleton;
   }
 
   const hours = Math.floor(totalMinutes / 60);
@@ -422,6 +437,7 @@ export default function ProfilePage() {
   const displayName = profile.nickname?.trim()
     ? profile.nickname
     : user.id.slice(0, 8);
+  const shouldShowReviewListSkeleton = reviews.length === 0 && loadingReviews;
 
   return (
     <>
@@ -512,6 +528,24 @@ export default function ProfilePage() {
             <p className="text-xs text-[#17171c]/60">
               첫 리뷰를 남겨보세요.
             </p>
+          ) : shouldShowReviewListSkeleton ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={`profile-review-loading-skeleton-${index}`}
+                  className="flex items-start gap-3 rounded-lg border border-black/5 bg-white p-3"
+                >
+                  <Skeleton className="h-20 w-14 shrink-0 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-4/5" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                  <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="space-y-3">
               {reviews.map((review) => (

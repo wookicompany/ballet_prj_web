@@ -400,7 +400,7 @@ export default function PerformanceListPage() {
   const awardCards = sections.awards.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
-      animation: tabEntryToken ? "strong" : "none",
+      animation: "none",
       replayToken: tabEntryToken,
     })
   );
