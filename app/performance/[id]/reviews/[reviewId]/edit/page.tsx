@@ -273,7 +273,7 @@ export default function PerformanceReviewEditPage() {
 
         <div className="space-y-5">
           <section className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">
+            <Label className="text-sm text-[#17171c]/60">
               별점<span className="-ml-[1px] text-[#17171c]/50">*</span>
             </Label>
             <div className="flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function PerformanceReviewEditPage() {
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-[#17171c]/60">내용</Label>
+              <Label className="text-sm text-[#17171c]/60">내용</Label>
               <span className="text-[11px] text-[#17171c]/50">
                 {content.length}/300
               </span>
@@ -318,7 +318,7 @@ export default function PerformanceReviewEditPage() {
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-[#17171c]/60">미디어 업로드</Label>
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
               <span className="text-[11px] text-[#17171c]/50">
                 {existingImages.length + mediaItems.length}/{MAX_IMAGES}
               </span>
@@ -383,7 +383,7 @@ export default function PerformanceReviewEditPage() {
               className="hidden"
               onChange={handleSelectFiles}
             />
-            <p className="text-[11px] text-[#17171c]/50">
+            <p className="text-xs text-[#17171c]/50">
               사진은 최대 3장까지 업로드할 수 있어요.
             </p>
           </section>
