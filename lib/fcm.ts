@@ -15,26 +15,33 @@ export type FCMPayload = {
 };
 
 let firebaseAdmin: typeof import("firebase-admin") | null = null;
+let firebaseAdminLoader: Promise<typeof import("firebase-admin") | null> | null =
+  null;
 
-function getFirebaseAdmin(): typeof import("firebase-admin") | null {
+async function getFirebaseAdmin(): Promise<typeof import("firebase-admin") | null> {
   if (firebaseAdmin !== null) return firebaseAdmin;
+  if (firebaseAdminLoader) return firebaseAdminLoader;
   const key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!key || typeof key !== "string" || key.trim() === "") return null;
-  try {
-    const admin = require("firebase-admin");
-    if (!admin.apps?.length) {
-      const cred = JSON.parse(key) as {
-        client_email?: string;
-        private_key?: string;
-        project_id?: string;
-      };
-      admin.initializeApp({ credential: admin.credential.cert(cred) });
+  firebaseAdminLoader = (async () => {
+    try {
+      const adminModule = await import("firebase-admin");
+      const admin = (adminModule.default ?? adminModule) as typeof import("firebase-admin");
+      if (!admin.apps?.length) {
+        const cred = JSON.parse(key) as {
+          client_email?: string;
+          private_key?: string;
+          project_id?: string;
+        };
+        admin.initializeApp({ credential: admin.credential.cert(cred) });
+      }
+      firebaseAdmin = admin;
+      return admin;
+    } catch {
+      return null;
     }
-    firebaseAdmin = admin;
-    return admin;
-  } catch {
-    return null;
-  }
+  })();
+  return firebaseAdminLoader;
 }
 
 /**
@@ -47,7 +54,7 @@ export async function sendFCMToUser(
   payload: FCMPayload
 ): Promise<void> {
   try {
-    const admin = getFirebaseAdmin();
+    const admin = await getFirebaseAdmin();
     if (!admin) return;
 
     const supabase = getSupabaseAdmin();

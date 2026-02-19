@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import {
   Suspense,
@@ -138,6 +139,12 @@ type SavedCenterOrder = {
   id: string;
   name: string;
   order_text: string;
+};
+
+type KakaoPostcodeConstructor = new (options: {
+  oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => void;
+}) => {
+  open: () => void;
 };
 
 function RecordNewContent() {
@@ -546,7 +553,11 @@ function RecordNewContent() {
       return;
     }
 
-    const kakao = (window as typeof window & { kakao?: any }).kakao;
+    const kakao = (
+      window as typeof window & {
+        kakao?: { Postcode?: KakaoPostcodeConstructor };
+      }
+    ).kakao;
     if (!kakao?.Postcode) {
       toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
       return;

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -192,8 +193,8 @@ export default function PerformanceSearchInputPage() {
 
       const fetched = (data as PerformanceItem[]) ?? [];
       const targetIds = fetched.map((item) => item.mt20id).filter(Boolean);
-      let nextRatingMap: Record<string, RatingSummary> = {};
-      let nextEngagementMap: Record<string, EngagementSummary> = {};
+      const nextRatingMap: Record<string, RatingSummary> = {};
+      const nextEngagementMap: Record<string, EngagementSummary> = {};
 
       if (targetIds.length) {
         const [
@@ -277,7 +278,7 @@ export default function PerformanceSearchInputPage() {
       setLoading(false);
       setLoadingMore(false);
     },
-    [fetchMatchedIds, filters.keyword, matchedIds]
+    [engagementMap, fetchMatchedIds, filters.keyword, matchedIds, ratingMap]
   );
 
   const handleSearch = (keyword: string) => {
