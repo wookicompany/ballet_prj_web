@@ -720,6 +720,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ballet_started_at: string | null
           calendar_highlight_weekend: boolean
           calendar_week_start_monday: boolean
           created_at: string
@@ -731,6 +732,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          ballet_started_at?: string | null
           calendar_highlight_weekend?: boolean
           calendar_week_start_monday?: boolean
           created_at?: string
@@ -742,6 +744,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          ballet_started_at?: string | null
           calendar_highlight_weekend?: boolean
           calendar_week_start_monday?: boolean
           created_at?: string
