@@ -902,10 +902,18 @@ export default function PerformanceDetailPage() {
             <section className="relative h-[400px] w-full overflow-hidden bg-black">
               {visualSlides.length ? (
                 <>
+                  {sharedVisualBackgroundUrl ? (
+                    <FadeInImage
+                      src={sharedVisualBackgroundUrl}
+                      alt=""
+                      className="absolute inset-0 z-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 z-0 bg-black/30" />
                   <Carousel
                     setApi={setVisualApi}
                     opts={{ align: "start" }}
-                    className="absolute inset-0 z-0"
+                    className="absolute inset-0 z-10"
                   >
                     <CarouselContent className="h-full">
                       {visualSlides.map((slide) => (
@@ -919,18 +927,11 @@ export default function PerformanceDetailPage() {
                             }}
                             aria-label="공연 이미지 크게 보기"
                           >
-                            {sharedVisualBackgroundUrl ? (
-                              <FadeInImage
-                                src={sharedVisualBackgroundUrl}
-                                alt=""
-                                className="absolute inset-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
-                              />
-                            ) : null}
-                            <div className="absolute inset-0 bg-black/30" />
                             <div className="absolute inset-0 z-10 flex items-center justify-center">
                               <FadeInImage
                                 src={slide.url}
                                 alt={slide.alt}
+                                animation="none"
                                 className="block max-h-full max-w-full object-contain object-center"
                               />
                             </div>

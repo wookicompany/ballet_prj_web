@@ -236,7 +236,7 @@ export default function PerformanceSearchInputPage() {
       }
 
       const getEngagementScore = (itemId: string) => {
-        const engagement = nextEngagementMap[itemId] ?? engagementMap[itemId];
+        const engagement = nextEngagementMap[itemId];
         if (!engagement) return 0;
         return (
           (engagement.view_count ?? 0) +
@@ -256,8 +256,8 @@ export default function PerformanceSearchInputPage() {
         if (hasEngagement) {
           return getEngagementScore(b.mt20id) - getEngagementScore(a.mt20id);
         }
-        const ratingA = nextRatingMap[a.mt20id] ?? ratingMap[a.mt20id];
-        const ratingB = nextRatingMap[b.mt20id] ?? ratingMap[b.mt20id];
+        const ratingA = nextRatingMap[a.mt20id];
+        const ratingB = nextRatingMap[b.mt20id];
         if (!ratingA && !ratingB) return 0;
         if (!ratingA) return 1;
         if (!ratingB) return -1;
@@ -278,7 +278,7 @@ export default function PerformanceSearchInputPage() {
       setLoading(false);
       setLoadingMore(false);
     },
-    [engagementMap, fetchMatchedIds, filters.keyword, matchedIds, ratingMap]
+    [fetchMatchedIds, filters.keyword, matchedIds]
   );
 
   const handleSearch = (keyword: string) => {

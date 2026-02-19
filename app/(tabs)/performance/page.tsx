@@ -38,6 +38,31 @@ type EngagementSummary = {
   comment_count: number;
 };
 
+type SectionBuckets = {
+  popular: PerformanceItem[];
+  scheduled: PerformanceItem[];
+  awards: PerformanceItem[];
+  completed: PerformanceItem[];
+  visit: PerformanceItem[];
+};
+
+type PerformanceHomePayload = {
+  ratingMap: Record<string, RatingSummary>;
+  sections: SectionBuckets;
+  shouldWarn: boolean;
+};
+
+const EMPTY_SECTIONS: SectionBuckets = {
+  popular: [],
+  scheduled: [],
+  awards: [],
+  completed: [],
+  visit: [],
+};
+
+let performanceHomeCache: PerformanceHomePayload | null = null;
+let performanceHomeInFlight: Promise<PerformanceHomePayload> | null = null;
+
 const formatDate = (value?: string | null) => {
   if (!value) return "날짜 미정";
   return value.replace(/-/g, ".");
@@ -50,216 +75,223 @@ const getDaysUntil = (value?: string | null) => {
 
 export default function PerformanceListPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>({});
-  const [sections, setSections] = useState<{
-    popular: PerformanceItem[];
-    scheduled: PerformanceItem[];
-    awards: PerformanceItem[];
-    completed: PerformanceItem[];
-    visit: PerformanceItem[];
-  }>({
-    popular: [],
-    scheduled: [],
-    awards: [],
-    completed: [],
-    visit: [],
-  });
+  const [loading, setLoading] = useState(() => !performanceHomeCache);
+  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>(
+    () => performanceHomeCache?.ratingMap ?? {}
+  );
+  const [sections, setSections] = useState<SectionBuckets>(
+    () => performanceHomeCache?.sections ?? EMPTY_SECTIONS
+  );
 
   const fetchSections = useCallback(async () => {
-    setLoading(true);
-    const ratingSummary: Record<string, RatingSummary> = {};
-    let shouldWarn = false;
-    const baseSelect =
-      "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
-
-    const [
-      { data: reviewRows, error: reviewError },
-      { data: engagementRows, error: engagementError },
-    ] = await Promise.all([
-      supabase
-        .from("performance_reviews")
-        .select("performance_id,rating")
-        .is("deleted_at", null),
-      supabase
-        .from("performance_engagement_summaries")
-        .select(
-          "performance_id,view_count,review_count,comment_count"
-        )
-        .or(
-          "view_count.gt.0,review_count.gt.0,comment_count.gt.0"
-        )
-        .range(0, 4999),
-    ]);
-
-    if (reviewError || engagementError) {
-      shouldWarn = true;
+    if (performanceHomeCache) {
+      setRatingMap(performanceHomeCache.ratingMap);
+      setSections(performanceHomeCache.sections);
+      setLoading(false);
+      return;
     }
 
-    (reviewRows ?? []).forEach((row) => {
-      if (!row.performance_id) return;
-      const current = ratingSummary[row.performance_id] ?? { count: 0, avg: 0 };
-      const nextCount = current.count + 1;
-      const nextAvg = (current.avg * current.count + row.rating) / nextCount;
-      ratingSummary[row.performance_id] = { count: nextCount, avg: nextAvg };
-    });
+    if (!performanceHomeInFlight) {
+      performanceHomeInFlight = (async () => {
+        const ratingSummary: Record<string, RatingSummary> = {};
+        let shouldWarn = false;
+        const baseSelect =
+          "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
 
-    const engagementList = (engagementRows ?? []) as EngagementSummary[];
-    const engagementScores = engagementList.map((item) => ({
-      id: item.performance_id,
-      score:
-        item.view_count +
-        item.review_count +
-        item.comment_count,
-    }));
-    const activeEngagement = engagementScores.filter((item) => item.score > 0);
-    const nextPopularIds = activeEngagement.length
-      ? activeEngagement
-          .sort((a, b) => b.score - a.score)
-          .map((item) => item.id)
-          .filter(Boolean)
-      : Object.entries(ratingSummary)
-          .filter(([, value]) => value.count > 0)
-          .sort(
-            (a, b) =>
-              b[1].count - a[1].count || b[1].avg - a[1].avg
-          )
-          .map(([id]) => id)
-          ;
-    const popularIds = nextPopularIds.slice(0, 12);
-    const popularQuery = popularIds.length
-      ? supabase
+        const [
+          { data: reviewRows, error: reviewError },
+          { data: engagementRows, error: engagementError },
+        ] = await Promise.all([
+          supabase
+            .from("performance_reviews")
+            .select("performance_id,rating")
+            .is("deleted_at", null),
+          supabase
+            .from("performance_engagement_summaries")
+            .select("performance_id,view_count,review_count,comment_count")
+            .or("view_count.gt.0,review_count.gt.0,comment_count.gt.0")
+            .range(0, 4999),
+        ]);
+
+        if (reviewError || engagementError) {
+          shouldWarn = true;
+        }
+
+        (reviewRows ?? []).forEach((row) => {
+          if (!row.performance_id) return;
+          const current = ratingSummary[row.performance_id] ?? { count: 0, avg: 0 };
+          const nextCount = current.count + 1;
+          const nextAvg = (current.avg * current.count + row.rating) / nextCount;
+          ratingSummary[row.performance_id] = { count: nextCount, avg: nextAvg };
+        });
+
+        const engagementList = (engagementRows ?? []) as EngagementSummary[];
+        const engagementScores = engagementList.map((item) => ({
+          id: item.performance_id,
+          score: item.view_count + item.review_count + item.comment_count,
+        }));
+        const activeEngagement = engagementScores.filter((item) => item.score > 0);
+        const nextPopularIds = activeEngagement.length
+          ? activeEngagement
+              .sort((a, b) => b.score - a.score)
+              .map((item) => item.id)
+              .filter(Boolean)
+          : Object.entries(ratingSummary)
+              .filter(([, value]) => value.count > 0)
+              .sort((a, b) => b[1].count - a[1].count || b[1].avg - a[1].avg)
+              .map(([id]) => id);
+        const popularIds = nextPopularIds.slice(0, 12);
+
+        const popularQuery = popularIds.length
+          ? supabase
+              .from("kopis_performances")
+              .select(baseSelect)
+              .is("deleted_at", null)
+              .eq("is_active", true)
+              .in("mt20id", popularIds)
+          : supabase
+              .from("kopis_performances")
+              .select(baseSelect)
+              .is("deleted_at", null)
+              .eq("is_active", true)
+              .order("updated_at", { ascending: false })
+              .limit(12);
+
+        const scheduledQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .in("mt20id", popularIds)
-      : supabase
-          .from("kopis_performances")
-          .select(baseSelect)
-          .is("deleted_at", null)
-          .eq("is_active", true)
-          .order("updated_at", { ascending: false })
+          .eq("prfstate", "공연예정")
+          .order("prfpdfrom", { ascending: true })
           .limit(12);
 
-    const scheduledQuery = supabase
-      .from("kopis_performances")
-      .select(baseSelect)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .eq("prfstate", "공연예정")
-      .order("prfpdfrom", { ascending: true })
-      .limit(12);
-
-    const completedQuery = supabase
-      .from("kopis_performances")
-      .select(baseSelect)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .eq("prfstate", "공연완료")
-      .order("prfpdto", { ascending: false })
-      .limit(12);
-
-    const [visitIdsRes] = await Promise.all([
-      supabase
-        .from("kopis_performance_details")
-        .select("mt20id")
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .eq("visit", "Y")
-        .order("updatedate", { ascending: false })
-        .limit(60),
-    ]);
-    const [awardIdsRes] = await Promise.all([
-      supabase
-        .from("kopis_performance_awards")
-        .select("mt20id,prfpdfrom,updated_at")
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .order("prfpdfrom", { ascending: false })
-        .order("updated_at", { ascending: false })
-        .limit(60),
-    ]);
-
-    const visitIds = (visitIdsRes.data ?? [])
-      .map((row) => row.mt20id)
-      .filter(Boolean)
-      .slice(0, 12);
-    const awardIds = (awardIdsRes.data ?? [])
-      .map((row) => row.mt20id)
-      .filter(Boolean)
-      .slice(0, 12);
-
-    const visitQuery = visitIds.length
-      ? supabase
+        const completedQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .in("mt20id", visitIds)
-      : null;
-    const awardsQuery = awardIds.length
-      ? supabase
-          .from("kopis_performances")
-          .select(baseSelect)
-          .is("deleted_at", null)
-          .eq("is_active", true)
-          .in("mt20id", awardIds)
-      : null;
-    const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
-      await Promise.all([
-        popularQuery,
-        scheduledQuery,
-        completedQuery,
-        awardsQuery ?? Promise.resolve({ data: [] }),
-        visitQuery ?? Promise.resolve({ data: [] }),
-      ]);
+          .eq("prfstate", "공연완료")
+          .order("prfpdto", { ascending: false })
+          .limit(12);
 
-    if (
-      popularRes.error ||
-      scheduledRes.error ||
-      completedRes.error ||
-      awardIdsRes.error ||
-      visitIdsRes.error ||
-      (awardsRes as { error?: unknown }).error ||
-      (visitRes as { error?: unknown }).error
-    ) {
-      shouldWarn = true;
+        const [visitIdsRes, awardIdsRes] = await Promise.all([
+          supabase
+            .from("kopis_performance_details")
+            .select("mt20id")
+            .is("deleted_at", null)
+            .eq("is_active", true)
+            .eq("visit", "Y")
+            .order("updatedate", { ascending: false })
+            .limit(60),
+          supabase
+            .from("kopis_performance_awards")
+            .select("mt20id,prfpdfrom,updated_at")
+            .is("deleted_at", null)
+            .eq("is_active", true)
+            .order("prfpdfrom", { ascending: false })
+            .order("updated_at", { ascending: false })
+            .limit(60),
+        ]);
+
+        const visitIds = (visitIdsRes.data ?? [])
+          .map((row) => row.mt20id)
+          .filter(Boolean)
+          .slice(0, 12);
+        const awardIds = (awardIdsRes.data ?? [])
+          .map((row) => row.mt20id)
+          .filter(Boolean)
+          .slice(0, 12);
+
+        const visitQuery = visitIds.length
+          ? supabase
+              .from("kopis_performances")
+              .select(baseSelect)
+              .is("deleted_at", null)
+              .eq("is_active", true)
+              .in("mt20id", visitIds)
+          : null;
+        const awardsQuery = awardIds.length
+          ? supabase
+              .from("kopis_performances")
+              .select(baseSelect)
+              .is("deleted_at", null)
+              .eq("is_active", true)
+              .in("mt20id", awardIds)
+          : null;
+
+        const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
+          await Promise.all([
+            popularQuery,
+            scheduledQuery,
+            completedQuery,
+            awardsQuery ?? Promise.resolve({ data: [] }),
+            visitQuery ?? Promise.resolve({ data: [] }),
+          ]);
+
+        if (
+          popularRes.error ||
+          scheduledRes.error ||
+          completedRes.error ||
+          awardIdsRes.error ||
+          visitIdsRes.error ||
+          (awardsRes as { error?: unknown }).error ||
+          (visitRes as { error?: unknown }).error
+        ) {
+          shouldWarn = true;
+        }
+
+        const popularData = (popularRes.data ?? []) as PerformanceItem[];
+        const orderedPopular = popularIds.length
+          ? popularData.sort(
+              (a, b) => popularIds.indexOf(a.mt20id) - popularIds.indexOf(b.mt20id)
+            )
+          : popularData;
+        const visitData = ((visitRes as { data?: PerformanceItem[] }).data ??
+          []) as PerformanceItem[];
+        const orderedVisit = visitIds.length
+          ? visitData.sort(
+              (a, b) => visitIds.indexOf(a.mt20id) - visitIds.indexOf(b.mt20id)
+            )
+          : visitData;
+        const awardsData = ((awardsRes as { data?: PerformanceItem[] }).data ??
+          []) as PerformanceItem[];
+        const orderedAwards = awardIds.length
+          ? awardsData.sort(
+              (a, b) => awardIds.indexOf(a.mt20id) - awardIds.indexOf(b.mt20id)
+            )
+          : awardsData;
+
+        return {
+          ratingMap: ratingSummary,
+          sections: {
+            popular: orderedPopular,
+            scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
+            awards: orderedAwards,
+            completed: (completedRes.data ?? []) as PerformanceItem[],
+            visit: orderedVisit,
+          },
+          shouldWarn,
+        } satisfies PerformanceHomePayload;
+      })();
     }
 
-    const popularData = (popularRes.data ?? []) as PerformanceItem[];
-    const orderedPopular = popularIds.length
-      ? popularData.sort(
-          (a, b) => popularIds.indexOf(a.mt20id) - popularIds.indexOf(b.mt20id)
-        )
-      : popularData;
-    const visitData = ((visitRes as { data?: PerformanceItem[] }).data ??
-      []) as PerformanceItem[];
-    const orderedVisit = visitIds.length
-      ? visitData.sort(
-          (a, b) => visitIds.indexOf(a.mt20id) - visitIds.indexOf(b.mt20id)
-        )
-      : visitData;
-    const awardsData = ((awardsRes as { data?: PerformanceItem[] }).data ??
-      []) as PerformanceItem[];
-    const orderedAwards = awardIds.length
-      ? awardsData.sort(
-          (a, b) => awardIds.indexOf(a.mt20id) - awardIds.indexOf(b.mt20id)
-        )
-      : awardsData;
-    setRatingMap(ratingSummary);
-    setSections((prev) => ({
-      ...prev,
-      popular: orderedPopular,
-      scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
-      awards: orderedAwards,
-      completed: (completedRes.data ?? []) as PerformanceItem[],
-      visit: orderedVisit,
-    }));
-    setLoading(false);
+    setLoading(true);
+    try {
+      const result = await performanceHomeInFlight;
+      performanceHomeCache = result;
+      setRatingMap(result.ratingMap);
+      setSections(result.sections);
+      setLoading(false);
 
-    if (shouldWarn) {
-      toast("공연 정보를 모두 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      if (result.shouldWarn) {
+        toast("공연 정보를 모두 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      }
+    } catch {
+      setLoading(false);
+      toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      performanceHomeInFlight = null;
     }
   }, []);
 
@@ -291,6 +323,7 @@ export default function PerformanceListPage() {
             <FadeInImage
               src={item.poster}
               alt={`${item.prfnm} 포스터`}
+              animation="soft"
               className="h-full w-full object-cover"
             />
           ) : (

@@ -1,15 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
+
+const revealedSrcCache = new Set<string>();
 
 type FadeInImageProps = {
    src: string;
    alt: string;
    className?: string;
    loading?: "eager" | "lazy";
+  animation?: "none" | "soft" | "strong";
    onClick?: () => void;
    ariaLabel?: string;
  };
@@ -19,14 +22,52 @@ type FadeInImageProps = {
    alt,
    className,
    loading = "lazy",
+  animation = "soft",
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
-  const loaded = loadedSrc === src;
+  const isStrongAnimation = animation === "strong";
+  const [isLoaded, setIsLoaded] = useState(() =>
+    isStrongAnimation ? revealedSrcCache.has(src) : true
+  );
+  const [isSoftEntered, setIsSoftEntered] = useState(false);
+
+  useEffect(() => {
+    const seen = revealedSrcCache.has(src);
+    setIsLoaded(isStrongAnimation ? seen : true);
+    setIsSoftEntered(false);
+    window.requestAnimationFrame(() => {
+      setIsSoftEntered(true);
+    });
+  }, [isStrongAnimation, src]);
+
+  const reveal = useCallback(() => {
+    if (!isStrongAnimation) return;
+    revealedSrcCache.add(src);
+    setIsLoaded(true);
+    setIsSoftEntered(false);
+    window.requestAnimationFrame(() => {
+      setIsSoftEntered(true);
+    });
+  }, [isStrongAnimation, src]);
+
+  const handleLoaded = () => {
+    reveal();
+  };
+
+  const handleRef = useCallback(
+    (node: HTMLImageElement | null) => {
+      if (!isStrongAnimation) return;
+      if (!node) return;
+      if (!node.complete) return;
+      reveal();
+    },
+    [isStrongAnimation, reveal]
+  );
 
   return (
     <Image
+      ref={isStrongAnimation ? handleRef : undefined}
       src={src}
       alt={alt}
       width={1600}
@@ -39,11 +80,19 @@ type FadeInImageProps = {
         sendHapticToApp();
         onClick?.();
       }}
-      className={`${className ?? ""} transition-opacity duration-500 ${
-        loaded ? "opacity-100" : "opacity-0"
+      className={`${className ?? ""} ${
+        animation === "none"
+          ? "opacity-100"
+          : animation === "strong"
+          ? `transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] ${
+              isLoaded ? "opacity-100" : "opacity-0"
+            } ${isSoftEntered ? "scale-100" : "scale-[1.01]"}`
+          : `opacity-100 transition-transform duration-180 ease-out will-change-transform ${
+              isSoftEntered ? "scale-100" : "scale-[0.996]"
+            }`
       }`}
-      onLoad={() => setLoadedSrc(src)}
-      onError={() => setLoadedSrc(src)}
+      onLoad={isStrongAnimation ? handleLoaded : undefined}
+      onError={isStrongAnimation ? handleLoaded : undefined}
     />
   );
 }

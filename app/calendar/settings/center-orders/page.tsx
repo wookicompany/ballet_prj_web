@@ -343,7 +343,7 @@ export default function SavedCenterOrdersPage() {
           <div className="space-y-2">
             <Label className="text-xs text-[#17171c]/60">이름</Label>
             <Input
-              className="h-12 text-base placeholder:text-xs"
+              className="h-12 text-base placeholder:text-sm"
               placeholder="예: 기본 순서"
               value={form.name}
               onChange={(event) =>
@@ -352,12 +352,12 @@ export default function SavedCenterOrdersPage() {
             />
           </div>
           <div className="space-y-3">
-            <Label className="text-xs text-[#17171c]/60">
+            <Label className="text-sm text-[#17171c]/60">
               센터(center) 순서
             </Label>
-            <div className="min-h-12 flex items-center rounded-lg border border-black/10 bg-white p-2">
+            <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
               {orderTags.length === 0 ? (
-                <p className="text-xs text-[#17171c]/40">
+                <p className="text-sm text-[#17171c]/40">
                   선택된 순서가 여기 표시돼요.
                 </p>
               ) : (
@@ -371,7 +371,7 @@ export default function SavedCenterOrdersPage() {
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full px-2 text-sm"
+                        className="h-9 rounded-full px-3 text-sm"
                         onClick={() =>
                           setOrderTags((prev) =>
                             prev.filter((_, idx) => idx !== index)
@@ -399,7 +399,7 @@ export default function SavedCenterOrdersPage() {
                     type="button"
                     variant={selected ? "default" : "outline"}
                     size="sm"
-                    className="h-7 rounded-full px-3 text-sm"
+                    className="h-9 rounded-full px-3 text-sm"
                     onClick={() =>
                       setOrderTags((prev) =>
                         selected
@@ -414,10 +414,10 @@ export default function SavedCenterOrdersPage() {
               })}
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-[#17171c]/60">직접 입력</Label>
+              <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
               <Input
                 type="text"
-                className="h-12 text-base placeholder:text-xs"
+                className="h-12 text-base placeholder:text-sm"
                 placeholder="직접 입력하고 Enter로 추가해 주세요"
                 value={orderInput}
                 onChange={(event) => setOrderInput(event.target.value)}
