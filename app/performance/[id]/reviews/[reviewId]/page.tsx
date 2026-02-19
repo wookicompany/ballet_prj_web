@@ -756,14 +756,14 @@ export default function PerformanceReviewDetailPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[11px] text-[#17171c]/50">
+                  <div className="flex h-full w-full items-center justify-center text-sm text-[#17171c]/50">
                     이미지 없음
                   </div>
                 )}
               </button>
               <div className="flex-1">
-                <p className="text-xs text-[#17171c]/60">공연</p>
-                <p className="text-sm font-semibold text-[#17171c]">
+                <p className="text-sm text-[#17171c]/60">공연</p>
+                <p className="text-base font-semibold text-[#17171c]">
                   {performance.prfnm || "공연명 미정"}
                 </p>
               </div>
@@ -773,7 +773,7 @@ export default function PerformanceReviewDetailPage() {
           <Separator className="bg-black/5" />
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-[#17171c]/60">
+            <div className="flex items-center justify-between text-sm text-[#17171c]/60">
               <span>
                 {getDisplayNickname(profile?.nickname, review.user_id, true)} ·{" "}
                 {formatDate(review.created_at)}
@@ -798,7 +798,7 @@ export default function PerformanceReviewDetailPage() {
                 );
               })}
             </div>
-            <p className="whitespace-pre-line text-sm text-[#17171c]">
+            <p className="whitespace-pre-line text-base text-[#17171c]">
               {isReviewHidden
                 ? "신고로 인해 숨김 처리되었어요."
                 : review.content || "내용이 없어요."}
@@ -826,7 +826,7 @@ export default function PerformanceReviewDetailPage() {
                 ))}
               </div>
             ) : null}
-            <div className="flex items-center gap-4 text-xs text-[#17171c]">
+            <div className="flex items-center gap-4 text-sm text-[#17171c]">
               <span className="inline-flex items-center gap-1">
                 <Heart className="h-4 w-4 text-[#17171c]" />
                 {likeCount}
@@ -867,7 +867,7 @@ export default function PerformanceReviewDetailPage() {
                   event.currentTarget.blur();
                 }
               }}
-              className="h-10 min-h-10 flex-1 resize-none rounded-md border border-black/5 bg-white px-3 py-2 text-base leading-5 placeholder:text-xs placeholder:leading-5 text-[#17171c] overflow-y-hidden focus:outline-none"
+              className="h-10 min-h-10 flex-1 resize-none rounded-md border border-black/5 bg-white px-3 py-2 text-base leading-5 placeholder:text-sm placeholder:leading-5 text-[#17171c] overflow-y-hidden focus:outline-none"
               maxLength={300}
               placeholder="댓글을 입력해 주세요."
             />
@@ -892,9 +892,9 @@ export default function PerformanceReviewDetailPage() {
                 return (
                   <div
                     key={comment.id}
-                    className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
+                    className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-base text-[#17171c] transition-colors active:bg-black/5"
                   >
-                    <div className="flex items-center justify-between text-[11px] text-[#17171c]/60">
+                    <div className="flex items-center justify-between text-sm text-[#17171c]/60">
                       <span>
                         {getDisplayNickname(
                           author?.nickname,
@@ -1000,7 +1000,7 @@ export default function PerformanceReviewDetailPage() {
                         {!isCommentHidden ? (
                           <button
                             type="button"
-                            className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#17171c]"
+                            className="mt-2 inline-flex items-center gap-1 text-sm text-[#17171c]"
                             onClick={() => handleToggleCommentLike(comment.id)}
                             aria-label="댓글 좋아요"
                           >
@@ -1114,7 +1114,7 @@ export default function PerformanceReviewDetailPage() {
             <textarea
               value={reportDetail}
               onChange={(event) => setReportDetail(event.target.value)}
-              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-xs focus:outline-none"
+              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
               maxLength={400}
               placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
             />
