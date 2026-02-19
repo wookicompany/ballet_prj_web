@@ -530,7 +530,7 @@ export default function ProfilePage() {
 
           {shouldShowReviewCardSkeleton ? (
             <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {Array.from({ length: 1 }).map((_, index) => (
                 <div
                   key={`profile-review-loading-skeleton-${index}`}
                   className="flex items-start gap-3 rounded-lg border border-black/5 bg-white p-3"
