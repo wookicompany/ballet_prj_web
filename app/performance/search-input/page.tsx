@@ -452,6 +452,7 @@ export default function PerformanceSearchInputPage() {
                       <FadeInImage
                         src={item.poster}
                         alt={`${item.title} 포스터`}
+                        animation="none"
                         className="h-full w-full object-cover"
                       />
                     ) : null}
@@ -511,6 +512,7 @@ export default function PerformanceSearchInputPage() {
                     <FadeInImage
                       src={item.poster}
                       alt={`${item.prfnm} 포스터`}
+                      animation="none"
                       className="h-full w-full object-cover"
                     />
                   ) : null}

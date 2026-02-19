@@ -445,6 +445,7 @@ export default function ProfilePage() {
                 <FadeInImage
                   src={profile.avatar_url}
                   alt="프로필 이미지"
+                  animation="soft"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -520,6 +521,7 @@ export default function ProfilePage() {
                       <FadeInImage
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
+                        animation="soft"
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -594,6 +596,7 @@ export default function ProfilePage() {
                         <FadeInImage
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
+                          animation="soft"
                           className="h-full w-full object-contain"
                         />
                         {reviewImages[review.id].length > 1 ? (

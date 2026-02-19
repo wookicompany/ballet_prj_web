@@ -906,6 +906,7 @@ export default function PerformanceDetailPage() {
                     <FadeInImage
                       src={sharedVisualBackgroundUrl}
                       alt=""
+                      animation="none"
                       className="absolute inset-0 z-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
                     />
                   ) : null}
@@ -920,7 +921,7 @@ export default function PerformanceDetailPage() {
                         <CarouselItem key={slide.id} className="h-full">
                           <button
                             type="button"
-                            className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black"
+                            className="relative flex h-full w-full items-center justify-center overflow-hidden bg-transparent"
                             onClick={() => {
                               setViewerUrl(slide.url);
                               setViewerOpen(true);
@@ -1446,6 +1447,7 @@ export default function PerformanceDetailPage() {
                                   <FadeInImage
                                     src={url}
                                     alt="리뷰 이미지"
+                                    animation="none"
                                     className="h-full w-full object-contain"
                                   />
                                 </button>

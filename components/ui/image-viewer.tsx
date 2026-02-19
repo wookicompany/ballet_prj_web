@@ -45,6 +45,7 @@ export default function ImageViewer({
       <FadeInImage
         src={imageUrl}
         alt={alt ?? "이미지 상세 보기"}
+        animation="none"
         className="max-h-full max-w-full object-contain"
         loading="eager"
       />

@@ -284,6 +284,7 @@ export default function PerformanceReviewNewPage() {
                   <FadeInImage
                     src={item.url}
                     alt="업로드 이미지"
+                    animation="none"
                     className="h-full w-full object-contain"
                   />
                   <button

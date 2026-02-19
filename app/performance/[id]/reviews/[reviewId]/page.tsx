@@ -752,6 +752,7 @@ export default function PerformanceReviewDetailPage() {
                   <FadeInImage
                     src={performance.poster}
                     alt={`${performance.prfnm ?? "공연"} 포스터`}
+                    animation="none"
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -818,6 +819,7 @@ export default function PerformanceReviewDetailPage() {
                     <FadeInImage
                       src={url}
                       alt="리뷰 이미지"
+                      animation="none"
                       className="h-full w-full object-contain"
                     />
                   </button>

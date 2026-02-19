@@ -318,6 +318,7 @@ export default function RecordDetailPage() {
                           <FadeInImage
                             src={item.url}
                             alt="업로드 사진"
+                            animation="none"
                             className="h-full w-full object-contain"
                           />
                         </button>
@@ -389,6 +390,7 @@ export default function RecordDetailPage() {
                     <FadeInImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
+                      animation="none"
                       className="h-full w-full object-contain"
                     />
                   </div>

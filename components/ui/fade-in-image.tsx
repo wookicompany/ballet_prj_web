@@ -12,6 +12,7 @@ type FadeInImageProps = {
    alt: string;
    className?: string;
    loading?: "eager" | "lazy";
+  // none: immediate render, soft: immediate + tiny transform, strong: load-gated fade
   animation?: "none" | "soft" | "strong";
    onClick?: () => void;
    ariaLabel?: string;
@@ -84,9 +85,11 @@ type FadeInImageProps = {
         animation === "none"
           ? "opacity-100"
           : animation === "strong"
+          // Strong mode is only for large hero visuals that can tolerate fade-in.
           ? `transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] ${
               isLoaded ? "opacity-100" : "opacity-0"
             } ${isSoftEntered ? "scale-100" : "scale-[1.01]"}`
+          // Soft mode keeps immediate visibility to avoid list flicker.
           : `opacity-100 transition-transform duration-180 ease-out will-change-transform ${
               isSoftEntered ? "scale-100" : "scale-[0.996]"
             }`

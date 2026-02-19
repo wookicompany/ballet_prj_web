@@ -232,6 +232,7 @@ export default function DayPage() {
                     <FadeInImage
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
+                      animation="none"
                       className="h-8 w-8 shrink-0"
                     />
                   ) : (
@@ -247,6 +248,7 @@ export default function DayPage() {
                       <FadeInImage
                         src={media.url}
                         alt="기록 미디어"
+                        animation="none"
                         className="h-full w-full rounded-lg object-cover"
                       />
                       {media.count > 1 ? (
