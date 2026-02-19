@@ -442,11 +442,11 @@ export default function RecordDetailPage() {
                           key={`bar-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
                             {tag}
                           </span>
                           {index < barOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">
+                            <span className="text-sm text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
@@ -466,11 +466,11 @@ export default function RecordDetailPage() {
                           key={`center-order-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-xs text-[#17171c]">
+                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
                             {tag}
                           </span>
                           {index < centerOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">
+                            <span className="text-sm text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}

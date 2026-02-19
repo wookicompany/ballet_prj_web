@@ -306,11 +306,11 @@ export default function SavedBarOrdersPage() {
                           key={`${item.id}-${tag}-${index}`}
                           className="flex items-center gap-2"
                         >
-                          <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-xs">
+                          <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-sm">
                             {tag}
                           </span>
                           {index < arr.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">
+                            <span className="text-sm text-[#17171c]/40">
                               &gt;
                             </span>
                           ) : null}
@@ -361,7 +361,7 @@ export default function SavedBarOrdersPage() {
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full px-2 text-xs"
+                        className="h-7 rounded-full px-2 text-sm"
                         onClick={() =>
                           setOrderTags((prev) =>
                             prev.filter((_, idx) => idx !== index)
@@ -371,7 +371,7 @@ export default function SavedBarOrdersPage() {
                         {tag}
                       </Button>
                       {index < orderTags.length - 1 ? (
-                        <span className="text-xs text-[#17171c]/40">
+                        <span className="text-sm text-[#17171c]/40">
                           &gt;
                         </span>
                       ) : null}
@@ -389,7 +389,7 @@ export default function SavedBarOrdersPage() {
                     type="button"
                     variant={selected ? "default" : "outline"}
                     size="sm"
-                    className="h-7 rounded-full px-3 text-xs"
+                    className="h-7 rounded-full px-3 text-sm"
                     onClick={() =>
                       setOrderTags((prev) =>
                         selected

@@ -12,13 +12,13 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
+import FadeInImage from "@/components/ui/fade-in-image";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
@@ -830,12 +830,10 @@ function RecordNewContent() {
                   key={`image-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <Image
+                  <FadeInImage
                     src={item.url}
                     alt="업로드 사진"
-                    fill
-                    unoptimized
-                    className="object-contain"
+                    className="h-full w-full object-contain"
                   />
                   <button
                     type="button"
@@ -1056,7 +1054,7 @@ function RecordNewContent() {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-9 rounded-full px-3 text-xs"
+                            className="h-9 rounded-full px-3 text-sm"
                             onClick={() =>
                               setBarOrderTags((prev) =>
                                 prev.filter((_, idx) => idx !== index)
@@ -1066,7 +1064,7 @@ function RecordNewContent() {
                             {tag}
                           </Button>
                           {index < barOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">&gt;</span>
+                            <span className="text-sm text-[#17171c]/40">&gt;</span>
                           ) : null}
                         </div>
                       ))}
@@ -1082,7 +1080,7 @@ function RecordNewContent() {
                         type="button"
                         variant={selected ? "default" : "outline"}
                         size="sm"
-                        className="h-9 rounded-full px-3 text-xs"
+                        className="h-9 rounded-full px-3 text-sm"
                         onClick={() =>
                           setBarOrderTags((prev) =>
                             selected
@@ -1168,7 +1166,7 @@ function RecordNewContent() {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-9 rounded-full px-3 text-xs"
+                            className="h-9 rounded-full px-3 text-sm"
                             onClick={() =>
                               setCenterOrderTags((prev) =>
                                 prev.filter((_, idx) => idx !== index)
@@ -1178,7 +1176,7 @@ function RecordNewContent() {
                             {tag}
                           </Button>
                           {index < centerOrderTags.length - 1 ? (
-                            <span className="text-xs text-[#17171c]/40">&gt;</span>
+                            <span className="text-sm text-[#17171c]/40">&gt;</span>
                           ) : null}
                         </div>
                       ))}
@@ -1194,7 +1192,7 @@ function RecordNewContent() {
                         type="button"
                         variant={selected ? "default" : "outline"}
                         size="sm"
-                        className="h-9 rounded-full px-3 text-xs"
+                        className="h-9 rounded-full px-3 text-sm"
                         onClick={() =>
                           setCenterOrderTags((prev) =>
                             selected
@@ -1814,11 +1812,11 @@ function RecordNewContent() {
                               key={`${item.id}-${tag}-${index}`}
                               className="flex items-center gap-2"
                             >
-                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-xs">
+                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-sm">
                                 {tag}
                               </span>
                               {index < arr.length - 1 ? (
-                                <span className="text-xs text-[#17171c]/40">
+                                <span className="text-sm text-[#17171c]/40">
                                   &gt;
                                 </span>
                               ) : null}
@@ -1907,11 +1905,11 @@ function RecordNewContent() {
                               key={`${item.id}-${tag}-${index}`}
                               className="flex items-center gap-2"
                             >
-                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-xs">
+                              <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-sm">
                                 {tag}
                               </span>
                               {index < arr.length - 1 ? (
-                                <span className="text-xs text-[#17171c]/40">
+                                <span className="text-sm text-[#17171c]/40">
                                   &gt;
                                 </span>
                               ) : null}

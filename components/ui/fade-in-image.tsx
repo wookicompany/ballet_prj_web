@@ -1,8 +1,7 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
@@ -23,11 +22,8 @@ type FadeInImageProps = {
    onClick,
    ariaLabel,
  }: FadeInImageProps) {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setLoaded(false);
-  }, [src]);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const loaded = loadedSrc === src;
 
   return (
     <Image
@@ -46,8 +42,8 @@ type FadeInImageProps = {
       className={`${className ?? ""} transition-opacity duration-500 ${
         loaded ? "opacity-100" : "opacity-0"
       }`}
-      onLoad={() => setLoaded(true)}
-      onError={() => setLoaded(true)}
+      onLoad={() => setLoadedSrc(src)}
+      onError={() => setLoadedSrc(src)}
     />
   );
 }
