@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -33,15 +33,6 @@ type ReviewSummary = {
 
 const REVIEW_PAGE_SIZE_INITIAL = 5;
 const REVIEW_PAGE_SIZE_MORE = 12;
-const PROFILE_TAB_ENTRY_KEY = "profile_tab_entry_token";
-
-const consumeProfileTabEntryToken = () => {
-  if (typeof window === "undefined") return null;
-  const token = window.sessionStorage.getItem(PROFILE_TAB_ENTRY_KEY);
-  if (!token) return null;
-  window.sessionStorage.removeItem(PROFILE_TAB_ENTRY_KEY);
-  return token;
-};
 
 function toMinutes(time: string) {
   const [hh, mm, ss] = time.split(":").map((value) => Number(value));
@@ -62,9 +53,6 @@ export default function ProfilePage() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [tabEntryToken] = useState<string | null>(() =>
-    consumeProfileTabEntryToken()
-  );
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
@@ -469,11 +457,13 @@ export default function ProfilePage() {
                   disabled={!profile.avatar_url}
                 >
                   {profile.avatar_url ? (
-                    <FadeInImage
+                    <Image
                       src={profile.avatar_url}
                       alt="프로필 이미지"
-                      animation={tabEntryToken ? "strong" : "none"}
-                      replayToken={tabEntryToken}
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -570,11 +560,13 @@ export default function ProfilePage() {
                     aria-label="리뷰 상세 보기"
                   >
                     {review.performancePoster ? (
-                      <FadeInImage
+                      <Image
                         src={review.performancePoster}
                         alt={`${review.performanceName ?? "공연"} 포스터`}
-                        animation={tabEntryToken ? "strong" : "none"}
-                        replayToken={tabEntryToken}
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -646,11 +638,13 @@ export default function ProfilePage() {
                         {formatReviewDate(review.createdAt)}
                       </div>
                       <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
-                        <FadeInImage
+                        <Image
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
-                          animation={tabEntryToken ? "strong" : "none"}
-                          replayToken={tabEntryToken}
+                          width={1600}
+                          height={1600}
+                          unoptimized
+                          draggable={false}
                           className="h-full w-full object-contain"
                         />
                         {reviewImages[review.id].length > 1 ? (

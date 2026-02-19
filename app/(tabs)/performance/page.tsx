@@ -1,12 +1,11 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDateKeyDiffDays } from "@/lib/kstDateTime";
@@ -62,15 +61,6 @@ const EMPTY_SECTIONS: SectionBuckets = {
 
 let performanceHomeCache: PerformanceHomePayload | null = null;
 let performanceHomeInFlight: Promise<PerformanceHomePayload> | null = null;
-const PERFORMANCE_TAB_ENTRY_KEY = "performance_tab_entry_token";
-
-const consumePerformanceTabEntryToken = () => {
-  if (typeof window === "undefined") return null;
-  const token = window.sessionStorage.getItem(PERFORMANCE_TAB_ENTRY_KEY);
-  if (!token) return null;
-  window.sessionStorage.removeItem(PERFORMANCE_TAB_ENTRY_KEY);
-  return token;
-};
 
 const formatDate = (value?: string | null) => {
   if (!value) return "날짜 미정";
@@ -84,7 +74,6 @@ const getDaysUntil = (value?: string | null) => {
 
 export default function PerformanceListPage() {
   const router = useRouter();
-  const [tabEntryToken] = useState<string | null>(() => consumePerformanceTabEntryToken());
   const [loading, setLoading] = useState(() => !performanceHomeCache);
   const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>(
     () => performanceHomeCache?.ratingMap ?? {}
@@ -314,8 +303,6 @@ export default function PerformanceListPage() {
     options?: {
       badgeLabel?: string | null;
       rating?: RatingSummary;
-      animation?: "none" | "soft" | "strong";
-      replayToken?: string | number | null;
     }
   ) => {
     return (
@@ -332,11 +319,13 @@ export default function PerformanceListPage() {
             </Badge>
           ) : null}
           {item.poster ? (
-            <FadeInImage
+            <Image
               src={item.poster}
               alt={`${item.prfnm} 포스터`}
-              animation={options?.animation ?? "strong"}
-              replayToken={options?.replayToken}
+              width={1600}
+              height={1600}
+              unoptimized
+              draggable={false}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -374,8 +363,6 @@ export default function PerformanceListPage() {
   const popularCards = sections.popular.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
-      animation: tabEntryToken ? "strong" : "none",
-      replayToken: tabEntryToken,
     })
   );
 
@@ -385,30 +372,24 @@ export default function PerformanceListPage() {
     return renderCard(item, {
       badgeLabel: label,
       rating: ratingMap[item.mt20id],
-      animation: tabEntryToken ? "strong" : "none",
-      replayToken: tabEntryToken,
     });
   });
 
   const completedCards = sections.completed.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
-      animation: "none",
     })
   );
 
   const awardCards = sections.awards.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
-      animation: "none",
-      replayToken: tabEntryToken,
     })
   );
 
   const visitCards = sections.visit.map((item) =>
     renderCard(item, {
       rating: ratingMap[item.mt20id],
-      animation: "none",
     })
   );
 

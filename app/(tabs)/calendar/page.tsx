@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
@@ -9,7 +10,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import {
   formatSeoulDateKey,
   getSeoulTodayDate,
@@ -33,7 +33,6 @@ function getMonthBounds(date: Date) {
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [entryReplayToken] = useState(() => `${Date.now()}`);
   const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
@@ -316,11 +315,13 @@ export default function CalendarPage() {
               <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
                 {moodValue ? (
                   <div className="relative h-full w-full overflow-visible">
-                    <FadeInImage
+                    <Image
                       src={`/mood/cat-${moodValue}.svg`}
                       alt={`기분 ${moodValue}단계`}
-                      animation="strong"
-                      replayToken={entryReplayToken}
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="h-full w-full max-h-[52px] object-contain"
                       loading="eager"
                     />

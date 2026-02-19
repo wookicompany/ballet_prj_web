@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -23,7 +24,6 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
@@ -749,10 +749,13 @@ export default function PerformanceReviewDetailPage() {
                 aria-label="공연 상세로 이동"
               >
                 {performance.poster ? (
-                  <FadeInImage
+                  <Image
                     src={performance.poster}
                     alt={`${performance.prfnm ?? "공연"} 포스터`}
-                    animation="strong"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -816,10 +819,13 @@ export default function PerformanceReviewDetailPage() {
                     }}
                     aria-label="리뷰 이미지 크게 보기"
                   >
-                    <FadeInImage
+                    <Image
                       src={url}
                       alt="리뷰 이미지"
-                      animation="strong"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="h-full w-full object-contain"
                     />
                   </button>

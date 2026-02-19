@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
@@ -10,7 +11,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import ImageViewer from "@/components/ui/image-viewer";
 import {
   AlertDialog,
@@ -315,10 +315,13 @@ export default function RecordDetailPage() {
                           }}
                           aria-label="업로드 사진 크게 보기"
                         >
-                          <FadeInImage
+                          <Image
                             src={item.url}
                             alt="업로드 사진"
-                            animation="strong"
+                            width={1600}
+                            height={1600}
+                            unoptimized
+                            draggable={false}
                             className="h-full w-full object-contain"
                           />
                         </button>
@@ -387,10 +390,13 @@ export default function RecordDetailPage() {
                 </Label>
                 <div className="mt-2 grid w-full grid-cols-5 gap-2">
                   <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
-                    <FadeInImage
+                    <Image
                       src={`/mood/cat-${record.mood}.svg`}
                       alt={`기분 ${record.mood}단계`}
-                      animation="strong"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="h-full w-full object-contain"
                     />
                   </div>

@@ -2,13 +2,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
-import FadeInImage from "@/components/ui/fade-in-image";
 import {
   formatSeoulDateKey,
   getSeoulTodayDate,
@@ -513,10 +513,13 @@ function PerformanceSearchContent() {
                 >
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
                     {item.poster ? (
-                      <FadeInImage
+                      <Image
                         src={item.poster}
                         alt={`${item.prfnm} 포스터`}
-                        animation="none"
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
                         className="h-full w-full object-cover"
                       />
                     ) : null}

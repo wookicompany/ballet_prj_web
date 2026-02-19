@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { X } from "lucide-react";
 
-import FadeInImage from "@/components/ui/fade-in-image";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 type ImageViewerProps = {
@@ -42,10 +42,13 @@ export default function ImageViewer({
       >
         <X className="h-5 w-5" />
       </button>
-      <FadeInImage
+      <Image
         src={imageUrl}
         alt={alt ?? "이미지 상세 보기"}
-        animation="none"
+        width={1600}
+        height={1600}
+        unoptimized
+        draggable={false}
         className="max-h-full max-w-full object-contain"
         loading="eager"
       />

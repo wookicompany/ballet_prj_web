@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -159,10 +159,13 @@ export default function ProfileEditPage() {
             <div className="relative">
               <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
                 {avatarUrl ? (
-                  <FadeInImage
+                  <Image
                     src={avatarUrl}
                     alt="프로필 이미지"
-                    animation="none"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
                     className="h-full w-full object-cover"
                   />
                 ) : (

@@ -12,13 +12,13 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import MoodSelector from "@/components/records/MoodSelector";
 import MobileContainer from "@/components/layout/MobileContainer";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
@@ -830,9 +830,13 @@ function RecordNewContent() {
                   key={`image-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <FadeInImage
+                  <Image
                     src={item.url}
                     alt="업로드 사진"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
                     className="h-full w-full object-contain"
                   />
                   <button

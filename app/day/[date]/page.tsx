@@ -2,13 +2,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 import {
   formatSeoulDateKey,
   getSeoulTimeParts,
@@ -229,10 +229,13 @@ export default function DayPage() {
               >
                 <div className="flex h-full w-full items-center justify-between gap-2">
                   {record.mood ? (
-                    <FadeInImage
+                    <Image
                       src={`/mood/cat-${record.mood}.svg`}
                       alt="오늘 발레 기분"
-                      animation="none"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="h-9 w-9 shrink-0"
                     />
                   ) : (
@@ -245,10 +248,13 @@ export default function DayPage() {
                   </div>
                   {media?.url ? (
                     <div className="relative h-9 w-9 shrink-0 rounded-lg bg-black/5">
-                      <FadeInImage
+                      <Image
                         src={media.url}
                         alt="기록 미디어"
-                        animation="none"
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
                         className="h-full w-full rounded-lg object-cover"
                       />
                       {media.count > 1 ? (

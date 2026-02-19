@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -35,7 +36,6 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import ImageViewer from "@/components/ui/image-viewer";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import {
@@ -903,10 +903,13 @@ export default function PerformanceDetailPage() {
               {visualSlides.length ? (
                 <>
                   {sharedVisualBackgroundUrl ? (
-                    <FadeInImage
+                    <Image
                       src={sharedVisualBackgroundUrl}
                       alt=""
-                      animation="none"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
                       className="absolute inset-0 z-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
                     />
                   ) : null}
@@ -929,10 +932,13 @@ export default function PerformanceDetailPage() {
                             aria-label="공연 이미지 크게 보기"
                           >
                             <div className="absolute inset-0 z-10 flex items-center justify-center">
-                              <FadeInImage
+                              <Image
                                 src={slide.url}
                                 alt={slide.alt}
-                                animation="none"
+                                width={1600}
+                                height={1600}
+                                unoptimized
+                                draggable={false}
                                 className="block max-h-full max-w-full object-contain object-center"
                               />
                             </div>
@@ -1444,10 +1450,13 @@ export default function PerformanceDetailPage() {
                                   }}
                                   aria-label="리뷰 이미지 크게 보기"
                                 >
-                                  <FadeInImage
+                                  <Image
                                     src={url}
                                     alt="리뷰 이미지"
-                                    animation="none"
+                                    width={1600}
+                                    height={1600}
+                                    unoptimized
+                                    draggable={false}
                                     className="h-full w-full object-contain"
                                   />
                                 </button>

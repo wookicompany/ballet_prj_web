@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -14,7 +15,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
-import FadeInImage from "@/components/ui/fade-in-image";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -281,10 +281,13 @@ export default function PerformanceReviewNewPage() {
                   key={`${item.url}-${index}`}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <FadeInImage
+                  <Image
                     src={item.url}
                     alt="업로드 이미지"
-                    animation="none"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
                     className="h-full w-full object-contain"
                   />
                   <button

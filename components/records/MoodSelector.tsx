@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import FadeInImage from "@/components/ui/fade-in-image";
 
 const MOODS = [1, 2, 3, 4, 5];
 
@@ -30,9 +30,13 @@ export default function MoodSelector({
             onClick={() => onChange(moodValue)}
           >
             <span className="flex aspect-square w-full items-center justify-center rounded-full overflow-hidden p-2">
-              <FadeInImage
+              <Image
                 src={`/mood/cat-${moodValue}.svg`}
                 alt={`기분 ${moodValue}단계`}
+                width={1600}
+                height={1600}
+                unoptimized
+                draggable={false}
                 className="h-full w-full object-contain"
               />
             </span>
