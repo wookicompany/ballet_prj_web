@@ -242,7 +242,7 @@ export default function CalendarPage() {
         <div className="w-9" />
       </header>
 
-      <section className="grid grid-cols-7 gap-0 pb-2 text-center text-xs text-[#17171c]/60">
+      <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
         {weekLabels.map((day) => {
           const isSaturday = day === "토";
           const isSunday = day === "일";
@@ -303,7 +303,7 @@ export default function CalendarPage() {
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full ${
                     isToday
-                      ? "bg-[#ff273d] text-white"
+                      ? "bg-[#17171c] text-white"
                       : highlightWeekend && isWeekend
                         ? weekendClass
                         : "text-[#17171c]"
@@ -326,7 +326,7 @@ export default function CalendarPage() {
                       loading="eager"
                     />
                     {count >= 2 ? (
-                      <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-[11px] text-white">
+                      <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
                         {count}
                       </Badge>
                     ) : null}
@@ -334,7 +334,7 @@ export default function CalendarPage() {
                 ) : null}
               </div>
               {!moodValue && count >= 2 ? (
-                <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-[10px] text-white">
+                <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
                   {count}
                 </Badge>
               ) : null}
