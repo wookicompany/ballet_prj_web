@@ -1083,7 +1083,7 @@ export default function RecordEditPage() {
                 <Label className="text-sm text-[#17171c]/60">
                   오늘의 발레를 한줄로 남겨보아요.
                 </Label>
-                <span className="text-[11px] text-[#17171c]/50">
+                <span className="text-xs text-[#17171c]/50">
                   {form.content.length}/16
                 </span>
               </div>
