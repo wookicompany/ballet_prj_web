@@ -134,6 +134,7 @@ export default function PerformanceReviewDetailPage() {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [likeCount, setLikeCount] = useState(0);
+  const [likedByMe, setLikedByMe] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentProfiles, setCommentProfiles] = useState<
@@ -201,6 +202,7 @@ export default function PerformanceReviewDetailPage() {
         profileMap,
         { data: imageRows },
         { data: likeRows },
+        { data: myLikeRow },
         { count: commentTotal },
         { count: reviewReportCount },
       ] = await Promise.all([
@@ -220,6 +222,15 @@ export default function PerformanceReviewDetailPage() {
           .select("review_id")
           .eq("review_id", reviewId)
           .is("deleted_at", null),
+        user
+          ? supabase
+              .from("performance_review_likes")
+              .select("review_id")
+              .eq("review_id", reviewId)
+              .eq("user_id", user.id)
+              .is("deleted_at", null)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
         supabase
           .from("performance_review_comments")
           .select("id", { count: "exact", head: true })
@@ -240,12 +251,13 @@ export default function PerformanceReviewDetailPage() {
       setProfile(profileMap[reviewData.user_id] ?? null);
       setImages((imageRows ?? []).map((row) => row.url).filter(Boolean));
       setLikeCount((likeRows ?? []).length);
+      setLikedByMe(Boolean(myLikeRow));
       setCommentCount(commentTotal ?? 0);
       setLoading(false);
     };
 
     fetchReviewDetail();
-  }, [performanceId, reviewId]);
+  }, [performanceId, reviewId, user]);
 
   useEffect(() => {
     setComments([]);
@@ -839,7 +851,10 @@ export default function PerformanceReviewDetailPage() {
             ) : null}
             <div className="flex items-center gap-4 text-sm text-[#17171c]">
               <span className="inline-flex items-center gap-1">
-                <Heart className="h-4 w-4 text-[#17171c]" />
+                <Heart
+                  className="h-4 w-4 text-[#17171c]"
+                  fill={likedByMe ? "#17171c" : "none"}
+                />
                 {likeCount}
               </span>
               <span className="inline-flex items-center gap-1">
