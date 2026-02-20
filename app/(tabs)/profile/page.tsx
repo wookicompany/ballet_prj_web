@@ -541,7 +541,7 @@ export default function ProfilePage() {
             {shouldShowReviewCardSkeleton ? (
               <Skeleton className="h-5 w-20" />
             ) : (
-              <h2 className="text-base font-semibold text-[#17171c]">내 공연 리뷰</h2>
+              <h2 className="text-base font-semibold text-[#17171c]">공연 리뷰</h2>
             )}
           </div>
 
