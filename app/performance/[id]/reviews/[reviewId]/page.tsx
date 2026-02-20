@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import {
   REPORT_REASON_OPTIONS,
@@ -746,7 +747,10 @@ export default function PerformanceReviewDetailPage() {
               <button
                 type="button"
                 className="h-24 w-16 overflow-hidden rounded-lg border border-black/5 bg-black/5"
-                onClick={() => router.push(`/performance/${performance.mt20id}`)}
+                onClick={() => {
+                  sendHapticToApp();
+                  router.push(`/performance/${performance.mt20id}`);
+                }}
                 aria-label="공연 상세로 이동"
               >
                 {performance.poster ? (
