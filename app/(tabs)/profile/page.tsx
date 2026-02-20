@@ -541,7 +541,7 @@ export default function ProfilePage() {
             {shouldShowReviewCardSkeleton ? (
               <Skeleton className="h-5 w-20" />
             ) : (
-              <h2 className="text-sm font-semibold text-[#17171c]">내 공연 리뷰</h2>
+              <h2 className="text-base font-semibold text-[#17171c]">내 공연 리뷰</h2>
             )}
           </div>
 
@@ -596,7 +596,7 @@ export default function ProfilePage() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[11px] text-[#17171c]/50">
+                      <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
                         이미지 없음
                       </div>
                     )}
@@ -642,7 +642,7 @@ export default function ProfilePage() {
                             );
                           })}
                         </div>
-                        <p className="line-clamp-2 text-xs text-[#17171c]/70">
+                        <p className="line-clamp-1 text-sm text-[#17171c]/70">
                           {review.content || "내용이 없어요."}
                         </p>
                         <div className="flex items-center gap-4 text-xs text-[#17171c]">
@@ -660,7 +660,7 @@ export default function ProfilePage() {
                   </button>
                   {reviewImages[review.id]?.length ? (
                     <div className="flex h-20 w-16 flex-col items-center gap-2">
-                      <div className="text-[11px] text-[#17171c]/50">
+                      <div className="whitespace-nowrap text-xs text-[#17171c]/50">
                         {formatReviewDate(review.createdAt)}
                       </div>
                       <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
@@ -674,7 +674,7 @@ export default function ProfilePage() {
                           className="h-full w-full object-contain"
                         />
                         {reviewImages[review.id].length > 1 ? (
-                          <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                          <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-xs text-white">
                             {reviewImages[review.id].length}
                           </span>
                         ) : null}
@@ -682,7 +682,7 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="flex h-20 w-16 items-start justify-center">
-                      <div className="text-[11px] text-[#17171c]/50">
+                      <div className="whitespace-nowrap text-xs text-[#17171c]/50">
                         {formatReviewDate(review.createdAt)}
                       </div>
                     </div>
