@@ -94,7 +94,9 @@ export default function ProfileMenuPage() {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          refresh_token: session.refresh_token ?? null,
+        }),
       });
       if (!response.ok) {
         let errorMessage = "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.";

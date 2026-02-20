@@ -48,6 +48,33 @@ const tryKakaoUnlink = async ({
   return response.ok;
 };
 
+const tryAppleRevoke = async ({
+  clientId,
+  clientSecret,
+  refreshToken,
+}: {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+}) => {
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    token: refreshToken,
+    token_type_hint: "refresh_token",
+  });
+
+  const response = await fetch("https://appleid.apple.com/auth/revoke", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  return response.ok;
+};
+
 export const POST = async (request: Request) => {
   const { user, supabaseAdmin, errorResponse } = await getUserFromRequest(request);
   if (errorResponse || !user || !supabaseAdmin) {
@@ -59,6 +86,14 @@ export const POST = async (request: Request) => {
   // 현재 정책: Kakao만 unlink를 수행하고 Apple revoke는 추후 단계로 유예한다.
   const provider = getOAuthProvider(user);
   const nowIso = new Date().toISOString();
+  const requestBody = await request.json().catch(() => null);
+  const refreshToken =
+    requestBody &&
+    typeof requestBody === "object" &&
+    "refresh_token" in requestBody &&
+    typeof requestBody.refresh_token === "string"
+      ? requestBody.refresh_token.trim()
+      : "";
 
   if (provider === "kakao") {
     const kakaoAdminKey = process.env.KAKAO_ADMIN_KEY ?? "";
@@ -69,6 +104,35 @@ export const POST = async (request: Request) => {
         await tryKakaoUnlink({ adminKey: kakaoAdminKey, providerUserId });
       } catch {
         // B policy: continue service deletion even if unlink fails.
+      }
+    }
+  }
+
+  if (provider === "apple") {
+    const appleClientId = process.env.APPLE_CLIENT_ID ?? "";
+    const appleClientSecret = process.env.APPLE_CLIENT_SECRET ?? "";
+
+    if (!appleClientId || !appleClientSecret || !refreshToken) {
+      console.error("Apple revoke skipped due to missing config or refresh token", {
+        hasClientId: Boolean(appleClientId),
+        hasClientSecret: Boolean(appleClientSecret),
+        hasRefreshToken: Boolean(refreshToken),
+      });
+    } else {
+      try {
+        const revoked = await tryAppleRevoke({
+          clientId: appleClientId,
+          clientSecret: appleClientSecret,
+          refreshToken,
+        });
+        if (!revoked) {
+          console.error("Apple revoke failed", { userId: user.id });
+        }
+      } catch (error) {
+        console.error("Apple revoke failed with exception", {
+          userId: user.id,
+          error,
+        });
       }
     }
   }

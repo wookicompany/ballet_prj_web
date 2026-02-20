@@ -97,6 +97,7 @@ console.log(`Apple client secret saved: ${outPath}`);
 
 ## 현재 정책 메모
 
-- 회원탈퇴 시 Apple 계정 revoke는 이번 단계에서 수행하지 않습니다.
-- 현재는 서비스 내부 소프트 삭제 + 로컬 세션 종료를 표준으로 사용합니다.
-- Apple revoke 연동이 필요해지면 별도 작업으로 `account/delete` API에 추가합니다.
+- 회원탈퇴 시 Apple provider인 경우 `app/api/account/delete/route.ts`에서 Apple revoke를 함께 시도합니다.
+- revoke 실패 시에도 회원탈퇴 소프트 삭제는 계속 진행하는 fail-open 정책을 사용합니다.
+- revoke 호출에는 `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`, 요청 본문의 `refresh_token`이 필요합니다.
+- `APPLE_CLIENT_SECRET`이 만료되면 Apple 로그인 실패뿐 아니라 revoke 실패도 발생할 수 있으니 동일 주기로 관리합니다.
