@@ -227,7 +227,7 @@ export default function ProfileEditPage() {
           <section className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm text-[#17171c]/60">닉네임</Label>
-              <span className="text-[11px] text-[#17171c]/40">
+              <span className="text-xs text-[#17171c]/40">
                 {nickname.length}/12
               </span>
             </div>
@@ -247,13 +247,13 @@ export default function ProfileEditPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="h-auto px-1 text-[11px] text-[#17171c]/40 hover:text-[#17171c]/70"
+                  className="h-auto px-1 text-xs text-[#17171c]/40 hover:text-[#17171c]/70"
                   onClick={() => setBalletStartedAt(null)}
                 >
                   초기화
                 </Button>
               ) : (
-                <span className="text-[11px] text-[#17171c]/40" />
+                <span className="text-xs text-[#17171c]/40" />
               )}
             </div>
             <Button
