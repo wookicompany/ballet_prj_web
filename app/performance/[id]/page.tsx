@@ -1023,7 +1023,7 @@ export default function PerformanceDetailPage() {
                   </div>
                 ) : null}
               </section>
-              <section className="space-y-4 rounded-2xl border border-black/5 bg-white p-5 text-xs text-[#17171c] shadow-sm">
+              <section className="space-y-4 rounded-2xl border border-black/5 bg-white p-5 text-sm text-[#17171c] shadow-sm">
                 <div className="flex w-full">
                   <div className="relative flex w-full rounded-xl bg-black/5 p-1.5 text-xs text-[#17171c]/60">
                     <div
@@ -1269,7 +1269,7 @@ export default function PerformanceDetailPage() {
 
               <section className="space-y-5 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[#17171c]">리뷰</h3>
+                  <h3 className="text-base font-semibold text-[#17171c]">리뷰</h3>
                   <Button
                     type="button"
                     size="sm"
@@ -1555,7 +1555,7 @@ export default function PerformanceDetailPage() {
             <textarea
               value={reportDetail}
               onChange={(event) => setReportDetail(event.target.value)}
-              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-xs focus:outline-none"
+              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
               maxLength={400}
               placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
             />
