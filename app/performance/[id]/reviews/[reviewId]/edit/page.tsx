@@ -306,7 +306,7 @@ export default function PerformanceReviewEditPage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm text-[#17171c]/60">내용</Label>
-              <span className="text-[11px] text-[#17171c]/50">
+              <span className="text-xs text-[#17171c]/50">
                 {content.length}/300
               </span>
             </div>
@@ -321,7 +321,7 @@ export default function PerformanceReviewEditPage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-              <span className="text-[11px] text-[#17171c]/50">
+              <span className="text-xs text-[#17171c]/50">
                 {existingImages.length + mediaItems.length}/{MAX_IMAGES}
               </span>
             </div>

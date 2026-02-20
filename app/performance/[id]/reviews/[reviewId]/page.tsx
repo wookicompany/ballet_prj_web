@@ -760,7 +760,7 @@ export default function PerformanceReviewDetailPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm text-[#17171c]/50">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
                     이미지 없음
                   </div>
                 )}
@@ -848,7 +848,7 @@ export default function PerformanceReviewDetailPage() {
 
         <section className="mt-6 space-y-4 rounded-xl border border-black/5 bg-white p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#17171c]">댓글</h2>
+            <h2 className="text-base font-semibold text-[#17171c]">댓글</h2>
             {commentSummary ? (
               <span className="text-xs text-[#17171c]/60">{commentSummary}</span>
             ) : null}
