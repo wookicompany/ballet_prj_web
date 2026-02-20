@@ -333,7 +333,7 @@ export default function SavedBarOrdersPage() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">이름</Label>
+            <Label className="text-sm text-[#17171c]/60">이름</Label>
             <Input
               className="h-12 text-base placeholder:text-sm"
               placeholder="예: 기본 순서"
