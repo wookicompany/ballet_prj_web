@@ -384,9 +384,9 @@ export default function SavedLocationsPage() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">장소</Label>
+            <Label className="text-sm text-[#17171c]/60">장소</Label>
             <Input
-              className="h-12 text-base placeholder:text-xs"
+              className="h-12 text-base placeholder:text-sm"
               placeholder="장소 이름을 입력해 주세요"
               value={form.name}
               onChange={(event) =>
@@ -395,20 +395,20 @@ export default function SavedLocationsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">주소</Label>
+            <Label className="text-sm text-[#17171c]/60">주소</Label>
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full justify-start text-left text-xs font-normal"
+              className="h-12 w-full justify-start text-left text-sm font-normal"
               onClick={handleSearchAddress}
             >
               {form.address_base || "주소 검색하기"}
             </Button>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs text-[#17171c]/60">상세 주소</Label>
+            <Label className="text-sm text-[#17171c]/60">상세 주소</Label>
             <Input
-              className="h-12 text-base placeholder:text-xs"
+              className="h-12 text-base placeholder:text-sm"
               placeholder="상세 주소를 입력해 주세요 (선택사항)"
               value={form.address_detail}
               onChange={(event) =>
