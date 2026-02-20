@@ -433,7 +433,7 @@ export default function ProfilePage() {
     <>
       <main className="px-4 pb-10 pt-2">
         <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">프로필</h1>
+          <h1 className="text-xl font-semibold">프로필</h1>
           <Button
             type="button"
             variant="ghost"

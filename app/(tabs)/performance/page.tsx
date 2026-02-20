@@ -429,7 +429,7 @@ export default function PerformanceListPage() {
       <main className="px-4 pb-16 pt-2">
           <header className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-0">
-              <h1 className="text-lg font-semibold">공연</h1>
+              <h1 className="text-xl font-semibold">공연</h1>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -475,7 +475,7 @@ export default function PerformanceListPage() {
     <main className="px-4 pb-16 pt-2">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-0">
-            <h1 className="text-lg font-semibold">공연</h1>
+            <h1 className="text-xl font-semibold">공연</h1>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
