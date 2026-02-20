@@ -482,6 +482,7 @@ export default function PerformanceReviewDetailPage() {
   };
 
   const handleSubmitComment = async () => {
+    sendHapticToApp();
     if (!user) {
       openLoginSheet();
       return;
@@ -573,6 +574,7 @@ export default function PerformanceReviewDetailPage() {
   };
 
   const handleDeleteComment = async () => {
+    sendHapticToApp();
     if (!user || !deleteCommentId) return;
     const target = comments.find((comment) => comment.id === deleteCommentId);
     if (!target) {
@@ -604,6 +606,7 @@ export default function PerformanceReviewDetailPage() {
   };
 
   const handleToggleCommentLike = async (commentId: string) => {
+    sendHapticToApp();
     if (!user) {
       openLoginSheet();
       return;
@@ -646,7 +649,50 @@ export default function PerformanceReviewDetailPage() {
     }
   };
 
+  const handleToggleLike = async () => {
+    sendHapticToApp();
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+
+    const isLiked = likedByMe;
+    setLikedByMe(!isLiked);
+    setLikeCount((prev) => Math.max(0, prev + (isLiked ? -1 : 1)));
+
+    if (isLiked) {
+      const { error } = await supabase
+        .from("performance_review_likes")
+        .delete()
+        .eq("review_id", reviewId)
+        .eq("user_id", user.id);
+      if (error) {
+        toast("좋아요를 취소하지 못했어요.");
+        setLikedByMe(true);
+        setLikeCount((prev) => prev + 1);
+      }
+      return;
+    }
+
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) {
+      setLikedByMe(false);
+      setLikeCount((prev) => Math.max(0, prev - 1));
+      return;
+    }
+    const res = await fetch(`/api/reviews/${reviewId}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
+      toast("좋아요를 남기지 못했어요.");
+      setLikedByMe(false);
+      setLikeCount((prev) => Math.max(0, prev - 1));
+    }
+  };
+
   const handleSubmitReport = async () => {
+    sendHapticToApp();
     if (!reportTarget) return;
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
@@ -850,13 +896,18 @@ export default function PerformanceReviewDetailPage() {
               </div>
             ) : null}
             <div className="flex items-center gap-4 text-sm text-[#17171c]">
-              <span className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1"
+                onClick={handleToggleLike}
+                aria-label="리뷰 좋아요"
+              >
                 <Heart
                   className="h-4 w-4 text-[#17171c]"
                   fill={likedByMe ? "#17171c" : "none"}
                 />
                 {likeCount}
-              </span>
+              </button>
               <span className="inline-flex items-center gap-1">
                 <MessageCircle className="h-4 w-4 text-[#17171c]" />
                 {commentCount}
@@ -1181,6 +1232,7 @@ export default function PerformanceReviewDetailPage() {
               variant="outline"
               className="flex-1 text-red-500 hover:text-red-500"
               onClick={async () => {
+                sendHapticToApp();
                 if (!user) {
                   openLoginSheet();
                   return;

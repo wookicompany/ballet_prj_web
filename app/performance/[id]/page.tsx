@@ -650,6 +650,7 @@ export default function PerformanceDetailPage() {
   };
 
   const handleToggleLike = async (reviewId: string) => {
+    sendHapticToApp();
     if (!user) {
       openLoginSheet();
       return;
@@ -696,6 +697,7 @@ export default function PerformanceDetailPage() {
   };
 
   const handleDeleteReview = async () => {
+    sendHapticToApp();
     if (!user || !deleteTargetId) return;
     const target = reviews.find((review) => review.id === deleteTargetId);
     if (!target) {
@@ -759,6 +761,7 @@ export default function PerformanceDetailPage() {
   };
 
   const handleSubmitReviewReport = async () => {
+    sendHapticToApp();
     if (!reportTargetId) return;
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
