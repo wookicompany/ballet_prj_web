@@ -224,12 +224,12 @@ export default function PerformanceReviewNewPage() {
                 const ratio = getStarFillRatio(rating, starIndex);
                 return (
                   <div key={starIndex} className="relative h-7 w-7">
-                    <Star className="h-6 w-6 text-[#ff273d]" fill="none" />
+                    <Star className="h-6 w-6 text-brand" fill="none" />
                     <div
                       className="absolute inset-0 overflow-hidden"
                       style={{ width: `${ratio * 100}%` }}
                     >
-                      <Star className="h-6 w-6 text-[#ff273d]" fill="#ff273d" />
+                      <Star className="h-6 w-6 text-brand" fill="currentColor" />
                     </div>
                     <button
                       type="button"

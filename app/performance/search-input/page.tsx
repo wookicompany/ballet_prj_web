@@ -534,8 +534,8 @@ export default function PerformanceSearchInputPage() {
                     {item.fcltynm || "공연장 정보 없음"}
                   </p>
                   <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#17171c]/70">
-                    <span className="inline-flex items-center gap-1 text-[#ff273d]">
-                      <Star className="h-3 w-3 text-[#ff273d]" fill="#ff273d" />
+                    <span className="inline-flex items-center gap-1 text-brand">
+                      <Star className="h-3 w-3 text-brand" fill="currentColor" />
                       {rating ? rating.avg.toFixed(1) : "-"}
                     </span>
                     <span className="inline-flex items-center gap-1">

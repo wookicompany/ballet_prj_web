@@ -207,7 +207,7 @@ export default function DayPage() {
           ))}
           {nowMinutes !== null && nowMinutes >= 6 * 60 ? (
             <div
-              className="absolute left-0 right-0 h-px bg-[#ff273d]"
+              className="absolute left-0 right-0 h-px bg-brand"
               style={{ top: `${nowMinutes - 6 * 60}px` }}
             />
           ) : null}

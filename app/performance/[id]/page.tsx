@@ -996,17 +996,17 @@ export default function PerformanceDetailPage() {
                           key={`summary-star-${index}`}
                           className="relative h-4 w-4"
                         >
-                          <Star className="h-4 w-4 text-[#ff273d]" fill="none" />
+                          <Star className="h-4 w-4 text-brand" fill="none" />
                           <div
                             className="absolute inset-0 overflow-hidden"
                             style={{ width: `${ratio * 100}%` }}
                           >
-                            <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
+                            <Star className="h-4 w-4 text-brand" fill="currentColor" />
                           </div>
                         </div>
                       );
                     })}
-                    <span className="text-[#ff273d]">
+                    <span className="text-brand">
                       {formatRatingText(reviewAverage)}점
                     </span>
                   </div>
@@ -1294,9 +1294,9 @@ export default function PerformanceDetailPage() {
                 <div className="flex items-center gap-2 text-sm text-[#17171c]/70">
                   {reviewAverage !== null ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-[#ff273d]">평균</span>
-                      <span className="inline-flex items-center gap-1 font-medium text-[#ff273d]">
-                        <Star className="h-4 w-4 text-[#ff273d]" fill="#ff273d" />
+                      <span className="text-brand">평균</span>
+                      <span className="inline-flex items-center gap-1 font-medium text-brand">
+                        <Star className="h-4 w-4 text-brand" fill="currentColor" />
                         {formatRatingText(reviewAverage)}점
                       </span>
                       <span className="text-[#17171c]/40">/</span>
@@ -1421,7 +1421,7 @@ export default function PerformanceDetailPage() {
                                   className="relative h-4 w-4"
                                 >
                                   <Star
-                                    className="h-4 w-4 text-[#ff273d]"
+                                    className="h-4 w-4 text-brand"
                                     fill="none"
                                   />
                                   <div
@@ -1429,8 +1429,8 @@ export default function PerformanceDetailPage() {
                                     style={{ width: `${ratio * 100}%` }}
                                   >
                                     <Star
-                                      className="h-4 w-4 text-[#ff273d]"
-                                      fill="#ff273d"
+                                      className="h-4 w-4 text-brand"
+                                      fill="currentColor"
                                     />
                                   </div>
                                 </div>

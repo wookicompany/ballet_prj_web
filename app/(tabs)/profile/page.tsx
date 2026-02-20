@@ -450,7 +450,7 @@ export default function ProfilePage() {
           {shouldShowProfileSkeleton ? (
             <>
               <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
+                <Skeleton className="h-20 w-20 rounded-full" />
                 <Skeleton className="h-5 w-24" />
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -465,7 +465,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  className="h-16 w-16 overflow-hidden rounded-full border border-black/10 bg-black/5"
+                  className="h-20 w-20 overflow-hidden rounded-full border border-black/10 bg-black/5"
                   onClick={() => {
                     if (profile.avatar_url) {
                       setAvatarOpen(true);
@@ -486,14 +486,14 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[#17171c]/60">
-                      <User className="h-7 w-7" />
+                      <User className="h-8 w-8" />
                     </div>
                   )}
                 </button>
                 <div className="flex-1">
                   <p className="text-base font-semibold">{displayName}</p>
                   {careerDuration ? (
-                    <p className="mt-1 text-xs text-[#17171c]/70">
+                    <p className="mt-1 text-sm text-[#17171c]/70">
                       발레 경력{" "}
                       <span className="font-semibold text-[#17171c]">
                         {careerDuration}
@@ -503,25 +503,25 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-left text-xs text-[#17171c]/70">
-                <span>
-                  발레 횟수{" "}
-                  <span className="font-semibold text-[#17171c]">
-                    {recordCount}회
-                  </span>
-                </span>
-                <span>
-                  발레 시간{" "}
-                  <span className="font-semibold text-[#17171c]">
+              <div className="mt-4 grid grid-cols-3 divide-x divide-black/10 rounded-xl border border-black/5 bg-white py-3">
+                <div className="flex flex-col items-center justify-center px-2">
+                  <p className="text-sm font-semibold leading-none text-[#17171c]">
+                    {recordCount}
+                  </p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">발레 기록 수</p>
+                </div>
+                <div className="flex flex-col items-center justify-center px-2">
+                  <p className="text-sm font-semibold leading-none text-[#17171c]">
                     {hours}시간 {minutes}분
-                  </span>
-                </span>
-                <span>
-                  리뷰 작성 수{" "}
-                  <span className="font-semibold text-[#17171c]">
-                    {reviewCount}개
-                  </span>
-                </span>
+                  </p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">발레 기록 시간</p>
+                </div>
+                <div className="flex flex-col items-center justify-center px-2">
+                  <p className="text-sm font-semibold leading-none text-[#17171c]">
+                    {reviewCount}
+                  </p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">리뷰 작성 수</p>
+                </div>
               </div>
 
               <Button
@@ -626,7 +626,7 @@ export default function ProfilePage() {
                                 className="relative h-4 w-4"
                               >
                                 <Star
-                                  className="h-4 w-4 text-[#ff273d]"
+                                  className="h-4 w-4 text-brand"
                                   fill="none"
                                 />
                                 <div
@@ -634,8 +634,8 @@ export default function ProfilePage() {
                                   style={{ width: `${ratio * 100}%` }}
                                 >
                                   <Star
-                                    className="h-4 w-4 text-[#ff273d]"
-                                    fill="#ff273d"
+                                    className="h-4 w-4 text-brand"
+                                    fill="currentColor"
                                   />
                                 </div>
                               </div>

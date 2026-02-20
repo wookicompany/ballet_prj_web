@@ -354,7 +354,7 @@ export default function PerformanceListPage() {
           <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
           <div className="h-4">
             {options?.rating ? (
-              <span className="inline-flex items-center gap-1 text-xs text-[#ff273d]">
+              <span className="inline-flex items-center gap-1 text-xs text-brand">
                 <Star className="h-3 w-3 fill-current" />
                 {options.rating.avg.toFixed(1)}
               </span>

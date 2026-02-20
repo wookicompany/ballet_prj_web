@@ -850,14 +850,14 @@ export default function PerformanceReviewDetailPage() {
                 const ratio = getStarFillRatio(review.rating, index + 1);
                 return (
                   <div key={`review-star-${index}`} className="relative h-4 w-4">
-                    <Star className="h-4 w-4 text-[#ff273d]" fill="none" />
+                    <Star className="h-4 w-4 text-brand" fill="none" />
                     <div
                       className="absolute inset-0 overflow-hidden"
                       style={{ width: `${ratio * 100}%` }}
                     >
                       <Star
-                        className="h-4 w-4 text-[#ff273d]"
-                        fill="#ff273d"
+                        className="h-4 w-4 text-brand"
+                        fill="currentColor"
                       />
                     </div>
                   </div>
