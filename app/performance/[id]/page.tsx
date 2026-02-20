@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -1576,7 +1577,7 @@ export default function PerformanceDetailPage() {
               onClick={handleSubmitReviewReport}
               disabled={reporting}
             >
-              {reporting ? "제출 중..." : "제출하기"}
+              {reporting ? <Spinner size="sm" className="text-white" /> : "제출하기"}
             </Button>
           </div>
         </div>

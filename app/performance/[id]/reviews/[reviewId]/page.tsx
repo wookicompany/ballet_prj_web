@@ -1142,7 +1142,7 @@ export default function PerformanceReviewDetailPage() {
               onClick={handleSubmitReport}
               disabled={reporting}
             >
-              {reporting ? "제출 중..." : "제출하기"}
+              {reporting ? <Spinner size="sm" className="text-white" /> : "제출하기"}
             </Button>
           </div>
         </div>

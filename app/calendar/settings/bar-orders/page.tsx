@@ -438,7 +438,7 @@ export default function SavedBarOrdersPage() {
               onClick={handleSubmit}
               disabled={saving}
             >
-              {saving ? "저장 중..." : "저장하기"}
+              {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
             </Button>
           </div>
         </div>
