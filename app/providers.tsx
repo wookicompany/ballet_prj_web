@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import GoogleAnalyticsPageView from "@/components/analytics/GoogleAnalyticsPageView";
 import { ConsentSheetProvider } from "@/components/auth/ConsentSheetProvider";
 import { LoginSheetProvider } from "@/components/auth/LoginSheetProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +12,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <LoginSheetProvider>
         <ConsentSheetProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            <GoogleAnalyticsPageView />
+            {children}
+          </TooltipProvider>
           <Toaster position="top-center" />
         </ConsentSheetProvider>
       </LoginSheetProvider>
