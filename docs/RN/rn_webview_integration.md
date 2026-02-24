@@ -71,13 +71,15 @@ RN 앱에서 마이발레 웹을 WebView로 붙일 때 참고할 내용이다.
   - 카카오 로그아웃: `app/auth/kakao/logout/callback/page.tsx`에서만 송신(중복 송신 방지)
 - **RN 수신 규칙:**
   - 위 두 타입 + `version: 1`만 처리
-  - 처리 시 공통으로 `POST /api/profile/fcm-token` with `{ "fcm_token": "" }` 호출
+  - 처리 시 공통으로 `POST /api/profile/expo-push-token` with `{ "expo_push_token": "" }` 호출
   - 스펙 외 타입/버전은 무시하고 경고 로그만 남김
 
-**알림 배너(댓글/좋아요) 구현 (확정):** postMessage 아님. **마이발레 Vercel API** 에서 댓글/좋아요 생성 시 수신자 `fcm_token`을 Supabase에서 조회한 뒤 **FCM API 호출**. Supabase는 DB·토큰 저장만 사용. RN은 FCM 토큰을 등록하고 푸시 수신 시 배너 표시·탭 시 해당 URL로 WebView 이동.
+**알림 배너(댓글/좋아요) 구현 (확정):** postMessage 아님. **마이발레 Vercel API** 에서 댓글/좋아요 생성 시 수신자 `expo_push_token`을 Supabase에서 조회한 뒤 **Expo Push API 호출**. Supabase는 DB·토큰 저장만 사용. RN은 Expo 토큰을 등록하고 푸시 수신 시 배너 표시·탭 시 해당 URL로 WebView 이동.
 
-- RN 토큰 등록 API: `POST /api/profile/fcm-token`
-- 요청 본문: `{ "fcm_token": "<token>" }` (`""` 전송 시 토큰 제거)
+- RN 토큰 등록 API: `POST /api/profile/expo-push-token`
+- 요청 본문: `{ "expo_push_token": "ExponentPushToken[...]" }` (`""` 전송 시 토큰 제거)
+- RN 토큰 발급: `Notifications.getExpoPushTokenAsync({ projectId })`
+  - `projectId`는 RN `app.json`의 `extra.eas.projectId`와 일치해야 함
 - 현재 알림 payload는 제목 중심으로 전송됨 (body는 선택값).
 
 ---

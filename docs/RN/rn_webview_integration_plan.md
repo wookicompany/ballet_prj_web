@@ -10,7 +10,7 @@
 - 제외: `ballet_prj_rn` 코드 수정
 - 웹 책임:
   - Web→RN 해제 이벤트를 고정 스펙으로 송신
-  - `POST /api/profile/fcm-token` 반영 검증 강화(0-row 성공 오인 방지)
+  - `POST /api/profile/expo-push-token` 반영 검증 강화(0-row 성공 오인 방지)
   - 문서/QA 체크리스트 고정
 
 ---
@@ -39,7 +39,7 @@
 ### 2.3 RN 수신 규칙(웹 계약)
 
 - 위 타입 + 버전만 유효 처리
-- 수신 시 `POST /api/profile/fcm-token` with `{ "fcm_token": "" }`
+- 수신 시 `POST /api/profile/expo-push-token` with `{ "expo_push_token": "" }`
 - 스펙 외 타입/버전은 무시 + 경고 로그
 
 ---
@@ -48,7 +48,7 @@
 
 ### 3.1 엔드포인트
 
-- `POST /api/profile/fcm-token`
+- `POST /api/profile/expo-push-token`
 
 ### 3.2 필수 보강 내용
 
@@ -58,6 +58,8 @@
 - 로그를 등록/갱신과 해제로 구분
   - `register_or_refresh`
   - `unregister`
+- 토큰 형식 검증:
+  - `ExponentPushToken[...]` 형식 불일치 시 `422` 반환
 
 ---
 
@@ -71,15 +73,18 @@
 ### 4.2 운영 점검 SQL
 
 - 토큰 보유 현황:
-  - `select count(*) filter (where fcm_token is not null and btrim(fcm_token) <> '') from public.profiles;`
+  - `select count(*) filter (where expo_push_token is not null and btrim(expo_push_token) <> '') from public.profiles;`
 - orphan 점검:
   - `select count(*) from auth.users u left join public.profiles p on p.id=u.id where p.id is null;`
 
 ### 4.3 시나리오
 
-- 로그인 후 `profiles.fcm_token` 저장 확인
-- 로그아웃/탈퇴 메시지 수신 후 `profiles.fcm_token`이 `null`인지 확인
+- 로그인 후 `profiles.expo_push_token` 저장 확인
+- 로그아웃/탈퇴 메시지 수신 후 `profiles.expo_push_token`이 `null`인지 확인
 - API 200이어도 DB 미반영이면 실패로 판정
+- 형식 오류 토큰 요청 시 `422` 확인
+- RN 토큰 발급 시 `Notifications.getExpoPushTokenAsync({ projectId })` 사용 확인
+- 사용 `projectId`와 RN `app.json > extra.eas.projectId` 일치 확인
 
 ---
 
@@ -88,6 +93,6 @@
 - `lib/reactNativeWebView.ts`
 - `app/profile/menu/page.tsx`
 - `app/auth/kakao/logout/callback/page.tsx`
-- `app/api/profile/fcm-token/route.ts`
+- `app/api/profile/expo-push-token/route.ts`
 - `docs/RN/rn_webview_integration.md`
 - `docs/RN/rn_webview_integration_plan.md`

@@ -725,7 +725,7 @@ export type Database = {
           calendar_week_start_monday: boolean
           created_at: string
           deleted_at: string | null
-          fcm_token: string | null
+          expo_push_token: string | null
           id: string
           nickname: string | null
           updated_at: string
@@ -737,7 +737,7 @@ export type Database = {
           calendar_week_start_monday?: boolean
           created_at?: string
           deleted_at?: string | null
-          fcm_token?: string | null
+          expo_push_token?: string | null
           id: string
           nickname?: string | null
           updated_at?: string
@@ -749,7 +749,7 @@ export type Database = {
           calendar_week_start_monday?: boolean
           created_at?: string
           deleted_at?: string | null
-          fcm_token?: string | null
+          expo_push_token?: string | null
           id?: string
           nickname?: string | null
           updated_at?: string

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/apiAuth";
-import { sendFCMToUser } from "@/lib/fcm";
+import { sendExpoPushToUser } from "@/lib/expoPush";
 
 /**
- * 리뷰 좋아요 등록. insert 후 리뷰 작성자에게 FCM 발송(본인 제외).
+ * 리뷰 좋아요 등록. insert 후 리뷰 작성자에게 Expo Push 발송(본인 제외).
  * @see docs/rn_webview_integration_plan.md
  */
 export const POST = async (
@@ -57,7 +57,7 @@ export const POST = async (
     review.user_id !== auth.user.id &&
     review.performance_id
   ) {
-    void sendFCMToUser(review.user_id, {
+    void sendExpoPushToUser(review.user_id, {
       title: "내 리뷰에 좋아요를 눌렀어요",
       link: `https://www.myballet.co.kr/performance/${review.performance_id}/reviews/${reviewId}`,
     });

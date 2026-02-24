@@ -159,7 +159,7 @@ export const POST = async (request: Request) => {
       deleted_at: nowIso,
       nickname: null,
       avatar_url: null,
-      fcm_token: null,
+      expo_push_token: null,
     })
     .eq("id", user.id)
     .is("deleted_at", null);

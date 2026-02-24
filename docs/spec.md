@@ -59,6 +59,10 @@
 
 - 오프라인: 읽기만 허용, 기록 생성/수정/삭제는 제한
 - 비로그인: 리뷰/평점은 읽기만 가능, 작성/수정/삭제/좋아요/댓글은 제한
+- RN 푸시 알림: Expo Push 단일 경로 사용 (`profiles.expo_push_token`, `POST /api/profile/expo-push-token`)
+  - 토큰 형식: `ExponentPushToken[...]`
+  - 로그아웃/회원탈퇴 시 RN은 `{ "expo_push_token": "" }`로 해제 호출
+  - 서버 발송 경로는 Expo Push API + `EXPO_ACCESS_TOKEN`을 기본 정책으로 사용
 
 ## 2) 로그인
 

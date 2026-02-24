@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { sendFCMToUser } from "@/lib/fcm";
+import { sendExpoPushToUser } from "@/lib/expoPush";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (request: Request) => {
@@ -77,7 +77,7 @@ export const POST = async (request: Request) => {
     review.user_id !== userData.user.id &&
     review.performance_id
   ) {
-    void sendFCMToUser(review.user_id, {
+    void sendExpoPushToUser(review.user_id, {
       title: "내 리뷰에 댓글이 달렸어요",
       link: `https://www.myballet.co.kr/performance/${review.performance_id}/reviews/${reviewId}`,
     });
