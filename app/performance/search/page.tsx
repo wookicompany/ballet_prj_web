@@ -290,8 +290,10 @@ function PerformanceSearchContent() {
         sliceIds = (orderedIds ?? []).slice(rangeStart, rangeStart + PAGE_SIZE);
         useOrderedSlice = true;
       } else if (sectionKey === "scheduled") {
+        const todayDateKey = formatSeoulDateKey();
         query = query
           .eq("prfstate", "공연예정")
+          .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
           .order("prfpdfrom", { ascending: true });
       } else if (sectionKey === "ongoing") {
         query = query
