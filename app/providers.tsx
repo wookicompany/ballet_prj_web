@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import GoogleAnalyticsPageView from "@/components/analytics/GoogleAnalyticsPageView";
 import { ConsentSheetProvider } from "@/components/auth/ConsentSheetProvider";
@@ -13,7 +14,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <LoginSheetProvider>
         <ConsentSheetProvider>
           <TooltipProvider>
-            <GoogleAnalyticsPageView />
+            <Suspense fallback={null}>
+              <GoogleAnalyticsPageView />
+            </Suspense>
             {children}
           </TooltipProvider>
           <Toaster position="top-center" />
