@@ -3,6 +3,9 @@
     "supabase": {
       "url": "https://mcp.supabase.com/mcp"
     },
+    "vercel": {
+      "url": "https://mcp.vercel.com"
+    },
     "shadcn": {
       "command": "npx",
       "args": [
