@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDateKeyDiffDays } from "@/lib/kstDateTime";
+import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
   getPerformanceHomeCache,
   setPerformanceHomeCache,
@@ -163,12 +163,15 @@ export default function PerformanceListPage() {
               .order("updated_at", { ascending: false })
               .limit(12);
 
+        const todayDateKey = formatSeoulDateKey();
+
         const scheduledQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
           .eq("prfstate", "공연예정")
+          .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
           .order("prfpdfrom", { ascending: true })
           .limit(12);
 
