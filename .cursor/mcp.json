@@ -1,5 +1,8 @@
 {
   "mcpServers": {
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp"
+    },
     "shadcn": {
       "command": "npx",
       "args": [
