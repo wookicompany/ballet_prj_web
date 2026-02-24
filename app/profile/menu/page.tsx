@@ -66,14 +66,16 @@ export default function ProfileMenuPage() {
     }
 
     if (provider === "apple" || provider === "google" || provider === "unknown") {
-      await supabase.auth.signOut({ scope: "local" });
+      // RN이 유효한 액세스 토큰으로 해제 API를 호출할 수 있도록
+      // 로그아웃 이벤트를 세션 정리 직전에 전송한다.
       sendLogoutToApp();
+      await supabase.auth.signOut({ scope: "local" });
       router.replace("/calendar");
       return;
     }
 
-    await supabase.auth.signOut({ scope: "local" });
     sendLogoutToApp();
+    await supabase.auth.signOut({ scope: "local" });
     router.replace("/calendar");
   };
 
@@ -112,16 +114,14 @@ export default function ProfileMenuPage() {
         return;
       }
 
-      let signedOut = false;
+      // RN이 유효한 액세스 토큰으로 해제 API를 호출할 수 있도록
+      // 탈퇴 이벤트를 세션 정리 직전에 전송한다.
+      sendAccountDeletedToApp();
       try {
         await supabase.auth.signOut({ scope: "local" });
-        signedOut = true;
       } catch {
         // 회원탈퇴 성공 후에는 로컬 세션 정리가 실패해도 화면 전환을 우선한다.
       } finally {
-        if (signedOut) {
-          sendAccountDeletedToApp();
-        }
         router.replace("/calendar");
       }
     } finally {

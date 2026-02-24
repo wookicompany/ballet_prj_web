@@ -64,8 +64,8 @@ RN 앱에서 마이발레 웹을 WebView로 붙일 때 참고할 내용이다.
   - `account_deleted`
 - **고정 포맷:** `{ "type": "<type>", "version": 1 }`
 - **발신 시점(웹 기준):**
-  - `logout`: 로그아웃 성공 직후(로컬 세션 정리 성공 후)
-  - `account_deleted`: 회원탈퇴 API 성공 직후(로컬 세션 정리 직후)
+  - `logout`: 로컬 세션 정리 직전(아직 access token이 유효할 때)
+  - `account_deleted`: 회원탈퇴 API 성공 후, 로컬 세션 정리 직전
 - **웹 구현 지점:**
   - 일반 provider 로그아웃/회원탈퇴: `app/profile/menu/page.tsx`
   - 카카오 로그아웃: `app/auth/kakao/logout/callback/page.tsx`에서만 송신(중복 송신 방지)

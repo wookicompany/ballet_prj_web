@@ -27,8 +27,8 @@
 
 ### 2.2 웹 발신 시점/지점
 
-- `logout`: 로컬 세션 정리 성공 직후
-- `account_deleted`: 회원탈퇴 API 성공 + 로컬 세션 정리 직후
+- `logout`: 로컬 세션 정리 직전
+- `account_deleted`: 회원탈퇴 API 성공 후 + 로컬 세션 정리 직전
 - 구현 지점:
   - `app/profile/menu/page.tsx`
     - 일반 provider(apple/google/unknown) 로그아웃

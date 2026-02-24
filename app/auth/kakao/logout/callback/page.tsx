@@ -12,8 +12,10 @@ export default function KakaoLogoutCallbackPage() {
 
   useEffect(() => {
     const finishLogout = async () => {
-      await supabase.auth.signOut({ scope: "local" });
+      // RN이 유효한 액세스 토큰으로 해제 API를 호출할 수 있도록
+      // 로그아웃 이벤트를 세션 정리 직전에 전송한다.
       sendLogoutToApp();
+      await supabase.auth.signOut({ scope: "local" });
       router.replace("/calendar");
     };
 
