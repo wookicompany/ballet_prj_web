@@ -27,6 +27,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { buildKakaoAccountLogoutUrl } from "@/lib/oauthProvider";
 import {
+  Bell,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -180,6 +181,18 @@ export default function ProfileMenuPage() {
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <Database className="h-5 w-5 text-[#17171c]/70" />
               데이터 관리
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/notice")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <Bell className="h-5 w-5 text-[#17171c]/70" />
+              공지사항
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>
