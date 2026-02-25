@@ -61,7 +61,7 @@ export default function CommunityRulesPage() {
         </header>
 
         <div className="space-y-6 rounded-xl border border-black/5 bg-white p-4 text-sm text-[#17171c]">
-          <p className="text-xs text-[#17171c]/60">시행일: 2026.03.03</p>
+          <p className="text-xs text-[#17171c]/60">시행일: 2026.02.25</p>
           <p className="text-[#17171c]/70">
             마이발레는 공연 커뮤니티를 안전하고 신뢰할 수 있는 공간으로 유지하기 위해 아래 기준을
             운영하고 있어요.

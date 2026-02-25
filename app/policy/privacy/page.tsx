@@ -72,7 +72,7 @@ export default function PrivacyPage() {
 
         <div className="space-y-6 rounded-xl border border-black/5 bg-white p-4 text-sm text-[#17171c]">
           <p className="text-xs text-[#17171c]/60">
-            시행일: 2026.03.03
+            시행일: 2026.02.25
           </p>
           <p className="text-[#17171c]/70">
             마이발레는 개인정보 보호법 등 관련 법령을 준수하며 개인정보를 안전하게 관리합니다.
