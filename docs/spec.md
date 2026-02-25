@@ -63,6 +63,11 @@
   - 토큰 형식: `ExponentPushToken[...]`
   - 로그아웃/회원탈퇴 시 RN은 `{ "expo_push_token": "" }`로 해제 호출
   - 서버 발송 경로는 Expo Push API + `EXPO_ACCESS_TOKEN`을 기본 정책으로 사용
+- 에러 모니터링: 웹은 Sentry(`@sentry/nextjs`)로 수집한다.
+  - DSN 키: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`
+  - 릴리스/소스맵 업로드 키: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
+  - 환경 키: `SENTRY_ENVIRONMENT` (`development`/`preview`/`production`)
+  - 운영 기본값(무료 플랜): `tracesSampleRate=0.05`, `sendDefaultPii=false`
 
 ## 2) 로그인
 

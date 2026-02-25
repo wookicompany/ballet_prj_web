@@ -63,8 +63,12 @@
 
 - 환경변수는 `.env.local`에만 관리한다.
 - `.env.local`은 절대 커밋하지 않는다.
+- Sentry 시크릿(`SENTRY_AUTH_TOKEN`)은 로컬/CI 환경변수로만 관리하고 코드/문서/채팅에 노출하지 않는다.
+- Sentry DSN은 `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`를 함께 사용하고 값은 동일하게 유지한다.
+- `SENTRY_ENVIRONMENT`는 배포 환경별로 분리해 관리한다. (`development`/`preview`/`production`)
 
 ## 검증
 
 - UI 변경 후에는 `npm run dev`로 최소 렌더링 확인을 한다.
 - Supabase 변경 후에는 관련 화면 또는 쿼리가 정상 동작하는지 확인한다.
+- Sentry 설정 변경 후에는 프로덕션에서 테스트 에러 1건을 발생시켜 Issues 유입과 `environment` 값을 확인한다.
