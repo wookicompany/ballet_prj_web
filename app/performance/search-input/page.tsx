@@ -445,7 +445,10 @@ export default function PerformanceSearchInputPage() {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => router.push(`/performance/${item.id}`)}
+                    onClick={() => {
+                      sendHapticToApp();
+                      router.push(`/performance/${item.id}`);
+                    }}
                     className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/5"
                   >
                     {item.poster ? (
