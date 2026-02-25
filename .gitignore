@@ -43,3 +43,6 @@ yarn-error.log*
 # local auth secrets
 AuthKey_*.p8
 apple_client_secret.txt
+
+# Sentry Config File
+.env.sentry-build-plugin
