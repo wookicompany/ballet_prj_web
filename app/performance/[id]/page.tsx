@@ -1437,11 +1437,15 @@ export default function PerformanceDetailPage() {
                               );
                             })}
                           </div>
-                          <p className="mt-2.5 whitespace-pre-line text-sm text-[#17171c]">
-                            {isReviewHidden
-                              ? "신고로 인해 숨김 처리되었어요."
-                              : review.content || "내용이 없어요."}
-                          </p>
+                          {isReviewHidden ? (
+                            <p className="mt-2.5 whitespace-pre-line text-sm text-[#17171c]">
+                              신고로 인해 숨김 처리되었어요.
+                            </p>
+                          ) : review.content ? (
+                            <p className="mt-2.5 whitespace-pre-line text-sm text-[#17171c]">
+                              {review.content}
+                            </p>
+                          ) : null}
                           {!isReviewHidden && reviewImages[review.id]?.length ? (
                             <div className="mt-2.5 flex gap-2">
                               {reviewImages[review.id].slice(0, 3).map((url, index) => (

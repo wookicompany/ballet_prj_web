@@ -959,7 +959,7 @@ export default function PerformanceReviewDetailPage() {
           </div>
           <div className="space-y-3">
             {comments.length === 0 && !loadingComments ? (
-              <p className="text-xs text-[#17171c]/60">아직 댓글이 없어요.</p>
+              <p className="text-xs text-[#17171c]/60">첫 댓글을 남겨 보세요.</p>
             ) : (
               comments.map((comment) => {
                 const author = commentProfiles[comment.user_id];
