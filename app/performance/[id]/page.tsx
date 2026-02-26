@@ -1303,7 +1303,7 @@ export default function PerformanceDetailPage() {
                       <span>총 리뷰 수 {reviewCount}개</span>
                     </div>
                   ) : (
-                    <span className="text-[#17171c]/60">아직 리뷰가 없어요. 첫 리뷰를 남겨 보세요.</span>
+                    <span className="text-[#17171c]/60">첫 리뷰를 남겨 보세요.</span>
                   )}
                 </div>
                 <div className="space-y-4">
