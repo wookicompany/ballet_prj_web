@@ -34,6 +34,26 @@ type ReviewSummary = {
 
 const REVIEW_PAGE_SIZE_INITIAL = 5;
 const REVIEW_PAGE_SIZE_MORE = 12;
+const USE_MOCK_PROFILE_REVIEWS = true;
+
+const buildMockProfileReviews = (count = 20): ReviewSummary[] => {
+  const ratingPattern = [10, 9, 8, 7, 6];
+  return Array.from({ length: count }).map((_, index) => {
+    const n = index + 1;
+    return {
+      id: `mock-profile-review-${n}`,
+      performanceId: `PF_MOCK_${String(n).padStart(3, "0")}`,
+      performanceName: `테스트 공연 ${n}`,
+      performancePoster: null,
+      content:
+        n % 4 === 0
+          ? null
+          : `프로필 공연 리뷰 하드코딩 ${n}번입니다. 리스트 노출/줄바꿈/간격 확인용 텍스트예요.`,
+      rating: ratingPattern[index % ratingPattern.length],
+      createdAt: new Date(Date.now() - index * 1000 * 60 * 60 * 8).toISOString(),
+    };
+  });
+};
 
 function toMinutes(time: string) {
   const [hh, mm, ss] = time.split(":").map((value) => Number(value));
@@ -130,6 +150,34 @@ export default function ProfilePage() {
       const nextCount = count ?? 0;
       setReviewCount(nextCount);
 
+      if (USE_MOCK_PROFILE_REVIEWS) {
+        const mockReviews = buildMockProfileReviews(20);
+        setReviewCount(mockReviews.length);
+        setReviews(mockReviews);
+        setReviewLikeCounts(
+          mockReviews.reduce<Record<string, number>>((acc, review, index) => {
+            acc[review.id] = index % 7;
+            return acc;
+          }, {})
+        );
+        setReviewCommentCounts(
+          mockReviews.reduce<Record<string, number>>((acc, review, index) => {
+            acc[review.id] = index % 6;
+            return acc;
+          }, {})
+        );
+        setReviewImages({});
+        setOrderedReviewIds([]);
+        setReviewOrderReady(true);
+        setHasMoreReviews(false);
+        setShowMoreReviews(true);
+        setReviewPage(0);
+        requestedPagesRef.current = new Set();
+        setReviewSectionLoading(false);
+        setProfileLoading(false);
+        return;
+      }
+
       setReviews([]);
       setReviewLikeCounts({});
       setReviewCommentCounts({});
@@ -155,6 +203,7 @@ export default function ProfilePage() {
   }, [user, pathname, loading, openLoginSheet]);
 
   useEffect(() => {
+    if (USE_MOCK_PROFILE_REVIEWS) return;
     const fetchReviewOrder = async () => {
       if (pathname !== "/profile") return;
       if (!user) return;
@@ -250,6 +299,7 @@ export default function ProfilePage() {
   }, [showMoreReviews, loadingReviews, hasMoreReviews]);
 
   useEffect(() => {
+    if (USE_MOCK_PROFILE_REVIEWS) return;
     const fetchReviewsPage = async () => {
       if (!user || !reviewOrderReady || reviewPage === 0 || !hasMoreReviews) return;
       if (requestedPagesRef.current.has(reviewPage)) return;
@@ -613,7 +663,7 @@ export default function ProfilePage() {
                     aria-label="리뷰 상세 보기"
                   >
                     <div className="flex h-full flex-col">
-                      <div className="flex h-20 flex-col justify-between">
+                      <div className="flex h-20 flex-col gap-2">
                         <div className="flex items-center gap-1">
                           {Array.from({ length: 5 }, (_, index) => {
                             const ratio = getStarFillRatio(
@@ -642,10 +692,12 @@ export default function ProfilePage() {
                             );
                           })}
                         </div>
-                        <p className="line-clamp-1 text-sm text-[#17171c]/70">
-                          {review.content || "내용이 없어요."}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs text-[#17171c]">
+                        {review.content ? (
+                          <p className="line-clamp-1 text-sm text-[#17171c]/70">
+                            {review.content}
+                          </p>
+                        ) : null}
+                        <div className="mt-auto flex items-center gap-4 text-xs text-[#17171c]">
                           <span className="inline-flex items-center gap-1">
                             <Heart className="h-4 w-4 text-[#17171c]" />
                             {reviewLikeCounts[review.id] ?? 0}
