@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type NoticeListItem = {
@@ -31,6 +31,17 @@ export default function NoticePage() {
   const [items, setItems] = useState<NoticeListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const renderNoticeSkeleton = () => (
+    <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={`notice-skeleton-${index}`} className="px-4 py-3">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="mt-2 h-3 w-24" />
+        </div>
+      ))}
+    </section>
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -83,9 +94,7 @@ export default function NoticePage() {
         </header>
 
         {loading ? (
-          <div className="flex min-h-[160px] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
+          renderNoticeSkeleton()
         ) : null}
 
         {!loading && error ? (
