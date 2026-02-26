@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import {
@@ -59,6 +60,23 @@ export default function SavedLocationsPage() {
     address_detail: "",
   });
   const [deleteTarget, setDeleteTarget] = useState<SavedLocation | null>(null);
+
+  const renderListSkeleton = () => (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`location-skeleton-${index}`}
+          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+        >
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   const resetForm = () => {
     setForm({ name: "", address_base: "", address_detail: "" });
@@ -258,17 +276,7 @@ export default function SavedLocationsPage() {
     await fetchItems();
   };
 
-  if (loading) {
-    return (
-      <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
-        </main>
-      </MobileContainer>
-    );
-  }
-
-  if (!user) {
+  if (!loading && !user) {
     return (
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
@@ -308,6 +316,7 @@ export default function SavedLocationsPage() {
             size="icon-lg"
             className="text-[#17171c]/70"
             onClick={handleOpenCreate}
+            disabled={loading}
             aria-label="장소 추가"
           >
             <Plus className="size-5" />
@@ -315,10 +324,8 @@ export default function SavedLocationsPage() {
         </header>
 
         <section className="space-y-3">
-          {listLoading ? (
-            <div className="flex min-h-[160px] items-center justify-center">
-              <Spinner size="lg" />
-            </div>
+          {loading || listLoading ? (
+            renderListSkeleton()
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">

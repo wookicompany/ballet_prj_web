@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { BAR_ORDER_TAGS } from "@/lib/orderTags";
@@ -53,6 +54,23 @@ export default function SavedBarOrdersPage() {
   const [orderTags, setOrderTags] = useState<string[]>([]);
   const [orderInput, setOrderInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<SavedBarOrder | null>(null);
+
+  const renderListSkeleton = () => (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`bar-order-skeleton-${index}`}
+          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+        >
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   const addOrderTags = (
     rawValue: string,
@@ -192,17 +210,7 @@ export default function SavedBarOrdersPage() {
     await fetchItems();
   };
 
-  if (loading) {
-    return (
-      <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
-        </main>
-      </MobileContainer>
-    );
-  }
-
-  if (!user) {
+  if (!loading && !user) {
     return (
       <MobileContainer>
         <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
@@ -242,6 +250,7 @@ export default function SavedBarOrdersPage() {
             size="icon-lg"
             className="text-[#17171c]/70"
             onClick={handleOpenCreate}
+            disabled={loading}
             aria-label="바 순서 추가"
           >
             <Plus className="size-5" />
@@ -249,10 +258,8 @@ export default function SavedBarOrdersPage() {
         </header>
 
         <section className="space-y-3">
-          {listLoading ? (
-            <div className="flex min-h-[160px] items-center justify-center">
-              <Spinner size="lg" />
-            </div>
+          {loading || listLoading ? (
+            renderListSkeleton()
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
