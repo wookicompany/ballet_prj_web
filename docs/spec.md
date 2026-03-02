@@ -26,7 +26,10 @@
   - `/profile/menu`: 프로필 설정 메뉴
   - `/profile/data-management`: 데이터 관리
   - `/support`: 고객지원
+  - `/notice`: 공지사항 목록
+  - `/notice/[id]`: 공지사항 상세
   - `/policy`: 정책 목록
+  - `/policy/community-rules`: 공연 커뮤니티 이용규칙
   - `/policy/privacy`: 개인정보 처리방침
   - `/policy/terms`: 이용약관
   - `/calendar/settings`: 캘린더 설정
@@ -68,6 +71,16 @@
   - 릴리스/소스맵 업로드 키: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
   - 환경 키: `SENTRY_ENVIRONMENT` (`development`/`preview`/`production`)
   - 운영 기본값(무료 플랜): `tracesSampleRate=0.05`, `sendDefaultPii=false`
+
+### 공지사항
+
+- 공지사항은 DB(`notices`) 기반으로 운영한다.
+- 목록/상세 라우트:
+  - `/notice`: 게시된 공지 목록
+  - `/notice/[id]`: 공지 상세
+- 조회 API:
+  - `GET /api/notices`: 게시된 공지 목록 조회
+  - `GET /api/notices/[id]`: 게시된 공지 상세 조회(미게시/미존재는 404)
 
 ## 2) 로그인
 
@@ -310,3 +323,4 @@
 - 회원탈퇴: 설정 화면에 포함
 - 데이터 관리: `/profile/data-management`에서 안내
 - 캘린더 설정: 캘린더 설정 진입 후 바 주문/센터 주문/강사 레벨/장소 목록 관리 (각각 CRUD API: `saved-bar-orders`, `saved-center-orders`, `saved-instructor-levels`, `saved-locations`)
+- 공지사항: 더보기(`/profile/menu`)에서 공지사항(`/notice`)으로 진입
