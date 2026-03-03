@@ -25,11 +25,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { toast } from "sonner";
 
 const BUCKET = "record-media";
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+const TITLE_MAX_LENGTH = 120;
+const DESCRIPTION_MAX_LENGTH = 200;
 
 type AdDetail = {
   id: string;
@@ -83,16 +85,47 @@ export default function AdminAdDetailPage() {
   const [targetUrl, setTargetUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const trimmedTitle = title.trim();
+  const trimmedTargetUrl = targetUrl.trim();
+  const trimmedImageUrl = imageUrl.trim();
+  const hasInvalidPeriod = !!startDate && !!endDate && startDate > endDate;
+
+  const formatDateTime = useCallback((value: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   const canSubmit = useMemo(
     () =>
-      title.trim() &&
+      trimmedTitle &&
       startDate &&
       endDate &&
-      targetUrl.trim() &&
-      imageUrl.trim() &&
-      AD_PLACEMENTS.includes(placement),
-    [title, startDate, endDate, targetUrl, imageUrl, placement]
+      !hasInvalidPeriod &&
+      trimmedTargetUrl &&
+      trimmedImageUrl &&
+      AD_PLACEMENTS.includes(placement) &&
+      !submitting,
+    [
+      trimmedTitle,
+      startDate,
+      endDate,
+      hasInvalidPeriod,
+      trimmedTargetUrl,
+      trimmedImageUrl,
+      placement,
+      submitting,
+    ]
   );
 
   const applyAdToForm = useCallback((next: AdDetail) => {
@@ -110,14 +143,17 @@ export default function AdminAdDetailPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
+    setError(null);
     try {
       const res = await fetch(`/api/admin/ads/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
+        setError("광고 상세 정보를 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -127,6 +163,8 @@ export default function AdminAdDetailPage() {
         setAd(next);
         applyAdToForm(next);
       }
+    } catch {
+      setError("광고 상세 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -161,16 +199,21 @@ export default function AdminAdDetailPage() {
   };
 
   const handleSave = useCallback(async () => {
+    if (hasInvalidPeriod) {
+      setError("종료 날짜는 시작 날짜보다 같거나 늦어야 합니다.");
+      return;
+    }
     if (!ad || !canSubmit) {
-      toast("필수 입력값을 확인해 주세요.");
+      setError("필수 입력값을 확인해 주세요.");
       return;
     }
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     if (!token) {
-      toast("로그인이 필요해요.");
+      setError("로그인이 필요해요.");
       return;
     }
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/ads/${id}`, {
         method: "PATCH",
@@ -180,18 +223,18 @@ export default function AdminAdDetailPage() {
         },
         body: JSON.stringify({
           placement,
-          title: title.trim(),
+          title: trimmedTitle,
           description: description.trim() || null,
           start_at: `${startDate}T00:00`,
           end_at: `${endDate}T23:59`,
-          target_url: targetUrl.trim(),
-          image_url: imageUrl.trim(),
+          target_url: trimmedTargetUrl,
+          image_url: trimmedImageUrl,
           is_active: isActive,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(data.message ?? "저장에 실패했어요.");
+        setError(data.message ?? "저장에 실패했어요.");
         return;
       }
       if (data.ad) {
@@ -200,6 +243,8 @@ export default function AdminAdDetailPage() {
       }
       setEditing(false);
       toast("광고를 저장했어요.");
+    } catch {
+      setError("광고 저장 중 오류가 발생했어요.");
     } finally {
       setSubmitting(false);
     }
@@ -214,8 +259,10 @@ export default function AdminAdDetailPage() {
     isActive,
     placement,
     startDate,
-    targetUrl,
-    title,
+    trimmedImageUrl,
+    trimmedTargetUrl,
+    trimmedTitle,
+    hasInvalidPeriod,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -241,33 +288,108 @@ export default function AdminAdDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
+        <AdminPageHeader title="광고 상세" />
+        <Skeleton className="h-28 w-full" />
         <Skeleton className="h-56 w-full" />
+      </div>
+    );
+  }
+
+  if (error && !ad) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader title="광고 상세" />
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchDetail}>
+              다시 시도
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/wookicompany/admin/ads">목록으로</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!ad) {
     return (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">광고를 찾을 수 없습니다.</p>
-        <Button variant="outline" asChild>
-          <Link href="/wookicompany/admin/ads">목록으로</Link>
-        </Button>
+      <div className="space-y-6">
+        <AdminPageHeader title="광고 상세" />
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm text-muted-foreground">광고를 찾을 수 없습니다.</p>
+          <Button variant="outline" size="sm" className="mt-3" asChild>
+            <Link href="/wookicompany/admin/ads">목록으로</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/wookicompany/admin/ads">
-            <ArrowLeft className="size-4" />
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold">광고 상세</h1>
-      </div>
+      <AdminPageHeader
+        title="광고 상세"
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/wookicompany/admin/ads">
+              <ArrowLeft className="mr-1.5 size-4" />
+              목록으로
+            </Link>
+          </Button>
+        }
+      />
+
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : null}
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-5">
+            <div className="rounded-md border p-3 md:col-span-2">
+              <p className="text-xs text-muted-foreground">광고명</p>
+              <p className="mt-1 font-medium">{ad.title || "미입력"}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">노출 위치</p>
+              <p className="mt-1 font-medium">
+                {ad.placement === "calendar_home" ? "캘린더 홈" : "공연 홈"}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">상태</p>
+              <p className="mt-1">
+                <Badge variant={ad.is_active ? "default" : "secondary"}>
+                  {ad.is_active ? "활성" : "비활성"}
+                </Badge>
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">클릭수</p>
+              <p className="mt-1 font-medium tabular-nums">{ad.click_count}</p>
+            </div>
+            <div className="rounded-md border p-3 md:col-span-2">
+              <p className="text-xs text-muted-foreground">노출 기간 (KST)</p>
+              <p className="mt-1 font-medium">
+                {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">생성일</p>
+              <p className="mt-1 font-medium">{formatDateTime(ad.created_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">수정일</p>
+              <p className="mt-1 font-medium">{formatDateTime(ad.updated_at)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -317,6 +439,7 @@ export default function AdminAdDetailPage() {
                   onClick={() => {
                     setEditing(false);
                     applyAdToForm(ad);
+                    setError(null);
                   }}
                 >
                   취소
@@ -329,7 +452,7 @@ export default function AdminAdDetailPage() {
           {editing ? (
             <div className="max-w-3xl space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="placement">노출 위치</Label>
+                <Label htmlFor="placement">노출 위치 *</Label>
                 <select
                   id="placement"
                   value={placement}
@@ -342,13 +465,25 @@ export default function AdminAdDetailPage() {
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-muted-foreground">
+                  {placement === "calendar_home"
+                    ? "캘린더 홈 슬롯 권장 사이즈: 320x50"
+                    : "공연 홈 슬롯 권장 사이즈: 320x100"}
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="title">광고명</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="title">광고명 *</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {title.length.toLocaleString("ko-KR")} /{" "}
+                    {TITLE_MAX_LENGTH.toLocaleString("ko-KR")}
+                  </span>
+                </div>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={TITLE_MAX_LENGTH}
                 />
               </div>
               <div className="space-y-2">
@@ -357,11 +492,12 @@ export default function AdminAdDetailPage() {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  maxLength={DESCRIPTION_MAX_LENGTH}
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">시작 날짜 (KST)</Label>
+                  <Label htmlFor="start_date">시작 날짜 (KST) *</Label>
                   <Input
                     id="start_date"
                     type="date"
@@ -370,7 +506,7 @@ export default function AdminAdDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">종료 날짜 (KST)</Label>
+                  <Label htmlFor="end_date">종료 날짜 (KST) *</Label>
                   <Input
                     id="end_date"
                     type="date"
@@ -379,8 +515,13 @@ export default function AdminAdDetailPage() {
                   />
                 </div>
               </div>
+              {hasInvalidPeriod ? (
+                <p className="text-xs text-destructive">
+                  종료 날짜는 시작 날짜보다 같거나 늦어야 합니다.
+                </p>
+              ) : null}
               <div className="space-y-2">
-                <Label htmlFor="target_url">URL Link</Label>
+                <Label htmlFor="target_url">URL Link *</Label>
                 <Input
                   id="target_url"
                   type="url"
@@ -400,6 +541,9 @@ export default function AdminAdDetailPage() {
                     void handleUploadImage(file);
                   }}
                 />
+                <p className="text-xs text-muted-foreground">
+                  업로드 시 이미지 URL에 자동 반영됩니다.
+                </p>
                 <Label htmlFor="image_url">이미지 URL</Label>
                 <Input
                   id="image_url"
@@ -420,7 +564,7 @@ export default function AdminAdDetailPage() {
               </div>
             </div>
           ) : (
-            <dl className="grid gap-2 text-sm">
+            <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
               <div>
                 <dt className="text-muted-foreground">노출 위치</dt>
                 <dd className="font-medium">
@@ -429,51 +573,43 @@ export default function AdminAdDetailPage() {
               </div>
               <div>
                 <dt className="text-muted-foreground">공급자</dt>
-                <dd>{ad.provider.toUpperCase()}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">광고명</dt>
-                <dd className="font-medium">{ad.title}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">상태</dt>
-                <dd>
-                  <Badge variant={ad.is_active ? "default" : "secondary"}>
-                    {ad.is_active ? "활성" : "비활성"}
-                  </Badge>
-                </dd>
+                <dd>{ad.provider?.toUpperCase() || "미입력"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">노출 시작/종료 (KST)</dt>
                 <dd>
-                  {formatIsoToSeoulDate(ad.start_at)} ~ {formatIsoToSeoulDate(ad.end_at)}
+                  {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">URL Link</dt>
-                <dd className="break-all">{ad.target_url}</dd>
+                <dd className="break-all">
+                  <a
+                    href={ad.target_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {ad.target_url}
+                  </a>
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">이미지 URL</dt>
-                <dd className="break-all">{ad.image_url}</dd>
-              </div>
-              {ad.description ? (
-                <div>
-                  <dt className="text-muted-foreground">설명/메모</dt>
-                  <dd>{ad.description}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt className="text-muted-foreground">클릭수</dt>
-                <dd>{ad.click_count}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">생성일</dt>
-                <dd>{formatIsoToSeoulDate(ad.created_at)}</dd>
+                <dd className="break-all">
+                  <a
+                    href={ad.image_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {ad.image_url}
+                  </a>
+                </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">수정일</dt>
-                <dd>{formatIsoToSeoulDate(ad.updated_at)}</dd>
+                <dt className="text-muted-foreground">설명/메모</dt>
+                <dd>{ad.description || "미입력"}</dd>
               </div>
             </dl>
           )}

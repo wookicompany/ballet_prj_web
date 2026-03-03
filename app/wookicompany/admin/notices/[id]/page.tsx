@@ -23,6 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trash2, Pencil } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+
+const TITLE_MAX_LENGTH = 120;
+const CONTENT_MAX_LENGTH = 5000;
 
 type NoticeDetail = {
   id: string;
@@ -46,19 +50,38 @@ export default function AdminNoticeDetailPage() {
   const [editIsPublished, setEditIsPublished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const formatDateTime = (value: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+  const canSave = !!editTitle.trim() && !!editContent.trim() && !submitting;
 
   const fetchDetail = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
+    setError(null);
     try {
       const res = await fetch(`/api/admin/notices/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
+        setError("공지 상세 정보를 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -70,6 +93,8 @@ export default function AdminNoticeDetailPage() {
         setEditContent(n.content);
         setEditIsPublished(n.is_published);
       }
+    } catch {
+      setError("공지 상세 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -82,8 +107,12 @@ export default function AdminNoticeDetailPage() {
   const handleSave = useCallback(async () => {
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     if (!token || !notice) return;
-    if (!editTitle.trim() || !editContent.trim()) return;
+    if (!editTitle.trim() || !editContent.trim()) {
+      setError("제목과 내용을 입력해 주세요.");
+      return;
+    }
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/notices/${id}`, {
         method: "PATCH",
@@ -106,7 +135,12 @@ export default function AdminNoticeDetailPage() {
           setEditIsPublished(data.notice.is_published);
         }
         setEditing(false);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message ?? "공지 저장에 실패했습니다.");
       }
+    } catch {
+      setError("공지 저장 중 오류가 발생했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -132,33 +166,96 @@ export default function AdminNoticeDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-48 w-full" />
+        <AdminPageHeader title="공지 상세" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
+  }
+
+  if (error && !notice) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader title="공지 상세" />
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchDetail}>
+              다시 시도
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/wookicompany/admin/notices">목록으로</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!notice) {
     return (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">공지를 찾을 수 없습니다.</p>
-        <Button variant="outline" asChild>
-          <Link href="/wookicompany/admin/notices">목록으로</Link>
-        </Button>
+      <div className="space-y-6">
+        <AdminPageHeader title="공지 상세" />
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm text-muted-foreground">공지를 찾을 수 없습니다.</p>
+          <Button variant="outline" size="sm" className="mt-3" asChild>
+            <Link href="/wookicompany/admin/notices">목록으로</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/wookicompany/admin/notices">
-            <ArrowLeft className="size-4" />
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold">공지 상세</h1>
-      </div>
+      <AdminPageHeader
+        title="공지 상세"
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/wookicompany/admin/notices">
+              <ArrowLeft className="mr-1.5 size-4" />
+              목록으로
+            </Link>
+          </Button>
+        }
+      />
+
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : null}
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-md border p-3 md:col-span-2">
+              <p className="text-xs text-muted-foreground">제목</p>
+              <p className="mt-1 font-medium">{notice.title || "미입력"}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">게시 상태</p>
+              <p className="mt-1">
+                <Badge variant={notice.is_published ? "default" : "secondary"}>
+                  {notice.is_published ? "게시됨" : "미게시"}
+                </Badge>
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">게시일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.published_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">생성일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.created_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">수정일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.updated_at)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -202,7 +299,7 @@ export default function AdminNoticeDetailPage() {
               </>
             ) : (
               <>
-                <Button size="sm" onClick={handleSave} disabled={submitting}>
+                <Button size="sm" onClick={handleSave} disabled={!canSave}>
                   {submitting ? "저장 중…" : "저장"}
                 </Button>
                 <Button
@@ -213,6 +310,7 @@ export default function AdminNoticeDetailPage() {
                     setEditTitle(notice.title);
                     setEditContent(notice.content);
                     setEditIsPublished(notice.is_published);
+                    setError(null);
                   }}
                   disabled={submitting}
                 >
@@ -224,23 +322,37 @@ export default function AdminNoticeDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {editing ? (
-            <div className="space-y-4 max-w-2xl">
+            <div className="space-y-4 max-w-3xl">
               <div className="space-y-2">
-                <Label htmlFor="edit-title">제목</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="edit-title">제목 *</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {editTitle.length.toLocaleString("ko-KR")} /{" "}
+                    {TITLE_MAX_LENGTH.toLocaleString("ko-KR")}
+                  </span>
+                </div>
                 <Input
                   id="edit-title"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={TITLE_MAX_LENGTH}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-content">내용</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="edit-content">내용 *</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {editContent.length.toLocaleString("ko-KR")} /{" "}
+                    {CONTENT_MAX_LENGTH.toLocaleString("ko-KR")}
+                  </span>
+                </div>
                 <textarea
                   id="edit-content"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  rows={10}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[200px]"
+                  rows={12}
+                  maxLength={CONTENT_MAX_LENGTH}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[260px]"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -250,42 +362,16 @@ export default function AdminNoticeDetailPage() {
                   onCheckedChange={(checked) => setEditIsPublished(checked === true)}
                 />
                 <Label htmlFor="edit-is_published" className="cursor-pointer">
-                  게시함
+                  게시함 (체크 시 공개 상태)
                 </Label>
               </div>
             </div>
           ) : (
-            <dl className="grid gap-2 text-sm">
-              <div>
-                <dt className="text-muted-foreground">제목</dt>
-                <dd className="font-medium">{notice.title}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">게시여부</dt>
-                <dd>
-                  <Badge variant={notice.is_published ? "default" : "secondary"}>
-                    {notice.is_published ? "게시됨" : "미게시"}
-                  </Badge>
-                </dd>
-              </div>
-              {notice.published_at && (
-                <div>
-                  <dt className="text-muted-foreground">게시일</dt>
-                  <dd>{new Date(notice.published_at).toLocaleString("ko-KR")}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-muted-foreground">내용</dt>
-                <dd className="whitespace-pre-wrap mt-1">{notice.content}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">생성일</dt>
-                <dd>{new Date(notice.created_at).toLocaleString("ko-KR")}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">수정일</dt>
-                <dd>{new Date(notice.updated_at).toLocaleString("ko-KR")}</dd>
-              </div>
+            <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
+              <dt className="text-muted-foreground">내용</dt>
+              <dd className="whitespace-pre-wrap rounded-md border bg-muted/20 p-3">
+                {notice.content || "미입력"}
+              </dd>
             </dl>
           )}
         </CardContent>

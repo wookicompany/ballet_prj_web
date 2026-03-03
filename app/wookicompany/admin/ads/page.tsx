@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -25,8 +26,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight, Plus } from "lucide-react";
-import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import { ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -49,20 +49,44 @@ export default function AdminAdsPage() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [placementFilter, setPlacementFilter] = useState<
+    "all" | "calendar_home" | "performance_home"
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all"
+  );
+
+  const formatDateTime = useCallback((value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   const fetchAds = useCallback(async (pageOffset: number) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/ads?limit=${LIMIT}&offset=${pageOffset}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
+        setError("광고 목록을 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -70,6 +94,8 @@ export default function AdminAdsPage() {
       setAds(data.ads ?? []);
       setTotal(data.total ?? 0);
       setOffset(pageOffset);
+    } catch {
+      setError("광고 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -81,28 +107,126 @@ export default function AdminAdsPage() {
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredAds = useMemo(() => {
+    return ads.filter((ad) => {
+      if (placementFilter !== "all" && ad.placement !== placementFilter) return false;
+      if (statusFilter === "active" && !ad.is_active) return false;
+      if (statusFilter === "inactive" && ad.is_active) return false;
+      if (!normalizedQuery) return true;
+      return (
+        ad.title.toLowerCase().includes(normalizedQuery) ||
+        placementLabel(ad.placement).toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [ads, normalizedQuery, placementFilter, statusFilter]);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="광고 관리"
-        description="캘린더 홈과 공연 홈 광고의 노출 기간, 상태, 성과를 관리합니다."
         actions={
-          <Button asChild>
-            <Link href="/wookicompany/admin/ads/new">
-              <Plus className="mr-1 size-4" />
-              새 광고
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchAds(offset)}
+              disabled={loading}
+            >
+              <RefreshCw className="mr-1.5 size-4" />
+              새로고침
+            </Button>
+            <Button asChild>
+              <Link href="/wookicompany/admin/ads/new">
+                <Plus className="mr-1 size-4" />
+                새 광고
+              </Link>
+            </Button>
+          </div>
         }
       />
       <Card>
-        <CardHeader>
-          <CardTitle>광고 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>광고 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              현재 페이지 표시: {filteredAds.length.toLocaleString("ko-KR")}건
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative max-w-sm flex-1 min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="광고명 검색"
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={placementFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPlacementFilter("all")}
+            >
+              전체 슬롯
+            </Button>
+            <Button
+              variant={placementFilter === "calendar_home" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPlacementFilter("calendar_home")}
+            >
+              캘린더
+            </Button>
+            <Button
+              variant={placementFilter === "performance_home" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPlacementFilter("performance_home")}
+            >
+              공연
+            </Button>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+            >
+              전체 상태
+            </Button>
+            <Button
+              variant={statusFilter === "active" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("active")}
+            >
+              활성
+            </Button>
+            <Button
+              variant={statusFilter === "inactive" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("inactive")}
+            >
+              비활성
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <Skeleton className="h-64 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => fetchAds(offset)}
+              >
+                다시 시도
+              </Button>
+            </div>
           ) : (
             <>
               <Table>
@@ -118,17 +242,21 @@ export default function AdminAdsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ads.length === 0 ? (
+                  {filteredAds.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                        등록된 광고가 없습니다.
+                        {normalizedQuery ||
+                        placementFilter !== "all" ||
+                        statusFilter !== "all"
+                          ? "검색/필터 결과가 없습니다."
+                          : "등록된 광고가 없습니다."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ads.map((ad) => (
-                      <TableRow key={ad.id}>
+                    filteredAds.map((ad) => (
+                      <TableRow key={ad.id} className="hover:bg-muted/40">
                         <TableCell>{placementLabel(ad.placement)}</TableCell>
-                        <TableCell className="max-w-[260px] truncate font-medium">
+                        <TableCell className="max-w-[260px] truncate font-medium" title={ad.title}>
                           {ad.title}
                         </TableCell>
                         <TableCell>
@@ -137,11 +265,11 @@ export default function AdminAdsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatIsoToSeoulDate(ad.start_at)} ~ {formatIsoToSeoulDate(ad.end_at)}
+                          {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
                         </TableCell>
-                        <TableCell>{ad.click_count}</TableCell>
+                        <TableCell className="tabular-nums">{ad.click_count}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatIsoToSeoulDate(ad.created_at)}
+                          {formatDateTime(ad.created_at)}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>

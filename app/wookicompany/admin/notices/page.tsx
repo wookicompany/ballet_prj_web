@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -41,21 +42,43 @@ export default function AdminNoticesPage() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">(
+    "all"
+  );
+
+  const formatDateTime = useCallback((value: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   const fetchNotices = useCallback(async (pageOffset: number) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(
         `/api/admin/notices?limit=${LIMIT}&offset=${pageOffset}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
+        setError("공지 목록을 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -63,6 +86,8 @@ export default function AdminNoticesPage() {
       setNotices(data.notices ?? []);
       setTotal(data.total ?? 0);
       setOffset(pageOffset);
+    } catch {
+      setError("공지 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -74,28 +99,101 @@ export default function AdminNoticesPage() {
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredNotices = useMemo(() => {
+    return notices.filter((notice) => {
+      if (statusFilter === "published" && !notice.is_published) return false;
+      if (statusFilter === "draft" && notice.is_published) return false;
+      if (!normalizedQuery) return true;
+      return notice.title.toLowerCase().includes(normalizedQuery);
+    });
+  }, [notices, normalizedQuery, statusFilter]);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="공지사항 관리"
-        description="공지 게시 상태를 확인하고 새로운 공지를 빠르게 등록합니다."
         actions={
-          <Button asChild>
-            <Link href="/wookicompany/admin/notices/new">
-              <Plus className="size-4 mr-1" />
-              새 공지
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchNotices(offset)}
+              disabled={loading}
+            >
+              <RefreshCw className="mr-1.5 size-4" />
+              새로고침
+            </Button>
+            <Button asChild>
+              <Link href="/wookicompany/admin/notices/new">
+                <Plus className="size-4 mr-1" />
+                새 공지
+              </Link>
+            </Button>
+          </div>
         }
       />
       <Card>
-        <CardHeader>
-          <CardTitle>공지 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>공지 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              현재 페이지 표시: {filteredNotices.length.toLocaleString("ko-KR")}건
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative max-w-sm flex-1 min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="제목 검색"
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+            >
+              전체
+            </Button>
+            <Button
+              variant={statusFilter === "published" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("published")}
+            >
+              게시
+            </Button>
+            <Button
+              variant={statusFilter === "draft" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("draft")}
+            >
+              미게시
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <Skeleton className="h-64 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => fetchNotices(offset)}
+              >
+                다시 시도
+              </Button>
+            </div>
           ) : (
             <>
               <Table>
@@ -109,16 +207,21 @@ export default function AdminNoticesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {notices.length === 0 ? (
+                  {filteredNotices.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        등록된 공지가 없습니다.
+                        {normalizedQuery || statusFilter !== "all"
+                          ? "검색/필터 결과가 없습니다."
+                          : "등록된 공지가 없습니다."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    notices.map((n) => (
-                      <TableRow key={n.id}>
-                        <TableCell className="font-medium max-w-[300px] truncate">
+                    filteredNotices.map((n) => (
+                      <TableRow key={n.id} className="hover:bg-muted/40">
+                        <TableCell
+                          className="font-medium max-w-[300px] truncate"
+                          title={n.title}
+                        >
                           {n.title}
                         </TableCell>
                         <TableCell>
@@ -127,12 +230,10 @@ export default function AdminNoticesPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {n.published_at
-                            ? new Date(n.published_at).toLocaleDateString("ko-KR")
-                            : "-"}
+                          {formatDateTime(n.published_at)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(n.created_at).toLocaleDateString("ko-KR")}
+                          {formatDateTime(n.created_at)}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>

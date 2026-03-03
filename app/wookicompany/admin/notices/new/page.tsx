@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+
+const TITLE_MAX_LENGTH = 120;
+const CONTENT_MAX_LENGTH = 5000;
 
 export default function AdminNoticeNewPage() {
   const router = useRouter();
@@ -18,10 +22,13 @@ export default function AdminNoticeNewPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const trimmedTitle = title.trim();
+  const trimmedContent = content.trim();
+  const canSubmit = !!trimmedTitle && !!trimmedContent && !submitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
+    if (!trimmedTitle || !trimmedContent) {
       setError("제목과 내용을 입력해 주세요.");
       return;
     }
@@ -41,8 +48,8 @@ export default function AdminNoticeNewPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: title.trim(),
-          content: content.trim(),
+          title: trimmedTitle,
+          content: trimmedContent,
           is_published: isPublished,
         }),
       });
@@ -66,44 +73,44 @@ export default function AdminNoticeNewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/wookicompany/admin/notices">
-            <ArrowLeft className="size-4" />
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold">새 공지 등록</h1>
-      </div>
+      <AdminPageHeader
+        title="새 공지 등록"
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/wookicompany/admin/notices">
+              <ArrowLeft className="mr-1.5 size-4" />
+              목록으로
+            </Link>
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>공지 작성</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl">
+        {error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        ) : null}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>기본 정보</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">제목</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="title">제목 *</Label>
+                <span className="text-xs text-muted-foreground">
+                  {title.length.toLocaleString("ko-KR")} / {TITLE_MAX_LENGTH.toLocaleString("ko-KR")}
+                </span>
+              </div>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="제목을 입력하세요"
+                placeholder="예) 3월 공지사항 안내"
+                maxLength={TITLE_MAX_LENGTH}
                 required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">내용</Label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="내용을 입력하세요"
-                required
-                rows={10}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[200px]"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -113,20 +120,50 @@ export default function AdminNoticeNewPage() {
                 onCheckedChange={(checked) => setIsPublished(checked === true)}
               />
               <Label htmlFor="is_published" className="cursor-pointer">
-                바로 게시
+                바로 게시 (체크 시 즉시 공개)
               </Label>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "등록 중…" : "등록"}
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/wookicompany/admin/notices">취소</Link>
-              </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>본문</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="content">내용 *</Label>
+                <span className="text-xs text-muted-foreground">
+                  {content.length.toLocaleString("ko-KR")} / {CONTENT_MAX_LENGTH.toLocaleString("ko-KR")}
+                </span>
+              </div>
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="공지 내용을 입력하세요."
+                maxLength={CONTENT_MAX_LENGTH}
+                required
+                rows={12}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[260px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                줄바꿈을 포함한 원문 그대로 사용자에게 표시됩니다.
+              </p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-2">
+          <Button type="submit" disabled={!canSubmit}>
+            {submitting ? "등록 중…" : "등록"}
+          </Button>
+          <Button type="button" variant="outline" asChild>
+            <Link href="/wookicompany/admin/notices">취소</Link>
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
