@@ -23,6 +23,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { ChevronRight } from "lucide-react";
 
 const LIMIT = 20;
@@ -81,10 +82,13 @@ export default function AdminRecordsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">캘린더 기록 관리</h1>
+      <AdminPageHeader
+        title="캘린더 기록 관리"
+        description="사용자 기록을 최신 순으로 확인하고 상세 화면으로 이동할 수 있습니다."
+      />
       <Card>
         <CardHeader>
-          <CardTitle>기록 목록</CardTitle>
+          <CardTitle>기록 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

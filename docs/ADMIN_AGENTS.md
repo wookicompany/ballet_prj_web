@@ -18,6 +18,7 @@
 - shadcn/ui를 적극 활용한다. Sidebar, Tabs, Table, Card, Button, AlertDialog, Avatar, Pagination, Badge, Skeleton 등.
 - 아이콘은 `lucide-react` 사용.
 - 삭제 확인은 `AlertDialog` 사용. 소프트 삭제 시 "소프트 삭제합니다" 등 안내 문구를 명시한다.
+- 관리자 페이지 상단 헤더는 기본적으로 `description` 없이 제목 중심으로 구성한다(필요 시에만 예외적으로 사용).
 
 ## API 설계
 

@@ -24,6 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { ChevronRight, Plus } from "lucide-react";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 
@@ -83,18 +84,21 @@ export default function AdminAdsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">광고 관리</h1>
-        <Button asChild>
-          <Link href="/wookicompany/admin/ads/new">
-            <Plus className="mr-1 size-4" />
-            새 광고
-          </Link>
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="광고 관리"
+        description="캘린더 홈과 공연 홈 광고의 노출 기간, 상태, 성과를 관리합니다."
+        actions={
+          <Button asChild>
+            <Link href="/wookicompany/admin/ads/new">
+              <Plus className="mr-1 size-4" />
+              새 광고
+            </Link>
+          </Button>
+        }
+      />
       <Card>
         <CardHeader>
-          <CardTitle>광고 목록</CardTitle>
+          <CardTitle>광고 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

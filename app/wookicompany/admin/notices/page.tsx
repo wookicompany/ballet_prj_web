@@ -23,6 +23,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { ChevronRight, Plus } from "lucide-react";
 
 const LIMIT = 20;
@@ -76,18 +77,21 @@ export default function AdminNoticesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">공지사항 관리</h1>
-        <Button asChild>
-          <Link href="/wookicompany/admin/notices/new">
-            <Plus className="size-4 mr-1" />
-            새 공지
-          </Link>
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="공지사항 관리"
+        description="공지 게시 상태를 확인하고 새로운 공지를 빠르게 등록합니다."
+        actions={
+          <Button asChild>
+            <Link href="/wookicompany/admin/notices/new">
+              <Plus className="size-4 mr-1" />
+              새 공지
+            </Link>
+          </Button>
+        }
+      />
       <Card>
         <CardHeader>
-          <CardTitle>공지 목록</CardTitle>
+          <CardTitle>공지 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

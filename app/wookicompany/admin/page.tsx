@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { RefreshCw } from "lucide-react";
 
 type Stats = {
@@ -94,9 +95,9 @@ export default function AdminDashboardPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">대시보드</h1>
-        </div>
+        <AdminPageHeader
+          title="대시보드"
+        />
         <div className="space-y-8">
           <div className="space-y-3">
             <Skeleton className="h-5 w-16" />
@@ -127,7 +128,9 @@ export default function AdminDashboardPage() {
   if (error || !stats) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">대시보드</h1>
+        <AdminPageHeader
+          title="대시보드"
+        />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">
           <p className="text-sm font-medium">{error ?? "데이터가 없습니다."}</p>
           <Button
@@ -148,22 +151,24 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">대시보드</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground"
-          onClick={() => {
-            setLoading(true);
-            fetchStats();
-          }}
-          aria-label="통계 새로고침"
-        >
-          <RefreshCw className="size-4 mr-1.5" />
-          새로고침
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="대시보드"
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setLoading(true);
+              fetchStats();
+            }}
+            aria-label="통계 새로고침"
+          >
+            <RefreshCw className="size-4 mr-1.5" />
+            새로고침
+          </Button>
+        }
+      />
 
       {/* 1행 사용자 | 2행 캘린더 | 3행 공연, 카드 동일 크기(3열 그리드) */}
       <div className="space-y-8" role="region" aria-label="대시보드 지표">

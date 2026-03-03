@@ -23,6 +23,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { ChevronRight } from "lucide-react";
 
 const LIMIT = 20;
@@ -76,10 +77,13 @@ export default function AdminMembersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">회원 관리</h1>
+      <AdminPageHeader
+        title="회원 관리"
+        description="회원 프로필과 활동 지표를 확인하고 상세 화면에서 추가 정보를 볼 수 있습니다."
+      />
       <Card>
         <CardHeader>
-          <CardTitle>회원 목록</CardTitle>
+          <CardTitle>회원 목록 (총 {total.toLocaleString("ko-KR")}명)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

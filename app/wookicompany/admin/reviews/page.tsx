@@ -24,6 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { ChevronRight } from "lucide-react";
 
 const LIMIT = 20;
@@ -120,7 +121,10 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">공연 리뷰/댓글 관리</h1>
+      <AdminPageHeader
+        title="공연 리뷰/댓글 관리"
+        description="리뷰와 댓글을 분리 탭으로 관리하고 신고 건을 빠르게 확인합니다."
+      />
       <Tabs defaultValue="reviews">
         <TabsList>
           <TabsTrigger value="reviews">리뷰</TabsTrigger>
@@ -129,7 +133,7 @@ export default function AdminReviewsPage() {
         <TabsContent value="reviews" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>리뷰 목록</CardTitle>
+              <CardTitle>리뷰 목록 (총 {reviewsTotal.toLocaleString("ko-KR")}건)</CardTitle>
             </CardHeader>
             <CardContent>
               {reviewsLoading ? (
@@ -199,7 +203,7 @@ export default function AdminReviewsPage() {
         <TabsContent value="comments" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>댓글 목록</CardTitle>
+              <CardTitle>댓글 목록 (총 {commentsTotal.toLocaleString("ko-KR")}건)</CardTitle>
             </CardHeader>
             <CardContent>
               {commentsLoading ? (

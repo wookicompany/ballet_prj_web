@@ -11,6 +11,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -20,15 +21,34 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  MessageSquare,
+  Users,
+} from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/wookicompany/admin", label: "대시보드" },
-  { href: "/wookicompany/admin/records", label: "캘린더 기록 관리" },
-  { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리" },
-  { href: "/wookicompany/admin/notices", label: "공지사항 관리" },
-  { href: "/wookicompany/admin/ads", label: "광고 관리" },
-  { href: "/wookicompany/admin/members", label: "회원 관리" },
+const NAV_GROUPS = [
+  {
+    label: "개요",
+    items: [{ href: "/wookicompany/admin", label: "대시보드", icon: LayoutDashboard }],
+  },
+  {
+    label: "운영 관리",
+    items: [
+      { href: "/wookicompany/admin/records", label: "캘린더 기록 관리", icon: CalendarDays },
+      { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리", icon: MessageSquare },
+      { href: "/wookicompany/admin/notices", label: "공지사항 관리", icon: Bell },
+      { href: "/wookicompany/admin/ads", label: "광고 관리", icon: Megaphone },
+    ],
+  },
+  {
+    label: "회원",
+    items: [{ href: "/wookicompany/admin/members", label: "회원 관리", icon: Users }],
+  },
 ] as const;
 
 export default function AdminLayout({
@@ -107,29 +127,41 @@ export default function AdminLayout({
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent className="gap-2">
-              <SidebarMenu className="gap-2">
-                {NAV_ITEMS.map(({ href, label }) => {
-                  const isActive = pathname === href || (href !== "/wookicompany/admin" && pathname.startsWith(href));
-                  return (
-                    <SidebarMenuItem
-                      key={href}
-                      className={isActive ? "rounded-md bg-zinc-800 [&_a]:!bg-transparent [&_a]:!text-white [&_a:hover]:!bg-zinc-700 [&_a:hover]:!text-white" : undefined}
-                    >
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        className="min-h-11 w-full py-3 data-[active=true]:!bg-transparent data-[active=true]:!text-white data-[active=true]:font-semibold"
+          {NAV_GROUPS.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent className="gap-2">
+                <SidebarMenu className="gap-2">
+                  {group.items.map(({ href, label, icon: Icon }) => {
+                    const isActive =
+                      pathname === href ||
+                      (href !== "/wookicompany/admin" && pathname.startsWith(href));
+                    return (
+                      <SidebarMenuItem
+                        key={href}
+                        className={
+                          isActive
+                            ? "rounded-md bg-zinc-800 [&_a]:!bg-transparent [&_a]:!text-white [&_a:hover]:!bg-zinc-700 [&_a:hover]:!text-white"
+                            : undefined
+                        }
                       >
-                        <Link href={href}>{label}</Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          className="min-h-11 w-full py-3 data-[active=true]:!bg-transparent data-[active=true]:!text-white data-[active=true]:font-semibold"
+                        >
+                          <Link href={href}>
+                            <Icon className="size-4" />
+                            <span>{label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
