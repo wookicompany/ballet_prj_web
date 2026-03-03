@@ -16,6 +16,7 @@ type BottomSheetProps = {
   title?: string;
   description?: string;
   showHeader?: boolean;
+  contentClassName?: string;
   children: React.ReactNode;
 };
 
@@ -25,6 +26,7 @@ export default function BottomSheet({
   title,
   description,
   showHeader = true,
+  contentClassName,
   children,
 }: BottomSheetProps) {
   const resolvedDescription =
@@ -34,7 +36,7 @@ export default function BottomSheet({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className={contentClassName}>
         {shouldShowHeader ? (
           <DrawerHeader>
             {title ? (

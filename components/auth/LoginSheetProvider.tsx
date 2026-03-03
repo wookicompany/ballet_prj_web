@@ -52,6 +52,7 @@ export function LoginSheetProvider({
         onOpenChange={setOpen}
         title="로그인이 필요해요"
         description="소셜 계정으로 간편하게 시작할 수 있어요."
+        contentClassName="!bg-white text-[#17171c] [&_[data-slot=drawer-title]]:!text-[#17171c] [&_[data-slot=drawer-description]]:!text-[#525252]"
       >
         <div className="space-y-3">
           {SHOW_KAKAO_LOGIN ? (
@@ -75,11 +76,9 @@ export function LoginSheetProvider({
           ) : null}
           {SHOW_APPLE_LOGIN ? (
             <Button
-              className={`${SOCIAL_BUTTON_BASE_CLASS} rounded-[6px] border border-[#1a1a1a] !bg-black text-white hover:!bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-white/30`}
-              style={{ backgroundColor: "#000000" }}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-black text-white hover:bg-black/90`}
               disabled={loading}
               onClick={() => void handleSocialLogin("apple")}
-              aria-label="Sign in with Apple"
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
                 <Image
