@@ -155,9 +155,8 @@ export default function AdminDashboardPage() {
         title="대시보드"
         actions={
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="text-muted-foreground hover:text-foreground"
             onClick={() => {
               setLoading(true);
               fetchStats();

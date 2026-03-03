@@ -165,12 +165,16 @@ export default function AdminLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-          <span className="text-sm font-medium text-muted-foreground">관리자</span>
-          <div className="ml-auto">
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1.5">
+        <header className="flex min-h-14 shrink-0 items-center justify-end gap-3 border-b border-border bg-background px-4 py-2 md:px-6">
+          <div className="flex shrink-0 items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="size-9 p-0"
+              aria-label="로그아웃"
+            >
               <LogOut className="size-4" />
-              로그아웃
             </Button>
           </div>
         </header>
