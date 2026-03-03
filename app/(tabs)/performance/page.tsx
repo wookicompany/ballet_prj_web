@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
+import AdSlot from "@/components/ads/AdSlot";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -463,6 +464,13 @@ export default function PerformanceListPage() {
             </Button>
           </header>
 
+          <AdSlot
+            placement="performance_home"
+            width={320}
+            height={100}
+            className="mx-auto mb-6"
+          />
+
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
             {renderSectionSkeleton("scheduled")}
@@ -509,6 +517,13 @@ export default function PerformanceListPage() {
             <Search className="size-6" />
           </Button>
         </header>
+
+        <AdSlot
+          placement="performance_home"
+          width={320}
+          height={100}
+          className="mx-auto mb-6"
+        />
 
         <div className="space-y-7">
             <section className="space-y-3">

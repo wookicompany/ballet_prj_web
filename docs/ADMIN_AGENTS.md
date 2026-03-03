@@ -1,4 +1,4 @@
-# WEB AGENTS 작업 규칙 (어드민/웹 전용)
+# ADMIN AGENTS 작업 규칙 (어드민/웹 전용)
 
 이 문서는 어드민 패널(`/wookicompany/admin`) 및 웹 전용 영역에서 작업하는 에이전트가 따라야 할 규칙을 정의한다. 일반 앱 규칙은 [docs/APP_AGENTS.md](APP_AGENTS.md)를 따른다.
 

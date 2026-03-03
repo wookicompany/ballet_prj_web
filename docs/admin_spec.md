@@ -19,6 +19,7 @@
 | 캘린더 기록 관리  | `/wookicompany/admin/records`     |
 | 공연 리뷰/댓글 관리 | `/wookicompany/admin/reviews`     |
 | 공지사항 관리     | `/wookicompany/admin/notices`     |
+| 광고 관리        | `/wookicompany/admin/ads`         |
 | 회원 관리        | `/wookicompany/admin/members`     |
 
 - **UI**: shadcn/ui Sidebar, Tabs, Table, Card, Button, AlertDialog, Avatar, Pagination 등 사용. 웹(데스크톱) 최적화.
@@ -57,8 +58,15 @@
 | POST | `/api/admin/notices` | 공지 등록 |
 | PATCH | `/api/admin/notices/[id]` | 공지 수정 |
 | DELETE | `/api/admin/notices/[id]` | 공지 삭제 (물리 삭제) |
+| GET | `/api/admin/ads` | 광고 목록 (limit, offset) |
+| GET | `/api/admin/ads/[id]` | 광고 상세 |
+| POST | `/api/admin/ads` | 광고 등록 |
+| PATCH | `/api/admin/ads/[id]` | 광고 수정 |
+| DELETE | `/api/admin/ads/[id]` | 광고 삭제 (물리 삭제) |
 | GET | `/api/admin/members` | 회원 목록 (limit, offset) |
 | GET | `/api/admin/members/[id]` | 회원 상세 + 활동 요약(기록/리뷰/댓글 건수) |
+| GET | `/api/ads` | 앱 광고 슬롯 조회 (placement 기준, 활성 1건) |
+| POST | `/api/ads/[id]/click` | 광고 클릭 집계(+1) |
 
 모든 어드민 API는 `Authorization: Bearer <session.access_token>` 필요. `getAdminFromRequest` 실패 시 401/403 반환.
 
@@ -89,7 +97,18 @@
 - **목록**: profiles (deleted_at IS NULL), nickname, created_at, (선택) 기록 수/리뷰 수.
 - **상세**: 프로필 정보 + 해당 사용자의 records/reviews/comments 건수. 활동 정지 기능 없음. 삭제(회원 탈퇴/소프트 삭제)는 별도 정책에 따라 구현 가능하며 1차는 조회 위주.
 
+### 광고 관리
+
+- **범위**: `calendar_home`, `performance_home` 2개 슬롯 관리.
+- **등록/수정 필드**: placement, title, description(선택), image_url, target_url, is_active, start_at/end_at(KST 입력).
+- **정책**: 초기 공급자는 `b2b` 고정. 동일 슬롯에서 기간이 겹치는 활성 광고는 1건만 허용.
+- **조회/노출**: 앱은 `/api/ads?placement=...`로 현재 시점 유효 광고 1건 조회(활성 + 기간 내).
+- **집계**: 클릭 시 `/api/ads/[id]/click` 호출로 `click_count`, `last_clicked_at` 업데이트.
+- **삭제**: 물리 삭제(ads 테이블).
+
 ## 6. DB
 
 - **어드민 권한**: `profiles.is_admin` (boolean, 기본값 false). Supabase 대시보드에서 수동으로 true 설정.
 - **마이그레이션**: `docs/sql/add_profiles_is_admin.sql` 참고.
+- **광고 테이블**: `ads` (`placement`, `provider`, `title`, `image_url`, `target_url`, `is_active`, `start_at`, `end_at`, `click_count`, `last_clicked_at`, `created_at`, `updated_at`).
+- **광고 마이그레이션**: `docs/sql/create_ads_table.sql` 참고.

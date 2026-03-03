@@ -274,7 +274,7 @@ export default function DayPage() {
         <Button
           type="button"
           size="icon-lg"
-          className="size-12 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+          className="h-10 w-10 rounded-xl bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
           aria-label="기록 등록"
           onClick={() => {
             if (!user) {
@@ -284,7 +284,7 @@ export default function DayPage() {
             router.push(`/record/new?date=${dateStr}`);
           }}
         >
-          <Plus className="size-6" strokeWidth={3} />
+          <Plus className="size-5" strokeWidth={2.8} />
         </Button>
       </div>
     </main>

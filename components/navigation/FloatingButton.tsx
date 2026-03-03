@@ -15,9 +15,10 @@ export default function FloatingButton() {
   const { openLoginSheet } = useLoginSheet();
   const { ensureConsent } = useConsentSheet();
 
-  const isCalendar = pathname.startsWith("/calendar");
+  const isCalendarHome = pathname === "/calendar";
+  const isCalendarRelated = pathname.startsWith("/calendar");
 
-  if (!isCalendar) {
+  if (!isCalendarRelated || isCalendarHome) {
     return null;
   }
 

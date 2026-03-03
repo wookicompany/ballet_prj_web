@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/wookicompany/admin/records", label: "캘린더 기록 관리" },
   { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리" },
   { href: "/wookicompany/admin/notices", label: "공지사항 관리" },
+  { href: "/wookicompany/admin/ads", label: "광고 관리" },
   { href: "/wookicompany/admin/members", label: "회원 관리" },
 ] as const;
 

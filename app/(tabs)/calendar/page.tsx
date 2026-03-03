@@ -3,10 +3,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
+import AdSlot from "@/components/ads/AdSlot";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,8 @@ function getMonthBounds(date: Date) {
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
+  const { ensureConsent } = useConsentSheet();
   const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
@@ -239,7 +244,24 @@ export default function CalendarPage() {
             <ChevronDown className="size-6" strokeWidth={2.5} />
           </Button>
         </div>
-        <div className="w-9" />
+        <Button
+          type="button"
+          variant="default"
+          size="icon-lg"
+          className="h-10 w-10 rounded-xl bg-[#17171c] text-white hover:bg-[#17171c]/90"
+          aria-label="기록 생성"
+          onClick={async () => {
+            if (!user) {
+              openLoginSheet();
+              return;
+            }
+            const consentOk = await ensureConsent();
+            if (!consentOk) return;
+            router.push("/record/new");
+          }}
+        >
+          <Plus className="size-5" strokeWidth={2.8} />
+        </Button>
       </header>
 
       <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
@@ -342,6 +364,12 @@ export default function CalendarPage() {
           );
         })}
       </section>
+      <AdSlot
+        placement="calendar_home"
+        width={320}
+        height={50}
+        className="mx-auto mt-3"
+      />
       <BottomSheet
         open={monthSheetOpen}
         onOpenChange={setMonthSheetOpen}

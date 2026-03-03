@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads: {
+        Row: {
+          click_count: number
+          created_at: string
+          description: string | null
+          end_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          last_clicked_at: string | null
+          placement: string
+          provider: string
+          start_at: string
+          target_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          description?: string | null
+          end_at: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          last_clicked_at?: string | null
+          placement: string
+          provider?: string
+          start_at: string
+          target_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          description?: string | null
+          end_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          last_clicked_at?: string | null
+          placement?: string
+          provider?: string
+          start_at?: string
+          target_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kopis_facilities: {
         Row: {
           created_at: string | null
