@@ -84,21 +84,18 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 라이트 모드만 사용: 시스템 다크 모드 시에도 테마 변수는 라이트 유지 */
+/* @media (prefers-color-scheme: dark) 제거됨 */
+
+html {
+  color-scheme: light;
+  overscroll-behavior-y: none;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Pretendard", "Geist Sans", Arial, Helvetica, sans-serif;
-  overscroll-behavior-y: none;
-}
-
-html {
   overscroll-behavior-y: none;
 }
 

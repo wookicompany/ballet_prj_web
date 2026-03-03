@@ -52,7 +52,6 @@ export function LoginSheetProvider({
         onOpenChange={setOpen}
         title="로그인이 필요해요"
         description="소셜 계정으로 간편하게 시작할 수 있어요."
-        contentClassName="!bg-white text-[#17171c] [&_[data-slot=drawer-title]]:!text-[#17171c] [&_[data-slot=drawer-description]]:!text-[#525252]"
       >
         <div className="space-y-3">
           {SHOW_KAKAO_LOGIN ? (
