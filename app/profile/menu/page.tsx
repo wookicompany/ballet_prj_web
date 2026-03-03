@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -24,7 +24,7 @@ import {
   sendLogoutToApp,
 } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ensureSessionOrLogin } from "@/lib/authSession";
+import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import { buildKakaoAccountLogoutUrl } from "@/lib/oauthProvider";
 import {
   Bell,
@@ -45,6 +45,38 @@ export default function ProfileMenuPage() {
   const { openLoginSheet } = useLoginSheet();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
+
+  useEffect(() => {
+    const fetchNoticeReadStatus = async () => {
+      if (loading) return;
+      if (!user) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const accessToken = await getAccessToken(openLoginSheet);
+      if (!accessToken) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const response = await fetch("/api/notices/read-status", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const payload = (await response.json()) as { has_unread?: boolean };
+      setHasUnreadNotices(payload.has_unread === true);
+    };
+
+    void fetchNoticeReadStatus();
+  }, [user, loading, openLoginSheet]);
 
   const handleLogout = async () => {
     if (!user || loading) return;
@@ -192,7 +224,12 @@ export default function ProfileMenuPage() {
           >
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <Bell className="h-5 w-5 text-[#17171c]/70" />
-              공지사항
+              <span className="inline-flex items-center gap-2">
+                공지사항
+                {hasUnreadNotices ? (
+                  <span className="h-2 w-2 rounded-full bg-[#FF154A]" />
+                ) : null}
+              </span>
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>

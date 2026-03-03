@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { getAccessToken } from "@/lib/authSession";
 import { ChevronLeft } from "lucide-react";
 
 type NoticeDetail = {
@@ -39,6 +42,8 @@ const toParagraphs = (content: string) =>
 
 export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [noticeId, setNoticeId] = useState<string>("");
   const [item, setItem] = useState<NoticeDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +102,25 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
       isMounted = false;
     };
   }, [noticeId]);
+
+  useEffect(() => {
+    const markNoticeAsRead = async () => {
+      if (authLoading) return;
+      if (!user || !item?.id) return;
+
+      const accessToken = await getAccessToken(openLoginSheet);
+      if (!accessToken) return;
+
+      await fetch(`/api/notices/${item.id}/read`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    };
+
+    void markNoticeAsRead();
+  }, [user, authLoading, item?.id, openLoginSheet]);
 
   return (
     <MobileContainer>

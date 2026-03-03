@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { getAccessToken } from "@/lib/authSession";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
@@ -75,9 +76,42 @@ export default function ProfilePage() {
   const [reviewOrderReady, setReviewOrderReady] = useState(false);
   const [reviewSectionLoading, setReviewSectionLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
 
   const reviewSentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const fetchNoticeReadStatus = async () => {
+      if (loading) return;
+      if (pathname !== "/profile") return;
+      if (!user) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const accessToken = await getAccessToken(openLoginSheet);
+      if (!accessToken) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const response = await fetch("/api/notices/read-status", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        setHasUnreadNotices(false);
+        return;
+      }
+
+      const payload = (await response.json()) as { has_unread?: boolean };
+      setHasUnreadNotices(payload.has_unread === true);
+    };
+
+    void fetchNoticeReadStatus();
+  }, [user, pathname, loading, openLoginSheet]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -438,11 +472,14 @@ export default function ProfilePage() {
             type="button"
             variant="ghost"
             size="icon-lg"
-            className="text-[#17171c]/70"
+            className="relative text-[#17171c]/70"
             onClick={() => router.push("/profile/menu")}
             aria-label="더보기"
           >
             <Menu className="size-6" />
+            {hasUnreadNotices ? (
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
+            ) : null}
           </Button>
         </header>
 

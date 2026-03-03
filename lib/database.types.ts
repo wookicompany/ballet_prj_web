@@ -476,6 +476,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notice_reads: {
+        Row: {
+          created_at: string
+          notice_id: string
+          read_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          notice_id: string
+          read_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          notice_id?: string
+          read_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notice_reads_notice_id_fkey"
+            columns: ["notice_id"]
+            isOneToOne: false
+            referencedRelation: "notices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notice_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       performance_review_comment_likes: {
         Row: {
           comment_id: string

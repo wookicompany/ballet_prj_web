@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAccessToken } from "@/lib/authSession";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type NoticeListItem = {
@@ -28,9 +31,13 @@ const formatPublishedDate = (value: string | null) => {
 
 export default function NoticePage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [items, setItems] = useState<NoticeListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [readNoticeIds, setReadNoticeIds] = useState<string[]>([]);
+  const [isReadStatusReady, setIsReadStatusReady] = useState(false);
 
   const renderNoticeSkeleton = () => (
     <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
@@ -74,6 +81,43 @@ export default function NoticePage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const fetchReadStatus = async () => {
+      if (authLoading) return;
+      if (!user) {
+        setReadNoticeIds([]);
+        setIsReadStatusReady(true);
+        return;
+      }
+
+      setIsReadStatusReady(false);
+      const accessToken = await getAccessToken(openLoginSheet);
+      if (!accessToken) {
+        setReadNoticeIds([]);
+        setIsReadStatusReady(true);
+        return;
+      }
+
+      const response = await fetch("/api/notices/read-status", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        setReadNoticeIds([]);
+        setIsReadStatusReady(true);
+        return;
+      }
+      const payload = (await response.json()) as { read_notice_ids?: string[] };
+      setReadNoticeIds(
+        Array.isArray(payload.read_notice_ids) ? payload.read_notice_ids : []
+      );
+      setIsReadStatusReady(true);
+    };
+
+    void fetchReadStatus();
+  }, [user, authLoading, openLoginSheet]);
 
   return (
     <MobileContainer>
@@ -120,7 +164,12 @@ export default function NoticePage() {
                 onClick={() => router.push(`/notice/${item.id}`)}
               >
                 <span className="flex min-w-0 flex-1 flex-col items-start gap-1 pr-3">
-                  <span className="truncate text-sm text-[#17171c]">{item.title}</span>
+                  <span className="inline-flex items-center gap-2 truncate text-sm text-[#17171c]">
+                    {isReadStatusReady && !readNoticeIds.includes(item.id) ? (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF154A]" />
+                    ) : null}
+                    <span className="truncate">{item.title}</span>
+                  </span>
                   <span className="text-xs text-[#17171c]/50">
                     {formatPublishedDate(item.published_at)}
                   </span>
