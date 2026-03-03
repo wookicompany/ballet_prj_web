@@ -757,6 +757,7 @@ export type Database = {
           deleted_at: string | null
           expo_push_token: string | null
           id: string
+          is_admin: boolean
           nickname: string | null
           updated_at: string
         }
@@ -769,6 +770,7 @@ export type Database = {
           deleted_at?: string | null
           expo_push_token?: string | null
           id: string
+          is_admin?: boolean
           nickname?: string | null
           updated_at?: string
         }
@@ -781,6 +783,7 @@ export type Database = {
           deleted_at?: string | null
           expo_push_token?: string | null
           id?: string
+          is_admin?: boolean
           nickname?: string | null
           updated_at?: string
         }
