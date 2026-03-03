@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 export default function AdminMemberDetailPage() {
   const params = useParams();
@@ -18,19 +19,37 @@ export default function AdminMemberDetailPage() {
   const [reviewCount, setReviewCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const formatDateTime = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+  const totalActivity = recordCount + reviewCount + commentCount;
 
   const fetchDetail = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
+    setError(null);
     try {
       const res = await fetch(`/api/admin/members/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
+        setError("회원 정보를 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -39,6 +58,8 @@ export default function AdminMemberDetailPage() {
       setRecordCount(data.record_count ?? 0);
       setReviewCount(data.review_count ?? 0);
       setCommentCount(data.comment_count ?? 0);
+    } catch {
+      setError("회원 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -51,33 +72,96 @@ export default function AdminMemberDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
+        <AdminPageHeader title="회원 상세" />
+        <Skeleton className="h-28 w-full" />
         <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (error && !profile) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader title="회원 상세" />
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchDetail}>
+              다시 시도
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/wookicompany/admin/members">목록으로</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">회원을 찾을 수 없습니다.</p>
-        <Button variant="outline" asChild>
-          <Link href="/wookicompany/admin/members">목록으로</Link>
-        </Button>
+      <div className="space-y-6">
+        <AdminPageHeader title="회원 상세" />
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm text-muted-foreground">회원을 찾을 수 없습니다.</p>
+          <Button variant="outline" size="sm" className="mt-3" asChild>
+            <Link href="/wookicompany/admin/members">목록으로</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/wookicompany/admin/members">
-            <ArrowLeft className="size-4" />
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold">회원 상세</h1>
-      </div>
+      <AdminPageHeader
+        title="회원 상세"
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/wookicompany/admin/members">
+              <ArrowLeft className="mr-1.5 size-4" />
+              목록으로
+            </Link>
+          </Button>
+        }
+      />
+
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : null}
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-md border p-3 md:col-span-2">
+              <p className="text-xs text-muted-foreground">닉네임</p>
+              <p className="mt-1 font-medium">{profile.nickname ?? "미입력"}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">가입일</p>
+              <p className="mt-1 font-medium">{formatDateTime(profile.created_at as string)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">총 활동</p>
+              <p className="mt-1 font-medium tabular-nums">{totalActivity}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">기록</p>
+              <p className="mt-1 font-medium tabular-nums">{recordCount}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">리뷰</p>
+              <p className="mt-1 font-medium tabular-nums">{reviewCount}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">댓글</p>
+              <p className="mt-1 font-medium tabular-nums">{commentCount}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -90,15 +174,13 @@ export default function AdminMemberDetailPage() {
               <AvatarFallback>{(profile.nickname as string) ?? (profile.id as string).slice(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{profile.nickname ?? "-"}</p>
-              <p className="text-sm text-muted-foreground">ID: {profile.id}</p>
+              <p className="font-medium">{profile.nickname ?? "미입력"}</p>
+              <p className="text-sm text-muted-foreground break-all">ID: {profile.id}</p>
             </div>
           </div>
-          <dl className="grid gap-2 text-sm">
-            <div>
-              <dt className="text-muted-foreground">가입일</dt>
-              <dd>{new Date(profile.created_at as string).toLocaleString("ko-KR")}</dd>
-            </div>
+          <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
+            <dt className="text-muted-foreground">가입일</dt>
+            <dd>{formatDateTime(profile.created_at as string)}</dd>
           </dl>
         </CardContent>
       </Card>
@@ -109,9 +191,9 @@ export default function AdminMemberDetailPage() {
         </CardHeader>
         <CardContent>
           <ul className="grid gap-2 text-sm">
-            <li>캘린더 기록: {recordCount}건</li>
-            <li>공연 리뷰: {reviewCount}건</li>
-            <li>공연 댓글: {commentCount}건</li>
+            <li className="tabular-nums">캘린더 기록: {recordCount}건</li>
+            <li className="tabular-nums">공연 리뷰: {reviewCount}건</li>
+            <li className="tabular-nums">공연 댓글: {commentCount}건</li>
           </ul>
         </CardContent>
       </Card>

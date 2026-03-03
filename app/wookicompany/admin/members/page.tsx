@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -42,20 +43,41 @@ export default function AdminMembersPage() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activityFilter, setActivityFilter] = useState<
+    "all" | "has_record" | "has_review"
+  >("all");
+
+  const formatDateTime = useCallback((value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   const fetchMembers = useCallback(async (pageOffset: number) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setError("로그인이 필요합니다.");
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/members?limit=${LIMIT}&offset=${pageOffset}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
+        setError("회원 목록을 불러오지 못했습니다.");
         setLoading(false);
         return;
       }
@@ -63,6 +85,8 @@ export default function AdminMembersPage() {
       setMembers(data.members ?? []);
       setTotal(data.total ?? 0);
       setOffset(pageOffset);
+    } catch {
+      setError("회원 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -74,20 +98,96 @@ export default function AdminMembersPage() {
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredMembers = useMemo(() => {
+    return members.filter((member) => {
+      if (activityFilter === "has_record" && member.record_count <= 0) return false;
+      if (activityFilter === "has_review" && member.review_count <= 0) return false;
+      if (!normalizedQuery) return true;
+      return (
+        (member.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
+        member.id.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [members, normalizedQuery, activityFilter]);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="회원 관리"
-        description="회원 프로필과 활동 지표를 확인하고 상세 화면에서 추가 정보를 볼 수 있습니다."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchMembers(offset)}
+            disabled={loading}
+          >
+            <RefreshCw className="mr-1.5 size-4" />
+            새로고침
+          </Button>
+        }
       />
       <Card>
-        <CardHeader>
-          <CardTitle>회원 목록 (총 {total.toLocaleString("ko-KR")}명)</CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>회원 목록 (총 {total.toLocaleString("ko-KR")}명)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              현재 페이지 표시: {filteredMembers.length.toLocaleString("ko-KR")}명
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative max-w-sm flex-1 min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="닉네임/유저 ID 검색"
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={activityFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActivityFilter("all")}
+            >
+              전체
+            </Button>
+            <Button
+              variant={activityFilter === "has_record" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActivityFilter("has_record")}
+            >
+              기록 있음
+            </Button>
+            <Button
+              variant={activityFilter === "has_review" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActivityFilter("has_review")}
+            >
+              리뷰 있음
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <Skeleton className="h-64 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => fetchMembers(offset)}
+              >
+                다시 시도
+              </Button>
+            </div>
           ) : (
             <>
               <Table>
@@ -101,15 +201,17 @@ export default function AdminMembersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {members.length === 0 ? (
+                  {filteredMembers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        회원이 없습니다.
+                        {normalizedQuery || activityFilter !== "all"
+                          ? "검색/필터 결과가 없습니다."
+                          : "회원이 없습니다."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    members.map((m) => (
-                      <TableRow key={m.id}>
+                    filteredMembers.map((m) => (
+                      <TableRow key={m.id} className="hover:bg-muted/40">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="size-6">
@@ -118,14 +220,17 @@ export default function AdminMembersPage() {
                                 {(m.nickname ?? m.id.slice(0, 2)).slice(0, 2)}
                               </AvatarFallback>
                             </Avatar>
-                            <span>{m.nickname ?? "-"}</span>
+                            <div className="space-y-0.5">
+                              <p className="text-sm leading-none">{m.nickname ?? "미입력"}</p>
+                              <p className="text-xs text-muted-foreground">{m.id.slice(0, 8)}</p>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {new Date(m.created_at).toLocaleDateString("ko-KR")}
+                          {formatDateTime(m.created_at)}
                         </TableCell>
-                        <TableCell>{m.record_count}</TableCell>
-                        <TableCell>{m.review_count}</TableCell>
+                        <TableCell className="tabular-nums">{m.record_count}</TableCell>
+                        <TableCell className="tabular-nums">{m.review_count}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>
                             <Link href={`/wookicompany/admin/members/${m.id}`}>
