@@ -75,9 +75,11 @@ export function LoginSheetProvider({
           ) : null}
           {SHOW_APPLE_LOGIN ? (
             <Button
-              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-black text-white hover:bg-black/90`}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} rounded-[6px] border border-[#1a1a1a] !bg-black text-white hover:!bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-white/30`}
+              style={{ backgroundColor: "#000000" }}
               disabled={loading}
               onClick={() => void handleSocialLogin("apple")}
+              aria-label="Sign in with Apple"
             >
               <span className={SOCIAL_ICON_BOX_CLASS}>
                 <Image
