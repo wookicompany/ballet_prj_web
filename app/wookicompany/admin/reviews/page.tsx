@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -53,33 +54,59 @@ type CommentRow = {
 };
 
 export default function AdminReviewsPage() {
+  const [activeTab, setActiveTab] = useState<"reviews" | "comments">("reviews");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [reportFilter, setReportFilter] = useState<"all" | "reported">("all");
+
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [reviewsTotal, setReviewsTotal] = useState(0);
   const [reviewsOffset, setReviewsOffset] = useState(0);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
 
   const [comments, setComments] = useState<CommentRow[]>([]);
   const [commentsTotal, setCommentsTotal] = useState(0);
   const [commentsOffset, setCommentsOffset] = useState(0);
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+
+  const formatDateTime = useCallback((value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   const fetchReviews = useCallback(async (offset: number) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setReviewsError("로그인이 필요합니다.");
       setReviewsLoading(false);
       return;
     }
     setReviewsLoading(true);
+    setReviewsError(null);
     try {
       const res = await fetch(`/api/admin/reviews?limit=${LIMIT}&offset=${offset}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setReviewsError("리뷰 목록을 불러오지 못했습니다.");
+        return;
+      }
       const data = await res.json();
       setReviews(data.reviews ?? []);
       setReviewsTotal(data.total ?? 0);
       setReviewsOffset(offset);
+    } catch {
+      setReviewsError("리뷰 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setReviewsLoading(false);
     }
@@ -89,19 +116,26 @@ export default function AdminReviewsPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
+      setCommentsError("로그인이 필요합니다.");
       setCommentsLoading(false);
       return;
     }
     setCommentsLoading(true);
+    setCommentsError(null);
     try {
       const res = await fetch(`/api/admin/review-comments?limit=${LIMIT}&offset=${offset}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setCommentsError("댓글 목록을 불러오지 못했습니다.");
+        return;
+      }
       const data = await res.json();
       setComments(data.comments ?? []);
       setCommentsTotal(data.total ?? 0);
       setCommentsOffset(offset);
+    } catch {
+      setCommentsError("댓글 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setCommentsLoading(false);
     }
@@ -118,26 +152,120 @@ export default function AdminReviewsPage() {
   const reviewsPage = Math.floor(reviewsOffset / LIMIT) + 1;
   const commentsPages = Math.ceil(commentsTotal / LIMIT) || 1;
   const commentsPage = Math.floor(commentsOffset / LIMIT) + 1;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((row) => {
+      if (reportFilter === "reported" && row.report_count <= 0) return false;
+      if (!normalizedQuery) return true;
+      return (
+        row.prfnm.toLowerCase().includes(normalizedQuery) ||
+        (row.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
+        (row.content ?? "").toLowerCase().includes(normalizedQuery) ||
+        row.user_id.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [reviews, reportFilter, normalizedQuery]);
+
+  const filteredComments = useMemo(() => {
+    return comments.filter((row) => {
+      if (reportFilter === "reported" && row.report_count <= 0) return false;
+      if (!normalizedQuery) return true;
+      return (
+        (row.prfnm ?? "").toLowerCase().includes(normalizedQuery) ||
+        (row.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
+        row.content.toLowerCase().includes(normalizedQuery) ||
+        row.user_id.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [comments, reportFilter, normalizedQuery]);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="공연 리뷰/댓글 관리"
-        description="리뷰와 댓글을 분리 탭으로 관리하고 신고 건을 빠르게 확인합니다."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (activeTab === "reviews") {
+                fetchReviews(reviewsOffset);
+              } else {
+                fetchComments(commentsOffset);
+              }
+            }}
+            disabled={activeTab === "reviews" ? reviewsLoading : commentsLoading}
+          >
+            <RefreshCw className="mr-1.5 size-4" />
+            새로고침
+          </Button>
+        }
       />
-      <Tabs defaultValue="reviews">
-        <TabsList>
+      <Tabs
+        defaultValue="reviews"
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as "reviews" | "comments")}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
           <TabsTrigger value="reviews">리뷰</TabsTrigger>
           <TabsTrigger value="comments">댓글</TabsTrigger>
         </TabsList>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={reportFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setReportFilter("all")}
+            >
+              전체
+            </Button>
+            <Button
+              variant={reportFilter === "reported" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setReportFilter("reported")}
+            >
+              신고 있음
+            </Button>
+          </div>
+        </div>
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="공연/작성자/내용 검색"
+            className="pl-9"
+          />
+        </div>
         <TabsContent value="reviews" className="mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="space-y-2">
               <CardTitle>리뷰 목록 (총 {reviewsTotal.toLocaleString("ko-KR")}건)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                현재 페이지 표시: {filteredReviews.length.toLocaleString("ko-KR")}건
+              </p>
             </CardHeader>
             <CardContent>
               {reviewsLoading ? (
-                <Skeleton className="h-64 w-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : reviewsError ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+                  <p className="text-sm text-destructive">{reviewsError}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => fetchReviews(reviewsOffset)}
+                  >
+                    다시 시도
+                  </Button>
+                </div>
               ) : (
                 <>
                   <Table>
@@ -153,21 +281,36 @@ export default function AdminReviewsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {reviews.length === 0 ? (
+                      {filteredReviews.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                            등록된 리뷰가 없습니다.
+                            {normalizedQuery || reportFilter === "reported"
+                              ? "검색/필터 결과가 없습니다."
+                              : "등록된 리뷰가 없습니다."}
                           </TableCell>
                         </TableRow>
                       ) : (
-                        reviews.map((r) => (
-                          <TableRow key={r.id}>
+                        filteredReviews.map((r) => (
+                          <TableRow key={r.id} className="hover:bg-muted/40">
                             <TableCell className="font-medium">{r.prfnm}</TableCell>
                             <TableCell>{r.nickname ?? "-"}</TableCell>
                             <TableCell>{r.rating}</TableCell>
-                            <TableCell className="max-w-[200px] truncate text-muted-foreground">{r.content ?? "-"}</TableCell>
-                            <TableCell>{r.report_count > 0 ? <Badge variant="secondary">{r.report_count}</Badge> : "-"}</TableCell>
-                            <TableCell className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString("ko-KR")}</TableCell>
+                            <TableCell
+                              className="max-w-[200px] truncate text-muted-foreground"
+                              title={r.content ?? "-"}
+                            >
+                              {r.content ?? "-"}
+                            </TableCell>
+                            <TableCell>
+                              {r.report_count > 0 ? (
+                                <Badge variant="destructive">{r.report_count}건</Badge>
+                              ) : (
+                                <Badge variant="secondary">0건</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDateTime(r.created_at)}
+                            </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" asChild>
                                 <Link href={`/wookicompany/admin/reviews/${r.id}`}>
@@ -184,13 +327,35 @@ export default function AdminReviewsPage() {
                     <Pagination className="mt-4">
                       <PaginationContent>
                         <PaginationItem>
-                          <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT); }} className={reviewsPage <= 1 ? "pointer-events-none opacity-50" : ""} />
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT);
+                            }}
+                            className={reviewsPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
                         <PaginationItem>
-                          <PaginationLink href="#" onClick={(e) => { e.preventDefault(); }} isActive>{reviewsPage} / {reviewsPages}</PaginationLink>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                            }}
+                            isActive
+                          >
+                            {reviewsPage} / {reviewsPages}
+                          </PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                          <PaginationNext href="#" onClick={(e) => { e.preventDefault(); if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT); }} className={reviewsPage >= reviewsPages ? "pointer-events-none opacity-50" : ""} />
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT);
+                            }}
+                            className={reviewsPage >= reviewsPages ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
@@ -202,12 +367,32 @@ export default function AdminReviewsPage() {
         </TabsContent>
         <TabsContent value="comments" className="mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="space-y-2">
               <CardTitle>댓글 목록 (총 {commentsTotal.toLocaleString("ko-KR")}건)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                현재 페이지 표시: {filteredComments.length.toLocaleString("ko-KR")}건
+              </p>
             </CardHeader>
             <CardContent>
               {commentsLoading ? (
-                <Skeleton className="h-64 w-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : commentsError ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+                  <p className="text-sm text-destructive">{commentsError}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => fetchComments(commentsOffset)}
+                  >
+                    다시 시도
+                  </Button>
+                </div>
               ) : (
                 <>
                   <Table>
@@ -222,20 +407,35 @@ export default function AdminReviewsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {comments.length === 0 ? (
+                      {filteredComments.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                            등록된 댓글이 없습니다.
+                            {normalizedQuery || reportFilter === "reported"
+                              ? "검색/필터 결과가 없습니다."
+                              : "등록된 댓글이 없습니다."}
                           </TableCell>
                         </TableRow>
                       ) : (
-                        comments.map((c) => (
-                          <TableRow key={c.id}>
+                        filteredComments.map((c) => (
+                          <TableRow key={c.id} className="hover:bg-muted/40">
                             <TableCell className="font-medium">{c.prfnm ?? "-"}</TableCell>
                             <TableCell>{c.nickname ?? "-"}</TableCell>
-                            <TableCell className="max-w-[200px] truncate text-muted-foreground">{c.content}</TableCell>
-                            <TableCell>{c.report_count > 0 ? <Badge variant="secondary">{c.report_count}</Badge> : "-"}</TableCell>
-                            <TableCell className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString("ko-KR")}</TableCell>
+                            <TableCell
+                              className="max-w-[200px] truncate text-muted-foreground"
+                              title={c.content}
+                            >
+                              {c.content}
+                            </TableCell>
+                            <TableCell>
+                              {c.report_count > 0 ? (
+                                <Badge variant="destructive">{c.report_count}건</Badge>
+                              ) : (
+                                <Badge variant="secondary">0건</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDateTime(c.created_at)}
+                            </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" asChild>
                                 <Link href={`/wookicompany/admin/reviews/comments/${c.id}`}>
@@ -252,13 +452,35 @@ export default function AdminReviewsPage() {
                     <Pagination className="mt-4">
                       <PaginationContent>
                         <PaginationItem>
-                          <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); if (commentsPage > 1) fetchComments(commentsOffset - LIMIT); }} className={commentsPage <= 1 ? "pointer-events-none opacity-50" : ""} />
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (commentsPage > 1) fetchComments(commentsOffset - LIMIT);
+                            }}
+                            className={commentsPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
                         <PaginationItem>
-                          <PaginationLink href="#" onClick={(e) => { e.preventDefault(); }} isActive>{commentsPage} / {commentsPages}</PaginationLink>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                            }}
+                            isActive
+                          >
+                            {commentsPage} / {commentsPages}
+                          </PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                          <PaginationNext href="#" onClick={(e) => { e.preventDefault(); if (commentsPage < commentsPages) fetchComments(commentsOffset + LIMIT); }} className={commentsPage >= commentsPages ? "pointer-events-none opacity-50" : ""} />
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (commentsPage < commentsPages) fetchComments(commentsOffset + LIMIT);
+                            }}
+                            className={commentsPage >= commentsPages ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
