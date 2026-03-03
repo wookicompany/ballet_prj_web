@@ -11,33 +11,23 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  LayoutDashboard,
-  CalendarDays,
-  MessageSquare,
-  Megaphone,
-  Users,
-  LogOut,
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/wookicompany/admin", label: "대시보드", icon: LayoutDashboard },
-  { href: "/wookicompany/admin/records", label: "캘린더 기록 관리", icon: CalendarDays },
-  { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리", icon: MessageSquare },
-  { href: "/wookicompany/admin/notices", label: "공지사항 관리", icon: Megaphone },
-  { href: "/wookicompany/admin/members", label: "회원 관리", icon: Users },
+  { href: "/wookicompany/admin", label: "대시보드" },
+  { href: "/wookicompany/admin/records", label: "캘린더 기록 관리" },
+  { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리" },
+  { href: "/wookicompany/admin/notices", label: "공지사항 관리" },
+  { href: "/wookicompany/admin/members", label: "회원 관리" },
 ] as const;
 
 export default function AdminLayout({
@@ -112,24 +102,30 @@ export default function AdminLayout({
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border">
           <div className="flex items-center gap-2 px-2 py-2">
-            <span className="font-semibold text-sidebar-foreground">어드민</span>
+            <span className="font-semibold text-sidebar-foreground">ADMIN</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>메뉴</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton asChild isActive={pathname === href || (href !== "/wookicompany/admin" && pathname.startsWith(href))}>
-                      <Link href={href}>
-                        <Icon className="size-4" />
-                        <span>{label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+            <SidebarGroupContent className="gap-2">
+              <SidebarMenu className="gap-2">
+                {NAV_ITEMS.map(({ href, label }) => {
+                  const isActive = pathname === href || (href !== "/wookicompany/admin" && pathname.startsWith(href));
+                  return (
+                    <SidebarMenuItem
+                      key={href}
+                      className={isActive ? "rounded-md bg-zinc-800 [&_a]:!bg-transparent [&_a]:!text-white [&_a:hover]:!bg-zinc-700 [&_a:hover]:!text-white" : undefined}
+                    >
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        className="min-h-11 w-full py-3 data-[active=true]:!bg-transparent data-[active=true]:!text-white data-[active=true]:font-semibold"
+                      >
+                        <Link href={href}>{label}</Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -137,8 +133,6 @@ export default function AdminLayout({
       </Sidebar>
       <SidebarInset>
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-6" />
           <span className="text-sm font-medium text-muted-foreground">관리자</span>
           <div className="ml-auto">
             <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1.5">
