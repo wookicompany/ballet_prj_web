@@ -14,7 +14,7 @@ type AdPayload = {
 
 type Props = {
   placement: AdPlacement;
-  width: number;
+  width?: number;
   height: number;
   className?: string;
 };
@@ -55,7 +55,7 @@ export default function AdSlot({ placement, width, height, className }: Props) {
     <button
       type="button"
       className={`relative block overflow-hidden rounded-lg bg-[#17171c]/5 ${className ?? ""}`}
-      style={{ width, height }}
+      style={{ width: width ?? "100%", height }}
       onClick={() => {
         void fetch(`/api/ads/${ad.id}/click`, { method: "POST" }).catch(() => undefined);
         window.location.href = ad.target_url;
@@ -71,9 +71,6 @@ export default function AdSlot({ placement, width, height, className }: Props) {
         draggable={false}
         className="h-full w-full object-cover"
       />
-      <span className="absolute left-2 top-2 rounded bg-black/55 px-2 py-0.5 text-[10px] text-white">
-        광고
-      </span>
     </button>
   );
 }

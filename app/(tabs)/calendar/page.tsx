@@ -364,12 +364,12 @@ export default function CalendarPage() {
           );
         })}
       </section>
-      <AdSlot
-        placement="calendar_home"
-        width={320}
-        height={50}
-        className="mx-auto mt-3"
-      />
+      <div className="mt-3 px-4">
+        <AdSlot
+          placement="calendar_home"
+          height={50}
+        />
+      </div>
       <BottomSheet
         open={monthSheetOpen}
         onOpenChange={setMonthSheetOpen}
