@@ -27,8 +27,9 @@ const hasOverlappingActiveAd = async ({
   startAtIso,
   endAtIso,
 }: {
-  supabaseAdmin: Awaited<
-    ReturnType<typeof getAdminFromRequest>
+  supabaseAdmin: Extract<
+    Awaited<ReturnType<typeof getAdminFromRequest>>,
+    { admin: true }
   >["supabaseAdmin"];
   adId: string;
   placement: string;

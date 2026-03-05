@@ -30,8 +30,9 @@ const hasOverlappingActiveAd = async ({
   startAtIso,
   endAtIso,
 }: {
-  supabaseAdmin: Awaited<
-    ReturnType<typeof getAdminFromRequest>
+  supabaseAdmin: Extract<
+    Awaited<ReturnType<typeof getAdminFromRequest>>,
+    { admin: true }
   >["supabaseAdmin"];
   placement: string;
   startAtIso: string;
@@ -100,13 +101,14 @@ export const POST = async (request: Request) => {
   const imageUrl = body.image_url?.trim();
   const targetUrl = body.target_url?.trim();
   const description = body.description?.trim() || null;
+  const placement = body.placement;
   if (!title || !imageUrl || !targetUrl || !body.start_at || !body.end_at) {
     return NextResponse.json(
       { message: "required fields are missing" },
       { status: 400 }
     );
   }
-  if (!isAdPlacement(body.placement ?? "")) {
+  if (!placement || !isAdPlacement(placement)) {
     return NextResponse.json({ message: "invalid placement" }, { status: 400 });
   }
   if (!isValidHttpUrl(imageUrl) || !isValidHttpUrl(targetUrl)) {
@@ -135,7 +137,7 @@ export const POST = async (request: Request) => {
   if (isActive) {
     const overlap = await hasOverlappingActiveAd({
       supabaseAdmin: result.supabaseAdmin,
-      placement: body.placement,
+      placement,
       startAtIso,
       endAtIso,
     });
@@ -157,7 +159,7 @@ export const POST = async (request: Request) => {
   const { data: ad, error } = await result.supabaseAdmin
     .from("ads")
     .insert({
-      placement: body.placement,
+      placement,
       provider: AD_PROVIDER,
       title,
       description,
