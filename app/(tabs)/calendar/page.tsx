@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import AdSlot from "@/components/ads/AdSlot";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,9 @@ function getMonthBounds(date: Date) {
   return { start, end };
 }
 
+const SWIPE_THRESHOLD_PX = 40;
+const SWIPE_TRANSITION_LOCK_MS = 240;
+
 export default function CalendarPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -52,6 +55,10 @@ export default function CalendarPage() {
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const swipeStartPointRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeHandledRef = useRef(false);
+  const swipeLockedRef = useRef(false);
+  const swipeLockTimeoutRef = useRef<number | null>(null);
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
@@ -179,6 +186,59 @@ export default function CalendarPage() {
   const yearButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const monthButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
+  const changeMonthBy = useCallback((delta: -1 | 1) => {
+    if (swipeLockedRef.current) return;
+    swipeLockedRef.current = true;
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    if (swipeLockTimeoutRef.current) {
+      window.clearTimeout(swipeLockTimeoutRef.current);
+    }
+    swipeLockTimeoutRef.current = window.setTimeout(() => {
+      swipeLockedRef.current = false;
+      swipeLockTimeoutRef.current = null;
+    }, SWIPE_TRANSITION_LOCK_MS);
+  }, []);
+
+  const handleCalendarTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      if (swipeLockedRef.current) return;
+      const point = event.touches[0];
+      if (!point) return;
+      swipeStartPointRef.current = { x: point.clientX, y: point.clientY };
+      swipeHandledRef.current = false;
+    },
+    []
+  );
+
+  const handleCalendarTouchEnd = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      if (swipeLockedRef.current || swipeHandledRef.current) {
+        swipeStartPointRef.current = null;
+        return;
+      }
+      const start = swipeStartPointRef.current;
+      swipeStartPointRef.current = null;
+      if (!start) return;
+
+      const point = event.changedTouches[0];
+      if (!point) return;
+
+      const deltaX = point.clientX - start.x;
+      const deltaY = point.clientY - start.y;
+      if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+      swipeHandledRef.current = true;
+      changeMonthBy(deltaX < 0 ? 1 : -1);
+    },
+    [changeMonthBy]
+  );
+
+  const handleCalendarTouchCancel = useCallback(() => {
+    swipeStartPointRef.current = null;
+    swipeHandledRef.current = false;
+  }, []);
+
   useEffect(() => {
     if (!monthSheetOpen) return;
 
@@ -194,6 +254,15 @@ export default function CalendarPage() {
     const frame = window.setTimeout(handleScroll, 0);
     return () => window.clearTimeout(frame);
   }, [monthSheetOpen, monthDraft.year, monthDraft.month]);
+
+  useEffect(
+    () => () => {
+      if (swipeLockTimeoutRef.current) {
+        window.clearTimeout(swipeLockTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   const weekLabels = useMemo(() => {
     return weekStartMonday
@@ -264,106 +333,113 @@ export default function CalendarPage() {
         </Button>
       </header>
 
-      <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
-        {weekLabels.map((day) => {
-          const isSaturday = day === "토";
-          const isSunday = day === "일";
-          const isWeekend = isSaturday || isSunday;
-          const weekendClass = highlightWeekend
-            ? isSaturday
-              ? "text-blue-600"
-              : isSunday
-                ? "text-red-500"
-                : ""
-            : "";
-          return (
-            <span
-              key={day}
-              className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
-            >
-              {day}
-            </span>
-          );
-        })}
-      </section>
-      <div className="h-px w-full bg-black/5" />
+      <div
+        className="touch-pan-y"
+        onTouchStart={handleCalendarTouchStart}
+        onTouchEnd={handleCalendarTouchEnd}
+        onTouchCancel={handleCalendarTouchCancel}
+      >
+        <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
+          {weekLabels.map((day) => {
+            const isSaturday = day === "토";
+            const isSunday = day === "일";
+            const isWeekend = isSaturday || isSunday;
+            const weekendClass = highlightWeekend
+              ? isSaturday
+                ? "text-blue-600"
+                : isSunday
+                  ? "text-red-500"
+                  : ""
+              : "";
+            return (
+              <span
+                key={day}
+                className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
+              >
+                {day}
+              </span>
+            );
+          })}
+        </section>
+        <div className="h-px w-full bg-black/5" />
 
-      <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
-        {cells.map((cell, index) => {
-          const isEmpty = !cell.date;
-          const dateStr = cell.date ? formatDate(cell.date) : "";
-          const count = recordCounts[dateStr] ?? 0;
-          const moodValue = moodAverages[dateStr];
-          const isToday = dateStr === todayStr;
-          const dayOfWeek = cell.date ? cell.date.getDay() : null;
-          const isSaturday = dayOfWeek === 6;
-          const isSunday = dayOfWeek === 0;
-          const isWeekend = isSaturday || isSunday;
-          const weekendClass = highlightWeekend
-            ? isSaturday
-              ? "text-blue-600"
-              : isSunday
-                ? "text-red-500"
-                : ""
-            : "";
+        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
+          {cells.map((cell, index) => {
+            const isEmpty = !cell.date;
+            const dateStr = cell.date ? formatDate(cell.date) : "";
+            const count = recordCounts[dateStr] ?? 0;
+            const moodValue = moodAverages[dateStr];
+            const isToday = dateStr === todayStr;
+            const dayOfWeek = cell.date ? cell.date.getDay() : null;
+            const isSaturday = dayOfWeek === 6;
+            const isSunday = dayOfWeek === 0;
+            const isWeekend = isSaturday || isSunday;
+            const weekendClass = highlightWeekend
+              ? isSaturday
+                ? "text-blue-600"
+                : isSunday
+                  ? "text-red-500"
+                  : ""
+              : "";
 
-          return (
-            <Button
-              key={`${index}-${dateStr}`}
-              type="button"
-              variant="outline"
-              className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 overflow-visible ${
-                isEmpty ? "opacity-40" : ""
-              }`}
-              disabled={isEmpty}
-              onClick={() => {
-                if (!cell.date) return;
-                router.push(`/day/${dateStr}`);
-              }}
-            >
-              <div className="flex w-full items-start justify-center">
-                <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                    isToday
-                      ? "bg-brand text-white"
-                      : highlightWeekend && isWeekend
-                        ? weekendClass
-                        : "text-[#17171c]"
-                  }`}
-                >
-                  {cell.day ?? ""}
-                </span>
-              </div>
-              <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
-                {moodValue ? (
-                  <div className="relative h-full w-full overflow-visible">
-                    <AnimatedImage
-                      src={`/mood/cat-${moodValue}.svg`}
-                      alt={`기분 ${moodValue}단계`}
-                      width={1600}
-                      height={1600}
-                      unoptimized
-                      draggable={false}
-                      className="h-full w-full max-h-[52px] object-contain"
-                      loading="eager"
-                    />
-                    {count >= 2 ? (
-                      <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
-                        {count}
-                      </Badge>
-                    ) : null}
-                  </div>
+            return (
+              <Button
+                key={`${index}-${dateStr}`}
+                type="button"
+                variant="outline"
+                className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 overflow-visible ${
+                  isEmpty ? "opacity-40" : ""
+                }`}
+                disabled={isEmpty}
+                onClick={() => {
+                  if (!cell.date) return;
+                  router.push(`/day/${dateStr}`);
+                }}
+              >
+                <div className="flex w-full items-start justify-center">
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                      isToday
+                        ? "bg-brand text-white"
+                        : highlightWeekend && isWeekend
+                          ? weekendClass
+                          : "text-[#17171c]"
+                    }`}
+                  >
+                    {cell.day ?? ""}
+                  </span>
+                </div>
+                <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
+                  {moodValue ? (
+                    <div className="relative h-full w-full overflow-visible">
+                      <AnimatedImage
+                        src={`/mood/cat-${moodValue}.svg`}
+                        alt={`기분 ${moodValue}단계`}
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
+                        className="h-full w-full max-h-[52px] object-contain"
+                        loading="eager"
+                      />
+                      {count >= 2 ? (
+                        <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
+                          {count}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                {!moodValue && count >= 2 ? (
+                  <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
+                    {count}
+                  </Badge>
                 ) : null}
-              </div>
-              {!moodValue && count >= 2 ? (
-                <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
-                  {count}
-                </Badge>
-              ) : null}
-            </Button>
-          );
-        })}
-      </section>
+              </Button>
+            );
+          })}
+        </section>
+      </div>
       <div className="mt-3 px-4">
         <AdSlot
           placement="calendar_home"
