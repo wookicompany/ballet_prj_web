@@ -58,7 +58,7 @@ export default function BottomSheet({
             ) : null}
           </DrawerHeader>
         )}
-        <div className="px-4 pb-6">{children}</div>
+        <div className="px-4 pt-6 pb-8">{children}</div>
       </DrawerContent>
     </Drawer>
   );
