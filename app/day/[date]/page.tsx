@@ -270,7 +270,7 @@ export default function DayPage() {
           })}
         </div>
       </section>
-      <div className="fixed bottom-8 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-6">
+      <div className="fixed bottom-10 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-6">
         <Button
           type="button"
           size="icon-lg"
