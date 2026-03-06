@@ -466,7 +466,7 @@ export default function PerformanceListPage() {
 
           <AdSlot
             placement="performance_home"
-            height={50}
+            height={100}
             className="mb-4"
           />
 
@@ -519,7 +519,7 @@ export default function PerformanceListPage() {
 
         <AdSlot
           placement="performance_home"
-          height={50}
+          height={100}
           className="mb-4"
         />
 

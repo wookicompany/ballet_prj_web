@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -51,7 +58,6 @@ type AdDetail = {
 };
 
 const placementOptions: Array<{ value: AdPlacement; label: string }> = [
-  { value: "calendar_home", label: "캘린더 홈" },
   { value: "performance_home", label: "공연 홈" },
 ];
 
@@ -77,7 +83,7 @@ export default function AdminAdDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [placement, setPlacement] = useState<AdPlacement>("calendar_home");
+  const [placement, setPlacement] = useState<AdPlacement>("performance_home");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -452,24 +458,32 @@ export default function AdminAdDetailPage() {
           {editing ? (
             <div className="max-w-3xl space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="placement">노출 위치 *</Label>
-                <select
-                  id="placement"
+                <div className="flex items-center justify-between">
+                  <Label>노출 위치 *</Label>
+                  <Badge variant="secondary" className="text-xs">
+                    필수
+                  </Badge>
+                </div>
+                <Select
                   value={placement}
-                  onChange={(e) => setPlacement(e.target.value as AdPlacement)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  onValueChange={(value) => setPlacement(value as AdPlacement)}
                 >
-                  {placementOptions.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  {placement === "calendar_home"
-                    ? "캘린더 홈 슬롯 권장 사이즈: 320x50"
-                    : "공연 홈 슬롯 권장 사이즈: 320x50"}
-                </p>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="노출 위치를 선택해 주세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {placementOptions.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    공연 홈 슬롯 권장 사이즈: 320x100
+                  </p>
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">

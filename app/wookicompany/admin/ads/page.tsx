@@ -41,9 +41,6 @@ type AdRow = {
   created_at: string;
 };
 
-const placementLabel = (value: AdRow["placement"]) =>
-  value === "calendar_home" ? "캘린더 홈" : "공연 홈";
-
 export default function AdminAdsPage() {
   const [ads, setAds] = useState<AdRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -51,9 +48,6 @@ export default function AdminAdsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [placementFilter, setPlacementFilter] = useState<
-    "all" | "calendar_home" | "performance_home"
-  >("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
     "all"
   );
@@ -110,16 +104,13 @@ export default function AdminAdsPage() {
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredAds = useMemo(() => {
     return ads.filter((ad) => {
-      if (placementFilter !== "all" && ad.placement !== placementFilter) return false;
+      if (ad.placement !== "performance_home") return false;
       if (statusFilter === "active" && !ad.is_active) return false;
       if (statusFilter === "inactive" && ad.is_active) return false;
       if (!normalizedQuery) return true;
-      return (
-        ad.title.toLowerCase().includes(normalizedQuery) ||
-        placementLabel(ad.placement).toLowerCase().includes(normalizedQuery)
-      );
+      return ad.title.toLowerCase().includes(normalizedQuery);
     });
-  }, [ads, normalizedQuery, placementFilter, statusFilter]);
+  }, [ads, normalizedQuery, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -163,27 +154,6 @@ export default function AdminAdsPage() {
                 className="pl-9"
               />
             </div>
-            <Button
-              variant={placementFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPlacementFilter("all")}
-            >
-              전체 슬롯
-            </Button>
-            <Button
-              variant={placementFilter === "calendar_home" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPlacementFilter("calendar_home")}
-            >
-              캘린더
-            </Button>
-            <Button
-              variant={placementFilter === "performance_home" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPlacementFilter("performance_home")}
-            >
-              공연
-            </Button>
             <Button
               variant={statusFilter === "all" ? "default" : "outline"}
               size="sm"
@@ -245,9 +215,7 @@ export default function AdminAdsPage() {
                   {filteredAds.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                        {normalizedQuery ||
-                        placementFilter !== "all" ||
-                        statusFilter !== "all"
+                        {normalizedQuery || statusFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "등록된 광고가 없습니다."}
                       </TableCell>
@@ -255,7 +223,7 @@ export default function AdminAdsPage() {
                   ) : (
                     filteredAds.map((ad) => (
                       <TableRow key={ad.id} className="hover:bg-muted/40">
-                        <TableCell>{placementLabel(ad.placement)}</TableCell>
+                        <TableCell>공연 홈</TableCell>
                         <TableCell className="max-w-[260px] truncate font-medium" title={ad.title}>
                           {ad.title}
                         </TableCell>
