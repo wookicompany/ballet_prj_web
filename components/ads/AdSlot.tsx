@@ -47,9 +47,20 @@ export default function AdSlot({ placement, width, height, className }: Props) {
     };
   }, [placement]);
 
-  if (loading) return null;
+  const demoSlotClassName = `relative flex items-center justify-center overflow-hidden rounded-lg bg-[#17171c]/10 ${className ?? ""}`;
+  const demoSlot = (
+    <div
+      className={demoSlotClassName}
+      style={{ width: width ?? "100%", height }}
+      aria-label={`${placement} 광고 데모 영역`}
+    >
+      <span className="text-xs text-[#17171c]/50">광고 데모 영역</span>
+    </div>
+  );
 
-  if (!ad) return null;
+  if (loading) return demoSlot;
+
+  if (!ad) return demoSlot;
 
   return (
     <button

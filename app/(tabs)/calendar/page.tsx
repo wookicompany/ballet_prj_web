@@ -293,7 +293,7 @@ export default function CalendarPage() {
   }, [currentDate, weekStartMonday]);
 
   return (
-    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-2">
+    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-24 pt-2">
       <header className="mb-6 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
@@ -440,11 +440,8 @@ export default function CalendarPage() {
           })}
         </section>
       </div>
-      <div className="mt-3 px-4">
-        <AdSlot
-          placement="calendar_home"
-          height={50}
-        />
+      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-4">
+        <AdSlot placement="calendar_home" height={50} />
       </div>
       <BottomSheet
         open={monthSheetOpen}
