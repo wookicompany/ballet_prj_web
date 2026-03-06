@@ -431,7 +431,7 @@ export default function PerformanceListPage() {
   if (loading) {
     return (
       <main className="px-4 pb-16 pt-2">
-          <header className="mb-6 flex items-center justify-between">
+          <header className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-0">
               <h1 className="text-xl font-semibold">공연</h1>
               <Popover>
@@ -466,8 +466,8 @@ export default function PerformanceListPage() {
 
           <AdSlot
             placement="performance_home"
-            height={100}
-            className="mb-6"
+            height={50}
+            className="mb-4"
           />
 
           <div className="space-y-7">
@@ -483,7 +483,7 @@ export default function PerformanceListPage() {
 
   return (
     <main className="px-4 pb-16 pt-2">
-        <header className="mb-6 flex items-center justify-between">
+        <header className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-xl font-semibold">공연</h1>
             <Popover>
@@ -519,8 +519,8 @@ export default function PerformanceListPage() {
 
         <AdSlot
           placement="performance_home"
-          height={100}
-          className="mb-6"
+          height={50}
+          className="mb-4"
         />
 
         <div className="space-y-7">

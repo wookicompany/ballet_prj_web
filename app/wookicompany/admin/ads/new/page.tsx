@@ -186,7 +186,7 @@ export default function AdminAdNewPage() {
               <p className="text-xs text-muted-foreground">
                 {placement === "calendar_home"
                   ? "캘린더 홈 슬롯 권장 사이즈: 320x50"
-                  : "공연 홈 슬롯 권장 사이즈: 320x100"}
+                  : "공연 홈 슬롯 권장 사이즈: 320x50"}
               </p>
             </div>
 
