@@ -24,26 +24,35 @@ export default function AdSlot({ placement, width, height, className }: Props) {
   const [ad, setAd] = useState<AdPayload | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
     const fetchAd = async () => {
       setLoading(true);
       try {
         const res = await fetch(`/api/ads?placement=${placement}`, {
           cache: "no-store",
+          signal: controller.signal,
         });
         if (!res.ok) {
-          if (mounted) setAd(null);
+          setAd(null);
           return;
         }
         const data = await res.json();
-        if (mounted) setAd((data.ad as AdPayload | null) ?? null);
+        setAd((data.ad as AdPayload | null) ?? null);
+      } catch (error) {
+        // 화면 전환/언마운트로 인한 취소는 정상 플로우로 간주한다.
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        setAd(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     void fetchAd();
     return () => {
-      mounted = false;
+      controller.abort();
     };
   }, [placement]);
 
