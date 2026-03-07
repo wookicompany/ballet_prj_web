@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import UserProfileSummarySheet from "@/components/performance/UserProfileSummarySheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -171,6 +172,8 @@ export default function PerformanceReviewDetailPage() {
   const [reportReason, setReportReason] = useState<ReportReasonCode>("SPAM");
   const [reportDetail, setReportDetail] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [userSummarySheetOpen, setUserSummarySheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<{
     kind: "review" | "comment";
     id: string;
@@ -746,6 +749,12 @@ export default function PerformanceReviewDetailPage() {
     toast("신고가 접수되었어요.");
   };
 
+  const openUserSummarySheet = (userId: string) => {
+    sendHapticToApp();
+    setSelectedUserId(userId);
+    setUserSummarySheetOpen(true);
+  };
+
   if (loading) {
     return (
       <MobileContainer>
@@ -840,10 +849,17 @@ export default function PerformanceReviewDetailPage() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm text-[#17171c]/60">
-              <span>
-                {getDisplayNickname(profile?.nickname, review.user_id, true)} ·{" "}
-                {formatDate(review.created_at)}
-              </span>
+              <div className="flex min-w-0 items-center gap-1">
+                <button
+                  type="button"
+                  className="truncate text-left underline-offset-2 hover:underline"
+                  onClick={() => openUserSummarySheet(review.user_id)}
+                  aria-label="사용자 정보 보기"
+                >
+                  {getDisplayNickname(profile?.nickname, review.user_id, true)}
+                </button>
+                <span>· {formatDate(review.created_at)}</span>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }, (_, index) => {
@@ -972,14 +988,21 @@ export default function PerformanceReviewDetailPage() {
                     className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-base text-[#17171c] transition-colors active:bg-black/5"
                   >
                     <div className="flex items-center justify-between text-sm text-[#17171c]/60">
-                      <span>
-                        {getDisplayNickname(
-                          author?.nickname,
-                          comment.user_id,
-                          !!commentProfileResolvedMap[comment.user_id],
-                        )} ·{" "}
-                        {formatDate(comment.created_at)}
-                      </span>
+                      <div className="flex min-w-0 items-center gap-1">
+                        <button
+                          type="button"
+                          className="truncate text-left underline-offset-2 hover:underline"
+                          onClick={() => openUserSummarySheet(comment.user_id)}
+                          aria-label="사용자 정보 보기"
+                        >
+                          {getDisplayNickname(
+                            author?.nickname,
+                            comment.user_id,
+                            !!commentProfileResolvedMap[comment.user_id],
+                          )}
+                        </button>
+                        <span>· {formatDate(comment.created_at)}</span>
+                      </div>
                       {user ? (
                         <Popover>
                           <PopoverTrigger asChild>
@@ -1154,6 +1177,12 @@ export default function PerformanceReviewDetailPage() {
           </Button>
         )}
       </BottomSheet>
+
+      <UserProfileSummarySheet
+        open={userSummarySheetOpen}
+        onOpenChange={setUserSummarySheetOpen}
+        userId={selectedUserId}
+      />
 
       <BottomSheet
         open={reportSheetOpen}

@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import UserProfileSummarySheet from "@/components/performance/UserProfileSummarySheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -236,6 +237,8 @@ export default function PerformanceDetailPage() {
   const [reportReason, setReportReason] = useState<ReportReasonCode>("SPAM");
   const [reportDetail, setReportDetail] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [userSummarySheetOpen, setUserSummarySheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [storyExpanded, setStoryExpanded] = useState(false);
   const [infoTab, setInfoTab] = useState<"performance" | "facility">(
     "performance",
@@ -804,6 +807,12 @@ export default function PerformanceDetailPage() {
     toast("신고가 접수되었어요.");
   };
 
+  const openUserSummarySheet = (userId: string) => {
+    sendHapticToApp();
+    setSelectedUserId(userId);
+    setUserSummarySheetOpen(true);
+  };
+
   const awardLines = useMemo(() => {
     const raw = awardDetail?.awards;
     if (!raw) return [];
@@ -1336,14 +1345,27 @@ export default function PerformanceDetailPage() {
                           }}
                         >
                           <div className="flex items-center justify-between gap-2 text-xs text-[#17171c]/60">
-                            <span>
-                              {getDisplayNickname(
-                                profile?.nickname,
-                                review.user_id,
-                                !!profileResolvedMap[review.user_id],
-                              )} ·{" "}
-                              {formatDate(review.created_at)}
-                            </span>
+                            <div className="flex min-w-0 items-center gap-1">
+                              <button
+                                type="button"
+                                className="truncate text-left underline-offset-2 hover:underline"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openUserSummarySheet(review.user_id);
+                                }}
+                                onKeyDown={(event) => {
+                                  event.stopPropagation();
+                                }}
+                                aria-label="사용자 정보 보기"
+                              >
+                                {getDisplayNickname(
+                                  profile?.nickname,
+                                  review.user_id,
+                                  !!profileResolvedMap[review.user_id],
+                                )}
+                              </button>
+                              <span>· {formatDate(review.created_at)}</span>
+                            </div>
                             {user ? (
                               <Popover>
                                 <PopoverTrigger asChild>
@@ -1526,6 +1548,11 @@ export default function PerformanceDetailPage() {
         imageUrl={viewerUrl}
         alt="소개 이미지 크게 보기"
         onClose={() => setViewerOpen(false)}
+      />
+      <UserProfileSummarySheet
+        open={userSummarySheetOpen}
+        onOpenChange={setUserSummarySheetOpen}
+        userId={selectedUserId}
       />
       <BottomSheet
         open={reportSheetOpen}
