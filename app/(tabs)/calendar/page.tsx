@@ -32,8 +32,42 @@ function getMonthBounds(date: Date) {
   return { start, end };
 }
 
+function buildMonthCells(date: Date, weekStartMonday: boolean): CalendarCell[] {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const startDay = new Date(year, month, 1).getDay();
+  const firstDay = weekStartMonday ? (startDay + 6) % 7 : startDay;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const result: CalendarCell[] = [];
+  for (let i = 0; i < 42; i += 1) {
+    const dayNumber = i - firstDay + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      result.push({ date: null, day: null });
+    } else {
+      result.push({
+        date: new Date(year, month, dayNumber),
+        day: dayNumber,
+      });
+    }
+  }
+  return result;
+}
+
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_TRANSITION_LOCK_MS = 240;
+const SWIPE_ANIMATION_MS = 220;
+
+type CalendarCell = {
+  date: Date | null;
+  day: number | null;
+};
+
+type CalendarAnimationSnapshot = {
+  cells: CalendarCell[];
+  recordCounts: Record<string, number>;
+  moodAverages: Record<string, number>;
+};
 
 export default function CalendarPage() {
   const router = useRouter();
@@ -58,6 +92,15 @@ export default function CalendarPage() {
   const swipeHandledRef = useRef(false);
   const swipeLockedRef = useRef(false);
   const swipeLockTimeoutRef = useRef<number | null>(null);
+  const swipeAnimationFrameRef = useRef<number | null>(null);
+  const swipeAnimationTimeoutRef = useRef<number | null>(null);
+  const [slideDirection, setSlideDirection] = useState<"next" | "prev" | null>(
+    null
+  );
+  const [isSlideAnimating, setIsSlideAnimating] = useState(false);
+  const [isSlidePhaseReady, setIsSlidePhaseReady] = useState(false);
+  const [slidePrevSnapshot, setSlidePrevSnapshot] =
+    useState<CalendarAnimationSnapshot | null>(null);
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
@@ -185,18 +228,56 @@ export default function CalendarPage() {
   const yearButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const monthButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
-  const changeMonthBy = useCallback((delta: -1 | 1) => {
-    if (swipeLockedRef.current) return;
-    swipeLockedRef.current = true;
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
-    if (swipeLockTimeoutRef.current) {
-      window.clearTimeout(swipeLockTimeoutRef.current);
-    }
-    swipeLockTimeoutRef.current = window.setTimeout(() => {
-      swipeLockedRef.current = false;
-      swipeLockTimeoutRef.current = null;
-    }, SWIPE_TRANSITION_LOCK_MS);
-  }, []);
+  const changeMonthBy = useCallback(
+    (delta: -1 | 1) => {
+      if (swipeLockedRef.current) return;
+      swipeLockedRef.current = true;
+
+      if (swipeAnimationFrameRef.current) {
+        window.cancelAnimationFrame(swipeAnimationFrameRef.current);
+        swipeAnimationFrameRef.current = null;
+      }
+      if (swipeAnimationTimeoutRef.current) {
+        window.clearTimeout(swipeAnimationTimeoutRef.current);
+        swipeAnimationTimeoutRef.current = null;
+      }
+      if (swipeLockTimeoutRef.current) {
+        window.clearTimeout(swipeLockTimeoutRef.current);
+        swipeLockTimeoutRef.current = null;
+      }
+
+      setSlideDirection(delta > 0 ? "next" : "prev");
+      setSlidePrevSnapshot({
+        cells: buildMonthCells(currentDate, weekStartMonday),
+        recordCounts: { ...recordCounts },
+        moodAverages: { ...moodAverages },
+      });
+      setIsSlideAnimating(true);
+      setIsSlidePhaseReady(false);
+      setCurrentDate(
+        (prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
+      );
+
+      swipeAnimationFrameRef.current = window.requestAnimationFrame(() => {
+        setIsSlidePhaseReady(true);
+        swipeAnimationFrameRef.current = null;
+      });
+
+      swipeAnimationTimeoutRef.current = window.setTimeout(() => {
+        setIsSlideAnimating(false);
+        setIsSlidePhaseReady(false);
+        setSlideDirection(null);
+        setSlidePrevSnapshot(null);
+        swipeAnimationTimeoutRef.current = null;
+      }, SWIPE_ANIMATION_MS);
+
+      swipeLockTimeoutRef.current = window.setTimeout(() => {
+        swipeLockedRef.current = false;
+        swipeLockTimeoutRef.current = null;
+      }, SWIPE_TRANSITION_LOCK_MS);
+    },
+    [currentDate, moodAverages, recordCounts, weekStartMonday]
+  );
 
   const handleCalendarTouchStart = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
@@ -259,6 +340,12 @@ export default function CalendarPage() {
       if (swipeLockTimeoutRef.current) {
         window.clearTimeout(swipeLockTimeoutRef.current);
       }
+      if (swipeAnimationTimeoutRef.current) {
+        window.clearTimeout(swipeAnimationTimeoutRef.current);
+      }
+      if (swipeAnimationFrameRef.current) {
+        window.cancelAnimationFrame(swipeAnimationFrameRef.current);
+      }
     },
     []
   );
@@ -269,27 +356,125 @@ export default function CalendarPage() {
       : ["일", "월", "화", "수", "목", "금", "토"];
   }, [weekStartMonday]);
 
-  const cells = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const startDay = new Date(year, month, 1).getDay();
-    const firstDay = weekStartMonday ? (startDay + 6) % 7 : startDay;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const result: Array<{ date: Date | null; day: number | null }> = [];
-    for (let i = 0; i < 42; i += 1) {
-      const dayNumber = i - firstDay + 1;
-      if (dayNumber < 1 || dayNumber > daysInMonth) {
-        result.push({ date: null, day: null });
-      } else {
-        result.push({
-          date: new Date(year, month, dayNumber),
-          day: dayNumber,
-        });
-      }
-    }
-    return result;
+  const cells = useMemo<CalendarCell[]>(() => {
+    return buildMonthCells(currentDate, weekStartMonday);
   }, [currentDate, weekStartMonday]);
+
+  const renderCalendarBody = useCallback(
+    (
+      layerCells: CalendarCell[],
+      layerRecordCounts: Record<string, number>,
+      layerMoodAverages: Record<string, number>,
+      keyPrefix: string,
+      disableClick: boolean
+    ) => {
+      return (
+        <>
+          <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
+            {weekLabels.map((day) => {
+              const isSaturday = day === "토";
+              const isSunday = day === "일";
+              const isWeekend = isSaturday || isSunday;
+              const weekendClass = highlightWeekend
+                ? isSaturday
+                  ? "text-blue-600"
+                  : isSunday
+                    ? "text-red-500"
+                    : ""
+                : "";
+              return (
+                <span
+                  key={`${keyPrefix}-weekday-${day}`}
+                  className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
+                >
+                  {day}
+                </span>
+              );
+            })}
+          </section>
+          <div className="h-px w-full bg-black/5" />
+
+          <section className="grid flex-1 auto-rows-fr grid-cols-7 gap-0">
+            {layerCells.map((cell, index) => {
+              const isEmpty = !cell.date;
+              const dateStr = cell.date ? formatDate(cell.date) : "";
+              const count = layerRecordCounts[dateStr] ?? 0;
+              const moodValue = layerMoodAverages[dateStr];
+              const isToday = dateStr === todayStr;
+              const dayOfWeek = cell.date ? cell.date.getDay() : null;
+              const isSaturday = dayOfWeek === 6;
+              const isSunday = dayOfWeek === 0;
+              const isWeekend = isSaturday || isSunday;
+              const weekendClass = highlightWeekend
+                ? isSaturday
+                  ? "text-blue-600"
+                  : isSunday
+                    ? "text-red-500"
+                    : ""
+                : "";
+
+              return (
+                <Button
+                  key={`${keyPrefix}-${index}-${dateStr}`}
+                  type="button"
+                  variant="outline"
+                  className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 overflow-visible rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 ${
+                    isEmpty ? "opacity-40" : ""
+                  }`}
+                  disabled={isEmpty || disableClick}
+                  onClick={() => {
+                    if (!cell.date) return;
+                    router.push(`/day/${dateStr}`);
+                  }}
+                >
+                  <div className="flex w-full items-start justify-center">
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                        isToday
+                          ? "bg-brand text-white"
+                          : highlightWeekend && isWeekend
+                            ? weekendClass
+                            : "text-[#17171c]"
+                      }`}
+                    >
+                      {cell.day ?? ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
+                    {moodValue ? (
+                      <div className="relative h-full w-full overflow-visible">
+                        <AnimatedImage
+                          src={`/mood/cat-${moodValue}.svg`}
+                          alt={`기분 ${moodValue}단계`}
+                          width={1600}
+                          height={1600}
+                          unoptimized
+                          draggable={false}
+                          className="h-full w-full max-h-[52px] object-contain"
+                          loading="eager"
+                        />
+                        {count >= 2 ? (
+                          <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
+                            {count}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                  {!moodValue && count >= 2 ? (
+                    <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
+                      {count}
+                    </Badge>
+                  ) : null}
+                </Button>
+              );
+            })}
+          </section>
+        </>
+      );
+    },
+    [highlightWeekend, router, todayStr, weekLabels]
+  );
 
   return (
     <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-2">
@@ -338,106 +523,51 @@ export default function CalendarPage() {
         onTouchEnd={handleCalendarTouchEnd}
         onTouchCancel={handleCalendarTouchCancel}
       >
-        <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
-          {weekLabels.map((day) => {
-            const isSaturday = day === "토";
-            const isSunday = day === "일";
-            const isWeekend = isSaturday || isSunday;
-            const weekendClass = highlightWeekend
-              ? isSaturday
-                ? "text-blue-600"
-                : isSunday
-                  ? "text-red-500"
-                  : ""
-              : "";
-            return (
-              <span
-                key={day}
-                className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
-              >
-                {day}
-              </span>
-            );
-          })}
-        </section>
-        <div className="h-px w-full bg-black/5" />
+        <div className="relative overflow-hidden">
+          {isSlideAnimating && slidePrevSnapshot && slideDirection ? (
+            <div
+              className={`absolute inset-0 z-10 transform transition-transform duration-[220ms] ease-out ${
+                slideDirection === "next"
+                  ? isSlidePhaseReady
+                    ? "-translate-x-full"
+                    : "translate-x-0"
+                  : isSlidePhaseReady
+                    ? "translate-x-full"
+                    : "translate-x-0"
+              }`}
+            >
+              {renderCalendarBody(
+                slidePrevSnapshot.cells,
+                slidePrevSnapshot.recordCounts,
+                slidePrevSnapshot.moodAverages,
+                "prev",
+                true
+              )}
+            </div>
+          ) : null}
 
-        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
-          {cells.map((cell, index) => {
-            const isEmpty = !cell.date;
-            const dateStr = cell.date ? formatDate(cell.date) : "";
-            const count = recordCounts[dateStr] ?? 0;
-            const moodValue = moodAverages[dateStr];
-            const isToday = dateStr === todayStr;
-            const dayOfWeek = cell.date ? cell.date.getDay() : null;
-            const isSaturday = dayOfWeek === 6;
-            const isSunday = dayOfWeek === 0;
-            const isWeekend = isSaturday || isSunday;
-            const weekendClass = highlightWeekend
-              ? isSaturday
-                ? "text-blue-600"
-                : isSunday
-                  ? "text-red-500"
-                  : ""
-              : "";
-
-            return (
-              <Button
-                key={`${index}-${dateStr}`}
-                type="button"
-                variant="outline"
-                className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 overflow-visible ${
-                  isEmpty ? "opacity-40" : ""
-                }`}
-                disabled={isEmpty}
-                onClick={() => {
-                  if (!cell.date) return;
-                  router.push(`/day/${dateStr}`);
-                }}
-              >
-                <div className="flex w-full items-start justify-center">
-                  <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                      isToday
-                        ? "bg-brand text-white"
-                        : highlightWeekend && isWeekend
-                          ? weekendClass
-                          : "text-[#17171c]"
-                    }`}
-                  >
-                    {cell.day ?? ""}
-                  </span>
-                </div>
-                <div className="flex flex-1 items-center justify-center overflow-visible pt-1">
-                  {moodValue ? (
-                    <div className="relative h-full w-full overflow-visible">
-                      <AnimatedImage
-                        src={`/mood/cat-${moodValue}.svg`}
-                        alt={`기분 ${moodValue}단계`}
-                        width={1600}
-                        height={1600}
-                        unoptimized
-                        draggable={false}
-                        className="h-full w-full max-h-[52px] object-contain"
-                        loading="eager"
-                      />
-                      {count >= 2 ? (
-                        <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
-                          {count}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                {!moodValue && count >= 2 ? (
-                  <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
-                    {count}
-                  </Badge>
-                ) : null}
-              </Button>
-            );
-          })}
-        </section>
+          <div
+            className={`transform transition-transform duration-[220ms] ease-out ${
+              isSlideAnimating && slideDirection
+                ? slideDirection === "next"
+                  ? isSlidePhaseReady
+                    ? "translate-x-0"
+                    : "translate-x-full"
+                  : isSlidePhaseReady
+                    ? "translate-x-0"
+                    : "-translate-x-full"
+                : "translate-x-0"
+            }`}
+          >
+            {renderCalendarBody(
+              cells,
+              recordCounts,
+              moodAverages,
+              "current",
+              isSlideAnimating
+            )}
+          </div>
+        </div>
       </div>
       <BottomSheet
         open={monthSheetOpen}
