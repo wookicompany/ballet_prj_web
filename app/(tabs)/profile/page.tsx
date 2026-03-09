@@ -33,8 +33,20 @@ type ReviewSummary = {
   createdAt: string;
 };
 
+type RecordSummary = {
+  id: string;
+  recordDate: string;
+  startTime: string;
+  endTime: string;
+  content: string;
+  mood: number | null;
+  createdAt: string;
+};
+
 const REVIEW_PAGE_SIZE_INITIAL = 5;
 const REVIEW_PAGE_SIZE_MORE = 12;
+const RECORD_PAGE_SIZE_INITIAL = 5;
+const RECORD_PAGE_SIZE_MORE = 12;
 
 function toMinutes(time: string) {
   const [hh, mm, ss] = time.split(":").map((value) => Number(value));
@@ -43,6 +55,16 @@ function toMinutes(time: string) {
 
 const formatReviewDate = (value: string) => {
   return formatIsoToSeoulDate(value, "ko-KR");
+};
+
+const formatRecordDate = (value: string) => {
+  return formatIsoToSeoulDate(value, "ko-KR");
+};
+
+const formatRecordTimeRange = (startTime: string, endTime: string) => {
+  const start = startTime.slice(0, 5);
+  const end = endTime.slice(0, 5);
+  return `${start} - ${end}`;
 };
 
 const getStarFillRatio = (rating10: number, starIndex: number) => {
@@ -61,6 +83,7 @@ export default function ProfilePage() {
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
+  const [records, setRecords] = useState<RecordSummary[]>([]);
   const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(
     {}
   );
@@ -75,11 +98,20 @@ export default function ProfilePage() {
   const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
   const [reviewOrderReady, setReviewOrderReady] = useState(false);
   const [reviewSectionLoading, setReviewSectionLoading] = useState(true);
+  const [recordPage, setRecordPage] = useState(0);
+  const [hasMoreRecords, setHasMoreRecords] = useState(true);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [showMoreRecords, setShowMoreRecords] = useState(false);
+  const [orderedRecordIds, setOrderedRecordIds] = useState<string[]>([]);
+  const [recordOrderReady, setRecordOrderReady] = useState(false);
+  const [recordSectionLoading, setRecordSectionLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"records" | "reviews">("records");
   const [profileLoading, setProfileLoading] = useState(true);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
 
-  const reviewSentinelRef = useRef<HTMLDivElement | null>(null);
+  const cardSentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
+  const requestedRecordPagesRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchNoticeReadStatus = async () => {
@@ -123,6 +155,7 @@ export default function ProfilePage() {
       }
       setProfileLoading(true);
       setReviewSectionLoading(true);
+      setRecordSectionLoading(true);
 
       const { data } = await supabase
         .from("profiles")
@@ -142,15 +175,15 @@ export default function ProfilePage() {
         setProfile(data as Profile);
       }
 
-      const { data: records } = await supabase
+      const { data: recordRows } = await supabase
         .from("records")
         .select("start_time,end_time")
         .eq("user_id", user.id)
         .is("deleted_at", null);
 
-      if (records) {
-        setRecordCount(records.length);
-        const minutes = records.reduce((sum, record) => {
+      if (recordRows) {
+        setRecordCount(recordRows.length);
+        const minutes = recordRows.reduce((sum, record) => {
           return sum + (toMinutes(record.end_time) - toMinutes(record.start_time));
         }, 0);
         setTotalMinutes(minutes);
@@ -168,8 +201,21 @@ export default function ProfilePage() {
       setReviewLikeCounts({});
       setReviewCommentCounts({});
       setReviewImages({});
+      setRecords([]);
       setOrderedReviewIds([]);
+      setOrderedRecordIds([]);
       setReviewOrderReady(false);
+      setRecordOrderReady(false);
+      setShowMoreRecords(false);
+      setRecordPage(0);
+      if ((recordRows?.length ?? 0) === 0) {
+        setHasMoreRecords(false);
+        setRecordOrderReady(true);
+        setRecordSectionLoading(false);
+      } else {
+        setHasMoreRecords(true);
+        setRecordPage(1);
+      }
       if (nextCount === 0) {
         setHasMoreReviews(false);
         setShowMoreReviews(false);
@@ -182,6 +228,7 @@ export default function ProfilePage() {
         setReviewPage(1);
       }
       requestedPagesRef.current = new Set();
+      requestedRecordPagesRef.current = new Set();
       setProfileLoading(false);
     };
 
@@ -272,16 +319,83 @@ export default function ProfilePage() {
   }, [user, pathname, reviewCount, profileLoading]);
 
   useEffect(() => {
-    if (!showMoreReviews) return;
-    if (!reviewSentinelRef.current || loadingReviews || !hasMoreReviews) return;
+    const fetchRecordOrder = async () => {
+      if (pathname !== "/profile") return;
+      if (!user) return;
+      if (profileLoading) return;
+
+      if (recordCount === 0) {
+        setOrderedRecordIds([]);
+        setHasMoreRecords(false);
+        setRecordOrderReady(true);
+        setRecordSectionLoading(false);
+        return;
+      }
+
+      setRecordOrderReady(false);
+      setRecordSectionLoading(true);
+
+      const { data: recordRows, error: recordError } = await supabase
+        .from("records")
+        .select("id,record_date,created_at")
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .order("record_date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (recordError) {
+        setOrderedRecordIds([]);
+        setHasMoreRecords(false);
+        setRecordOrderReady(true);
+        setRecordSectionLoading(false);
+        return;
+      }
+
+      const rows = (recordRows ?? []) as Array<{ id: string }>;
+      if (rows.length === 0) {
+        setOrderedRecordIds([]);
+        setHasMoreRecords(false);
+        setRecordOrderReady(true);
+        setRecordSectionLoading(false);
+        return;
+      }
+
+      setOrderedRecordIds(rows.map((row) => row.id));
+      setHasMoreRecords(true);
+      setRecordOrderReady(true);
+    };
+
+    fetchRecordOrder();
+  }, [user, pathname, recordCount, profileLoading]);
+
+  useEffect(() => {
+    if (!cardSentinelRef.current) return;
+    if (activeTab === "reviews") {
+      if (!showMoreReviews || loadingReviews || !hasMoreReviews) return;
+    } else if (!showMoreRecords || loadingRecords || !hasMoreRecords) {
+      return;
+    }
+
     const observer = new IntersectionObserver((entries) => {
       if (entries[0]?.isIntersecting) {
-        setReviewPage((prev) => prev + 1);
+        if (activeTab === "reviews") {
+          setReviewPage((prev) => prev + 1);
+        } else {
+          setRecordPage((prev) => prev + 1);
+        }
       }
     });
-    observer.observe(reviewSentinelRef.current);
+    observer.observe(cardSentinelRef.current);
     return () => observer.disconnect();
-  }, [showMoreReviews, loadingReviews, hasMoreReviews]);
+  }, [
+    activeTab,
+    showMoreReviews,
+    loadingReviews,
+    hasMoreReviews,
+    showMoreRecords,
+    loadingRecords,
+    hasMoreRecords,
+  ]);
 
   useEffect(() => {
     const fetchReviewsPage = async () => {
@@ -434,6 +548,98 @@ export default function ProfilePage() {
     reviewOrderReady,
   ]);
 
+  useEffect(() => {
+    const fetchRecordsPage = async () => {
+      if (!user || !recordOrderReady || recordPage === 0 || !hasMoreRecords) return;
+      if (requestedRecordPagesRef.current.has(recordPage)) return;
+      requestedRecordPagesRef.current.add(recordPage);
+      setLoadingRecords(true);
+      try {
+        const pageSize = showMoreRecords
+          ? RECORD_PAGE_SIZE_MORE
+          : RECORD_PAGE_SIZE_INITIAL;
+        const from = (recordPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        const pageRecordIds = orderedRecordIds.slice(from, to + 1);
+        if (pageRecordIds.length === 0) {
+          setHasMoreRecords(false);
+          return;
+        }
+
+        const { data: recordRows, error } = await supabase
+          .from("records")
+          .select("id,record_date,start_time,end_time,content,mood,created_at")
+          .in("id", pageRecordIds)
+          .eq("user_id", user.id)
+          .is("deleted_at", null);
+
+        if (error) {
+          return;
+        }
+
+        const fetchedRows = (recordRows ?? []) as Array<{
+          id: string;
+          record_date: string;
+          start_time: string;
+          end_time: string;
+          content: string;
+          mood: number | null;
+          created_at: string;
+        }>;
+
+        const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
+        const nextRows = pageRecordIds
+          .map((recordId) => rowMap.get(recordId))
+          .filter(
+            (
+              row
+            ): row is {
+              id: string;
+              record_date: string;
+              start_time: string;
+              end_time: string;
+              content: string;
+              mood: number | null;
+              created_at: string;
+            } => Boolean(row)
+          );
+
+        if (to >= orderedRecordIds.length - 1) {
+          setHasMoreRecords(false);
+        }
+
+        const mapped = nextRows.map((row) => ({
+          id: row.id,
+          recordDate: row.record_date,
+          startTime: row.start_time,
+          endTime: row.end_time,
+          content: row.content,
+          mood: row.mood,
+          createdAt: row.created_at,
+        }));
+
+        setRecords((prev) => {
+          const existing = new Set(prev.map((row) => row.id));
+          return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
+        });
+      } finally {
+        setLoadingRecords(false);
+        if (recordPage === 1) {
+          setRecordSectionLoading(false);
+        }
+      }
+    };
+
+    fetchRecordsPage();
+  }, [
+    recordPage,
+    user,
+    hasMoreRecords,
+    showMoreRecords,
+    orderedRecordIds,
+    recordOrderReady,
+  ]);
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -459,6 +665,7 @@ export default function ProfilePage() {
     : user.id.slice(0, 8);
   const shouldShowProfileSkeleton = profileLoading || !profile;
   const shouldShowReviewCardSkeleton = profileLoading || reviewSectionLoading;
+  const shouldShowRecordCardSkeleton = profileLoading || recordSectionLoading;
   const careerDuration = profile?.ballet_started_at
     ? formatCareerDuration(profile.ballet_started_at)
     : null;
@@ -575,14 +782,130 @@ export default function ProfilePage() {
 
         <section className="mt-6 space-y-4 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            {shouldShowReviewCardSkeleton ? (
-              <Skeleton className="h-5 w-20" />
-            ) : (
-              <h2 className="text-base font-semibold text-[#17171c]">공연 리뷰</h2>
-            )}
+            <div className="relative inline-flex w-full rounded-lg bg-black/5 p-1">
+              <div
+                className="absolute bottom-1 top-1 rounded-md bg-[#17171c] transition-all duration-200 ease-out"
+                style={{
+                  left: activeTab === "records" ? "4px" : "calc(50% + 2px)",
+                  width: "calc(50% - 6px)",
+                }}
+                aria-hidden
+              />
+              <Button
+                type="button"
+                size="sm"
+                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
+                  activeTab === "records"
+                    ? "bg-transparent text-white hover:bg-transparent"
+                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
+                }`}
+                onClick={() => setActiveTab("records")}
+              >
+                발레 기록
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
+                  activeTab === "reviews"
+                    ? "bg-transparent text-white hover:bg-transparent"
+                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
+                }`}
+                onClick={() => setActiveTab("reviews")}
+              >
+                공연 리뷰
+              </Button>
+            </div>
           </div>
 
-          {shouldShowReviewCardSkeleton ? (
+          {activeTab === "records" ? (
+            shouldShowRecordCardSkeleton ? (
+              <div className="space-y-3">
+                {Array.from({ length: 1 }).map((_, index) => (
+                  <div
+                    key={`profile-record-loading-skeleton-${index}`}
+                    className="flex items-start gap-3 rounded-lg border border-black/5 bg-white p-3"
+                  >
+                    <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : records.length === 0 ? (
+              <p className="text-xs text-[#17171c]/60">
+                첫번째 발레 기록을 남겨보세요.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {records.map((record) => (
+                  <button
+                    key={record.id}
+                    type="button"
+                    className="flex w-full items-start gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                    onClick={() => {
+                      sendHapticToApp();
+                      router.push(`/record/${record.id}`);
+                    }}
+                    aria-label="기록 상세 보기"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#17171c]/5">
+                      {record.mood ? (
+                        <AnimatedImage
+                          src={`/mood/cat-${record.mood}.svg`}
+                          alt={`기분 ${record.mood}단계`}
+                          width={1600}
+                          height={1600}
+                          unoptimized
+                          draggable={false}
+                          className="h-8 w-8"
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-[#17171c]/45" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-sm text-[#17171c]">
+                        {record.content || "오늘의 발레를 한줄로 남겨보아요."}
+                      </p>
+                      <p className="mt-1 text-xs text-[#17171c]/60">
+                        {formatRecordDate(record.recordDate)}
+                      </p>
+                      <p className="mt-1 text-xs text-[#17171c]/60">
+                        {formatRecordTimeRange(record.startTime, record.endTime)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+                {!showMoreRecords && recordCount > RECORD_PAGE_SIZE_INITIAL ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setRecordSectionLoading(true);
+                      setShowMoreRecords(true);
+                      setRecords([]);
+                      setHasMoreRecords(true);
+                      setRecordPage(1);
+                      requestedRecordPagesRef.current = new Set();
+                    }}
+                  >
+                    더 보기
+                  </Button>
+                ) : null}
+                {loadingRecords ? (
+                  <div className="flex justify-center py-2">
+                    <Spinner size="sm" />
+                  </div>
+                ) : null}
+                <div ref={cardSentinelRef} />
+              </div>
+            )
+          ) : shouldShowReviewCardSkeleton ? (
             <div className="space-y-3">
               {Array.from({ length: 1 }).map((_, index) => (
                 <div
@@ -602,26 +925,24 @@ export default function ProfilePage() {
             </div>
           ) : reviews.length === 0 ? (
             <p className="text-xs text-[#17171c]/60">
-              첫 리뷰를 남겨보세요.
+              첫번째 공연 리뷰를 남겨보세요.
             </p>
           ) : (
             <div className="space-y-3">
               {reviews.map((review) => (
-                <div
+                <button
                   key={review.id}
+                  type="button"
                   className="flex w-full items-start gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                  onClick={() => {
+                    sendHapticToApp();
+                    router.push(
+                      `/performance/${review.performanceId}/reviews/${review.id}`
+                    );
+                  }}
+                  aria-label="리뷰 상세 보기"
                 >
-                  <button
-                    type="button"
-                    className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5"
-                    onClick={() => {
-                      sendHapticToApp();
-                      router.push(
-                        `/performance/${review.performanceId}/reviews/${review.id}`
-                      );
-                    }}
-                    aria-label="리뷰 상세 보기"
-                  >
+                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5">
                     {review.performancePoster ? (
                       <AnimatedImage
                         src={review.performancePoster}
@@ -637,72 +958,52 @@ export default function ProfilePage() {
                         이미지 없음
                       </div>
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 text-left"
-                    onClick={() => {
-                      sendHapticToApp();
-                      router.push(
-                        `/performance/${review.performanceId}/reviews/${review.id}`
-                      );
-                    }}
-                    aria-label="리뷰 상세 보기"
-                  >
-                    <div className="flex h-full flex-col">
-                      <div className="flex h-20 flex-col gap-2">
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: 5 }, (_, index) => {
-                            const ratio = getStarFillRatio(
-                              review.rating,
-                              index + 1
-                            );
-                            return (
-                              <div
-                                key={`${review.id}-star-${index}`}
-                                className="relative h-4 w-4"
-                              >
-                                <Star
-                                  className="h-4 w-4 text-brand"
-                                  fill="none"
-                                />
-                                <div
-                                  className="absolute inset-0 overflow-hidden"
-                                  style={{ width: `${ratio * 100}%` }}
-                                >
-                                  <Star
-                                    className="h-4 w-4 text-brand"
-                                    fill="currentColor"
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {review.content ? (
-                          <p className="line-clamp-1 text-sm text-[#17171c]/70">
-                            {review.content}
-                          </p>
-                        ) : null}
-                        <div className="mt-auto flex items-center gap-4 text-xs text-[#17171c]">
-                          <span className="inline-flex items-center gap-1">
-                            <Heart className="h-4 w-4 text-[#17171c]" />
-                            {reviewLikeCounts[review.id] ?? 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MessageCircle className="h-4 w-4 text-[#17171c]" />
-                            {reviewCommentCounts[review.id] ?? 0}
-                          </span>
-                        </div>
-                      </div>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }, (_, index) => {
+                        const ratio = getStarFillRatio(review.rating, index + 1);
+                        return (
+                          <div
+                            key={`${review.id}-star-${index}`}
+                            className="relative h-4 w-4"
+                          >
+                            <Star className="h-4 w-4 text-brand" fill="none" />
+                            <div
+                              className="absolute inset-0 overflow-hidden"
+                              style={{ width: `${ratio * 100}%` }}
+                            >
+                              <Star
+                                className="h-4 w-4 text-brand"
+                                fill="currentColor"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </button>
-                  {reviewImages[review.id]?.length ? (
-                    <div className="flex h-20 w-16 flex-col items-center gap-2">
+                    {review.content ? (
+                      <p className="mt-2 line-clamp-1 text-sm text-[#17171c]/70">
+                        {review.content}
+                      </p>
+                    ) : null}
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-4 text-xs text-[#17171c]">
+                        <span className="inline-flex items-center gap-1">
+                          <Heart className="h-4 w-4 text-[#17171c]" />
+                          {reviewLikeCounts[review.id] ?? 0}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4 text-[#17171c]" />
+                          {reviewCommentCounts[review.id] ?? 0}
+                        </span>
+                      </div>
                       <div className="whitespace-nowrap text-xs text-[#17171c]/50">
                         {formatReviewDate(review.createdAt)}
                       </div>
-                      <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
+                    </div>
+                    {reviewImages[review.id]?.length ? (
+                      <div className="mt-2 relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
                         <AnimatedImage
                           src={reviewImages[review.id][0]}
                           alt="리뷰 이미지"
@@ -718,15 +1019,9 @@ export default function ProfilePage() {
                           </span>
                         ) : null}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex h-20 w-16 items-start justify-center">
-                      <div className="whitespace-nowrap text-xs text-[#17171c]/50">
-                        {formatReviewDate(review.createdAt)}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    ) : null}
+                  </div>
+                </button>
               ))}
               {!showMoreReviews && reviewCount > REVIEW_PAGE_SIZE_INITIAL ? (
                 <Button
@@ -750,7 +1045,7 @@ export default function ProfilePage() {
                   <Spinner size="sm" />
                 </div>
               ) : null}
-              <div ref={reviewSentinelRef} />
+              <div ref={cardSentinelRef} />
             </div>
           )}
         </section>

@@ -46,6 +46,13 @@
 - 동일 소셜 계정 재로그인 시 `soft_deleted_at`를 제거해 즉시 재활성화하고, 기존 소프트 삭제 데이터는 계속 비노출 상태로 유지한다.
 - 평점(1~10), mood(1~5) 같은 범위는 서버에서 최종 검증한다.
 - 파일 업로드는 클라이언트에서 처리하고, 메타데이터 저장은 서버 API로 통일한다.
+- 프로필 홈 카드 영역은 현재 클라이언트 `supabase` 직접 조회 패턴을 사용한다. (요약/목록 read 전용)
+- `records` 목록 정렬 기본은 `record_date DESC`, 동률 시 `created_at DESC`를 우선한다.
+- records API 현황은 다음을 기준으로 유지한다.
+  - `POST /api/records`
+  - `PATCH /api/records/[id]`
+  - `DELETE /api/records/[id]/delete`
+- records API 인증은 `Authorization: Bearer <token>` 기반 사용자 검증 + 소유권 검증을 필수로 적용한다.
 
 ## 인증
 
