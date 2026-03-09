@@ -800,7 +800,7 @@ export default function ProfilePage() {
               <Button
                 type="button"
                 variant="outline"
-                className="mt-4 w-full"
+                className="mt-4 h-9 w-full text-xs"
                 onClick={() => router.push("/profile/edit")}
               >
                 프로필 편집
@@ -822,7 +822,7 @@ export default function ProfilePage() {
               />
               <Button
                 type="button"
-                className={`relative z-10 h-10 flex-1 rounded-md px-3 text-sm transition-colors duration-200 ${
+                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
                   activeTab === "records"
                     ? "bg-transparent text-white hover:bg-transparent"
                     : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
@@ -833,7 +833,7 @@ export default function ProfilePage() {
               </Button>
               <Button
                 type="button"
-                className={`relative z-10 h-10 flex-1 rounded-md px-3 text-sm transition-colors duration-200 ${
+                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
                   activeTab === "reviews"
                     ? "bg-transparent text-white hover:bg-transparent"
                     : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
