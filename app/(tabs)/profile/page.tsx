@@ -84,6 +84,9 @@ export default function ProfilePage() {
   const [reviewCount, setReviewCount] = useState(0);
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [records, setRecords] = useState<RecordSummary[]>([]);
+  const [recordMediaById, setRecordMediaById] = useState<
+    Record<string, { url: string; count: number }>
+  >({});
   const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(
     {}
   );
@@ -201,6 +204,7 @@ export default function ProfilePage() {
       setReviewLikeCounts({});
       setReviewCommentCounts({});
       setReviewImages({});
+      setRecordMediaById({});
       setRecords([]);
       setOrderedReviewIds([]);
       setOrderedRecordIds([]);
@@ -240,6 +244,8 @@ export default function ProfilePage() {
       if (pathname !== "/profile") return;
       if (!user) return;
       if (profileLoading) return;
+      const userId = user?.id;
+      if (!userId) return;
 
       if (reviewCount === 0) {
         setOrderedReviewIds([]);
@@ -255,7 +261,7 @@ export default function ProfilePage() {
       const { data: reviewRows, error: reviewError } = await supabase
         .from("performance_reviews")
         .select("id,created_at")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .is("deleted_at", null);
 
       if (reviewError) {
@@ -323,6 +329,8 @@ export default function ProfilePage() {
       if (pathname !== "/profile") return;
       if (!user) return;
       if (profileLoading) return;
+      const userId = user?.id;
+      if (!userId) return;
 
       if (recordCount === 0) {
         setOrderedRecordIds([]);
@@ -338,7 +346,7 @@ export default function ProfilePage() {
       const { data: recordRows, error: recordError } = await supabase
         .from("records")
         .select("id,record_date,created_at")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .is("deleted_at", null)
         .order("record_date", { ascending: false })
         .order("created_at", { ascending: false });
@@ -414,13 +422,15 @@ export default function ProfilePage() {
           setHasMoreReviews(false);
           return;
         }
+        const userId = user?.id;
+        if (!userId) return;
 
         const { data: reviewRows, error } = await supabase
           .from("performance_reviews")
           .select("id,performance_id,rating,content,created_at")
           .in("id", pageReviewIds)
           .is("deleted_at", null)
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         if (error) {
           return;
@@ -501,7 +511,7 @@ export default function ProfilePage() {
               .from("performance_review_images")
               .select("review_id,url")
               .in("review_id", reviewIds)
-              .eq("user_id", user.id)
+              .eq("user_id", userId)
               .is("deleted_at", null),
           ]);
 
@@ -565,12 +575,14 @@ export default function ProfilePage() {
           setHasMoreRecords(false);
           return;
         }
+        const userId = user?.id;
+        if (!userId) return;
 
         const { data: recordRows, error } = await supabase
           .from("records")
           .select("id,record_date,start_time,end_time,content,mood,created_at")
           .in("id", pageRecordIds)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .is("deleted_at", null);
 
         if (error) {
@@ -622,6 +634,23 @@ export default function ProfilePage() {
           const existing = new Set(prev.map((row) => row.id));
           return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
         });
+        const { data: mediaRows } = await supabase
+          .from("record_media")
+          .select("record_id,url,created_at")
+          .in("record_id", pageRecordIds)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true });
+        const nextMediaById: Record<string, { url: string; count: number }> = {};
+        (mediaRows ?? []).forEach((row) => {
+          if (!nextMediaById[row.record_id]) {
+            nextMediaById[row.record_id] = { url: row.url, count: 1 };
+            return;
+          }
+          nextMediaById[row.record_id].count += 1;
+        });
+        if (Object.keys(nextMediaById).length > 0) {
+          setRecordMediaById((prev) => ({ ...prev, ...nextMediaById }));
+        }
       } finally {
         setLoadingRecords(false);
         if (recordPage === 1) {
@@ -793,8 +822,7 @@ export default function ProfilePage() {
               />
               <Button
                 type="button"
-                size="sm"
-                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
+                className={`relative z-10 h-10 flex-1 rounded-md px-3 text-sm transition-colors duration-200 ${
                   activeTab === "records"
                     ? "bg-transparent text-white hover:bg-transparent"
                     : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
@@ -805,8 +833,7 @@ export default function ProfilePage() {
               </Button>
               <Button
                 type="button"
-                size="sm"
-                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
+                className={`relative z-10 h-10 flex-1 rounded-md px-3 text-sm transition-colors duration-200 ${
                   activeTab === "reviews"
                     ? "bg-transparent text-white hover:bg-transparent"
                     : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
@@ -878,6 +905,26 @@ export default function ProfilePage() {
                         {formatRecordTimeRange(record.startTime, record.endTime)}
                       </p>
                     </div>
+                    {recordMediaById[record.id] ? (
+                      <div className="relative h-14 w-14 shrink-0 overflow-visible">
+                        <div className="h-full w-full overflow-hidden rounded-lg border border-black/5 bg-white">
+                          <AnimatedImage
+                            src={recordMediaById[record.id].url}
+                            alt="기록 미디어"
+                            width={1600}
+                            height={1600}
+                            unoptimized
+                            draggable={false}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        {recordMediaById[record.id].count > 1 ? (
+                          <span className="absolute -right-1.5 -top-1.5 rounded-full bg-black/80 px-1.5 py-0.5 text-xs text-white shadow-sm">
+                            {recordMediaById[record.id].count}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </button>
                 ))}
                 {!showMoreRecords && recordCount > RECORD_PAGE_SIZE_INITIAL ? (
