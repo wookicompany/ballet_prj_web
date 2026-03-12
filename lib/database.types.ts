@@ -21,13 +21,11 @@ export type Database = {
           description: string | null
           end_at: string
           id: string
-          image_url: string
           is_active: boolean
           last_clicked_at: string | null
           placement: string
           provider: string
           start_at: string
-          target_url: string
           title: string
           updated_at: string
         }
@@ -37,13 +35,11 @@ export type Database = {
           description?: string | null
           end_at: string
           id?: string
-          image_url: string
           is_active?: boolean
           last_clicked_at?: string | null
           placement: string
           provider?: string
           start_at: string
-          target_url: string
           title: string
           updated_at?: string
         }
@@ -53,13 +49,11 @@ export type Database = {
           description?: string | null
           end_at?: string
           id?: string
-          image_url?: string
           is_active?: boolean
           last_clicked_at?: string | null
           placement?: string
           provider?: string
           start_at?: string
-          target_url?: string
           title?: string
           updated_at?: string
         }

@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminFromRequest } from "@/lib/apiAuth";
-import {
-  isAdPlacement,
-  isValidHttpUrl,
-  parseKstDateTimeInputToIso,
-} from "@/lib/ads";
+import { isAdPlacement, parseKstDateTimeInputToIso } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +9,6 @@ type UpdateAdBody = {
   placement?: string;
   title?: string;
   description?: string | null;
-  image_url?: string;
-  target_url?: string;
   is_active?: boolean;
   start_at?: string;
   end_at?: string;
@@ -60,7 +54,7 @@ export const GET = async (
   const { data: ad, error } = await result.supabaseAdmin
     .from("ads")
     .select(
-      "id, placement, provider, title, description, image_url, target_url, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
+      "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -125,20 +119,6 @@ export const PATCH = async (
   }
   if (typeof body.description === "string" || body.description === null) {
     updates.description = body.description?.trim() || null;
-  }
-  if (typeof body.image_url === "string") {
-    const imageUrl = body.image_url.trim();
-    if (!isValidHttpUrl(imageUrl)) {
-      return NextResponse.json({ message: "invalid image_url" }, { status: 400 });
-    }
-    updates.image_url = imageUrl;
-  }
-  if (typeof body.target_url === "string") {
-    const targetUrl = body.target_url.trim();
-    if (!isValidHttpUrl(targetUrl)) {
-      return NextResponse.json({ message: "invalid target_url" }, { status: 400 });
-    }
-    updates.target_url = targetUrl;
   }
   if (typeof body.start_at === "string") {
     const startAtIso = parseKstDateTimeInputToIso(body.start_at);

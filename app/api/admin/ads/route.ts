@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminFromRequest } from "@/lib/apiAuth";
-import {
-  AD_PROVIDER,
-  isAdPlacement,
-  isValidHttpUrl,
-  parseKstDateTimeInputToIso,
-} from "@/lib/ads";
+import { AD_PLACEMENTS, AD_PROVIDER, isAdPlacement } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +12,16 @@ type CreateAdBody = {
   placement?: string;
   title?: string;
   description?: string | null;
-  image_url?: string;
-  target_url?: string;
   is_active?: boolean;
-  start_at?: string;
-  end_at?: string;
+};
+
+const ADSENSE_DEFAULT_START_AT = "2000-01-01T00:00:00.000Z";
+const ADSENSE_DEFAULT_END_AT = "2099-12-31T23:59:59.999Z";
+
+const getDefaultTitle = (placement: string) => {
+  if (placement === "calendar_home") return "캘린더 탭 홈 AdSense";
+  if (placement === "profile_home") return "프로필 탭 홈 AdSense";
+  return "공연 탭 홈 AdSense";
 };
 
 const hasOverlappingActiveAd = async ({
@@ -54,6 +54,39 @@ export const GET = async (request: Request) => {
   const result = await getAdminFromRequest(request);
   if (!result.admin) return result.errorResponse;
 
+  const { data: existingSlots, error: existingSlotsError } = await result.supabaseAdmin
+    .from("ads")
+    .select("placement");
+  if (existingSlotsError) {
+    console.error("admin ads list placements", existingSlotsError);
+    return NextResponse.json({ message: "Failed to list ads" }, { status: 500 });
+  }
+
+  const existingPlacementSet = new Set(
+    (existingSlots ?? []).map((row) => row.placement)
+  );
+  const missingPlacements = AD_PLACEMENTS.filter(
+    (placement) => !existingPlacementSet.has(placement)
+  );
+
+  if (missingPlacements.length > 0) {
+    const { error: seedError } = await result.supabaseAdmin.from("ads").insert(
+      missingPlacements.map((placement) => ({
+        placement,
+        provider: AD_PROVIDER,
+        title: getDefaultTitle(placement),
+        description: null,
+        is_active: false,
+        start_at: ADSENSE_DEFAULT_START_AT,
+        end_at: ADSENSE_DEFAULT_END_AT,
+      }))
+    );
+    if (seedError) {
+      console.error("admin ads seed placements", seedError);
+      return NextResponse.json({ message: "Failed to prepare ad slots" }, { status: 500 });
+    }
+  }
+
   const { searchParams } = new URL(request.url);
   const limit = Math.min(
     Number(searchParams.get("limit")) || DEFAULT_LIMIT,
@@ -64,7 +97,7 @@ export const GET = async (request: Request) => {
   const { data: rows, error } = await result.supabaseAdmin
     .from("ads")
     .select(
-      "id, placement, provider, title, description, image_url, target_url, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
+      "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -97,41 +130,14 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Invalid JSON" }, { status: 400 });
   }
 
-  const title = body.title?.trim();
-  const imageUrl = body.image_url?.trim();
-  const targetUrl = body.target_url?.trim();
-  const description = body.description?.trim() || null;
   const placement = body.placement;
-  if (!title || !imageUrl || !targetUrl || !body.start_at || !body.end_at) {
-    return NextResponse.json(
-      { message: "required fields are missing" },
-      { status: 400 }
-    );
-  }
   if (!placement || !isAdPlacement(placement)) {
     return NextResponse.json({ message: "invalid placement" }, { status: 400 });
   }
-  if (!isValidHttpUrl(imageUrl) || !isValidHttpUrl(targetUrl)) {
-    return NextResponse.json(
-      { message: "image_url and target_url must be valid http/https urls" },
-      { status: 400 }
-    );
-  }
-
-  const startAtIso = parseKstDateTimeInputToIso(body.start_at);
-  const endAtIso = parseKstDateTimeInputToIso(body.end_at);
-  if (!startAtIso || !endAtIso) {
-    return NextResponse.json(
-      { message: "start_at and end_at must be KST datetime-local format" },
-      { status: 400 }
-    );
-  }
-  if (startAtIso >= endAtIso) {
-    return NextResponse.json(
-      { message: "end_at must be after start_at" },
-      { status: 400 }
-    );
-  }
+  const title = body.title?.trim() || getDefaultTitle(placement);
+  const description = body.description?.trim() || null;
+  const startAtIso = ADSENSE_DEFAULT_START_AT;
+  const endAtIso = ADSENSE_DEFAULT_END_AT;
 
   const isActive = body.is_active === true;
   if (isActive) {
@@ -163,8 +169,6 @@ export const POST = async (request: Request) => {
       provider: AD_PROVIDER,
       title,
       description,
-      image_url: imageUrl,
-      target_url: targetUrl,
       is_active: isActive,
       start_at: startAtIso,
       end_at: endAtIso,

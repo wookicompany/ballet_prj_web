@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import AnimatedImage from "@/components/ui/animated-image";
-import AdSlot from "@/components/ads/AdSlot";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,7 @@ const EMPTY_SECTIONS: SectionBuckets = {
 };
 
 let performanceHomeInFlight: Promise<PerformanceHomePayload> | null = null;
+const PERFORMANCE_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_PERFORMANCE_HOME;
 
 const formatDate = (value?: string | null) => {
   if (!value) return "날짜 미정";
@@ -430,7 +431,8 @@ export default function PerformanceListPage() {
 
   if (loading) {
     return (
-      <main className="px-4 pb-16 pt-2">
+      <>
+        <main className="px-4 pb-16 pt-2">
           <header className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-0">
               <h1 className="text-xl font-semibold">공연</h1>
@@ -463,12 +465,9 @@ export default function PerformanceListPage() {
               <Search className="size-6" />
             </Button>
           </header>
-
-          <AdSlot
-            placement="performance_home"
-            height={100}
-            className="mb-4"
-          />
+          <section className="mb-4">
+            <AdsenseSlot placement="performance_home" slot={PERFORMANCE_HOME_SLOT} />
+          </section>
 
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
@@ -477,12 +476,14 @@ export default function PerformanceListPage() {
             {renderSectionSkeleton("visit")}
             {renderSectionSkeleton("completed")}
           </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="px-4 pb-16 pt-2">
+    <>
+      <main className="px-4 pb-16 pt-2">
         <header className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-xl font-semibold">공연</h1>
@@ -516,12 +517,9 @@ export default function PerformanceListPage() {
             <Search className="size-6" />
           </Button>
         </header>
-
-        <AdSlot
-          placement="performance_home"
-          height={100}
-          className="mb-4"
-        />
+        <section className="mb-4">
+          <AdsenseSlot placement="performance_home" slot={PERFORMANCE_HOME_SLOT} />
+        </section>
 
         <div className="space-y-7">
             <section className="space-y-3">
@@ -674,6 +672,7 @@ export default function PerformanceListPage() {
             </section>
 
         </div>
-    </main>
+      </main>
+    </>
   );
 }

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
+import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus } from "lucide-react";
 
@@ -34,6 +35,7 @@ function getMonthBounds(date: Date) {
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_TRANSITION_LOCK_MS = 240;
+const CALENDAR_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_CALENDAR_HOME;
 
 export default function CalendarPage() {
   const router = useRouter();
@@ -292,8 +294,9 @@ export default function CalendarPage() {
   }, [currentDate, weekStartMonday]);
 
   return (
-    <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-6 pt-2">
-      <header className="mb-6 flex items-center justify-between px-4">
+    <>
+      <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-[140px] pt-2">
+        <header className="mb-6 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
           <Button
@@ -439,10 +442,11 @@ export default function CalendarPage() {
           })}
         </section>
       </div>
-      <BottomSheet
-        open={monthSheetOpen}
-        onOpenChange={setMonthSheetOpen}
-      >
+
+        <BottomSheet
+          open={monthSheetOpen}
+          onOpenChange={setMonthSheetOpen}
+        >
         <div className="grid grid-cols-2 gap-3">
           <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
             {yearOptions.map((year) => (
@@ -500,7 +504,11 @@ export default function CalendarPage() {
             적용하기
           </Button>
         </div>
-      </BottomSheet>
-    </main>
+        </BottomSheet>
+      </main>
+      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+16px)] left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 px-4">
+        <AdsenseSlot placement="calendar_home" slot={CALENDAR_HOME_SLOT} />
+      </div>
+    </>
   );
 }

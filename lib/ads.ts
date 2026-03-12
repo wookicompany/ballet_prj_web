@@ -1,9 +1,13 @@
 import { KST_TIME_ZONE } from "@/lib/kstDateTime";
 
-export const AD_PLACEMENTS = ["calendar_home", "performance_home"] as const;
+export const AD_PLACEMENTS = [
+  "calendar_home",
+  "performance_home",
+  "profile_home",
+] as const;
 export type AdPlacement = (typeof AD_PLACEMENTS)[number];
 
-export const AD_PROVIDER = "b2b" as const;
+export const AD_PROVIDER = "adsense" as const;
 export type AdProvider = typeof AD_PROVIDER;
 
 export const isAdPlacement = (value: string): value is AdPlacement =>

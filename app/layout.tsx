@@ -26,6 +26,7 @@ export const viewport: Viewport = {
 };
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
+const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 
 export default function RootLayout({
   children,
@@ -54,6 +55,15 @@ export default function RootLayout({
               `}
             </Script>
           </>
+        ) : null}
+        {adsenseClient ? (
+          <Script
+            id="adsense-loader"
+            strategy="afterInteractive"
+            async
+            crossOrigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          />
         ) : null}
       </body>
     </html>

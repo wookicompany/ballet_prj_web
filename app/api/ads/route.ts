@@ -16,9 +16,8 @@ export const GET = async (request: Request) => {
   const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from("ads")
-    .select("id, placement, provider, title, image_url, target_url, start_at, end_at")
+    .select("id, placement, provider, title, start_at, end_at")
     .eq("placement", placement)
-    .eq("provider", "b2b")
     .eq("is_active", true)
     .lte("start_at", nowIso)
     .gte("end_at", nowIso)
