@@ -6,6 +6,13 @@ import {
   mapKopisDetailItem,
   mapKopisListItem,
 } from "@/lib/kopis";
+import {
+  assertCronAuthorized,
+  CronAuthError,
+  getSeoulYear,
+  isCronActiveYear,
+} from "@/lib/cronAuth";
+import { finishCronRun, startCronRun } from "@/lib/cronRunLogger";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -26,7 +33,6 @@ const getDateKey = (value: Date) =>
 const getDefaultDateRange = () => {
   const now = new Date();
   const start = new Date(now);
-  start.setDate(start.getDate() - 30);
   const end = new Date(now);
   end.setDate(end.getDate() + 365);
   return {
@@ -35,15 +41,8 @@ const getDefaultDateRange = () => {
   };
 };
 
-const getAfterDate = () => {
-  const now = new Date();
-  const after = new Date(now);
-  after.setDate(after.getDate() - 3);
-  return getDateKey(after);
-};
-
 const normalizeAfterDate = (value: string | null) => {
-  if (value === null) return getAfterDate();
+  if (value === null) return undefined;
   const normalized = value.trim().toLowerCase();
   if (!normalized || ["0", "off", "none"].includes(normalized)) {
     return undefined;
@@ -59,18 +58,24 @@ const chunk = <T,>(list: T[], size: number) => {
   return result;
 };
 
-const requireCronSecret = (request: Request) => {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return;
-  const header = request.headers.get("x-cron-secret");
-  if (header !== secret) {
-    throw new Error("Invalid cron secret");
-  }
-};
+const JOB_NAME = "kopis-sync";
+const SCHEDULED_SLOT = "03:00(KST)";
 
-export async function POST(request: Request) {
+const run = async (request: Request) => {
+  assertCronAuthorized(request);
+  if (!isCronActiveYear()) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: `CRON_ACTIVE_YEAR=${process.env.CRON_ACTIVE_YEAR}, current_year=${getSeoulYear()}(KST)`,
+    });
+  }
+  const runId = await startCronRun({
+    jobName: JOB_NAME,
+    scheduledSlot: SCHEDULED_SLOT,
+  });
+
   try {
-    requireCronSecret(request);
     const supabaseAdmin = getSupabaseAdmin();
     const serviceKey = getRequiredEnv("KOPIS_API_KEY");
 
@@ -155,15 +160,39 @@ export async function POST(request: Request) {
       if (error) throw error;
     }
 
-    return NextResponse.json({
+    const payload = {
       ok: true,
       range: { stdate: rangeStart, eddate: rangeEnd, afterdate },
       counts: {
         list: listRecords.length,
         detail: detailRecords.length,
       },
+    };
+
+    await finishCronRun({
+      runId,
+      status: "success",
+      counts: payload.counts,
     });
+
+    return NextResponse.json(payload);
   } catch (error) {
+    await finishCronRun({
+      runId,
+      status: "failed",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    }).catch(() => {});
+
+    if (error instanceof CronAuthError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: error.message,
+        },
+        { status: error.status }
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,
@@ -172,4 +201,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+};
+
+export async function GET(request: Request) {
+  return run(request);
+}
+
+export async function POST(request: Request) {
+  return run(request);
 }

@@ -65,6 +65,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_job_runs: {
+        Row: {
+          counts_json: Json | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          job_name: string
+          scheduled_slot: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          counts_json?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          scheduled_slot?: string | null
+          started_at?: string
+          status: string
+        }
+        Update: {
+          counts_json?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          scheduled_slot?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       kopis_facilities: {
         Row: {
           created_at: string | null
