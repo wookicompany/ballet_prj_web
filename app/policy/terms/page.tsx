@@ -82,7 +82,7 @@ export default function TermsPage() {
 
         <div className="space-y-6 rounded-xl border border-black/5 bg-white p-4 text-sm text-[#17171c]">
           <p className="text-xs text-[#17171c]/60">
-            시행일: 2026.02.25
+            시행일: 2026.03.15
           </p>
           <p className="text-[#17171c]/70">
             본 약관은 마이발레 서비스 이용을 위한 조건과 기준을 안내합니다.
