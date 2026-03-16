@@ -18,7 +18,41 @@ const pickRecordPayload = (body: Record<string, unknown>) => ({
   center_order: typeof body.center_order === "string" ? body.center_order : "",
   did_well: typeof body.did_well === "string" ? body.did_well : "",
   improve_next: typeof body.improve_next === "string" ? body.improve_next : "",
+  workout_activity_label:
+    typeof body.workout_activity_label === "string"
+      ? body.workout_activity_label
+      : null,
+  workout_source_name:
+    typeof body.workout_source_name === "string" ? body.workout_source_name : null,
+  workout_device_name:
+    typeof body.workout_device_name === "string" ? body.workout_device_name : null,
+  workout_total_energy_kcal:
+    typeof body.workout_total_energy_kcal === "string" ||
+    typeof body.workout_total_energy_kcal === "number"
+      ? body.workout_total_energy_kcal
+      : null,
+  workout_avg_bpm:
+    typeof body.workout_avg_bpm === "string" || typeof body.workout_avg_bpm === "number"
+      ? body.workout_avg_bpm
+      : null,
+  workout_max_bpm:
+    typeof body.workout_max_bpm === "string" || typeof body.workout_max_bpm === "number"
+      ? body.workout_max_bpm
+      : null,
 });
+
+const parseNullableNumber = (value: string | number | null) => {
+  if (value === null) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
+const parseNullableInt = (value: string | number | null) => {
+  const parsed = parseNullableNumber(value);
+  if (parsed === null) return null;
+  return Number.isInteger(parsed) ? parsed : NaN;
+};
 
 export const PATCH = async (
   request: Request,
@@ -70,6 +104,9 @@ export const PATCH = async (
   const body = await request.json();
   const payload = pickRecordPayload(body ?? {});
   const moodValue = Number(payload.mood);
+  const workoutTotalEnergy = parseNullableNumber(payload.workout_total_energy_kcal);
+  const workoutAvgBpm = parseNullableInt(payload.workout_avg_bpm);
+  const workoutMaxBpm = parseNullableInt(payload.workout_max_bpm);
 
   if (
     !payload.record_date ||
@@ -79,12 +116,24 @@ export const PATCH = async (
     !Number.isFinite(moodValue) ||
     !Number.isInteger(moodValue) ||
     moodValue < 1 ||
-    moodValue > 5
+    moodValue > 5 ||
+    Number.isNaN(workoutTotalEnergy) ||
+    Number.isNaN(workoutAvgBpm) ||
+    Number.isNaN(workoutMaxBpm) ||
+    (workoutTotalEnergy !== null && workoutTotalEnergy < 0) ||
+    (workoutAvgBpm !== null && workoutAvgBpm <= 0) ||
+    (workoutMaxBpm !== null && workoutMaxBpm <= 0)
   ) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
-  const normalizedPayload = { ...payload, mood: moodValue };
+  const normalizedPayload = {
+    ...payload,
+    mood: moodValue,
+    workout_total_energy_kcal: workoutTotalEnergy,
+    workout_avg_bpm: workoutAvgBpm,
+    workout_max_bpm: workoutMaxBpm,
+  };
 
   const { error: updateError } = await supabaseAdmin
     .from("records")

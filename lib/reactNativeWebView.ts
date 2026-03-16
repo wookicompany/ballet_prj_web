@@ -52,6 +52,8 @@ export function sendAccountDeletedToApp(): void {
 }
 
 export const RN_ADDRESS_SELECTED_EVENT = "myballet:address-selected";
+export const RN_PLATFORM_INFO_EVENT = "myballet:platform-info";
+export const RN_HEALTH_SYNC_RESULT_EVENT = "myballet:health-sync-result";
 
 type AddressMessagePayload = {
   type?: string;
@@ -59,6 +61,80 @@ type AddressMessagePayload = {
   roadAddress?: string;
   jibunAddress?: string;
 };
+
+export type AppPlatform = "ios" | "android";
+export type HealthProvider = "healthkit" | "health_connect" | "none";
+
+type PlatformInfoPayload = {
+  type?: string;
+  version?: number;
+  platform?: string;
+  health_provider?: string;
+};
+
+export type HealthSyncErrorCode =
+  | "NO_PERMISSION"
+  | "NO_DATA"
+  | "TIMEOUT"
+  | "QUERY_FAILED";
+
+type HealthSyncRequestPayload = {
+  type: "health_sync_request";
+  version: 1;
+  request_id: string;
+  date: string;
+  activity: "barre";
+};
+
+type HealthWorkoutPayload = {
+  activity?: string | null;
+  activity_label?: string | null;
+  source_name?: string | null;
+  device_name?: string | null;
+  active_energy_kcal?: number | null;
+  total_energy_kcal?: number | null;
+  avg_bpm?: number | null;
+  max_bpm?: number | null;
+};
+
+type HealthSyncResultSuccessPayload = {
+  type?: string;
+  version?: number;
+  request_id?: string;
+  status?: "success";
+  workout?: HealthWorkoutPayload;
+};
+
+type HealthSyncResultErrorPayload = {
+  type?: string;
+  version?: number;
+  request_id?: string;
+  status?: "error";
+  code?: string;
+  message?: string;
+};
+
+export type HealthSyncResult =
+  | {
+      requestId: string;
+      status: "success";
+      workout: {
+        activity: "barre";
+        activityLabel: string | null;
+        sourceName: string | null;
+        deviceName: string | null;
+        activeEnergyKcal: number | null;
+        totalEnergyKcal: number | null;
+        avgBpm: number | null;
+        maxBpm: number | null;
+      };
+    }
+  | {
+      requestId: string;
+      status: "error";
+      code: HealthSyncErrorCode;
+      message: string;
+    };
 
 /**
  * WebView 환경에서 RN 앱에 주소 검색 UI 오픈 요청을 보낸다.
@@ -80,7 +156,7 @@ export function requestAddressSearchFromApp(): boolean {
  * - CustomEvent.detail에 동일 payload 전달
  */
 export function resolveAddressFromBridgeMessage(raw: unknown): string | null {
-  const payload = normalizeAddressPayload(raw);
+  const payload = parseBridgePayload(raw);
   if (!payload) return null;
 
   const type = payload.type?.trim();
@@ -102,7 +178,106 @@ export function resolveAddressFromBridgeMessage(raw: unknown): string | null {
   return address || null;
 }
 
-function normalizeAddressPayload(raw: unknown): AddressMessagePayload | null {
+export function resolvePlatformInfoFromBridgeMessage(raw: unknown): {
+  platform: AppPlatform;
+  healthProvider: HealthProvider;
+} | null {
+  const payload = parseBridgePayload(raw) as PlatformInfoPayload | null;
+  if (!payload) return null;
+  if (payload.type !== "platform_info") return null;
+  if (payload.version !== 1) return null;
+
+  const platform = normalizePlatform(payload.platform);
+  const healthProvider = normalizeHealthProvider(payload.health_provider);
+  if (!platform || !healthProvider) return null;
+
+  return {
+    platform,
+    healthProvider,
+  };
+}
+
+export function requestHealthSyncFromApp({
+  requestId,
+  date,
+  activity = "barre",
+}: {
+  requestId: string;
+  date: string;
+  activity?: "barre";
+}): boolean {
+  if (!isInReactNativeWebView()) return false;
+  const trimmedRequestId = requestId.trim();
+  const trimmedDate = date.trim();
+  if (!trimmedRequestId || !trimmedDate) return false;
+
+  const payload: HealthSyncRequestPayload = {
+    type: "health_sync_request",
+    version: 1,
+    request_id: trimmedRequestId,
+    date: trimmedDate,
+    activity,
+  };
+  window.ReactNativeWebView?.postMessage(JSON.stringify(payload));
+  return true;
+}
+
+export function resolveHealthSyncFromBridgeMessage(raw: unknown): HealthSyncResult | null {
+  const payload = parseBridgePayload(raw) as
+    | HealthSyncResultSuccessPayload
+    | HealthSyncResultErrorPayload
+    | null;
+  if (!payload || payload.type !== "health_sync_result" || payload.version !== 1) {
+    return null;
+  }
+
+  const requestId = payload.request_id?.trim();
+  if (!requestId) return null;
+
+  if (payload.status === "success") {
+    const workout = payload.workout;
+    if (!workout || workout.activity !== "barre") return null;
+    return {
+      requestId,
+      status: "success",
+      workout: {
+        activity: "barre",
+        activityLabel: normalizeOptionalString(workout.activity_label),
+        sourceName: normalizeOptionalString(workout.source_name),
+        deviceName: normalizeOptionalString(workout.device_name),
+        activeEnergyKcal: normalizeOptionalNumber(workout.active_energy_kcal),
+        totalEnergyKcal: normalizeOptionalNumber(workout.total_energy_kcal),
+        avgBpm: normalizeOptionalNumber(workout.avg_bpm),
+        maxBpm: normalizeOptionalNumber(workout.max_bpm),
+      },
+    };
+  }
+
+  if (payload.status === "error") {
+    if (
+      payload.code !== "NO_PERMISSION" &&
+      payload.code !== "NO_DATA" &&
+      payload.code !== "TIMEOUT" &&
+      payload.code !== "QUERY_FAILED"
+    ) {
+      return null;
+    }
+    return {
+      requestId,
+      status: "error",
+      code: payload.code,
+      message: typeof payload.message === "string" ? payload.message : "",
+    };
+  }
+
+  return null;
+}
+
+export function resolveHealthSyncMessage(raw: unknown): HealthSyncResult | null {
+  return resolveHealthSyncFromBridgeMessage(raw);
+}
+
+function parseBridgePayload(raw: unknown): AddressMessagePayload | null {
   if (raw == null) return null;
 
   if (typeof raw === "string") {
@@ -122,5 +297,33 @@ function normalizeAddressPayload(raw: unknown): AddressMessagePayload | null {
     return raw as AddressMessagePayload;
   }
 
+  return null;
+}
+
+function normalizeOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function normalizeOptionalNumber(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function normalizePlatform(value: unknown): AppPlatform | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "ios") return "ios";
+  if (normalized === "android") return "android";
+  return null;
+}
+
+function normalizeHealthProvider(value: unknown): HealthProvider | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "healthkit") return "healthkit";
+  if (normalized === "health_connect") return "health_connect";
+  if (normalized === "none") return "none";
   return null;
 }

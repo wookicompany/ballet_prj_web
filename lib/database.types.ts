@@ -872,6 +872,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          app_platform: string | null
+          app_platform_updated_at: string | null
           avatar_url: string | null
           ballet_started_at: string | null
           calendar_highlight_weekend: boolean
@@ -885,6 +887,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_platform?: string | null
+          app_platform_updated_at?: string | null
           avatar_url?: string | null
           ballet_started_at?: string | null
           calendar_highlight_weekend?: boolean
@@ -898,6 +902,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_platform?: string | null
+          app_platform_updated_at?: string | null
           avatar_url?: string | null
           ballet_started_at?: string | null
           calendar_highlight_weekend?: boolean
@@ -982,6 +988,12 @@ export type Database = {
           new_learned: string | null
           record_date: string
           start_time: string
+          workout_activity_label: string | null
+          workout_avg_bpm: number | null
+          workout_device_name: string | null
+          workout_max_bpm: number | null
+          workout_source_name: string | null
+          workout_total_energy_kcal: number | null
           updated_at: string
           user_id: string
         }
@@ -1004,6 +1016,12 @@ export type Database = {
           new_learned?: string | null
           record_date: string
           start_time: string
+          workout_activity_label?: string | null
+          workout_avg_bpm?: number | null
+          workout_device_name?: string | null
+          workout_max_bpm?: number | null
+          workout_source_name?: string | null
+          workout_total_energy_kcal?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1026,6 +1044,12 @@ export type Database = {
           new_learned?: string | null
           record_date?: string
           start_time?: string
+          workout_activity_label?: string | null
+          workout_avg_bpm?: number | null
+          workout_device_name?: string | null
+          workout_max_bpm?: number | null
+          workout_source_name?: string | null
+          workout_total_energy_kcal?: number | null
           updated_at?: string
           user_id?: string
         }
