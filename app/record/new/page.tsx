@@ -807,7 +807,7 @@ function RecordNewContent() {
     }
   };
 
-  const appliedWorkout = useMemo(() => {
+  const appliedWorkout = useMemo<SyncedWorkout | null>(() => {
     const hasValue =
       !!form.workout_activity_label ||
       !!form.workout_source_name ||
@@ -820,6 +820,7 @@ function RecordNewContent() {
       activityLabel: form.workout_activity_label,
       sourceName: form.workout_source_name,
       deviceName: form.workout_device_name,
+      activeEnergyKcal: null,
       totalEnergyKcal: form.workout_total_energy_kcal,
       avgBpm: form.workout_avg_bpm,
       maxBpm: form.workout_max_bpm,
