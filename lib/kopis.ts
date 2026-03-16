@@ -157,6 +157,13 @@ const parseKopisNumber = (value?: string | null) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const normalizeKopisPosterUrl = (value?: string | null) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.replace(/^http:\/\//i, "https://");
+};
+
 const normalizeArray = <T>(value: T | T[] | undefined | null) => {
   if (!value) return [];
   return Array.isArray(value) ? value : [value];
@@ -351,7 +358,7 @@ export const mapKopisListItem = (item: KopisListItem) => ({
   prfpdfrom: parseKopisDate(item.prfpdfrom),
   prfpdto: parseKopisDate(item.prfpdto),
   fcltynm: item.fcltynm ?? null,
-  poster: item.poster ?? null,
+  poster: normalizeKopisPosterUrl(item.poster),
   area: item.area ?? null,
   genrenm: item.genrenm ?? null,
   openrun: item.openrun ?? null,
@@ -379,7 +386,10 @@ export const mapKopisDetailItem = (item: KopisDetailItem) => {
       : Array.isArray(item.styurls)
         ? item.styurls
         : item.styurls?.styurl
-  ).filter((value): value is string => typeof value === "string");
+  )
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => normalizeKopisPosterUrl(value))
+    .filter((value): value is string => Boolean(value));
   const relatesList = normalizeArray(
     typeof item.relates === "string"
       ? item.relates
@@ -404,7 +414,7 @@ export const mapKopisDetailItem = (item: KopisDetailItem) => {
     entrpsnm_h: item.entrpsnmH ?? null,
     entrpsnm_s: item.entrpsnmS ?? null,
     pcseguidance: item.pcseguidance ?? null,
-    poster: item.poster ?? null,
+    poster: normalizeKopisPosterUrl(item.poster),
     area: item.area ?? null,
     genrenm: item.genrenm ?? null,
     openrun: item.openrun ?? null,
@@ -494,7 +504,7 @@ export const mapKopisAwardItem = (item: KopisAwardItem) => {
     prfpdfrom: parseKopisDate(item.prfpdfrom),
     prfpdto: parseKopisDate(item.prfpdto),
     fcltynm: item.fcltynm ?? null,
-    poster: item.poster ?? null,
+    poster: normalizeKopisPosterUrl(item.poster),
     genrenm: item.genrenm ?? null,
     prfstate: item.prfstate ?? null,
     awards: normalizedAwards,
