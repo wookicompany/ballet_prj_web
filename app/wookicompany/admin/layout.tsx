@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Bell,
   CalendarDays,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -42,6 +43,7 @@ const NAV_GROUPS = [
       { href: "/wookicompany/admin/records", label: "캘린더 기록 관리", icon: CalendarDays },
       { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리", icon: MessageSquare },
       { href: "/wookicompany/admin/notices", label: "공지사항 관리", icon: Bell },
+      { href: "/wookicompany/admin/support-inquiries", label: "문의 관리", icon: Inbox },
       { href: "/wookicompany/admin/ads", label: "광고 관리", icon: Megaphone },
     ],
   },
