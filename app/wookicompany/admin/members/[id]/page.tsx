@@ -133,68 +133,48 @@ export default function AdminMemberDetailPage() {
       ) : null}
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-md border p-3 md:col-span-2">
-              <p className="text-xs text-muted-foreground">닉네임</p>
-              <p className="mt-1 font-medium">{profile.nickname ?? "미입력"}</p>
+        <CardHeader>
+          <CardTitle>회원 전체 정보</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center gap-3 rounded-md border bg-muted/20 p-3">
+            <Avatar>
+              <AvatarImage src={(profile.avatar_url as string) ?? undefined} />
+              <AvatarFallback>
+                {(profile.nickname as string) ?? (profile.id as string).slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium">{profile.nickname ?? "미입력"}</p>
+              <p className="break-all text-sm text-muted-foreground">ID: {profile.id}</p>
             </div>
-            <div className="rounded-md border p-3">
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md border p-3 sm:col-span-2">
               <p className="text-xs text-muted-foreground">가입일</p>
-              <p className="mt-1 font-medium">{formatDateTime(profile.created_at as string)}</p>
+              <p className="mt-1 font-medium">
+                {formatDateTime(profile.created_at as string)}
+              </p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">총 활동</p>
               <p className="mt-1 font-medium tabular-nums">{totalActivity}</p>
             </div>
             <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">기록</p>
-              <p className="mt-1 font-medium tabular-nums">{recordCount}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">리뷰</p>
-              <p className="mt-1 font-medium tabular-nums">{reviewCount}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">댓글</p>
-              <p className="mt-1 font-medium tabular-nums">{commentCount}</p>
+              <p className="text-xs text-muted-foreground">닉네임</p>
+              <p className="mt-1 font-medium">{profile.nickname ?? "미입력"}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>프로필</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={(profile.avatar_url as string) ?? undefined} />
-              <AvatarFallback>{(profile.nickname as string) ?? (profile.id as string).slice(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{profile.nickname ?? "미입력"}</p>
-              <p className="text-sm text-muted-foreground break-all">ID: {profile.id}</p>
-            </div>
+          <div className="rounded-md border p-4">
+            <p className="text-sm font-medium">활동 요약</p>
+            <ul className="mt-3 grid gap-2 text-sm">
+              <li className="tabular-nums">캘린더 기록: {recordCount}건</li>
+              <li className="tabular-nums">공연 리뷰: {reviewCount}건</li>
+              <li className="tabular-nums">공연 댓글: {commentCount}건</li>
+            </ul>
           </div>
-          <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
-            <dt className="text-muted-foreground">가입일</dt>
-            <dd>{formatDateTime(profile.created_at as string)}</dd>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>활동 요약</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="grid gap-2 text-sm">
-            <li className="tabular-nums">캘린더 기록: {recordCount}건</li>
-            <li className="tabular-nums">공연 리뷰: {reviewCount}건</li>
-            <li className="tabular-nums">공연 댓글: {commentCount}건</li>
-          </ul>
         </CardContent>
       </Card>
     </div>
