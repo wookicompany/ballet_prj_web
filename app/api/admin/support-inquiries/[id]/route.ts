@@ -17,8 +17,9 @@ export const GET = async (
 
   const { data: inquiry, error } = await result.supabaseAdmin
     .from("support_inquiries")
-    .select("id, user_id, email, nickname, title, content, created_at, deleted_at")
+    .select("id, user_id, email, nickname, title, content, created_at")
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error) {
@@ -29,7 +30,7 @@ export const GET = async (
     );
   }
 
-  if (!inquiry || inquiry.deleted_at) {
+  if (!inquiry) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

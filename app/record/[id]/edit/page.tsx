@@ -152,6 +152,7 @@ type FormState = {
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
+  workout_active_energy_kcal: number | null;
   workout_total_energy_kcal: number | null;
   workout_avg_bpm: number | null;
   workout_max_bpm: number | null;
@@ -366,6 +367,7 @@ export default function RecordEditPage() {
     workout_activity_label: null,
     workout_source_name: null,
     workout_device_name: null,
+    workout_active_energy_kcal: null,
     workout_total_energy_kcal: null,
     workout_avg_bpm: null,
     workout_max_bpm: null,
@@ -573,7 +575,7 @@ export default function RecordEditPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -606,6 +608,7 @@ export default function RecordEditPage() {
           workout_activity_label: data.workout_activity_label ?? null,
           workout_source_name: data.workout_source_name ?? null,
           workout_device_name: data.workout_device_name ?? null,
+          workout_active_energy_kcal: data.workout_active_energy_kcal ?? null,
           workout_total_energy_kcal: data.workout_total_energy_kcal ?? null,
           workout_avg_bpm: data.workout_avg_bpm ?? null,
           workout_max_bpm: data.workout_max_bpm ?? null,
@@ -616,6 +619,7 @@ export default function RecordEditPage() {
           data.workout_activity_label ||
             data.workout_source_name ||
             data.workout_device_name ||
+            data.workout_active_energy_kcal !== null ||
             data.workout_total_energy_kcal !== null ||
             data.workout_avg_bpm !== null ||
             data.workout_max_bpm !== null
@@ -795,6 +799,7 @@ export default function RecordEditPage() {
       !!form.workout_activity_label ||
       !!form.workout_source_name ||
       !!form.workout_device_name ||
+      form.workout_active_energy_kcal !== null ||
       form.workout_total_energy_kcal !== null ||
       form.workout_avg_bpm !== null ||
       form.workout_max_bpm !== null;
@@ -803,13 +808,14 @@ export default function RecordEditPage() {
       activityLabel: form.workout_activity_label,
       sourceName: form.workout_source_name,
       deviceName: form.workout_device_name,
-      activeEnergyKcal: null,
+      activeEnergyKcal: form.workout_active_energy_kcal,
       totalEnergyKcal: form.workout_total_energy_kcal,
       avgBpm: form.workout_avg_bpm,
       maxBpm: form.workout_max_bpm,
     };
   }, [
     form.workout_activity_label,
+    form.workout_active_energy_kcal,
     form.workout_avg_bpm,
     form.workout_device_name,
     form.workout_max_bpm,
@@ -839,6 +845,7 @@ export default function RecordEditPage() {
           workout_activity_label: null,
           workout_source_name: null,
           workout_device_name: null,
+          workout_active_energy_kcal: null,
           workout_total_energy_kcal: null,
           workout_avg_bpm: null,
           workout_max_bpm: null,
@@ -848,6 +855,7 @@ export default function RecordEditPage() {
             workout_activity_label: syncedWorkoutDraft.activityLabel,
             workout_source_name: syncedWorkoutDraft.sourceName,
             workout_device_name: syncedWorkoutDraft.deviceName,
+            workout_active_energy_kcal: syncedWorkoutDraft.activeEnergyKcal,
             workout_total_energy_kcal: syncedWorkoutDraft.totalEnergyKcal,
             workout_avg_bpm: syncedWorkoutDraft.avgBpm,
             workout_max_bpm: syncedWorkoutDraft.maxBpm,
@@ -856,6 +864,7 @@ export default function RecordEditPage() {
             workout_activity_label: form.workout_activity_label,
             workout_source_name: form.workout_source_name,
             workout_device_name: form.workout_device_name,
+            workout_active_energy_kcal: form.workout_active_energy_kcal,
             workout_total_energy_kcal: form.workout_total_energy_kcal,
             workout_avg_bpm: form.workout_avg_bpm,
             workout_max_bpm: form.workout_max_bpm,
@@ -1660,6 +1669,7 @@ export default function RecordEditPage() {
                         workout_activity_label: null,
                         workout_source_name: null,
                         workout_device_name: null,
+                        workout_active_energy_kcal: null,
                         workout_total_energy_kcal: null,
                         workout_avg_bpm: null,
                         workout_max_bpm: null,

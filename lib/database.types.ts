@@ -989,6 +989,7 @@ export type Database = {
           record_date: string
           start_time: string
           workout_activity_label: string | null
+          workout_active_energy_kcal: number | null
           workout_avg_bpm: number | null
           workout_device_name: string | null
           workout_max_bpm: number | null
@@ -1017,6 +1018,7 @@ export type Database = {
           record_date: string
           start_time: string
           workout_activity_label?: string | null
+          workout_active_energy_kcal?: number | null
           workout_avg_bpm?: number | null
           workout_device_name?: string | null
           workout_max_bpm?: number | null
@@ -1045,6 +1047,7 @@ export type Database = {
           record_date?: string
           start_time?: string
           workout_activity_label?: string | null
+          workout_active_energy_kcal?: number | null
           workout_avg_bpm?: number | null
           workout_device_name?: string | null
           workout_max_bpm?: number | null

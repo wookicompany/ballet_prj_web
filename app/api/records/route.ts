@@ -26,6 +26,11 @@ const pickRecordPayload = (body: Record<string, unknown>) => ({
     typeof body.workout_source_name === "string" ? body.workout_source_name : null,
   workout_device_name:
     typeof body.workout_device_name === "string" ? body.workout_device_name : null,
+  workout_active_energy_kcal:
+    typeof body.workout_active_energy_kcal === "string" ||
+    typeof body.workout_active_energy_kcal === "number"
+      ? body.workout_active_energy_kcal
+      : null,
   workout_total_energy_kcal:
     typeof body.workout_total_energy_kcal === "string" ||
     typeof body.workout_total_energy_kcal === "number"
@@ -80,6 +85,7 @@ export const POST = async (request: Request) => {
   const body = await request.json();
   const payload = pickRecordPayload(body ?? {});
   const moodValue = Number(payload.mood);
+  const workoutActiveEnergy = parseNullableNumber(payload.workout_active_energy_kcal);
   const workoutTotalEnergy = parseNullableNumber(payload.workout_total_energy_kcal);
   const workoutAvgBpm = parseNullableBpm(payload.workout_avg_bpm);
   const workoutMaxBpm = parseNullableBpm(payload.workout_max_bpm);
@@ -93,9 +99,11 @@ export const POST = async (request: Request) => {
     !Number.isInteger(moodValue) ||
     moodValue < 1 ||
     moodValue > 5 ||
+    Number.isNaN(workoutActiveEnergy) ||
     Number.isNaN(workoutTotalEnergy) ||
     Number.isNaN(workoutAvgBpm) ||
     Number.isNaN(workoutMaxBpm) ||
+    (workoutActiveEnergy !== null && workoutActiveEnergy < 0) ||
     (workoutTotalEnergy !== null && workoutTotalEnergy < 0) ||
     (workoutAvgBpm !== null && workoutAvgBpm <= 0) ||
     (workoutMaxBpm !== null && workoutMaxBpm <= 0)
@@ -106,6 +114,7 @@ export const POST = async (request: Request) => {
   const normalizedPayload = {
     ...payload,
     mood: moodValue,
+    workout_active_energy_kcal: workoutActiveEnergy,
     workout_total_energy_kcal: workoutTotalEnergy,
     workout_avg_bpm: workoutAvgBpm,
     workout_max_bpm: workoutMaxBpm,

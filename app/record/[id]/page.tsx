@@ -48,6 +48,7 @@ type RecordDetail = {
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
+  workout_active_energy_kcal: number | null;
   workout_total_energy_kcal: number | null;
   workout_avg_bpm: number | null;
   workout_max_bpm: number | null;
@@ -158,7 +159,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -248,6 +249,7 @@ export default function RecordDetailPage() {
     !!record.workout_activity_label ||
     !!record.workout_source_name ||
     !!record.workout_device_name ||
+    record.workout_active_energy_kcal !== null ||
     record.workout_total_energy_kcal !== null ||
     record.workout_avg_bpm !== null ||
     record.workout_max_bpm !== null;
@@ -440,7 +442,9 @@ export default function RecordDetailPage() {
                   <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
                     <Activity className="h-4 w-4" />
                     <span>활동 칼로리 소모량:</span>
-                    <span>-</span>
+                    {record.workout_active_energy_kcal == null
+                      ? "-"
+                      : `${record.workout_active_energy_kcal} kcal`}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
                     <Flame className="h-4 w-4" />
