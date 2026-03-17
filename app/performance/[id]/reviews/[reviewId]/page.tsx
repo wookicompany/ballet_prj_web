@@ -880,11 +880,15 @@ export default function PerformanceReviewDetailPage() {
                 );
               })}
             </div>
-            <p className="whitespace-pre-line text-base text-[#17171c]">
-              {isReviewHidden
-                ? "신고로 인해 숨김 처리되었어요."
-                : review.content || "내용이 없어요."}
-            </p>
+            {isReviewHidden ? (
+              <p className="whitespace-pre-line text-base text-[#17171c]">
+                신고로 인해 숨김 처리되었어요.
+              </p>
+            ) : review.content ? (
+              <p className="whitespace-pre-line text-base text-[#17171c]">
+                {review.content}
+              </p>
+            ) : null}
             {!isReviewHidden && images.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {images.map((url, index) => (
