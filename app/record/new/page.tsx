@@ -42,10 +42,7 @@ import {
   RN_HEALTH_SYNC_RESULT_EVENT,
   RN_PLATFORM_INFO_EVENT,
   isInReactNativeWebView,
-  RN_ADDRESS_SELECTED_EVENT,
   requestHealthSyncFromApp,
-  requestAddressSearchFromApp,
-  resolveAddressFromBridgeMessage,
   resolveHealthSyncFromBridgeMessage,
   resolvePlatformInfoFromBridgeMessage,
   sendHapticToApp,
@@ -188,12 +185,6 @@ type SavedCenterOrder = {
   id: string;
   name: string;
   order_text: string;
-};
-
-type KakaoPostcodeConstructor = new (options: {
-  oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => void;
-}) => {
-  open: () => void;
 };
 
 function RecordNewContent() {
@@ -556,17 +547,6 @@ function RecordNewContent() {
   }, [dateSheetOpen, dateDraft.year, dateDraft.month, dateDraft.day]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (document.getElementById("kakao-postcode-script")) return;
-    const script = document.createElement("script");
-    script.id = "kakao-postcode-script";
-    script.src =
-      "//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
-
-  useEffect(() => {
     if (loading) return;
     if (!user) {
       openLoginSheet();
@@ -613,80 +593,6 @@ function RecordNewContent() {
     sendHapticToApp();
     setImages((prev) => prev.filter((_, idx) => idx !== index));
   };
-
-  const handleSearchAddress = () => {
-    if (typeof window === "undefined") return;
-
-    if (requestAddressSearchFromApp()) {
-      return;
-    }
-
-    const kakao = (
-      window as typeof window & {
-        kakao?: { Postcode?: KakaoPostcodeConstructor };
-      }
-    ).kakao;
-    if (!kakao?.Postcode) {
-      toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
-      return;
-    }
-
-    new kakao.Postcode({
-      oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => {
-        const address = data.roadAddress || data.jibunAddress || "";
-        if (!address) return;
-        if (address !== locationBase) {
-          setLocationBase(address);
-          if (locationDetail) {
-            setLocationDetail("");
-          }
-          return;
-        }
-        setLocationBase(address);
-      },
-    }).open();
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const applyAddress = (address: string) => {
-      const trimmedAddress = address.trim();
-      if (!trimmedAddress) return;
-
-      setLocationBase((prev) => {
-        if (trimmedAddress !== prev && locationDetail) {
-          setLocationDetail("");
-        }
-        return trimmedAddress;
-      });
-    };
-
-    const handleWindowMessage = (event: MessageEvent) => {
-      const address = resolveAddressFromBridgeMessage(event.data);
-      if (address) applyAddress(address);
-    };
-
-    const handleCustomAddressEvent = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const address = resolveAddressFromBridgeMessage(customEvent.detail);
-      if (address) applyAddress(address);
-    };
-
-    window.addEventListener("message", handleWindowMessage);
-    window.addEventListener(
-      RN_ADDRESS_SELECTED_EVENT,
-      handleCustomAddressEvent as EventListener
-    );
-
-    return () => {
-      window.removeEventListener("message", handleWindowMessage);
-      window.removeEventListener(
-        RN_ADDRESS_SELECTED_EVENT,
-        handleCustomAddressEvent as EventListener
-      );
-    };
-  }, [locationDetail]);
 
   const saveDetectedPlatform = useCallback(
     async (platform: AppPlatform) => {
@@ -1514,14 +1420,21 @@ function RecordNewContent() {
                   value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={handleSearchAddress}
-                >
-                  {locationBase || "주소 검색하기"}
-                </Button>
+                <Input
+                  type="text"
+                  className="h-12 text-base placeholder:text-sm"
+                  placeholder="주소를 입력해 주세요"
+                  value={locationBase}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setLocationBase((prev) => {
+                      if (nextValue !== prev && locationDetail) {
+                        setLocationDetail("");
+                      }
+                      return nextValue;
+                    });
+                  }}
+                />
                 <Input
                   type="text"
                   className="h-12 text-base placeholder:text-sm"

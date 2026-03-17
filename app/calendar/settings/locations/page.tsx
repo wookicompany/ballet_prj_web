@@ -24,11 +24,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
-import {
-  RN_ADDRESS_SELECTED_EVENT,
-  requestAddressSearchFromApp,
-  resolveAddressFromBridgeMessage,
-} from "@/lib/reactNativeWebView";
 import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,12 +32,6 @@ type SavedLocation = {
   name: string;
   address_base: string | null;
   address_detail: string | null;
-};
-
-type KakaoPostcodeConstructor = new (options: {
-  oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => void;
-}) => {
-  open: () => void;
 };
 
 export default function SavedLocationsPage() {
@@ -82,100 +71,6 @@ export default function SavedLocationsPage() {
     setForm({ name: "", address_base: "", address_detail: "" });
     setEditingId(null);
   };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (document.getElementById("kakao-postcode-script")) return;
-    const script = document.createElement("script");
-    script.id = "kakao-postcode-script";
-    script.src =
-      "//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
-
-  const handleSearchAddress = () => {
-    if (typeof window === "undefined") return;
-
-    if (requestAddressSearchFromApp()) {
-      return;
-    }
-
-    const kakao = (
-      window as typeof window & {
-        kakao?: { Postcode?: KakaoPostcodeConstructor };
-      }
-    ).kakao;
-    if (!kakao?.Postcode) {
-      toast("주소 검색을 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
-      return;
-    }
-
-    new kakao.Postcode({
-      oncomplete: (data: { roadAddress?: string; jibunAddress?: string }) => {
-        const address = data.roadAddress || data.jibunAddress || "";
-        if (!address) return;
-        if (address !== form.address_base) {
-          setForm((prev) => ({
-            ...prev,
-            address_base: address,
-            address_detail: "",
-          }));
-          return;
-        }
-        setForm((prev) => ({ ...prev, address_base: address }));
-      },
-    }).open();
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const applyAddress = (address: string) => {
-      const trimmedAddress = address.trim();
-      if (!trimmedAddress) return;
-
-      setForm((prev) => {
-        if (trimmedAddress !== prev.address_base) {
-          return {
-            ...prev,
-            address_base: trimmedAddress,
-            address_detail: "",
-          };
-        }
-
-        return {
-          ...prev,
-          address_base: trimmedAddress,
-        };
-      });
-    };
-
-    const handleWindowMessage = (event: MessageEvent) => {
-      const address = resolveAddressFromBridgeMessage(event.data);
-      if (address) applyAddress(address);
-    };
-
-    const handleCustomAddressEvent = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const address = resolveAddressFromBridgeMessage(customEvent.detail);
-      if (address) applyAddress(address);
-    };
-
-    window.addEventListener("message", handleWindowMessage);
-    window.addEventListener(
-      RN_ADDRESS_SELECTED_EVENT,
-      handleCustomAddressEvent as EventListener
-    );
-
-    return () => {
-      window.removeEventListener("message", handleWindowMessage);
-      window.removeEventListener(
-        RN_ADDRESS_SELECTED_EVENT,
-        handleCustomAddressEvent as EventListener
-      );
-    };
-  }, []);
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
@@ -403,14 +298,22 @@ export default function SavedLocationsPage() {
           </div>
           <div className="space-y-2">
             <Label className="text-sm text-[#17171c]/60">주소</Label>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 w-full justify-start text-left text-sm font-normal"
-              onClick={handleSearchAddress}
-            >
-              {form.address_base || "주소 검색하기"}
-            </Button>
+            <Input
+              className="h-12 text-base placeholder:text-sm"
+              placeholder="주소를 입력해 주세요"
+              value={form.address_base}
+              onChange={(event) =>
+                setForm((prev) => {
+                  const nextAddress = event.target.value;
+                  return {
+                    ...prev,
+                    address_base: nextAddress,
+                    address_detail:
+                      nextAddress !== prev.address_base ? "" : prev.address_detail,
+                  };
+                })
+              }
+            />
           </div>
           <div className="space-y-2">
             <Label className="text-sm text-[#17171c]/60">상세 주소</Label>
