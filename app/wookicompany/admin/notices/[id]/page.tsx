@@ -227,39 +227,8 @@ export default function AdminNoticeDetailPage() {
       ) : null}
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-md border p-3 md:col-span-2">
-              <p className="text-xs text-muted-foreground">제목</p>
-              <p className="mt-1 font-medium">{notice.title || "미입력"}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">게시 상태</p>
-              <p className="mt-1">
-                <Badge variant={notice.is_published ? "default" : "secondary"}>
-                  {notice.is_published ? "게시됨" : "미게시"}
-                </Badge>
-              </p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">게시일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.published_at)}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">생성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.created_at)}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">수정일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.updated_at)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>기본 정보</CardTitle>
+          <CardTitle>공지 전체 정보</CardTitle>
           <div className="flex items-center gap-2">
             {!editing ? (
               <>
@@ -320,9 +289,36 @@ export default function AdminNoticeDetailPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md border p-3 lg:col-span-2">
+              <p className="text-xs text-muted-foreground">제목</p>
+              <p className="mt-1 font-medium">{notice.title || "미입력"}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">게시 상태</p>
+              <p className="mt-1">
+                <Badge variant={notice.is_published ? "default" : "secondary"}>
+                  {notice.is_published ? "게시됨" : "미게시"}
+                </Badge>
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">게시일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.published_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">생성일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.created_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">수정일</p>
+              <p className="mt-1 font-medium">{formatDateTime(notice.updated_at)}</p>
+            </div>
+          </div>
+
           {editing ? (
-            <div className="space-y-4 max-w-3xl">
+            <div className="max-w-3xl space-y-4 rounded-md border p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="edit-title">제목 *</Label>
@@ -367,7 +363,7 @@ export default function AdminNoticeDetailPage() {
               </div>
             </div>
           ) : (
-            <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
+            <dl className="grid gap-3 rounded-md border p-4 text-sm md:grid-cols-[120px_1fr]">
               <dt className="text-muted-foreground">내용</dt>
               <dd className="whitespace-pre-wrap rounded-md border bg-muted/20 p-3">
                 {notice.content || "미입력"}

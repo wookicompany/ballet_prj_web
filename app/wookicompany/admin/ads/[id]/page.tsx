@@ -268,49 +268,8 @@ export default function AdminAdDetailPage() {
       ) : null}
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-5">
-            <div className="rounded-md border p-3 md:col-span-2">
-              <p className="text-xs text-muted-foreground">광고명</p>
-              <p className="mt-1 font-medium">{ad.title || "미입력"}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">노출 위치</p>
-              <p className="mt-1 font-medium">{formatPlacementLabel(ad.placement)}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">상태</p>
-              <p className="mt-1">
-                <Badge variant={ad.is_active ? "default" : "secondary"}>
-                  {ad.is_active ? "활성" : "비활성"}
-                </Badge>
-              </p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">클릭수</p>
-              <p className="mt-1 font-medium tabular-nums">{ad.click_count}</p>
-            </div>
-            <div className="rounded-md border p-3 md:col-span-2">
-              <p className="text-xs text-muted-foreground">노출 기간 (KST)</p>
-              <p className="mt-1 font-medium">
-                {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
-              </p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">생성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(ad.created_at)}</p>
-            </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">수정일</p>
-              <p className="mt-1 font-medium">{formatDateTime(ad.updated_at)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>기본 정보</CardTitle>
+          <CardTitle>광고 전체 정보</CardTitle>
           <div className="flex items-center gap-2">
             {!editing ? (
               <>
@@ -365,9 +324,46 @@ export default function AdminAdDetailPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-md border p-3 lg:col-span-2">
+              <p className="text-xs text-muted-foreground">광고명</p>
+              <p className="mt-1 font-medium">{ad.title || "미입력"}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">노출 위치</p>
+              <p className="mt-1 font-medium">{formatPlacementLabel(ad.placement)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">상태</p>
+              <p className="mt-1">
+                <Badge variant={ad.is_active ? "default" : "secondary"}>
+                  {ad.is_active ? "활성" : "비활성"}
+                </Badge>
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">클릭수</p>
+              <p className="mt-1 font-medium tabular-nums">{ad.click_count}</p>
+            </div>
+            <div className="rounded-md border p-3 lg:col-span-2">
+              <p className="text-xs text-muted-foreground">노출 기간 (KST)</p>
+              <p className="mt-1 font-medium">
+                {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">생성일</p>
+              <p className="mt-1 font-medium">{formatDateTime(ad.created_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">수정일</p>
+              <p className="mt-1 font-medium">{formatDateTime(ad.updated_at)}</p>
+            </div>
+          </div>
+
           {editing ? (
-            <div className="max-w-3xl space-y-5">
+            <div className="max-w-3xl space-y-5 rounded-md border p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>노출 위치 *</Label>
@@ -408,7 +404,7 @@ export default function AdminAdDetailPage() {
               </div>
             </div>
           ) : (
-            <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
+            <dl className="grid gap-3 rounded-md border p-4 text-sm md:grid-cols-[140px_1fr]">
               <div>
                 <dt className="text-muted-foreground">노출 위치</dt>
                 <dd className="font-medium">{formatPlacementLabel(ad.placement)}</dd>
