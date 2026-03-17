@@ -41,6 +41,7 @@ type RecordDetail = {
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
+  workout_active_energy_kcal: number | null;
   workout_total_energy_kcal: number | null;
   workout_avg_bpm: number | null;
   workout_max_bpm: number | null;
@@ -321,6 +322,12 @@ export default function AdminRecordDetailPage() {
               <dd>{record.workout_source_name || "미입력"}</dd>
               <dt className="text-muted-foreground">기기</dt>
               <dd>{record.workout_device_name || "미입력"}</dd>
+              <dt className="text-muted-foreground">활동 칼로리</dt>
+              <dd>
+                {record.workout_active_energy_kcal == null
+                  ? "미입력"
+                  : `${record.workout_active_energy_kcal} kcal`}
+              </dd>
               <dt className="text-muted-foreground">총 칼로리</dt>
               <dd>
                 {record.workout_total_energy_kcal == null
