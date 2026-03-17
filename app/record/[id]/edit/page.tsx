@@ -1379,86 +1379,6 @@ export default function RecordEditPage() {
                 }
               />
             </div>
-            {isIosHealthkit ? (
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="health-sync-options"
-                  checked={showHealthSync}
-                  onCheckedChange={(checked) => {
-                    const next = !!checked;
-                    setShowHealthSync(next);
-                    if (!next) {
-                      setSyncedWorkoutDraft(null);
-                      setForm((prev) => ({
-                        ...prev,
-                        workout_activity_label: null,
-                        workout_source_name: null,
-                        workout_device_name: null,
-                        workout_total_energy_kcal: null,
-                        workout_avg_bpm: null,
-                        workout_max_bpm: null,
-                      }));
-                    }
-                  }}
-                />
-                <Label
-                  htmlFor="health-sync-options"
-                  className="text-sm text-[#17171c]/70"
-                >
-                  Apple Watch 발레 바 운동 불러오기
-                </Label>
-              </div>
-            ) : null}
-            {showHealthSync && isIosHealthkit ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm text-[#17171c]/60">
-                    Apple Watch 발레 바 운동
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-10 shrink-0 px-4 text-xs"
-                    onClick={handleRequestHealthSync}
-                    disabled={healthSyncing}
-                  >
-                    {healthSyncing ? <Spinner size="sm" /> : "불러오기"}
-                  </Button>
-                </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px]">
-                  <div className="flex items-start justify-end">
-                    <p className="text-xs text-[#17171c]/60">
-                      {workoutCard?.deviceName ?? "-"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Activity className="h-4 w-4" />
-                    <span>활동 칼로리 소모량:</span>
-                    {workoutCard?.activeEnergyKcal == null
-                      ? "-"
-                      : `${workoutCard.activeEnergyKcal} kcal`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Flame className="h-4 w-4" />
-                    <span>총 칼로리 소모량:</span>
-                    {workoutCard?.totalEnergyKcal == null
-                      ? "-"
-                      : `${workoutCard.totalEnergyKcal} kcal`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Heart className="h-4 w-4" />
-                    <span>평균 심박수:</span>
-                    {workoutCard?.avgBpm == null ? "-" : `${workoutCard.avgBpm} BPM`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <HeartPulse className="h-4 w-4" />
-                    <span>최대 심박수:</span>
-                    {workoutCard?.maxBpm == null ? "-" : `${workoutCard.maxBpm} BPM`}
-                  </div>
-                </div>
-              </div>
-            ) : null}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="bar-order-options"
@@ -1807,6 +1727,86 @@ export default function RecordEditPage() {
                       }))
                     }
                   />
+                </div>
+              </div>
+            ) : null}
+            {isIosHealthkit ? (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="health-sync-options"
+                  checked={showHealthSync}
+                  onCheckedChange={(checked) => {
+                    const next = !!checked;
+                    setShowHealthSync(next);
+                    if (!next) {
+                      setSyncedWorkoutDraft(null);
+                      setForm((prev) => ({
+                        ...prev,
+                        workout_activity_label: null,
+                        workout_source_name: null,
+                        workout_device_name: null,
+                        workout_total_energy_kcal: null,
+                        workout_avg_bpm: null,
+                        workout_max_bpm: null,
+                      }));
+                    }
+                  }}
+                />
+                <Label
+                  htmlFor="health-sync-options"
+                  className="text-sm text-[#17171c]/70"
+                >
+                  Apple Watch 발레 바 운동 불러오기
+                </Label>
+              </div>
+            ) : null}
+            {showHealthSync && isIosHealthkit ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-[#17171c]/60">
+                    Apple Watch 발레 바 운동
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 shrink-0 px-4 text-xs"
+                    onClick={handleRequestHealthSync}
+                    disabled={healthSyncing}
+                  >
+                    {healthSyncing ? <Spinner size="sm" /> : "불러오기"}
+                  </Button>
+                </div>
+                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px]">
+                  <div className="flex items-start justify-end">
+                    <p className="text-xs text-[#17171c]/60">
+                      {workoutCard?.deviceName ?? "-"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                    <Activity className="h-4 w-4" />
+                    <span>활동 칼로리 소모량:</span>
+                    {workoutCard?.activeEnergyKcal == null
+                      ? "-"
+                      : `${workoutCard.activeEnergyKcal} kcal`}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                    <Flame className="h-4 w-4" />
+                    <span>총 칼로리 소모량:</span>
+                    {workoutCard?.totalEnergyKcal == null
+                      ? "-"
+                      : `${workoutCard.totalEnergyKcal} kcal`}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                    <Heart className="h-4 w-4" />
+                    <span>평균 심박수:</span>
+                    {workoutCard?.avgBpm == null ? "-" : `${workoutCard.avgBpm} BPM`}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                    <HeartPulse className="h-4 w-4" />
+                    <span>최대 심박수:</span>
+                    {workoutCard?.maxBpm == null ? "-" : `${workoutCard.maxBpm} BPM`}
+                  </div>
                 </div>
               </div>
             ) : null}
