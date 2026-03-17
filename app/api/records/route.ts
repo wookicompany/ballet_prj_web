@@ -48,10 +48,12 @@ const parseNullableNumber = (value: string | number | null) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
-const parseNullableInt = (value: string | number | null) => {
+const parseNullableBpm = (value: string | number | null) => {
   const parsed = parseNullableNumber(value);
   if (parsed === null) return null;
-  return Number.isInteger(parsed) ? parsed : NaN;
+  if (!Number.isFinite(parsed)) return NaN;
+  if (parsed <= 0) return null;
+  return Math.round(parsed);
 };
 
 export const POST = async (request: Request) => {
@@ -79,8 +81,8 @@ export const POST = async (request: Request) => {
   const payload = pickRecordPayload(body ?? {});
   const moodValue = Number(payload.mood);
   const workoutTotalEnergy = parseNullableNumber(payload.workout_total_energy_kcal);
-  const workoutAvgBpm = parseNullableInt(payload.workout_avg_bpm);
-  const workoutMaxBpm = parseNullableInt(payload.workout_max_bpm);
+  const workoutAvgBpm = parseNullableBpm(payload.workout_avg_bpm);
+  const workoutMaxBpm = parseNullableBpm(payload.workout_max_bpm);
 
   if (
     !payload.record_date ||
