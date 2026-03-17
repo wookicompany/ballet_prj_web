@@ -147,7 +147,7 @@ const getHealthSyncErrorMessage = (code: HealthSyncErrorCode) => {
     return "Apple Health 권한을 확인해 주세요.";
   }
   if (code === "NO_DATA") {
-    return "해당 날짜에는 불러올 운동 기록이 아직 없어요.";
+    return "선택한 날짜에는 불러올 운동 기록이 아직 없어요.";
   }
   if (code === "TIMEOUT") {
     return "요청 시간이 초과됐어요. 다시 시도해 주세요.";
