@@ -158,9 +158,37 @@ export default function AdminReviewCommentDetailPage() {
       />
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-md border p-3 md:col-span-2">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <CardTitle>댓글 전체 정보</CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={deleting}>
+                <Trash2 className="mr-1 size-4" />
+                삭제
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>댓글 삭제</AlertDialogTitle>
+                <AlertDialogDescription>
+                  이 댓글을 소프트 삭제합니다. 계속할까요?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  삭제
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md border p-3 lg:col-span-2">
               <p className="text-xs text-muted-foreground">공연명</p>
               <p className="mt-1 font-medium">{comment.prfnm || "미입력"}</p>
             </div>
@@ -176,68 +204,46 @@ export default function AdminReviewCommentDetailPage() {
                 </Badge>
               </p>
             </div>
-            <div className="rounded-md border p-3 md:col-span-2">
+            <div className="rounded-md border p-3 lg:col-span-2">
               <p className="text-xs text-muted-foreground">작성일</p>
               <p className="mt-1 font-medium">{formatDateTime(comment.created_at)}</p>
             </div>
+            <div className="rounded-md border p-3 lg:col-span-2">
+              <p className="text-xs text-muted-foreground">작성자 ID</p>
+              <p className="mt-1 break-all font-medium">{comment.user_id}</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>댓글</CardTitle>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" disabled={deleting}>
-                <Trash2 className="size-4 mr-1" /> 삭제
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>댓글 삭제</AlertDialogTitle>
-                <AlertDialogDescription>이 댓글을 소프트 삭제합니다. 계속할까요?</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">삭제</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <dl className="grid gap-3 text-sm md:grid-cols-[120px_1fr]">
             <dt className="text-muted-foreground">내용</dt>
             <dd className="whitespace-pre-wrap rounded-md border bg-muted/20 p-3">
               {comment.content || "미입력"}
             </dd>
-            <dt className="text-muted-foreground">작성자 ID</dt>
-            <dd>{comment.user_id}</dd>
           </dl>
+
+          <div className="space-y-3 rounded-md border p-4">
+            <p className="text-sm font-medium">신고 목록 ({reports.length})</p>
+            {reports.length === 0 ? (
+              <p className="text-sm text-muted-foreground">접수된 신고가 없습니다.</p>
+            ) : (
+              <ul className="space-y-3">
+                {reports.map((r) => (
+                  <li key={r.id} className="rounded-lg border p-3 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{r.reporter_nickname ?? r.reporter_user_id}</span>
+                      <span>{formatDateTime(r.created_at)}</span>
+                    </div>
+                    <p className="mt-1 font-medium">{reasonLabel(r.reason_code)}</p>
+                    {r.reason_detail ? (
+                      <p className="mt-1 text-muted-foreground">{r.reason_detail}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {reports.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>신고 목록 ({reports.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {reports.map((r) => (
-                <li key={r.id} className="rounded-lg border p-3 text-sm">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>{r.reporter_nickname ?? r.reporter_user_id}</span>
-                    <span>{formatDateTime(r.created_at)}</span>
-                  </div>
-                  <p className="font-medium mt-1">{reasonLabel(r.reason_code)}</p>
-                  {r.reason_detail ? <p className="mt-1 text-muted-foreground">{r.reason_detail}</p> : null}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
