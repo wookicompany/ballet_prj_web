@@ -656,7 +656,7 @@ function RecordNewContent() {
         avgBpm: result.workout.avgBpm,
         maxBpm: result.workout.maxBpm,
       });
-      toast("운동 데이터를 불러왔어요. 확인 후 적용해 주세요.");
+      toast("운동 데이터를 불러왔어요.");
     };
 
     const handleWindowMessage = (event: MessageEvent) => {
