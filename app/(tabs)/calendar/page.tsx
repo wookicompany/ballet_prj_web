@@ -295,8 +295,8 @@ export default function CalendarPage() {
 
   return (
     <>
-      <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-[140px] pt-2">
-        <header className="mb-6 flex items-center justify-between px-4">
+      <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-[140px]">
+        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
           <Button

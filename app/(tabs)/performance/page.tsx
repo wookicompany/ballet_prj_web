@@ -432,8 +432,8 @@ export default function PerformanceListPage() {
   if (loading) {
     return (
       <>
-        <main className="px-4 pb-16 pt-2">
-          <header className="mb-4 flex items-center justify-between">
+        <main className="px-4 pb-16">
+          <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-0">
               <h1 className="text-xl font-semibold">공연</h1>
               <Popover>
@@ -483,8 +483,8 @@ export default function PerformanceListPage() {
 
   return (
     <>
-      <main className="px-4 pb-16 pt-2">
-        <header className="mb-4 flex items-center justify-between">
+      <main className="px-4 pb-16">
+        <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-0">
             <h1 className="text-xl font-semibold">공연</h1>
             <Popover>

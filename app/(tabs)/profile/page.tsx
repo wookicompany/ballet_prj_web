@@ -703,8 +703,8 @@ export default function ProfilePage() {
 
   return (
     <>
-      <main className="px-4 pb-[140px] pt-2">
-        <header className="mb-6 flex items-center justify-between">
+      <main className="px-4 pb-[140px]">
+        <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold">프로필</h1>
           <Button
             type="button"

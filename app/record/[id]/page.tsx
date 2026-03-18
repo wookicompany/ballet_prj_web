@@ -265,8 +265,8 @@ export default function RecordDetailPage() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-10 pt-2">
-        <header className="mb-6 flex items-center justify-between">
+      <main className="px-4 pb-10">
+        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
           <Button
             type="button"
             variant="ghost"

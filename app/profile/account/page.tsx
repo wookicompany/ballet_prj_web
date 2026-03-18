@@ -132,8 +132,8 @@ export default function ProfileAccountPage() {
   return (
     <MobileContainer>
       {isDeleting ? <LoadingOverlay /> : null}
-      <main className="px-4 pb-12 pt-2">
-        <header className="mb-6 flex items-center justify-between">
+      <main className="px-4 pb-12">
+        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
           <Button
             type="button"
             variant="ghost"
