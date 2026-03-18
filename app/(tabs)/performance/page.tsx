@@ -586,35 +586,6 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    수상작 공연만 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=awards")}
-                  aria-label="수상작 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {awardCards.length ? (
-                  awardCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
                     해외 팀이 참여한 공연만 모아봤어요
                   </h2>
                 </div>
@@ -663,6 +634,35 @@ export default function PerformanceListPage() {
               <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                 {completedCards.length ? (
                   completedCards
+                ) : (
+                  <div className="text-sm text-[#17171c]/50">
+                    표시할 공연이 없어요.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    수상작 공연만 모아봤어요
+                  </h2>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-[#17171c]/50"
+                  onClick={() => router.push("/performance/search?section=awards")}
+                  aria-label="수상작 더보기"
+                >
+                  <ChevronRight className="size-5" />
+                </Button>
+              </div>
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                {awardCards.length ? (
+                  awardCards
                 ) : (
                   <div className="text-sm text-[#17171c]/50">
                     표시할 공연이 없어요.
