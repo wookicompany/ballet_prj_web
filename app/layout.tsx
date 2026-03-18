@@ -16,7 +16,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "마이발레",
-  description: "발레의 순간을 기록하고 공연의 감동을 나누다",
+  description: "마이발레는 나의 발레를 기록하는 서비스예요.",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export const viewport: Viewport = {
