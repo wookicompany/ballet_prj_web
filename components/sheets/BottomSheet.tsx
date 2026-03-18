@@ -35,7 +35,7 @@ export default function BottomSheet({
   const accessibilityTitle = title ?? "바텀 시트";
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} shouldScaleBackground={false}>
       <DrawerContent className={contentClassName}>
         {shouldShowHeader ? (
           <DrawerHeader>
@@ -58,7 +58,7 @@ export default function BottomSheet({
             ) : null}
           </DrawerHeader>
         )}
-        <div className="px-4 pt-6 pb-12">{children}</div>
+        <div className="overflow-y-auto px-4 pt-6 pb-12">{children}</div>
       </DrawerContent>
     </Drawer>
   );
