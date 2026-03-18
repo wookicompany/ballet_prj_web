@@ -222,7 +222,8 @@ export default function PerformanceReviewEditPage() {
     }
 
     invalidatePerformanceHomeCache();
-    router.replace(`/performance/${performanceId}`);
+    sessionStorage.setItem(`review-updated:${performanceId}`, "1");
+    router.back();
   };
 
   if (loading || fetching) {

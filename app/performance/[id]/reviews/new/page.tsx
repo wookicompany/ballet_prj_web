@@ -155,7 +155,8 @@ export default function PerformanceReviewNewPage() {
     }
 
     invalidatePerformanceHomeCache();
-    router.replace(`/performance/${performanceId}`);
+    sessionStorage.setItem(`review-created:${performanceId}`, "1");
+    router.back();
   };
 
   useEffect(() => {

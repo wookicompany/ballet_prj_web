@@ -243,6 +243,7 @@ export default function PerformanceDetailPage() {
   const [infoTab, setInfoTab] = useState<"performance" | "facility">(
     "performance",
   );
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const viewTrackedRef = useRef<string | null>(null);
@@ -388,6 +389,38 @@ export default function PerformanceDetailPage() {
   }, [performanceId]);
 
   useEffect(() => {
+    const handlePageShow = () => {
+      const flagCreated = sessionStorage.getItem(`review-created:${performanceId}`);
+      const flagUpdated = sessionStorage.getItem(`review-updated:${performanceId}`);
+      if (!flagCreated && !flagUpdated) return;
+
+      sessionStorage.removeItem(`review-created:${performanceId}`);
+      sessionStorage.removeItem(`review-updated:${performanceId}`);
+
+      refreshReviewSummary();
+
+      setReviews([]);
+      setProfiles({});
+      setProfileResolvedMap({});
+      setLikeCounts({});
+      setLikedMap({});
+      setCommentCounts({});
+      setReviewImages({});
+      setReviewReportCounts({});
+      setHasMoreReviews(true);
+      setReviewPage(1);
+      requestedPagesRef.current = new Set();
+      setOrderedReviewIds([]);
+      setReviewOrderReady(false);
+      setReviewRefreshKey((k) => k + 1);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [performanceId]);
+
+  useEffect(() => {
     const fetchReviewOrder = async () => {
       setReviewOrderReady(false);
       const { data: reviewRows, error: reviewError } = await supabase
@@ -453,7 +486,7 @@ export default function PerformanceDetailPage() {
     };
 
     fetchReviewOrder();
-  }, [performanceId]);
+  }, [performanceId, reviewRefreshKey]);
 
   useEffect(() => {
     if (loading || loadingReviews || !hasMoreReviews) return;
