@@ -14,7 +14,8 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 export default function AdminMemberDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [profile, setProfile] = useState<{ id: string; nickname: string | null; avatar_url: string | null; created_at: string; [k: string]: unknown } | null>(null);
+  const [profile, setProfile] = useState<{ id: string; nickname: string | null; avatar_url: string | null; created_at: string; ballet_started_at: string | null; app_platform: string | null; [k: string]: unknown } | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
@@ -55,6 +56,7 @@ export default function AdminMemberDetailPage() {
       }
       const data = await res.json();
       setProfile(data.profile);
+      setEmail(data.email ?? null);
       setRecordCount(data.record_count ?? 0);
       setReviewCount(data.review_count ?? 0);
       setCommentCount(data.comment_count ?? 0);
@@ -150,11 +152,27 @@ export default function AdminMemberDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-md border p-3 sm:col-span-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">이메일</p>
+              <p className="mt-1 break-all font-medium">{email ?? "-"}</p>
+            </div>
+            <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">가입일</p>
               <p className="mt-1 font-medium">
                 {formatDateTime(profile.created_at as string)}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">발레 시작일</p>
+              <p className="mt-1 font-medium">
+                {profile.ballet_started_at ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">플랫폼</p>
+              <p className="mt-1 font-medium">
+                {profile.app_platform ?? "-"}
               </p>
             </div>
             <div className="rounded-md border p-3">

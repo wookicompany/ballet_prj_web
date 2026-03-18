@@ -30,14 +30,17 @@ export const GET = async (
     { count: recordsCount },
     { count: reviewsCount },
     { count: commentsCount },
+    { data: authUser },
   ] = await Promise.all([
     result.supabaseAdmin.from("records").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
+    result.supabaseAdmin.auth.admin.getUserById(id),
   ]);
 
   return NextResponse.json({
     profile,
+    email: authUser?.user?.email ?? null,
     record_count: recordsCount ?? 0,
     review_count: reviewsCount ?? 0,
     comment_count: commentsCount ?? 0,
