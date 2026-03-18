@@ -244,6 +244,7 @@ export default function PerformanceDetailPage() {
     "performance",
   );
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const viewTrackedRef = useRef<string | null>(null);
@@ -419,6 +420,15 @@ export default function PerformanceDetailPage() {
     return () => window.removeEventListener("pageshow", handlePageShow);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [performanceId]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // 포스터 400px - 헤더 48px = 352px 기준으로 배경 전환
+      setHeaderScrolled(window.scrollY > 352);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchReviewOrder = async () => {
@@ -900,11 +910,35 @@ export default function PerformanceDetailPage() {
     };
   }, [visualApi]);
 
+  const headerIsTransparent = !loading && !!detail && !headerScrolled;
+
   return (
     <MobileContainer>
       <main className="pb-12">
+        <header
+          className={`sticky top-0 z-20 h-12 flex items-center justify-between px-4 transition-colors duration-200 ${
+            headerIsTransparent ? "bg-transparent" : "bg-white"
+          }`}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-lg"
+            className={
+              headerIsTransparent
+                ? "text-white hover:bg-white/10"
+                : "text-[#17171c]/70 hover:bg-black/5"
+            }
+            onClick={() => router.back()}
+            aria-label="뒤로"
+          >
+            <ChevronLeft className="size-6" />
+          </Button>
+          <div className="w-9" />
+        </header>
+
         {loading ? (
-          <div className="space-y-5">
+          <div className="-mt-12 space-y-5">
             <section className="relative h-[400px] w-full overflow-hidden bg-black/5">
               <Skeleton className="h-full w-full" />
             </section>
@@ -946,7 +980,7 @@ export default function PerformanceDetailPage() {
             공연 정보를 찾을 수 없어요.
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="-mt-12 space-y-5">
             <section className="relative h-[400px] w-full overflow-hidden bg-black">
               {visualSlides.length ? (
                 <>
@@ -1005,19 +1039,6 @@ export default function PerformanceDetailPage() {
                   포스터 이미지 없음
                 </div>
               )}
-              <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/40 to-transparent px-4 pt-2 pb-12">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  className="text-white hover:bg-white/10"
-                  onClick={() => router.back()}
-                  aria-label="뒤로"
-                >
-                  <ChevronLeft className="size-6" />
-                </Button>
-                <div className="w-9" />
-              </header>
             </section>
 
             <div className="space-y-5 px-4 pb-2">
