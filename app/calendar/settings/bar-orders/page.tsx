@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import BottomSheet from "@/components/sheets/BottomSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +24,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -331,125 +336,130 @@ export default function SavedBarOrdersPage() {
         </section>
       </main>
 
-      <BottomSheet
+      <Dialog
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
           if (!open) resetForm();
         }}
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">이름</Label>
-            <Input
-              className="h-12 text-base placeholder:text-sm"
-              placeholder="예: 기본 순서"
-              value={form.name}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, name: event.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-3">
-            <Label className="text-sm text-[#17171c]/60">바(bar) 순서</Label>
-            <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
-              {orderTags.length === 0 ? (
-                <p className="text-sm text-[#17171c]/40">
-                  선택된 순서가 여기 표시돼요.
-                </p>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  {orderTags.map((tag, index) => (
-                    <div
-                      key={`bar-selected-${tag}-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-9 rounded-full px-3 text-sm"
-                        onClick={() =>
-                          setOrderTags((prev) =>
-                            prev.filter((_, idx) => idx !== index)
-                          )
-                        }
-                      >
-                        {tag}
-                      </Button>
-                      {index < orderTags.length - 1 ? (
-                        <span className="text-sm text-[#17171c]/40">
-                          &gt;
-                        </span>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {BAR_ORDER_TAGS.map((tag) => {
-                const selected = orderTags.includes(tag);
-                return (
-                  <Button
-                    key={`bar-tag-${tag}`}
-                    type="button"
-                    variant={selected ? "default" : "outline"}
-                    size="sm"
-                    className="h-9 rounded-full px-3 text-sm"
-                    onClick={() =>
-                      setOrderTags((prev) =>
-                        selected
-                          ? prev.filter((value) => value !== tag)
-                          : [...prev, tag]
-                      )
-                    }
-                  >
-                    {tag}
-                  </Button>
-                );
-              })}
-            </div>
+        <DialogContent className="max-w-[calc(430px-32px)] rounded-xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{editingId ? "바 순서 수정" : "바 순서 추가"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
+              <Label className="text-sm text-[#17171c]/60">이름</Label>
               <Input
-                type="text"
                 className="h-12 text-base placeholder:text-sm"
-                placeholder="직접 입력하고 Enter로 추가해 주세요"
-                value={orderInput}
-                onChange={(event) => setOrderInput(event.target.value)}
-                onKeyDown={(event) =>
-                  handleOrderInputKeyDown(
-                    event,
-                    orderInput,
-                    setOrderInput,
-                    setOrderTags
-                  )
+                placeholder="예: 기본 순서"
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
                 }
               />
             </div>
+            <div className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">바(bar) 순서</Label>
+              <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
+                {orderTags.length === 0 ? (
+                  <p className="text-sm text-[#17171c]/40">
+                    선택된 순서가 여기 표시돼요.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {orderTags.map((tag, index) => (
+                      <div
+                        key={`bar-selected-${tag}-${index}`}
+                        className="flex items-center gap-2"
+                      >
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-9 rounded-full px-3 text-sm"
+                          onClick={() =>
+                            setOrderTags((prev) =>
+                              prev.filter((_, idx) => idx !== index)
+                            )
+                          }
+                        >
+                          {tag}
+                        </Button>
+                        {index < orderTags.length - 1 ? (
+                          <span className="text-sm text-[#17171c]/40">
+                            &gt;
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {BAR_ORDER_TAGS.map((tag) => {
+                  const selected = orderTags.includes(tag);
+                  return (
+                    <Button
+                      key={`bar-tag-${tag}`}
+                      type="button"
+                      variant={selected ? "default" : "outline"}
+                      size="sm"
+                      className="h-9 rounded-full px-3 text-sm"
+                      onClick={() =>
+                        setOrderTags((prev) =>
+                          selected
+                            ? prev.filter((value) => value !== tag)
+                            : [...prev, tag]
+                        )
+                      }
+                    >
+                      {tag}
+                    </Button>
+                  );
+                })}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
+                <Input
+                  type="text"
+                  className="h-12 text-base placeholder:text-sm"
+                  placeholder="직접 입력하고 Enter로 추가해 주세요"
+                  value={orderInput}
+                  onChange={(event) => setOrderInput(event.target.value)}
+                  onKeyDown={(event) =>
+                    handleOrderInputKeyDown(
+                      event,
+                      orderInput,
+                      setOrderInput,
+                      setOrderTags
+                    )
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 flex-1"
+                onClick={() => setSheetOpen(false)}
+                disabled={saving}
+              >
+                취소
+              </Button>
+              <Button
+                type="button"
+                className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+                onClick={handleSubmit}
+                disabled={saving}
+              >
+                {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 flex-1"
-              onClick={() => setSheetOpen(false)}
-              disabled={saving}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
-              onClick={handleSubmit}
-              disabled={saving}
-            >
-              {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!deleteTarget}
