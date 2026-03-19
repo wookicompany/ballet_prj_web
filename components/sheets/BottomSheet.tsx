@@ -29,33 +29,6 @@ export default function BottomSheet({
   contentClassName,
   children,
 }: BottomSheetProps) {
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!open) return;
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-
-    const update = () => {
-      if (!contentRef.current) return;
-      const keyboardHeight = Math.max(
-        0,
-        window.innerHeight - viewport.height - viewport.offsetTop
-      );
-      contentRef.current.style.paddingBottom =
-        keyboardHeight > 0 ? `${keyboardHeight + 48}px` : "";
-    };
-
-    viewport.addEventListener("resize", update);
-    viewport.addEventListener("scroll", update);
-    update();
-
-    return () => {
-      viewport.removeEventListener("resize", update);
-      viewport.removeEventListener("scroll", update);
-    };
-  }, [open]);
-
   const resolvedDescription =
     description ?? "선택 항목을 확인해 주세요.";
   const shouldShowHeader = showHeader && (title || description);
@@ -85,9 +58,7 @@ export default function BottomSheet({
             ) : null}
           </DrawerHeader>
         )}
-        <div ref={contentRef} className="overflow-y-auto px-4 pt-6 pb-12">
-          {children}
-        </div>
+        <div className="overflow-y-auto px-4 pt-6 pb-12">{children}</div>
       </DrawerContent>
     </Drawer>
   );
