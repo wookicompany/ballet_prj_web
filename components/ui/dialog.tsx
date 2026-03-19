@@ -64,7 +64,7 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className="flex-1 overflow-y-scroll overscroll-contain p-6 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-scroll overscroll-contain p-6 flex flex-col gap-4 [touch-action:pan-y]">
           {children}
         </div>
         {showCloseButton && (
