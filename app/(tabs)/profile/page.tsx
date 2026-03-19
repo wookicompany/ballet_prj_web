@@ -935,7 +935,7 @@ export default function ProfilePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full"
+                    className="h-9 w-full text-xs"
                     onClick={() => {
                       setRecordSectionLoading(true);
                       setShowMoreRecords(true);
@@ -1078,7 +1078,7 @@ export default function ProfilePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="h-9 w-full text-xs"
                   onClick={() => {
                     setReviewSectionLoading(true);
                     setShowMoreReviews(true);
