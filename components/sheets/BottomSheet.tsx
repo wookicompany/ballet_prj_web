@@ -29,21 +29,6 @@ export default function BottomSheet({
   contentClassName,
   children,
 }: BottomSheetProps) {
-  // iOS WebView에서 바텀시트 내 input 포커스 시 키보드가 페이지를 강제 스크롤하는 문제 방지
-  React.useEffect(() => {
-    if (!open) return;
-    const scrollY = window.scrollY;
-    const body = document.body;
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = "100%";
-    return () => {
-      body.style.position = "";
-      body.style.top = "";
-      body.style.width = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [open]);
   const resolvedDescription =
     description ?? "선택 항목을 확인해 주세요.";
   const shouldShowHeader = showHeader && (title || description);
