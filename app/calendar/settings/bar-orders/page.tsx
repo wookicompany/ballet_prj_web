@@ -343,7 +343,7 @@ export default function SavedBarOrdersPage() {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-[calc(430px-32px)] rounded-xl">
+        <DialogContent className="rounded-xl">
           <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "바 순서 수정" : "바 순서 추가"}</DialogTitle>
           </DialogHeader>

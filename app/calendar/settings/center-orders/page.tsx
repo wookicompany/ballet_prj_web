@@ -351,7 +351,7 @@ export default function SavedCenterOrdersPage() {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-[calc(430px-32px)] rounded-xl">
+        <DialogContent className="rounded-xl">
           <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "센터 순서 수정" : "센터 순서 추가"}</DialogTitle>
           </DialogHeader>

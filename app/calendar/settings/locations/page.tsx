@@ -289,7 +289,7 @@ export default function SavedLocationsPage() {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-[calc(430px-32px)] rounded-xl">
+        <DialogContent className="rounded-xl">
           <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "장소 수정" : "장소 추가"}</DialogTitle>
           </DialogHeader>
