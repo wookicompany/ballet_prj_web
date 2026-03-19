@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import BottomSheet from "@/components/sheets/BottomSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -276,65 +271,60 @@ export default function SavedInstructorLevelsPage() {
         </section>
       </main>
 
-      <Dialog
+      <BottomSheet
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="rounded-xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{editingId ? "강사님 & 레벨 수정" : "강사님 & 레벨 추가"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm text-[#17171c]/60">강사님</Label>
-              <Input
-                className="h-12 text-base placeholder:text-sm"
-                placeholder="예: 김선생님"
-                value={form.instructor}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    instructor: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-[#17171c]/60">레벨</Label>
-              <Input
-                className="h-12 text-base placeholder:text-sm"
-                placeholder="예: 초급"
-                value={form.level}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, level: event.target.value }))
-                }
-              />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 flex-1"
-                onClick={() => setSheetOpen(false)}
-                disabled={saving}
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
-                className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
-                onClick={handleSubmit}
-                disabled={saving}
-              >
-                {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
-              </Button>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm text-[#17171c]/60">강사님</Label>
+            <Input
+              className="h-12 text-base placeholder:text-sm"
+              placeholder="예: 김선생님"
+              value={form.instructor}
+              onChange={(event) =>
+                setForm((prev) => ({
+                  ...prev,
+                  instructor: event.target.value,
+                }))
+              }
+            />
           </div>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label className="text-sm text-[#17171c]/60">레벨</Label>
+            <Input
+              className="h-12 text-base placeholder:text-sm"
+              placeholder="예: 초급"
+              value={form.level}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, level: event.target.value }))
+              }
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 flex-1"
+              onClick={() => setSheetOpen(false)}
+              disabled={saving}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              onClick={handleSubmit}
+              disabled={saving}
+            >
+              {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
 
       <AlertDialog
         open={!!deleteTarget}
