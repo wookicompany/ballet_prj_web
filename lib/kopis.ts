@@ -396,7 +396,16 @@ export const mapKopisDetailItem = (item: KopisDetailItem) => {
       : Array.isArray(item.relates)
         ? item.relates
         : item.relates?.relate,
-  ).filter((value): value is string => typeof value === "string");
+  )
+    .filter(
+      (value): value is { relatenm?: string; relateurl?: string } =>
+        typeof value === "object" && value !== null,
+    )
+    .map((value) => ({
+      relatenm: (value as { relatenm?: string }).relatenm ?? null,
+      relateurl: (value as { relateurl?: string }).relateurl ?? null,
+    }))
+    .filter((v) => v.relatenm || v.relateurl);
 
   return {
     mt20id: item.mt20id ?? null,
