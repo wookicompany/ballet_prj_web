@@ -66,54 +66,50 @@ export default function CalendarPage() {
     [currentDate]
   );
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      if (!user) {
-        setRecordCounts({});
-        setMoodAverages({});
-        return;
+  const fetchCounts = useCallback(async () => {
+    if (!user) {
+      setRecordCounts({});
+      setMoodAverages({});
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("records")
+      .select("record_date,mood")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .gte("record_date", formatDate(start))
+      .lte("record_date", formatDate(end));
+
+    if (error || !data) {
+      setRecordCounts({});
+      setMoodAverages({});
+      return;
+    }
+
+    const counts: Record<string, number> = {};
+    const moodTotals: Record<string, number> = {};
+    const moodCounts: Record<string, number> = {};
+    data.forEach((record) => {
+      counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
+      if (record.mood) {
+        moodTotals[record.record_date] =
+          (moodTotals[record.record_date] ?? 0) + record.mood;
+        moodCounts[record.record_date] =
+          (moodCounts[record.record_date] ?? 0) + 1;
       }
-
-      const { data, error } = await supabase
-        .from("records")
-        .select("record_date,mood")
-        .eq("user_id", user.id)
-        .is("deleted_at", null)
-        .gte("record_date", formatDate(start))
-        .lte("record_date", formatDate(end));
-
-      if (error || !data) {
-        setRecordCounts({});
-        setMoodAverages({});
-        return;
-      }
-
-      const counts: Record<string, number> = {};
-      const moodTotals: Record<string, number> = {};
-      const moodCounts: Record<string, number> = {};
-      data.forEach((record) => {
-        counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
-        if (record.mood) {
-          moodTotals[record.record_date] =
-            (moodTotals[record.record_date] ?? 0) + record.mood;
-          moodCounts[record.record_date] =
-            (moodCounts[record.record_date] ?? 0) + 1;
-        }
-      });
-      setRecordCounts(counts);
-      const averages: Record<string, number> = {};
-      Object.keys(moodTotals).forEach((date) => {
-        const avg = moodTotals[date] / (moodCounts[date] ?? 1);
-        const rounded = Math.round(avg);
-        averages[date] = Math.min(5, Math.max(1, rounded));
-      });
-      setMoodAverages(averages);
-    };
-
-    fetchCounts();
+    });
+    setRecordCounts(counts);
+    const averages: Record<string, number> = {};
+    Object.keys(moodTotals).forEach((date) => {
+      const avg = moodTotals[date] / (moodCounts[date] ?? 1);
+      const rounded = Math.round(avg);
+      averages[date] = Math.min(5, Math.max(1, rounded));
+    });
+    setMoodAverages(averages);
   }, [user, start, end]);
 
-  useEffect(() => {
+  const fetchSettings = useCallback(async () => {
     if (!user) {
       setWeekStartMonday(false);
       setHighlightWeekend(false);
@@ -121,40 +117,61 @@ export default function CalendarPage() {
       return;
     }
 
-    const fetchSettings = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("calendar_week_start_monday,calendar_highlight_weekend")
-        .eq("id", user.id)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("calendar_week_start_monday,calendar_highlight_weekend")
+      .eq("id", user.id)
+      .maybeSingle();
 
-      if (error) {
-        setWeekStartMonday(false);
-        setHighlightWeekend(false);
-        setSettingsLoaded(true);
-        return;
-      }
-
-      if (data) {
-        setWeekStartMonday(!!data.calendar_week_start_monday);
-        setHighlightWeekend(!!data.calendar_highlight_weekend);
-      } else {
-        setWeekStartMonday(false);
-        setHighlightWeekend(false);
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          calendar_week_start_monday: false,
-          calendar_highlight_weekend: false,
-        });
-      }
+    if (error) {
+      setWeekStartMonday(false);
+      setHighlightWeekend(false);
       setSettingsLoaded(true);
-    };
+      return;
+    }
 
-    fetchSettings();
+    if (data) {
+      setWeekStartMonday(!!data.calendar_week_start_monday);
+      setHighlightWeekend(!!data.calendar_highlight_weekend);
+    } else {
+      setWeekStartMonday(false);
+      setHighlightWeekend(false);
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        calendar_week_start_monday: false,
+        calendar_highlight_weekend: false,
+      });
+    }
+    setSettingsLoaded(true);
   }, [user]);
 
+  // user 변경 시: fetchCounts + fetchSettings 병렬 실행
+  useEffect(() => {
+    if (!user) {
+      setRecordCounts({});
+      setMoodAverages({});
+      setWeekStartMonday(false);
+      setHighlightWeekend(false);
+      setSettingsLoaded(true);
+      return;
+    }
+    void Promise.all([fetchCounts(), fetchSettings()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // 월 변경 시: counts만 재실행 (settings 재실행 불필요)
+  useEffect(() => {
+    if (!user) return;
+    void fetchCounts();
+  }, [start, end, user, fetchCounts]);
+
+  const isInitialSettingsLoad = useRef(true);
   useEffect(() => {
     if (!settingsLoaded || !user) return;
+    if (isInitialSettingsLoad.current) {
+      isInitialSettingsLoad.current = false;
+      return;
+    }
     const persistSettings = async () => {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,

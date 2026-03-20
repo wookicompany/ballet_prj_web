@@ -191,7 +191,12 @@ export default function SavedCenterOrdersPage() {
       toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    await fetchItems();
+    const { item } = (await response.json()) as { item: SavedCenterOrder };
+    if (editingId) {
+      setItems((prev) => prev.map((i) => (i.id === editingId ? item : i)));
+    } else {
+      setItems((prev) => [item, ...prev]);
+    }
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -201,8 +206,9 @@ export default function SavedCenterOrdersPage() {
     if (!user || !deleteTarget) return;
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) return;
+    const targetId = deleteTarget.id;
     const response = await fetch(
-      `/api/saved-center-orders/${deleteTarget.id}`,
+      `/api/saved-center-orders/${targetId}`,
       {
         method: "DELETE",
         headers: {
@@ -214,8 +220,8 @@ export default function SavedCenterOrdersPage() {
       toast("삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
+    setItems((prev) => prev.filter((i) => i.id !== targetId));
     setDeleteTarget(null);
-    await fetchItems();
   };
 
   if (!loading && !user) {

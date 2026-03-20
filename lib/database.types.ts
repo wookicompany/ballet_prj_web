@@ -929,6 +929,7 @@ export type Database = {
       record_media: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           media_type: string
           record_id: string
@@ -937,6 +938,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           media_type: string
           record_id: string
@@ -945,6 +947,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           media_type?: string
           record_id?: string

@@ -147,7 +147,12 @@ export default function SavedLocationsPage() {
       toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    await fetchItems();
+    const { item } = (await response.json()) as { item: SavedLocation };
+    if (editingId) {
+      setItems((prev) => prev.map((i) => (i.id === editingId ? item : i)));
+    } else {
+      setItems((prev) => [item, ...prev]);
+    }
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -157,7 +162,8 @@ export default function SavedLocationsPage() {
     if (!user || !deleteTarget) return;
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) return;
-    const response = await fetch(`/api/saved-locations/${deleteTarget.id}`, {
+    const targetId = deleteTarget.id;
+    const response = await fetch(`/api/saved-locations/${targetId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -167,8 +173,8 @@ export default function SavedLocationsPage() {
       toast("삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
+    setItems((prev) => prev.filter((i) => i.id !== targetId));
     setDeleteTarget(null);
-    await fetchItems();
   };
 
   if (!loading && !user) {

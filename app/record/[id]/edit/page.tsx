@@ -575,7 +575,7 @@ export default function RecordEditPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -635,15 +635,12 @@ export default function RecordEditPage() {
         setLocationDetail(parsedLocation.detail);
       }
 
-      const { data: mediaData } = await supabase
-        .from("record_media")
-        .select("id,url")
-        .eq("record_id", params.id)
-        .eq("user_id", user.id)
-        .order("created_at");
-
+      // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 클라이언트 후처리
       setExistingMedia(
-        (mediaData as Array<{ id: string; url: string }>) ?? []
+        (data?.record_media ?? [])
+          .filter((m) => !m.deleted_at)
+          .sort((a, b) => a.created_at.localeCompare(b.created_at))
+          .map(({ id, url }) => ({ id, url }))
       );
       setRemovedMediaIds([]);
       setRecordLoading(false);

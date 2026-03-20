@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -62,8 +62,13 @@ export default function CalendarSettingsPage() {
     fetchSettings();
   }, [user]);
 
+  const isInitialSettingsLoad = useRef(true);
   useEffect(() => {
     if (!settingsLoaded || !user) return;
+    if (isInitialSettingsLoad.current) {
+      isInitialSettingsLoad.current = false;
+      return;
+    }
     const persistSettings = async () => {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,

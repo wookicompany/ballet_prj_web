@@ -17,12 +17,20 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus } from "lucide-react";
 
+type RecordMedia = {
+  record_id: string;
+  url: string | null;
+  created_at: string;
+  deleted_at: string | null;
+};
+
 type RecordItem = {
   id: string;
   start_time: string;
   end_time: string;
   content: string;
   mood: number | null;
+  record_media: RecordMedia[];
 };
 
 function toMinutes(time: string) {
@@ -48,11 +56,12 @@ export default function DayPage() {
     const fetchRecords = async () => {
       if (!user) {
         setRecords([]);
+        setMediaByRecord({});
         return;
       }
       const { data } = await supabase
         .from("records")
-        .select("id,start_time,end_time,content,mood")
+        .select("id,start_time,end_time,content,mood,record_media(record_id,url,created_at,deleted_at)")
         .eq("user_id", user.id)
         .eq("record_date", dateStr)
         .is("deleted_at", null)
@@ -61,27 +70,15 @@ export default function DayPage() {
       const nextRecords = (data as RecordItem[]) ?? [];
       setRecords(nextRecords);
 
-      if (nextRecords.length === 0) {
-        setMediaByRecord({});
-        return;
-      }
-
-      const recordIds = nextRecords.map((record) => record.id);
-      const { data: mediaData } = await supabase
-        .from("record_media")
-        .select("record_id,url,created_at")
-        .in("record_id", recordIds)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
-
+      // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 중첩 select 후 클라이언트 필터링
       const nextMedia: Record<string, { url: string | null; count: number }> = {};
-      (mediaData ?? []).forEach((item) => {
-        const recordId = item.record_id as string;
-        if (!nextMedia[recordId]) {
-          nextMedia[recordId] = { url: item.url as string, count: 1 };
-          return;
+      nextRecords.forEach((record) => {
+        const activeMedia = (record.record_media ?? [])
+          .filter((m) => !m.deleted_at)
+          .sort((a, b) => a.created_at.localeCompare(b.created_at));
+        if (activeMedia.length > 0) {
+          nextMedia[record.id] = { url: activeMedia[0].url, count: activeMedia.length };
         }
-        nextMedia[recordId].count += 1;
       });
       setMediaByRecord(nextMedia);
     };
@@ -156,7 +153,7 @@ export default function DayPage() {
           variant="ghost"
           size="icon-lg"
           className="text-[#17171c]/70"
-          onClick={() => router.push("/calendar")}
+          onClick={() => router.back()}
           aria-label="캘린더로 이동"
         >
           <ChevronLeft className="size-6" />
@@ -181,7 +178,7 @@ export default function DayPage() {
                     ? "bg-black/5 text-[#17171c] shadow-sm hover:bg-black/5 hover:text-[#17171c]"
                     : "text-[#17171c]/60 hover:bg-transparent hover:text-[#17171c]/60"
                 }`}
-                onClick={() => router.push(`/day/${item.key}`)}
+                onClick={() => router.replace(`/day/${item.key}`)}
               >
                 <span className="text-xs">{item.day}</span>
                 <span className="text-sm font-semibold">{item.date}</span>

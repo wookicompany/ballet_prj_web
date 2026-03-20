@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -41,6 +42,7 @@ export function ConsentSheetProvider({
   const [termsChecked, setTermsChecked] = useState(false);
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const consentCacheRef = useRef<boolean | null>(null);
 
   const openConsentSheet = () => setOpen(true);
 
@@ -60,7 +62,9 @@ export function ConsentSheetProvider({
 
   const ensureConsent = async () => {
     if (loading || !user) return false;
+    if (consentCacheRef.current === true) return true;
     const ok = await fetchConsentStatus();
+    consentCacheRef.current = ok;
     if (!ok) setOpen(true);
     return ok;
   };
@@ -87,6 +91,7 @@ export function ConsentSheetProvider({
     const checkConsent = async () => {
       const ok = await fetchConsentStatus();
       if (!isActive) return;
+      consentCacheRef.current = ok;
       setOpen(!ok);
     };
 
@@ -118,6 +123,7 @@ export function ConsentSheetProvider({
       toast("동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
+    consentCacheRef.current = true;
     setOpen(false);
     router.replace("/calendar");
   };

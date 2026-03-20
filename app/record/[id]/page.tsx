@@ -59,6 +59,7 @@ type MediaItem = {
   id: string;
   media_type: string;
   url: string;
+  deleted_at: string | null;
 };
 
 const formatMeridiem = (hour: number) => (hour < 12 ? "오전" : "오후");
@@ -161,7 +162,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -169,14 +170,8 @@ export default function RecordDetailPage() {
         .single();
 
       setRecord((data as RecordDetail) ?? null);
-
-      const { data: mediaData } = await supabase
-        .from("record_media")
-        .select("id,media_type,url")
-        .eq("record_id", params.id)
-        .eq("user_id", user.id);
-
-      setMedia((mediaData as MediaItem[]) ?? []);
+      // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 클라이언트 후처리
+      setMedia(((data as (RecordDetail & { record_media: MediaItem[] }) | null)?.record_media ?? []).filter((m) => !m.deleted_at));
       setActiveMediaIndex(0);
     };
 
