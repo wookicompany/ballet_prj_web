@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +70,9 @@ export default function AdminReviewsPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
-  const fetchReviews = useCallback(async (offset: number) => {
+  const searchInit = useRef(true);
+
+  const fetchReviews = useCallback(async (offset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setReviewsError("로그인이 필요합니다.");
@@ -80,7 +82,8 @@ export default function AdminReviewsPage() {
     setReviewsLoading(true);
     setReviewsError(null);
     try {
-      const res = await fetch(`/api/admin/reviews?limit=${LIMIT}&offset=${offset}`, {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`/api/admin/reviews?limit=${LIMIT}&offset=${offset}${qParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -98,7 +101,7 @@ export default function AdminReviewsPage() {
     }
   }, []);
 
-  const fetchComments = useCallback(async (offset: number) => {
+  const fetchComments = useCallback(async (offset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setCommentsError("로그인이 필요합니다.");
@@ -108,7 +111,8 @@ export default function AdminReviewsPage() {
     setCommentsLoading(true);
     setCommentsError(null);
     try {
-      const res = await fetch(`/api/admin/review-comments?limit=${LIMIT}&offset=${offset}`, {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`/api/admin/review-comments?limit=${LIMIT}&offset=${offset}${qParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -133,37 +137,29 @@ export default function AdminReviewsPage() {
     fetchComments(0);
   }, [fetchComments]);
 
+  useEffect(() => {
+    if (searchInit.current) { searchInit.current = false; return; }
+    const timer = setTimeout(() => {
+      fetchReviews(0, searchQuery);
+      fetchComments(0, searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchReviews, fetchComments]);
+
   const reviewsPages = Math.ceil(reviewsTotal / LIMIT) || 1;
   const reviewsPage = Math.floor(reviewsOffset / LIMIT) + 1;
   const commentsPages = Math.ceil(commentsTotal / LIMIT) || 1;
   const commentsPage = Math.floor(commentsOffset / LIMIT) + 1;
-  const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredReviews = useMemo(() => {
-    return reviews.filter((row) => {
-      if (reportFilter === "reported" && row.report_count <= 0) return false;
-      if (!normalizedQuery) return true;
-      return (
-        row.prfnm.toLowerCase().includes(normalizedQuery) ||
-        (row.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
-        (row.content ?? "").toLowerCase().includes(normalizedQuery) ||
-        row.user_id.toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [reviews, reportFilter, normalizedQuery]);
+    if (reportFilter === "all") return reviews;
+    return reviews.filter((row) => row.report_count > 0);
+  }, [reviews, reportFilter]);
 
   const filteredComments = useMemo(() => {
-    return comments.filter((row) => {
-      if (reportFilter === "reported" && row.report_count <= 0) return false;
-      if (!normalizedQuery) return true;
-      return (
-        (row.prfnm ?? "").toLowerCase().includes(normalizedQuery) ||
-        (row.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
-        row.content.toLowerCase().includes(normalizedQuery) ||
-        row.user_id.toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [comments, reportFilter, normalizedQuery]);
+    if (reportFilter === "all") return comments;
+    return comments.filter((row) => row.report_count > 0);
+  }, [comments, reportFilter]);
 
   return (
     <div className="space-y-6">
@@ -175,9 +171,9 @@ export default function AdminReviewsPage() {
             size="sm"
             onClick={() => {
               if (activeTab === "reviews") {
-                fetchReviews(reviewsOffset);
+                fetchReviews(reviewsOffset, searchQuery);
               } else {
-                fetchComments(commentsOffset);
+                fetchComments(commentsOffset, searchQuery);
               }
             }}
             disabled={activeTab === "reviews" ? reviewsLoading : commentsLoading}
@@ -219,7 +215,7 @@ export default function AdminReviewsPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="공연/작성자/내용 검색"
+            placeholder="내용 검색"
             className="pl-9"
           />
         </div>
@@ -246,7 +242,7 @@ export default function AdminReviewsPage() {
                     variant="outline"
                     size="sm"
                     className="mt-3"
-                    onClick={() => fetchReviews(reviewsOffset)}
+                    onClick={() => fetchReviews(reviewsOffset, searchQuery)}
                   >
                     다시 시도
                   </Button>
@@ -269,7 +265,7 @@ export default function AdminReviewsPage() {
                       {filteredReviews.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                            {normalizedQuery || reportFilter === "reported"
+                            {searchQuery.trim() || reportFilter === "reported"
                               ? "검색/필터 결과가 없습니다."
                               : "등록된 리뷰가 없습니다."}
                           </TableCell>
@@ -316,7 +312,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT);
+                              if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT, searchQuery);
                             }}
                             className={reviewsPage <= 1 ? "pointer-events-none opacity-50" : ""}
                           />
@@ -337,7 +333,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT);
+                              if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT, searchQuery);
                             }}
                             className={reviewsPage >= reviewsPages ? "pointer-events-none opacity-50" : ""}
                           />
@@ -373,7 +369,7 @@ export default function AdminReviewsPage() {
                     variant="outline"
                     size="sm"
                     className="mt-3"
-                    onClick={() => fetchComments(commentsOffset)}
+                    onClick={() => fetchComments(commentsOffset, searchQuery)}
                   >
                     다시 시도
                   </Button>
@@ -395,7 +391,7 @@ export default function AdminReviewsPage() {
                       {filteredComments.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                            {normalizedQuery || reportFilter === "reported"
+                            {searchQuery.trim() || reportFilter === "reported"
                               ? "검색/필터 결과가 없습니다."
                               : "등록된 댓글이 없습니다."}
                           </TableCell>
@@ -441,7 +437,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (commentsPage > 1) fetchComments(commentsOffset - LIMIT);
+                              if (commentsPage > 1) fetchComments(commentsOffset - LIMIT, searchQuery);
                             }}
                             className={commentsPage <= 1 ? "pointer-events-none opacity-50" : ""}
                           />
@@ -462,7 +458,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (commentsPage < commentsPages) fetchComments(commentsOffset + LIMIT);
+                              if (commentsPage < commentsPages) fetchComments(commentsOffset + LIMIT, searchQuery);
                             }}
                             className={commentsPage >= commentsPages ? "pointer-events-none opacity-50" : ""}
                           />

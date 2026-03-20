@@ -16,13 +16,16 @@ export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Number(searchParams.get("offset")) || 0;
+  const q = searchParams.get("q")?.trim() || "";
 
-  const { data: rows, error } = await result.supabaseAdmin
+  let profileQuery = result.supabaseAdmin
     .from("profiles")
     .select("id, nickname, avatar_url, created_at")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("created_at", { ascending: false });
+  if (q) profileQuery = profileQuery.or(`nickname.ilike.%${q}%,id.ilike.%${q}%`);
+
+  const { data: rows, error } = await profileQuery.range(offset, offset + limit - 1);
 
   if (error) {
     console.error("admin members list", error);
@@ -54,10 +57,12 @@ export const GET = async (request: Request) => {
     review_count: reviewCount[r.id] ?? 0,
   }));
 
-  const { count } = await result.supabaseAdmin
+  let countQuery = result.supabaseAdmin
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
+  if (q) countQuery = countQuery.or(`nickname.ilike.%${q}%,id.ilike.%${q}%`);
+  const { count } = await countQuery;
 
   return NextResponse.json({
     members,

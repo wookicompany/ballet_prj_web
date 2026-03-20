@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +49,9 @@ export default function AdminMembersPage() {
     "all" | "has_record" | "has_review"
   >("all");
 
-  const fetchMembers = useCallback(async (pageOffset: number) => {
+  const searchInit = useRef(true);
+
+  const fetchMembers = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -59,7 +61,8 @@ export default function AdminMembersPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/members?limit=${LIMIT}&offset=${pageOffset}`, {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`/api/admin/members?limit=${LIMIT}&offset=${pageOffset}${qParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -82,20 +85,21 @@ export default function AdminMembersPage() {
     fetchMembers(0);
   }, [fetchMembers]);
 
+  useEffect(() => {
+    if (searchInit.current) { searchInit.current = false; return; }
+    const timer = setTimeout(() => { fetchMembers(0, searchQuery); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchMembers]);
+
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
-  const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
       if (activityFilter === "has_record" && member.record_count <= 0) return false;
       if (activityFilter === "has_review" && member.review_count <= 0) return false;
-      if (!normalizedQuery) return true;
-      return (
-        (member.nickname ?? "").toLowerCase().includes(normalizedQuery) ||
-        member.id.toLowerCase().includes(normalizedQuery)
-      );
+      return true;
     });
-  }, [members, normalizedQuery, activityFilter]);
+  }, [members, activityFilter]);
 
   return (
     <div className="space-y-6">
@@ -105,7 +109,7 @@ export default function AdminMembersPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchMembers(offset)}
+              onClick={() => fetchMembers(offset, searchQuery)}
             disabled={loading}
           >
             <RefreshCw className="mr-1.5 size-4" />
@@ -169,7 +173,7 @@ export default function AdminMembersPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchMembers(offset)}
+                onClick={() => fetchMembers(offset, searchQuery)}
               >
                 다시 시도
               </Button>
@@ -190,7 +194,7 @@ export default function AdminMembersPage() {
                   {filteredMembers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        {normalizedQuery || activityFilter !== "all"
+                        {searchQuery.trim() || activityFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "회원이 없습니다."}
                       </TableCell>
@@ -237,7 +241,7 @@ export default function AdminMembersPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchMembers(offset - LIMIT);
+                          if (currentPage > 1) fetchMembers(offset - LIMIT, searchQuery);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -252,7 +256,7 @@ export default function AdminMembersPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchMembers(offset + LIMIT);
+                          if (currentPage < totalPages) fetchMembers(offset + LIMIT, searchQuery);
                         }}
                         className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />

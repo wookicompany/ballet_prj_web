@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +48,9 @@ export default function AdminNoticesPage() {
     "all"
   );
 
-  const fetchNotices = useCallback(async (pageOffset: number) => {
+  const searchInit = useRef(true);
+
+  const fetchNotices = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -58,8 +60,9 @@ export default function AdminNoticesPage() {
     setLoading(true);
     setError(null);
     try {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
       const res = await fetch(
-        `/api/admin/notices?limit=${LIMIT}&offset=${pageOffset}`,
+        `/api/admin/notices?limit=${LIMIT}&offset=${pageOffset}${qParam}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -82,17 +85,21 @@ export default function AdminNoticesPage() {
     fetchNotices(0);
   }, [fetchNotices]);
 
+  useEffect(() => {
+    if (searchInit.current) { searchInit.current = false; return; }
+    const timer = setTimeout(() => { fetchNotices(0, searchQuery); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchNotices]);
+
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
-  const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredNotices = useMemo(() => {
     return notices.filter((notice) => {
       if (statusFilter === "published" && !notice.is_published) return false;
       if (statusFilter === "draft" && notice.is_published) return false;
-      if (!normalizedQuery) return true;
-      return notice.title.toLowerCase().includes(normalizedQuery);
+      return true;
     });
-  }, [notices, normalizedQuery, statusFilter]);
+  }, [notices, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -103,7 +110,7 @@ export default function AdminNoticesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchNotices(offset)}
+              onClick={() => fetchNotices(offset, searchQuery)}
               disabled={loading}
             >
               <RefreshCw className="mr-1.5 size-4" />
@@ -174,7 +181,7 @@ export default function AdminNoticesPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchNotices(offset)}
+                onClick={() => fetchNotices(offset, searchQuery)}
               >
                 다시 시도
               </Button>
@@ -195,7 +202,7 @@ export default function AdminNoticesPage() {
                   {filteredNotices.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        {normalizedQuery || statusFilter !== "all"
+                        {searchQuery.trim() || statusFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "등록된 공지가 없습니다."}
                       </TableCell>
@@ -240,7 +247,7 @@ export default function AdminNoticesPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchNotices(offset - LIMIT);
+                          if (currentPage > 1) fetchNotices(offset - LIMIT, searchQuery);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -253,7 +260,7 @@ export default function AdminNoticesPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              fetchNotices((p - 1) * LIMIT);
+                              fetchNotices((p - 1) * LIMIT, searchQuery);
                             }}
                             isActive={currentPage === p}
                           >
@@ -266,7 +273,7 @@ export default function AdminNoticesPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchNotices(offset + LIMIT);
+                          if (currentPage < totalPages) fetchNotices(offset + LIMIT, searchQuery);
                         }}
                         className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />

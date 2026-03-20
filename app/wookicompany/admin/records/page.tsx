@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,11 +50,13 @@ export default function AdminRecordsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const searchInit = useRef(true);
+
   const formatDateLabel = useCallback((dateText: string) => {
     return dateText.replaceAll("-", ".");
   }, []);
 
-  const fetchRecords = useCallback(async (pageOffset: number) => {
+  const fetchRecords = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -64,8 +66,9 @@ export default function AdminRecordsPage() {
     setLoading(true);
     setError(null);
     try {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
       const res = await fetch(
-        `/api/admin/records?limit=${LIMIT}&offset=${pageOffset}`,
+        `/api/admin/records?limit=${LIMIT}&offset=${pageOffset}${qParam}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -88,23 +91,14 @@ export default function AdminRecordsPage() {
     fetchRecords(0);
   }, [fetchRecords]);
 
+  useEffect(() => {
+    if (searchInit.current) { searchInit.current = false; return; }
+    const timer = setTimeout(() => { fetchRecords(0, searchQuery); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchRecords]);
+
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
-  const filteredRecords = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase();
-    if (!keyword) return records;
-    return records.filter((row) => {
-      const nickname = (row.nickname ?? "").toLowerCase();
-      const userId = row.user_id.toLowerCase();
-      const content = (row.content ?? "").toLowerCase();
-      return (
-        nickname.includes(keyword) ||
-        userId.includes(keyword) ||
-        content.includes(keyword) ||
-        row.record_date.includes(keyword)
-      );
-    });
-  }, [records, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -114,7 +108,7 @@ export default function AdminRecordsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchRecords(offset)}
+            onClick={() => fetchRecords(offset, searchQuery)}
             disabled={loading}
           >
             <RefreshCw className="mr-1.5 size-4" />
@@ -127,7 +121,7 @@ export default function AdminRecordsPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>기록 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
             <p className="text-sm text-muted-foreground">
-              현재 페이지 표시: {filteredRecords.length.toLocaleString("ko-KR")}건
+              현재 페이지 표시: {records.length.toLocaleString("ko-KR")}건
             </p>
           </div>
           <div className="relative max-w-sm">
@@ -135,7 +129,7 @@ export default function AdminRecordsPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="닉네임/내용/날짜 검색"
+              placeholder="내용 검색"
               className="pl-9"
             />
           </div>
@@ -156,7 +150,7 @@ export default function AdminRecordsPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchRecords(offset)}
+                onClick={() => fetchRecords(offset, searchQuery)}
               >
                 다시 시도
               </Button>
@@ -175,7 +169,7 @@ export default function AdminRecordsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.length === 0 ? (
+                  {records.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         {searchQuery.trim()
@@ -184,7 +178,7 @@ export default function AdminRecordsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredRecords.map((r) => (
+                    records.map((r) => (
                       <TableRow key={r.id} className="hover:bg-muted/40">
                         <TableCell className="font-medium">
                           {formatDateLabel(r.record_date)}
@@ -237,7 +231,7 @@ export default function AdminRecordsPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchRecords(offset - LIMIT);
+                          if (currentPage > 1) fetchRecords(offset - LIMIT, searchQuery);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -250,7 +244,7 @@ export default function AdminRecordsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              fetchRecords((p - 1) * LIMIT);
+                              fetchRecords((p - 1) * LIMIT, searchQuery);
                             }}
                             isActive={currentPage === p}
                           >
@@ -263,7 +257,7 @@ export default function AdminRecordsPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchRecords(offset + LIMIT);
+                          if (currentPage < totalPages) fetchRecords(offset + LIMIT, searchQuery);
                         }}
                         className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />

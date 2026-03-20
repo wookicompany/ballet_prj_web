@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +46,9 @@ export default function AdminSupportInquiriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchInquiries = useCallback(async (pageOffset: number) => {
+  const searchInit = useRef(true);
+
+  const fetchInquiries = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -56,8 +58,9 @@ export default function AdminSupportInquiriesPage() {
     setLoading(true);
     setError(null);
     try {
+      const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
       const res = await fetch(
-        `/api/admin/support-inquiries?limit=${LIMIT}&offset=${pageOffset}`,
+        `/api/admin/support-inquiries?limit=${LIMIT}&offset=${pageOffset}${qParam}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -80,20 +83,14 @@ export default function AdminSupportInquiriesPage() {
     fetchInquiries(0);
   }, [fetchInquiries]);
 
+  useEffect(() => {
+    if (searchInit.current) { searchInit.current = false; return; }
+    const timer = setTimeout(() => { fetchInquiries(0, searchQuery); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchInquiries]);
+
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredInquiries = useMemo(() => {
-    return inquiries.filter((inquiry) => {
-      if (!normalizedQuery) return true;
-      return (
-        inquiry.title.toLowerCase().includes(normalizedQuery) ||
-        inquiry.nickname?.toLowerCase().includes(normalizedQuery) ||
-        inquiry.email?.toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [inquiries, normalizedQuery]);
 
   return (
     <div className="space-y-6">
@@ -103,7 +100,7 @@ export default function AdminSupportInquiriesPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchInquiries(offset)}
+            onClick={() => fetchInquiries(offset, searchQuery)}
             disabled={loading}
           >
             <RefreshCw className="mr-1.5 size-4" />
@@ -116,7 +113,7 @@ export default function AdminSupportInquiriesPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>문의 목록 (총 {total.toLocaleString("ko-KR")}건)</CardTitle>
             <p className="text-sm text-muted-foreground">
-              현재 페이지 표시: {filteredInquiries.length.toLocaleString("ko-KR")}건
+              현재 페이지 표시: {inquiries.length.toLocaleString("ko-KR")}건
             </p>
           </div>
           <div className="relative max-w-sm flex-1 min-w-[220px]">
@@ -124,7 +121,7 @@ export default function AdminSupportInquiriesPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목/닉네임/이메일 검색"
+              placeholder="제목/내용 검색"
               className="pl-9"
             />
           </div>
@@ -144,7 +141,7 @@ export default function AdminSupportInquiriesPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchInquiries(offset)}
+                onClick={() => fetchInquiries(offset, searchQuery)}
               >
                 다시 시도
               </Button>
@@ -162,14 +159,14 @@ export default function AdminSupportInquiriesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInquiries.length === 0 ? (
+                  {inquiries.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        {normalizedQuery ? "검색 결과가 없습니다." : "접수된 문의가 없습니다."}
+                        {searchQuery.trim() ? "검색 결과가 없습니다." : "접수된 문의가 없습니다."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredInquiries.map((inquiry) => (
+                    inquiries.map((inquiry) => (
                       <TableRow key={inquiry.id} className="hover:bg-muted/40">
                         <TableCell
                           className="font-medium max-w-[300px] truncate"
@@ -208,7 +205,7 @@ export default function AdminSupportInquiriesPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchInquiries(offset - LIMIT);
+                          if (currentPage > 1) fetchInquiries(offset - LIMIT, searchQuery);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -226,7 +223,7 @@ export default function AdminSupportInquiriesPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              fetchInquiries((p - 1) * LIMIT);
+                              fetchInquiries((p - 1) * LIMIT, searchQuery);
                             }}
                             isActive={currentPage === p}
                           >
@@ -239,7 +236,7 @@ export default function AdminSupportInquiriesPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchInquiries(offset + LIMIT);
+                          if (currentPage < totalPages) fetchInquiries(offset + LIMIT, searchQuery);
                         }}
                         className={
                           currentPage >= totalPages ? "pointer-events-none opacity-50" : ""

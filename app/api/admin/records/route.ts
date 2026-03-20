@@ -16,13 +16,16 @@ export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Number(searchParams.get("offset")) || 0;
+  const q = searchParams.get("q")?.trim() || "";
 
-  const { data: rows, error } = await result.supabaseAdmin
+  let query = result.supabaseAdmin
     .from("records")
     .select("id, user_id, record_date, start_time, end_time, content, mood, created_at")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("created_at", { ascending: false });
+  if (q) query = query.ilike("content", `%${q}%`);
+
+  const { data: rows, error } = await query.range(offset, offset + limit - 1);
 
   if (error) {
     console.error("admin records list", error);
@@ -47,10 +50,12 @@ export const GET = async (request: Request) => {
     avatar_url: profilesMap[r.user_id]?.avatar_url ?? null,
   }));
 
-  const { count } = await result.supabaseAdmin
+  let countQuery = result.supabaseAdmin
     .from("records")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
+  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
+  const { count } = await countQuery;
 
   return NextResponse.json({
     records: recordsWithProfile,

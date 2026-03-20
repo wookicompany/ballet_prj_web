@@ -16,21 +16,24 @@ export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Number(searchParams.get("offset")) || 0;
+  const q = searchParams.get("q")?.trim() || "";
 
-  const { data: rows, error } = await result.supabaseAdmin
+  let query = result.supabaseAdmin
     .from("notices")
     .select("id, title, is_published, published_at, created_at")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("created_at", { ascending: false });
+  if (q) query = query.ilike("title", `%${q}%`);
+
+  const { data: rows, error } = await query.range(offset, offset + limit - 1);
 
   if (error) {
     console.error("admin notices list", error);
     return NextResponse.json({ message: "Failed to list notices" }, { status: 500 });
   }
 
-  const { count } = await result.supabaseAdmin
-    .from("notices")
-    .select("id", { count: "exact", head: true });
+  let countQuery = result.supabaseAdmin.from("notices").select("id", { count: "exact", head: true });
+  if (q) countQuery = countQuery.ilike("title", `%${q}%`);
+  const { count } = await countQuery;
 
   return NextResponse.json({
     notices: rows ?? [],
