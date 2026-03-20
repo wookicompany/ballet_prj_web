@@ -185,7 +185,9 @@ export default function PerformanceReviewDetailPage() {
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
+  const loadingCommentsRef = useRef(loadingComments);
 
+  // Effect 1: 리뷰 기본 데이터 (user 무관 — 로그인 변경 시 재fetch 방지)
   useEffect(() => {
     const fetchReviewDetail = async () => {
       setLoading(true);
@@ -209,7 +211,6 @@ export default function PerformanceReviewDetailPage() {
         profileMap,
         { data: imageRows },
         { data: likeRows },
-        { data: myLikeRow },
         { count: commentTotal },
         { count: reviewReportCount },
       ] = await Promise.all([
@@ -229,15 +230,6 @@ export default function PerformanceReviewDetailPage() {
           .select("review_id")
           .eq("review_id", reviewId)
           .is("deleted_at", null),
-        user
-          ? supabase
-              .from("performance_review_likes")
-              .select("review_id")
-              .eq("review_id", reviewId)
-              .eq("user_id", user.id)
-              .is("deleted_at", null)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
         supabase
           .from("performance_review_comments")
           .select("id", { count: "exact", head: true })
@@ -258,13 +250,31 @@ export default function PerformanceReviewDetailPage() {
       setProfile(profileMap[reviewData.user_id] ?? null);
       setImages((imageRows ?? []).map((row) => row.url).filter(Boolean));
       setLikeCount((likeRows ?? []).length);
-      setLikedByMe(Boolean(myLikeRow));
       setCommentCount(commentTotal ?? 0);
       setLoading(false);
     };
 
     fetchReviewDetail();
-  }, [performanceId, reviewId, user]);
+  }, [performanceId, reviewId]);
+
+  // Effect 2: 내 좋아요 상태만 (user 의존 — 로그인 변경 시만 재조회)
+  useEffect(() => {
+    if (!user) {
+      setLikedByMe(false);
+      return;
+    }
+    const fetchMyLike = async () => {
+      const { data: myLikeRow } = await supabase
+        .from("performance_review_likes")
+        .select("review_id")
+        .eq("review_id", reviewId)
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      setLikedByMe(Boolean(myLikeRow));
+    };
+    fetchMyLike();
+  }, [reviewId, user]);
 
   useEffect(() => {
     setComments([]);
@@ -331,15 +341,19 @@ export default function PerformanceReviewDetailPage() {
   }, [reviewId]);
 
   useEffect(() => {
-    if (!sentinelRef.current || loadingComments || !hasMoreComments) return;
+    loadingCommentsRef.current = loadingComments;
+  }, [loadingComments]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMoreComments) return;
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) {
+      if (entries[0]?.isIntersecting && !loadingCommentsRef.current) {
         setCommentPage((prev) => prev + 1);
       }
     });
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [loadingComments, hasMoreComments]);
+  }, [hasMoreComments]);
 
   useEffect(() => {
     const fetchCommentsPage = async () => {
@@ -383,6 +397,8 @@ export default function PerformanceReviewDetailPage() {
       }
 
       const userIds = Array.from(new Set(nextRows.map((row) => row.user_id)));
+      const commentIds = nextRows.map((row) => row.id);
+
       if (userIds.length > 0) {
         setCommentProfileResolvedMap((prev) => {
           const next = { ...prev };
@@ -391,61 +407,71 @@ export default function PerformanceReviewDetailPage() {
           });
           return next;
         });
-        const nextProfiles = await fetchPublicProfiles(userIds);
-        setCommentProfileResolvedMap((prev) => {
-          const next = { ...prev };
-          userIds.forEach((id) => {
-            next[id] = true;
-          });
-          return next;
-        });
-        setCommentProfiles((prev) => ({ ...prev, ...nextProfiles }));
       }
 
-      const commentIds = nextRows.map((row) => row.id);
-      if (commentIds.length > 0) {
-        const [likeRows, likedRows, reportRows] = await Promise.all([
-          supabase
-            .from("performance_review_comment_likes")
-            .select("comment_id")
-            .in("comment_id", commentIds)
-            .is("deleted_at", null),
-          user
+      if (userIds.length > 0 || commentIds.length > 0) {
+        const [nextProfiles, likeRows, likedRows, reportRows] = await Promise.all([
+          userIds.length > 0
+            ? fetchPublicProfiles(userIds)
+            : Promise.resolve({} as Record<string, ProfileSummary>),
+          commentIds.length > 0
+            ? supabase
+                .from("performance_review_comment_likes")
+                .select("comment_id")
+                .in("comment_id", commentIds)
+                .is("deleted_at", null)
+            : Promise.resolve({ data: [] as { comment_id: string }[] }),
+          commentIds.length > 0 && user
             ? supabase
                 .from("performance_review_comment_likes")
                 .select("comment_id")
                 .eq("user_id", user.id)
                 .in("comment_id", commentIds)
                 .is("deleted_at", null)
-            : Promise.resolve({ data: [] }),
-          supabase
-            .from("performance_review_comment_reports")
-            .select("comment_id")
-            .in("comment_id", commentIds)
-            .is("deleted_at", null),
+            : Promise.resolve({ data: [] as { comment_id: string }[] }),
+          commentIds.length > 0
+            ? supabase
+                .from("performance_review_comment_reports")
+                .select("comment_id")
+                .in("comment_id", commentIds)
+                .is("deleted_at", null)
+            : Promise.resolve({ data: [] as { comment_id: string }[] }),
         ]);
 
-        const nextLikeCounts: Record<string, number> = {};
-        (likeRows.data ?? []).forEach((row) => {
-          nextLikeCounts[row.comment_id] =
-            (nextLikeCounts[row.comment_id] ?? 0) + 1;
-        });
-        setCommentLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
-
-        if (user) {
-          const nextLiked: Record<string, boolean> = {};
-          (likedRows.data ?? []).forEach((row) => {
-            nextLiked[row.comment_id] = true;
+        if (userIds.length > 0) {
+          setCommentProfileResolvedMap((prev) => {
+            const next = { ...prev };
+            userIds.forEach((id) => {
+              next[id] = true;
+            });
+            return next;
           });
-          setCommentLikedMap((prev) => ({ ...prev, ...nextLiked }));
+          setCommentProfiles((prev) => ({ ...prev, ...nextProfiles }));
         }
 
-        const nextReportCounts: Record<string, number> = {};
-        (reportRows.data ?? []).forEach((row) => {
-          nextReportCounts[row.comment_id] =
-            (nextReportCounts[row.comment_id] ?? 0) + 1;
-        });
-        setCommentReportCounts((prev) => ({ ...prev, ...nextReportCounts }));
+        if (commentIds.length > 0) {
+          const nextLikeCounts: Record<string, number> = {};
+          (likeRows.data ?? []).forEach((row) => {
+            nextLikeCounts[row.comment_id] =
+              (nextLikeCounts[row.comment_id] ?? 0) + 1;
+          });
+          setCommentLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
+
+          if (user) {
+            const nextLiked: Record<string, boolean> = {};
+            (likedRows.data ?? []).forEach((row) => {
+              nextLiked[row.comment_id] = true;
+            });
+            setCommentLikedMap((prev) => ({ ...prev, ...nextLiked }));
+          }
+
+          const nextReportCounts: Record<string, number> = {};
+          (reportRows.data ?? []).forEach((row) => {
+            nextReportCounts[row.comment_id] =
+              (nextReportCounts[row.comment_id] ?? 0) + 1;
+          });
+          setCommentReportCounts((prev) => ({ ...prev, ...nextReportCounts }));
+        }
       }
 
       setLoadingComments(false);
@@ -530,6 +556,7 @@ export default function PerformanceReviewDetailPage() {
     }
 
     setComments((prev) => [data as CommentItem, ...prev]);
+    setOrderedCommentIds((prev) => [data.id, ...prev]);
     setCommentCount((prev) => prev + 1);
     setNewComment("");
 
@@ -613,6 +640,7 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
     setComments((prev) => prev.filter((comment) => comment.id !== deleteCommentId));
+    setOrderedCommentIds((prev) => prev.filter((id) => id !== deleteCommentId));
     setCommentCount((prev) => Math.max(0, prev - 1));
     setDeletingComment(false);
     setDeleteCommentId(null);

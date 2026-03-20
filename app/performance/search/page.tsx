@@ -116,6 +116,8 @@ function PerformanceSearchContent() {
   const [orderedReady, setOrderedReady] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef(new Set<number>());
+  const loadingRef = useRef(loading);
+  const loadingMoreRef = useRef(loadingMore);
 
   useEffect(() => {
     const nextFilters = {
@@ -440,17 +442,27 @@ function PerformanceSearchContent() {
   }, [fetchPage, hasMore, loadingMore, page]);
 
   useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+
+  useEffect(() => {
     const target = sentinelRef.current;
-    if (!target || loading || loadingMore || !hasMore) return;
+    if (!target || !hasMore) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) loadMore();
+        if (entry.isIntersecting && !loadingRef.current && !loadingMoreRef.current) {
+          loadMore();
+        }
       },
       { rootMargin: "120px" }
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasMore, loadMore, loading, loadingMore]);
+  }, [hasMore, loadMore]);
 
   return (
     <MobileContainer>

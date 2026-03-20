@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
@@ -310,102 +310,102 @@ export default function PerformanceListPage() {
     fetchSections();
   }, [fetchSections]);
 
-  const renderCard = (
-    item: PerformanceItem,
-    options?: {
-      badgeLabel?: string | null;
-      rating?: RatingSummary;
-    }
-  ) => {
-    return (
-      <button
-        key={item.mt20id}
-        type="button"
-        onClick={() => {
-          sendHapticToApp();
-          router.push(`/performance/${item.mt20id}`);
-        }}
-        className="flex w-[140px] shrink-0 snap-start flex-col text-left transition-opacity duration-200 active:opacity-70"
-      >
-        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
-          {options?.badgeLabel ? (
-            <Badge className="absolute left-2 top-2 z-10 rounded-md bg-black/70 text-white">
-              {options.badgeLabel}
-            </Badge>
-          ) : null}
-          {item.poster ? (
-            <AnimatedImage
-              src={item.poster}
-              alt={`${item.prfnm} 포스터`}
-              width={1600}
-              height={1600}
-              unoptimized
-              draggable={false}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
-              이미지 없음
-            </div>
-          )}
-        </div>
-        <div className="mt-2 flex min-h-[72px] flex-col space-y-1">
-          <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
-            {item.prfnm}
-          </p>
-          <p className="line-clamp-1 text-xs text-[#17171c]/70">
-            {item.fcltynm || "공연장 정보 없음"}
-          </p>
-          <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
-          <div className="h-4">
-            {options?.rating ? (
-              <span className="inline-flex items-center gap-1 text-xs text-brand">
-                <Star className="h-3 w-3 fill-current" />
-                {options.rating.avg.toFixed(1)}
-              </span>
+  const renderCard = useCallback(
+    (
+      item: PerformanceItem,
+      options?: {
+        badgeLabel?: string | null;
+        rating?: RatingSummary;
+      }
+    ) => {
+      return (
+        <button
+          key={item.mt20id}
+          type="button"
+          onClick={() => {
+            sendHapticToApp();
+            router.push(`/performance/${item.mt20id}`);
+          }}
+          className="flex w-[140px] shrink-0 snap-start flex-col text-left transition-opacity duration-200 active:opacity-70"
+        >
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
+            {options?.badgeLabel ? (
+              <Badge className="absolute left-2 top-2 z-10 rounded-md bg-black/70 text-white">
+                {options.badgeLabel}
+              </Badge>
+            ) : null}
+            {item.poster ? (
+              <AnimatedImage
+                src={item.poster}
+                alt={`${item.prfnm} 포스터`}
+                width={1600}
+                height={1600}
+                unoptimized
+                draggable={false}
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <span className="invisible inline-flex items-center gap-1 text-xs">
-                <Star className="h-3 w-3" />
-                0.0
-              </span>
+              <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
+                이미지 없음
+              </div>
             )}
           </div>
-        </div>
-      </button>
-    );
-  };
-
-  const popularCards = sections.popular.map((item) =>
-    renderCard(item, {
-      rating: ratingMap[item.mt20id],
-    })
+          <div className="mt-2 flex min-h-[72px] flex-col space-y-1">
+            <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
+              {item.prfnm}
+            </p>
+            <p className="line-clamp-1 text-xs text-[#17171c]/70">
+              {item.fcltynm || "공연장 정보 없음"}
+            </p>
+            <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
+            <div className="h-4">
+              {options?.rating ? (
+                <span className="inline-flex items-center gap-1 text-xs text-brand">
+                  <Star className="h-3 w-3 fill-current" />
+                  {options.rating.avg.toFixed(1)}
+                </span>
+              ) : (
+                <span className="invisible inline-flex items-center gap-1 text-xs">
+                  <Star className="h-3 w-3" />
+                  0.0
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      );
+    },
+    [router]
   );
 
-  const scheduledCards = sections.scheduled.map((item) => {
-    const diff = getDaysUntil(item.prfpdfrom);
-    const label = diff === null ? null : diff <= 0 ? "D-DAY" : `D-${diff}`;
-    return renderCard(item, {
-      badgeLabel: label,
-      rating: ratingMap[item.mt20id],
-    });
-  });
-
-  const completedCards = sections.completed.map((item) =>
-    renderCard(item, {
-      rating: ratingMap[item.mt20id],
-    })
+  const popularCards = useMemo(
+    () => sections.popular.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
+    [sections.popular, ratingMap, renderCard]
   );
 
-  const awardCards = sections.awards.map((item) =>
-    renderCard(item, {
-      rating: ratingMap[item.mt20id],
-    })
+  const scheduledCards = useMemo(
+    () =>
+      sections.scheduled.map((item) => {
+        const diff = getDaysUntil(item.prfpdfrom);
+        const label = diff === null ? null : diff <= 0 ? "D-DAY" : `D-${diff}`;
+        return renderCard(item, { badgeLabel: label, rating: ratingMap[item.mt20id] });
+      }),
+    [sections.scheduled, ratingMap, renderCard]
   );
 
-  const visitCards = sections.visit.map((item) =>
-    renderCard(item, {
-      rating: ratingMap[item.mt20id],
-    })
+  const completedCards = useMemo(
+    () => sections.completed.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
+    [sections.completed, ratingMap, renderCard]
+  );
+
+  const awardCards = useMemo(
+    () => sections.awards.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
+    [sections.awards, ratingMap, renderCard]
+  );
+
+  const visitCards = useMemo(
+    () => sections.visit.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
+    [sections.visit, ratingMap, renderCard]
   );
 
   const renderSectionSkeleton = (title: string) => (

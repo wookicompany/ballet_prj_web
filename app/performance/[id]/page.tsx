@@ -254,23 +254,41 @@ export default function PerformanceDetailPage() {
   useEffect(() => {
     const fetchDetail = async () => {
       setLoading(true);
-      const [{ data: listData, error: listError }, { data: detailData }] =
-        await Promise.all([
-          supabase
-            .from("kopis_performances")
-            .select(
-              "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area"
-            )
-            .eq("mt20id", performanceId)
-            .maybeSingle(),
-          supabase
-            .from("kopis_performance_details")
-            .select(
-              "mt20id,mt10id,prfcast,prfcrew,prfruntime,prfage,entrpsnm,entrpsnm_p,entrpsnm_a,entrpsnm_h,entrpsnm_s,pcseguidance,sty,child,dtguidance,styurls,relates"
-            )
-            .eq("mt20id", performanceId)
-            .maybeSingle(),
-        ]);
+
+      // Step 1: performanceId만 필요한 쿼리 4개 병렬 실행
+      const [
+        { data: listData, error: listError },
+        { data: detailData },
+        { data: awardData },
+        { data: ratings },
+      ] = await Promise.all([
+        supabase
+          .from("kopis_performances")
+          .select(
+            "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area"
+          )
+          .eq("mt20id", performanceId)
+          .maybeSingle(),
+        supabase
+          .from("kopis_performance_details")
+          .select(
+            "mt20id,mt10id,prfcast,prfcrew,prfruntime,prfage,entrpsnm,entrpsnm_p,entrpsnm_a,entrpsnm_h,entrpsnm_s,pcseguidance,sty,child,dtguidance,styurls,relates"
+          )
+          .eq("mt20id", performanceId)
+          .maybeSingle(),
+        supabase
+          .from("kopis_performance_awards")
+          .select("awards")
+          .eq("mt20id", performanceId)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .maybeSingle(),
+        supabase
+          .from("performance_reviews")
+          .select("rating")
+          .eq("performance_id", performanceId)
+          .is("deleted_at", null),
+      ]);
 
       if (listError || !listData) {
         toast("공연 정보를 불러오지 못했어요.");
@@ -290,15 +308,18 @@ export default function PerformanceDetailPage() {
         entrpsnmS: detailData?.entrpsnm_s ?? null,
       };
       setDetail(merged);
-      const { data: awardData } = await supabase
-        .from("kopis_performance_awards")
-        .select("awards")
-        .eq("mt20id", performanceId)
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .maybeSingle();
       setAwardDetail((awardData as AwardDetail) ?? null);
 
+      if (ratings && ratings.length > 0) {
+        const total = ratings.reduce((sum, row) => sum + row.rating, 0);
+        setReviewCount(ratings.length);
+        setReviewAverage(Math.round((total / ratings.length) * 10) / 10);
+      } else {
+        setReviewCount(0);
+        setReviewAverage(null);
+      }
+
+      // Step 2: mt10id 의존 쿼리 (merged 결과 필요)
       if (merged.mt10id) {
         const { data: facilityData } = await supabase
           .from("kopis_facility_details")
@@ -314,20 +335,6 @@ export default function PerformanceDetailPage() {
         setFacilityDetail(null);
       }
 
-      const { data: ratings } = await supabase
-        .from("performance_reviews")
-        .select("rating")
-        .eq("performance_id", performanceId)
-        .is("deleted_at", null);
-
-      if (ratings && ratings.length > 0) {
-        const total = ratings.reduce((sum, row) => sum + row.rating, 0);
-        setReviewCount(ratings.length);
-        setReviewAverage(Math.round((total / ratings.length) * 10) / 10);
-      } else {
-        setReviewCount(0);
-        setReviewAverage(null);
-      }
       setLoading(false);
     };
 

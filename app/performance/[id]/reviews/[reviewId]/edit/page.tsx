@@ -69,18 +69,21 @@ export default function PerformanceReviewEditPage() {
   }, [mediaItems]);
 
   useEffect(() => {
+    if (loading || !user) return;
     const fetchReview = async () => {
-      if (loading) return;
-      if (!user) {
-        openLoginSheet();
-        return;
-      }
-      const { data: review, error } = await supabase
-        .from("performance_reviews")
-        .select("id,rating,content,user_id")
-        .eq("id", reviewId)
-        .eq("performance_id", performanceId)
-        .single();
+      const [{ data: review, error }, { data: images }] = await Promise.all([
+        supabase
+          .from("performance_reviews")
+          .select("id,rating,content,user_id")
+          .eq("id", reviewId)
+          .eq("performance_id", performanceId)
+          .single(),
+        supabase
+          .from("performance_review_images")
+          .select("id,url")
+          .eq("review_id", reviewId)
+          .is("deleted_at", null),
+      ]);
 
       if (error || !review) {
         toast("리뷰 정보를 불러오지 못했어요.");
@@ -96,18 +99,12 @@ export default function PerformanceReviewEditPage() {
 
       setRating(review.rating);
       setContent(review.content ?? "");
-
-      const { data: images } = await supabase
-        .from("performance_review_images")
-        .select("id,url")
-        .eq("review_id", reviewId)
-        .is("deleted_at", null);
       setExistingImages((images ?? []) as ExistingImage[]);
       setFetching(false);
     };
 
     fetchReview();
-  }, [reviewId, performanceId, user, loading, openLoginSheet, router]);
+  }, [reviewId, performanceId, loading, user, router]);
 
   const handleSelectFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -193,22 +190,18 @@ export default function PerformanceReviewEditPage() {
     }
 
     if (mediaItems.length > 0) {
-      const uploadedUrls: string[] = [];
-      for (const item of mediaItems) {
-        const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(
-          item.file
-        )}`;
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, item.file);
-        if (uploadError) {
-          continue;
-        }
-        const { data: urlData } = supabase.storage
-          .from(BUCKET)
-          .getPublicUrl(path);
-        uploadedUrls.push(urlData.publicUrl);
-      }
+      const uploadResults = await Promise.all(
+        mediaItems.map(async (item) => {
+          const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(item.file)}`;
+          const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(path, item.file);
+          if (uploadError) return null;
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+          return urlData.publicUrl;
+        })
+      );
+      const uploadedUrls = uploadResults.filter((url): url is string => Boolean(url));
       if (uploadedUrls.length > 0) {
         await fetch(`/api/reviews/${reviewId}/images`, {
           method: "POST",

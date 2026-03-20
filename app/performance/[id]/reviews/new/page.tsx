@@ -126,22 +126,18 @@ export default function PerformanceReviewNewPage() {
     }
 
     if (mediaItems.length > 0) {
-      const uploadedUrls: string[] = [];
-      for (const item of mediaItems) {
-        const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(
-          item.file
-        )}`;
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, item.file);
-        if (uploadError) {
-          continue;
-        }
-        const { data: urlData } = supabase.storage
-          .from(BUCKET)
-          .getPublicUrl(path);
-        uploadedUrls.push(urlData.publicUrl);
-      }
+      const uploadResults = await Promise.all(
+        mediaItems.map(async (item) => {
+          const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(item.file)}`;
+          const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(path, item.file);
+          if (uploadError) return null;
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+          return urlData.publicUrl;
+        })
+      );
+      const uploadedUrls = uploadResults.filter((url): url is string => Boolean(url));
       if (uploadedUrls.length > 0) {
         await fetch(`/api/reviews/${reviewId}/images`, {
           method: "POST",
