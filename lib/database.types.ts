@@ -1316,7 +1316,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_calendar_users_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_performance_users_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
