@@ -137,7 +137,7 @@ export const POST = async (request: Request) => {
     }
   }
 
-  // Phase 1: 14개 테이블 + profiles 15개 병렬 soft-delete
+  // Phase 1: 15개 테이블 + profiles = 16개 병렬 soft-delete
   const softDeleteResults = await Promise.all([
     ...USER_SOFT_DELETE_TARGETS.map(({ table, userColumn }) =>
       supabaseAdmin
