@@ -1113,7 +1113,7 @@ function RecordNewContent() {
             <div className="pt-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm text-[#17171c]/60">
-                  오늘의 발레를 한 줄로 남겨주세요.
+                  한 줄로 가볍게 남겨주세요.
                 </Label>
                 <span className="text-xs text-[#17171c]/50">
                   {form.content.length}/16
@@ -1135,7 +1135,7 @@ function RecordNewContent() {
           <section className="space-y-6">
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                오늘 잘했던 점을 편하게 적어주세요.
+                오늘 잘했던 점을 남겨보세요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1148,7 +1148,7 @@ function RecordNewContent() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                다음에는 무엇을 더 신경 쓰면 좋을지 적어주세요.
+                다음에는 무엇을 더 신경 쓰면 좋을까요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1164,7 +1164,7 @@ function RecordNewContent() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                자유롭게 기록해주세요.
+                더 남기고 싶은 이야기가 있다면 적어보세요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"

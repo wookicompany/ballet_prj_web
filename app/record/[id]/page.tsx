@@ -423,7 +423,7 @@ export default function RecordDetailPage() {
               {record.content ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    오늘의 발레를 한 줄로 남겨주세요.
+                    한 줄로 가볍게 남겨주세요.
                   </Label>
                   <div className="mt-2 text-base text-[#17171c]">
                     {record.content}
@@ -475,7 +475,7 @@ export default function RecordDetailPage() {
               {record.did_well ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    오늘 잘했던 점을 편하게 적어주세요.
+                    오늘 잘했던 점을 남겨보세요.
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.did_well}
@@ -485,7 +485,7 @@ export default function RecordDetailPage() {
               {record.improve_next ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    다음에는 무엇을 더 신경 쓰면 좋을지 적어주세요.
+                    다음에는 무엇을 더 신경 쓰면 좋을까요?
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.improve_next}
@@ -495,7 +495,7 @@ export default function RecordDetailPage() {
               {record.memo ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    자유롭게 기록해주세요.
+                    더 남기고 싶은 이야기가 있다면 적어보세요.
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.memo}
