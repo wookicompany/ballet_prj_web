@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
@@ -143,6 +144,7 @@ export default function RecordDetailPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -220,6 +222,7 @@ export default function RecordDetailPage() {
     }
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
+    setDeleting(true);
     const response = await fetch(`/api/records/${record.id}/delete`, {
       method: "DELETE",
       headers: {
@@ -227,6 +230,7 @@ export default function RecordDetailPage() {
       },
     });
     if (!response.ok) {
+      setDeleting(false);
       toast("기록을 삭제하지 못했어요.");
       return;
     }
@@ -265,6 +269,7 @@ export default function RecordDetailPage() {
 
   return (
     <MobileContainer>
+      {deleting ? <LoadingOverlay /> : null}
       <main className="px-4 pb-10">
         <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
           <Button
