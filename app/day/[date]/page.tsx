@@ -240,7 +240,7 @@ export default function DayPage() {
                   )}
                   <div className="min-w-0 flex-1 text-center">
                     <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
-                      {record.content || "오늘의 발레를 한줄로 남겨보아요."}
+                      {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
                     </p>
                   </div>
                   {media?.url ? (

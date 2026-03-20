@@ -1247,7 +1247,7 @@ export default function RecordEditPage() {
             <div className="pt-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm text-[#17171c]/60">
-                  오늘의 발레를 한줄로 남겨보아요.
+                  오늘의 발레를 한 줄로 남겨주세요.
                 </Label>
                 <span className="text-xs text-[#17171c]/50">
                   {form.content.length}/16
@@ -1269,7 +1269,7 @@ export default function RecordEditPage() {
           <section className="space-y-6">
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                오늘 잘했던 점을 남겨볼까요?
+                오늘 잘했던 점을 편하게 적어주세요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1282,7 +1282,7 @@ export default function RecordEditPage() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
+                다음에는 무엇을 더 신경 쓰면 좋을지 적어주세요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1298,7 +1298,7 @@ export default function RecordEditPage() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                오늘의 발레를 자유롭게 기록해보세요!
+                자유롭게 기록해주세요.
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"

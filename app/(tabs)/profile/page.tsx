@@ -836,7 +836,7 @@ export default function ProfilePage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <p className="line-clamp-1 flex-1 text-sm text-[#17171c]">
-                          {record.content || "오늘의 발레를 한줄로 남겨보아요."}
+                          {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
                         </p>
                         <p className="shrink-0 text-right text-xs text-[#17171c]/60">
                           {formatRecordDate(record.recordDate)}
