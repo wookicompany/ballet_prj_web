@@ -435,13 +435,14 @@ export default function PerformanceListPage() {
         <Skeleton className="h-8 w-8 rounded-full" />
       </div>
       <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4">
-        {Array.from({ length: 12 }).map((_, index) => (
+        {Array.from({ length: 6 }).map((_, index) => (
           <div key={`${title}-skeleton-${index}`} className="w-[140px] shrink-0">
             <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
             <div className="mt-2 space-y-1">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-3 w-12" />
+              <Skeleton className="h-4 w-10" />
             </div>
           </div>
         ))}
@@ -481,6 +482,7 @@ export default function PerformanceListPage() {
               variant="ghost"
               size="icon-lg"
               className="text-[#17171c]/70"
+              onClick={() => router.push("/performance/search-input")}
               aria-label="검색"
             >
               <Search className="size-6" />
