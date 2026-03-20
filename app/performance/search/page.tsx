@@ -530,9 +530,9 @@ function PerformanceSearchContent() {
                       <AnimatedImage
                         src={item.poster}
                         alt={`${item.prfnm} 포스터`}
-                        width={1600}
-                        height={1600}
-                        unoptimized
+                        width={56}
+                        height={80}
+                        sizes="56px"
                         draggable={false}
                         className="h-full w-full object-cover"
                       />

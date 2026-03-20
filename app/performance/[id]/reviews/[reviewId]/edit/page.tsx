@@ -337,9 +337,9 @@ export default function PerformanceReviewEditPage() {
                   <AnimatedImage
                     src={item.url}
                     alt="업로드 이미지"
-                    width={1600}
-                    height={1600}
-                    unoptimized
+                    width={80}
+                    height={80}
+                    sizes="80px"
                     draggable={false}
                     className="h-full w-full object-contain"
                   />

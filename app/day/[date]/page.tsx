@@ -248,9 +248,9 @@ export default function DayPage() {
                       <AnimatedImage
                         src={media.url}
                         alt="기록 미디어"
-                        width={1600}
-                        height={1600}
-                        unoptimized
+                        width={36}
+                        height={36}
+                        sizes="36px"
                         draggable={false}
                         className="h-full w-full rounded-lg object-cover"
                       />

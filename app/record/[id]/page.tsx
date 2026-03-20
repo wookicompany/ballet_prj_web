@@ -333,9 +333,9 @@ export default function RecordDetailPage() {
                           <AnimatedImage
                             src={item.url}
                             alt="업로드 사진"
-                            width={1600}
-                            height={1600}
-                            unoptimized
+                            width={430}
+                            height={430}
+                            sizes="(max-width: 430px) 100vw, 430px"
                             draggable={false}
                             className="h-full w-full object-contain"
                           />

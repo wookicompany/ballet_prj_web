@@ -143,9 +143,9 @@ export default function ProfileAccountInfoPage() {
                 <AnimatedImage
                   src={account.avatar_url}
                   alt="프로필 사진"
-                  width={1600}
-                  height={1600}
-                  unoptimized
+                  width={56}
+                  height={56}
+                  sizes="56px"
                   draggable={false}
                   className="h-full w-full object-cover"
                 />

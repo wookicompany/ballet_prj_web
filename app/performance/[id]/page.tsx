@@ -1001,9 +1001,9 @@ export default function PerformanceDetailPage() {
                     <AnimatedImage
                       src={sharedVisualBackgroundUrl}
                       alt=""
-                      width={1600}
-                      height={1600}
-                      unoptimized
+                      width={430}
+                      height={400}
+                      sizes="430px"
                       draggable={false}
                       className="absolute inset-0 z-0 h-full w-full scale-110 object-cover blur-3xl opacity-75"
                     />
@@ -1030,9 +1030,9 @@ export default function PerformanceDetailPage() {
                               <AnimatedImage
                                 src={slide.url}
                                 alt={slide.alt}
-                                width={1600}
-                                height={1600}
-                                unoptimized
+                                width={430}
+                                height={400}
+                                sizes="(max-width: 430px) 100vw, 430px"
                                 draggable={false}
                                 className="block max-h-full max-w-full object-contain object-center"
                               />
@@ -1552,9 +1552,9 @@ export default function PerformanceDetailPage() {
                                   <AnimatedImage
                                     src={url}
                                     alt="리뷰 이미지"
-                                    width={1600}
-                                    height={1600}
-                                    unoptimized
+                                    width={64}
+                                    height={64}
+                                    sizes="64px"
                                     draggable={false}
                                     className="h-full w-full object-contain"
                                   />

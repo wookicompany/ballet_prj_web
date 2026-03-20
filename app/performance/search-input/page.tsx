@@ -455,9 +455,9 @@ export default function PerformanceSearchInputPage() {
                       <AnimatedImage
                         src={item.poster}
                         alt={`${item.title} 포스터`}
-                        width={1600}
-                        height={1600}
-                        unoptimized
+                        width={130}
+                        height={173}
+                        sizes="(max-width: 430px) 30vw, 130px"
                         draggable={false}
                         className="h-full w-full object-cover"
                       />
@@ -518,9 +518,9 @@ export default function PerformanceSearchInputPage() {
                     <AnimatedImage
                       src={item.poster}
                       alt={`${item.prfnm} 포스터`}
-                      width={1600}
-                      height={1600}
-                      unoptimized
+                      width={56}
+                      height={80}
+                      sizes="56px"
                       draggable={false}
                       className="h-full w-full object-cover"
                     />

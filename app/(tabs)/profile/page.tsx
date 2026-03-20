@@ -690,9 +690,9 @@ export default function ProfilePage() {
                     <AnimatedImage
                       src={profile.avatar_url}
                       alt="프로필 이미지"
-                      width={1600}
-                      height={1600}
-                      unoptimized
+                      width={80}
+                      height={80}
+                      sizes="80px"
                       draggable={false}
                       className="h-full w-full object-cover"
                     />
@@ -855,9 +855,9 @@ export default function ProfilePage() {
                                 <AnimatedImage
                                   src={url}
                                   alt="기록 미디어"
-                                  width={1600}
-                                  height={1600}
-                                  unoptimized
+                                  width={64}
+                                  height={64}
+                                  sizes="64px"
                                   draggable={false}
                                   className="h-full w-full object-cover"
                                 />
@@ -943,9 +943,9 @@ export default function ProfilePage() {
                         <AnimatedImage
                           src={review.performancePoster}
                           alt={`${review.performanceName ?? "공연"} 포스터`}
-                          width={1600}
-                          height={1600}
-                          unoptimized
+                          width={56}
+                          height={80}
+                          sizes="56px"
                           draggable={false}
                           className="h-full w-full object-cover"
                         />
@@ -1010,9 +1010,9 @@ export default function ProfilePage() {
                             <AnimatedImage
                               src={url}
                               alt="리뷰 이미지"
-                              width={1600}
-                              height={1600}
-                              unoptimized
+                              width={64}
+                              height={64}
+                              sizes="64px"
                               draggable={false}
                               className="h-full w-full object-cover"
                             />
