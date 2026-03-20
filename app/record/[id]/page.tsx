@@ -29,7 +29,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
-import { Activity, ChevronLeft, Flame, Heart, HeartPulse, Menu, PenLine, Trash2 } from "lucide-react";
+import { Activity, CalendarDays, ChevronLeft, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 type RecordDetail = {
@@ -235,15 +235,6 @@ export default function RecordDetailPage() {
 
   const barOrderTags = parseOrderTags(record.bar_order);
   const centerOrderTags = parseOrderTags(record.center_order);
-  const hasExtraInfo =
-    !!record.location ||
-    !!record.level ||
-    !!record.instructor ||
-    !!record.did_well ||
-    !!record.improve_next ||
-    barOrderTags.length > 0 ||
-    centerOrderTags.length > 0;
-  const showLevelInstructor = !!record.level || !!record.instructor;
   const hasWorkoutInfo =
     !!record.workout_activity_label ||
     !!record.workout_source_name ||
@@ -261,6 +252,10 @@ export default function RecordDetailPage() {
       ? `${locationParts.name}\n${locationAddress}`
       : locationParts.name
     : locationAddress;
+  const hasCard2 =
+    !!record.mood || !!record.content || hasWorkoutInfo ||
+    !!record.did_well || !!record.improve_next;
+  const hasCard3 = barOrderTags.length > 0 || centerOrderTags.length > 0;
 
   return (
     <MobileContainer>
@@ -290,7 +285,8 @@ export default function RecordDetailPage() {
           </Button>
         </header>
 
-        <div className="space-y-8">
+        <div className="space-y-3">
+          {/* 사진/영상 */}
           {media.length > 0 ? (
             <section className="space-y-3">
               <div
@@ -362,190 +358,194 @@ export default function RecordDetailPage() {
             </section>
           ) : null}
 
-          <section className="space-y-4">
-            <Label className="text-sm text-[#17171c]/60">날짜와 시간</Label>
-            <div className="mt-2 text-base text-[#17171c]">
-              <div>{formatDateLabel(record.record_date)}</div>
-              <div>
+          {/* 카드 1: 날짜 / 장소 / 강사 */}
+          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-3">
+            <div className="flex items-start gap-3">
+              <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
+              <span className="text-sm text-[#17171c]">
+                {formatDateLabel(record.record_date)}
+              </span>
+            </div>
+            <div className="flex items-start gap-3">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
+              <span className="text-sm text-[#17171c]">
                 {formatTimeRangeLine(record.start_time, record.end_time)}
-              </div>
+              </span>
             </div>
             {record.location && locationDisplay ? (
-              <div className="pt-2">
-                <Label className="text-sm text-[#17171c]/60">장소</Label>
-                <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
+                <span className="whitespace-pre-line text-sm text-[#17171c]">
                   {locationDisplay}
-                </div>
+                </span>
               </div>
             ) : null}
-            {showLevelInstructor ? (
-              <div className="grid grid-cols-2 gap-3">
-                {record.instructor ? (
-                  <div>
-                <Label className="text-sm text-[#17171c]/60">강사님</Label>
-                    <div className="mt-2 text-base text-[#17171c]">
-                      {record.instructor}
-                    </div>
-                  </div>
-                ) : null}
-                {record.level ? (
-                  <div>
-                    <Label className="text-sm text-[#17171c]/60">레벨</Label>
-                    <div className="mt-2 text-base text-[#17171c]">
-                      {record.level}
-                    </div>
-                  </div>
-                ) : null}
+            {record.instructor ? (
+              <div className="flex items-start gap-3">
+                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
+                <span className="text-sm text-[#17171c]">
+                  {record.instructor}
+                </span>
               </div>
             ) : null}
-            {record.mood ? (
-              <div className="pt-2">
-                <Label className="text-sm text-[#17171c]/60">
-                  오늘 발레는 어땠나요?
-                </Label>
-                <div className="mt-2 grid w-full grid-cols-5 gap-2">
-                  <div className="aspect-square w-full rounded-full bg-[#17171c]/5 p-3">
-                    <AnimatedImage
-                      src={`/mood/cat-${record.mood}.svg`}
-                      alt={`기분 ${record.mood}단계`}
-                      width={1600}
-                      height={1600}
-                      unoptimized
-                      draggable={false}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                </div>
+            {record.level ? (
+              <div className="flex items-start gap-3">
+                <Layers className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
+                <span className="text-sm text-[#17171c]">{record.level}</span>
               </div>
             ) : null}
-            {record.content ? (
-              <div className="pt-2">
-                <Label className="text-sm text-[#17171c]/60">
-                  오늘의 발레를 한줄로 남겨보아요.
-                </Label>
-                <div className="mt-2 text-base text-[#17171c]">
-                  {record.content}
-                </div>
-              </div>
-            ) : null}
-            {hasWorkoutInfo ? (
-              <div className="pt-2 space-y-3">
-                <div className="flex items-center justify-between">
+          </div>
+
+          {/* 카드 2: 기분 / 기록 / 회고 */}
+          {hasCard2 ? (
+            <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-4">
+              {record.mood ? (
+                <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    Apple Watch 발레 바 운동
+                    오늘 발레는 어땠나요?
                   </Label>
-                  <span className="text-xs text-[#17171c]/50">
-                    {record.workout_device_name || "-"}
-                  </span>
-                </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3">
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Activity className="h-4 w-4" />
-                    <span>활동 칼로리 소모량:</span>
-                    {record.workout_active_energy_kcal == null
-                      ? "-"
-                      : `${record.workout_active_energy_kcal} kcal`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Flame className="h-4 w-4" />
-                    <span>총 칼로리 소모량:</span>
-                    {record.workout_total_energy_kcal == null
-                      ? "-"
-                      : `${record.workout_total_energy_kcal} kcal`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <Heart className="h-4 w-4" />
-                    <span>평균 심박수:</span>
-                    {record.workout_avg_bpm == null
-                      ? "-"
-                      : `${record.workout_avg_bpm} BPM`}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
-                    <HeartPulse className="h-4 w-4" />
-                    <span>최대 심박수:</span>
-                    {record.workout_max_bpm == null
-                      ? "-"
-                      : `${record.workout_max_bpm} BPM`}
+                  <div className="mt-2">
+                    <div className="h-16 w-16 rounded-full bg-[#17171c]/5 p-3">
+                      <AnimatedImage
+                        src={`/mood/cat-${record.mood}.svg`}
+                        alt={`기분 ${record.mood}단계`}
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : null}
-          </section>
+              ) : null}
+              {record.content ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    오늘의 발레를 한줄로 남겨보아요.
+                  </Label>
+                  <div className="mt-2 text-base text-[#17171c]">
+                    {record.content}
+                  </div>
+                </div>
+              ) : null}
+              {hasWorkoutInfo ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-[#17171c]/60">
+                      Apple Watch 발레 바 운동
+                    </Label>
+                    <span className="text-xs text-[#17171c]/50">
+                      {record.workout_device_name || "-"}
+                    </span>
+                  </div>
+                  <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3">
+                    <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                      <Activity className="h-4 w-4" />
+                      <span>활동 칼로리 소모량:</span>
+                      {record.workout_active_energy_kcal == null
+                        ? "-"
+                        : `${record.workout_active_energy_kcal} kcal`}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                      <Flame className="h-4 w-4" />
+                      <span>총 칼로리 소모량:</span>
+                      {record.workout_total_energy_kcal == null
+                        ? "-"
+                        : `${record.workout_total_energy_kcal} kcal`}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                      <Heart className="h-4 w-4" />
+                      <span>평균 심박수:</span>
+                      {record.workout_avg_bpm == null
+                        ? "-"
+                        : `${record.workout_avg_bpm} BPM`}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
+                      <HeartPulse className="h-4 w-4" />
+                      <span>최대 심박수:</span>
+                      {record.workout_max_bpm == null
+                        ? "-"
+                        : `${record.workout_max_bpm} BPM`}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              {record.did_well ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    오늘 잘했던 점을 남겨볼까요?
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.did_well}
+                  </div>
+                </div>
+              ) : null}
+              {record.improve_next ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.improve_next}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
-          {hasExtraInfo ? (
-            <>
-
-              <section className="space-y-4">
-                {record.did_well ? (
-                  <div>
-                    <Label className="text-sm text-[#17171c]/60">
-                      오늘 잘했던 점을 남겨볼까요?
-                    </Label>
-                    <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
-                      {record.did_well}
-                    </div>
-                  </div>
-                ) : null}
-                {record.improve_next ? (
-                  <div>
-                    <Label className="text-sm text-[#17171c]/60">
-                      다음에는 무엇을 조금 더 신경 쓰면 좋을까요?
-                    </Label>
-                    <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
-                      {record.improve_next}
-                    </div>
-                  </div>
-                ) : null}
-                {barOrderTags.length > 0 ? (
-                  <div className="space-y-3">
-                    <Label className="text-sm text-[#17171c]/60">
-                      바(bar) 순서
-                    </Label>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {barOrderTags.map((tag, index) => (
-                        <div
-                          key={`bar-order-${tag}-${index}`}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
-                            {tag}
+          {/* 카드 3: 바 / 센터 순서 */}
+          {hasCard3 ? (
+            <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-4">
+              {barOrderTags.length > 0 ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    바(bar) 순서
+                  </Label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {barOrderTags.map((tag, index) => (
+                      <div
+                        key={`bar-order-${tag}-${index}`}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
+                          {tag}
+                        </span>
+                        {index < barOrderTags.length - 1 ? (
+                          <span className="text-sm text-[#17171c]/40">
+                            &gt;
                           </span>
-                          {index < barOrderTags.length - 1 ? (
-                            <span className="text-sm text-[#17171c]/40">
-                              &gt;
-                            </span>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
-                ) : null}
-                {centerOrderTags.length > 0 ? (
-                  <div className="space-y-3">
-                    <Label className="text-sm text-[#17171c]/60">
-                      센터(center) 순서
-                    </Label>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {centerOrderTags.map((tag, index) => (
-                        <div
-                          key={`center-order-${tag}-${index}`}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
-                            {tag}
+                </div>
+              ) : null}
+              {centerOrderTags.length > 0 ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    센터(center) 순서
+                  </Label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {centerOrderTags.map((tag, index) => (
+                      <div
+                        key={`center-order-${tag}-${index}`}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="rounded-full bg-[#17171c]/5 px-2 py-1 text-sm text-[#17171c]">
+                          {tag}
+                        </span>
+                        {index < centerOrderTags.length - 1 ? (
+                          <span className="text-sm text-[#17171c]/40">
+                            &gt;
                           </span>
-                          {index < centerOrderTags.length - 1 ? (
-                            <span className="text-sm text-[#17171c]/40">
-                              &gt;
-                            </span>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
-                ) : null}
-              </section>
-            </>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
         <BottomSheet
