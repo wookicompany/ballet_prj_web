@@ -1177,6 +1177,140 @@ function RecordNewContent() {
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
+                id="location-options"
+                checked={showLocation}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLocation(next);
+                  if (!next) {
+                    setLocationName("");
+                    setLocationBase("");
+                    setLocationDetail("");
+                    setForm((prev) => ({ ...prev, location: "" }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="location-options"
+                className="text-sm text-[#17171c]/70"
+              >
+                장소 입력
+              </Label>
+            </div>
+            {showLocation ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-[#17171c]/60">장소</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 shrink-0 px-4 text-xs"
+                    onClick={() => setLocationSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
+                </div>
+                <Input
+                  type="text"
+                  className="h-12 text-base placeholder:text-sm"
+                  placeholder="장소 이름을 입력해 주세요"
+                  value={locationName}
+                  onChange={(event) => setLocationName(event.target.value)}
+                />
+                <Input
+                  type="text"
+                  className="h-12 text-base placeholder:text-sm"
+                  placeholder="주소를 입력해 주세요"
+                  value={locationBase}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setLocationBase((prev) => {
+                      if (nextValue !== prev && locationDetail) {
+                        setLocationDetail("");
+                      }
+                      return nextValue;
+                    });
+                  }}
+                />
+                <Input
+                  type="text"
+                  className="h-12 text-base placeholder:text-sm"
+                  placeholder="상세 주소를 입력해 주세요 (선택사항)"
+                  value={locationDetail}
+                  onChange={(event) => setLocationDetail(event.target.value)}
+                />
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="level-instructor-options"
+                checked={showLevelInstructor}
+                onCheckedChange={(checked) => {
+                  const next = !!checked;
+                  setShowLevelInstructor(next);
+                  if (!next) {
+                    setForm((prev) => ({
+                      ...prev,
+                      level: "",
+                      instructor: "",
+                    }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="level-instructor-options"
+                className="text-sm text-[#17171c]/70"
+              >
+                강사님 &amp; 레벨 입력
+              </Label>
+            </div>
+            {showLevelInstructor ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#17171c]/60">
+                    강사님 &amp; 레벨
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 shrink-0 px-4 text-xs"
+                    onClick={() => setInstructorSheetOpen(true)}
+                  >
+                    불러오기
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  <Input
+                    type="text"
+                    className="h-12 text-base placeholder:text-sm"
+                    placeholder="강사님을 입력해 주세요"
+                    value={form.instructor}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        instructor: event.target.value,
+                      }))
+                    }
+                  />
+                  <Input
+                    type="text"
+                    className="h-12 text-base placeholder:text-sm"
+                    placeholder="레벨을 입력해 주세요"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        level: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <Checkbox
                 id="bar-order-options"
                 checked={showBarOrder}
                 onCheckedChange={(checked) => {
@@ -1394,140 +1528,6 @@ function RecordNewContent() {
                         setCenterOrderInput,
                         setCenterOrderTags
                       )
-                    }
-                  />
-                </div>
-              </div>
-            ) : null}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="location-options"
-                checked={showLocation}
-                onCheckedChange={(checked) => {
-                  const next = !!checked;
-                  setShowLocation(next);
-                  if (!next) {
-                    setLocationName("");
-                    setLocationBase("");
-                    setLocationDetail("");
-                    setForm((prev) => ({ ...prev, location: "" }));
-                  }
-                }}
-              />
-              <Label
-                htmlFor="location-options"
-                className="text-sm text-[#17171c]/70"
-              >
-                장소 입력
-              </Label>
-            </div>
-            {showLocation ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm text-[#17171c]/60">장소</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-10 shrink-0 px-4 text-xs"
-                    onClick={() => setLocationSheetOpen(true)}
-                  >
-                    불러오기
-                  </Button>
-                </div>
-                <Input
-                  type="text"
-                  className="h-12 text-base placeholder:text-sm"
-                  placeholder="장소 이름을 입력해 주세요"
-                  value={locationName}
-                  onChange={(event) => setLocationName(event.target.value)}
-                />
-                <Input
-                  type="text"
-                  className="h-12 text-base placeholder:text-sm"
-                  placeholder="주소를 입력해 주세요"
-                  value={locationBase}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    setLocationBase((prev) => {
-                      if (nextValue !== prev && locationDetail) {
-                        setLocationDetail("");
-                      }
-                      return nextValue;
-                    });
-                  }}
-                />
-                <Input
-                  type="text"
-                  className="h-12 text-base placeholder:text-sm"
-                  placeholder="상세 주소를 입력해 주세요 (선택사항)"
-                  value={locationDetail}
-                  onChange={(event) => setLocationDetail(event.target.value)}
-                />
-              </div>
-            ) : null}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="level-instructor-options"
-                checked={showLevelInstructor}
-                onCheckedChange={(checked) => {
-                  const next = !!checked;
-                  setShowLevelInstructor(next);
-                  if (!next) {
-                    setForm((prev) => ({
-                      ...prev,
-                      level: "",
-                      instructor: "",
-                    }));
-                  }
-                }}
-              />
-              <Label
-                htmlFor="level-instructor-options"
-                className="text-sm text-[#17171c]/70"
-              >
-                강사님 &amp; 레벨 입력
-              </Label>
-            </div>
-            {showLevelInstructor ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-[#17171c]/60">
-                    강사님 &amp; 레벨
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-10 shrink-0 px-4 text-xs"
-                    onClick={() => setInstructorSheetOpen(true)}
-                  >
-                    불러오기
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  <Input
-                    type="text"
-                    className="h-12 text-base placeholder:text-sm"
-                    placeholder="강사님을 입력해 주세요"
-                    value={form.instructor}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        instructor: event.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    type="text"
-                    className="h-12 text-base placeholder:text-sm"
-                    placeholder="레벨을 입력해 주세요"
-                    value={form.level}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        level: event.target.value,
-                      }))
                     }
                   />
                 </div>
