@@ -40,7 +40,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
+      (event, nextSession) => {
+        // getSession()이 INITIAL_SESSION을 이미 처리하므로 중복 렌더 방지
+        if (event === "INITIAL_SESSION") return;
         setSession(nextSession ?? null);
         setUser(nextSession?.user ?? null);
         setLoading(false);

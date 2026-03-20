@@ -137,42 +137,38 @@ export const POST = async (request: Request) => {
     }
   }
 
-  for (const { table, userColumn } of USER_SOFT_DELETE_TARGETS) {
-    const { error } = await supabaseAdmin
-      .from(table)
-      .update({ deleted_at: nowIso })
-      .eq(userColumn, user.id)
-      .is("deleted_at", null);
+  // Phase 1: 14개 테이블 + profiles 15개 병렬 soft-delete
+  const softDeleteResults = await Promise.all([
+    ...USER_SOFT_DELETE_TARGETS.map(({ table, userColumn }) =>
+      supabaseAdmin
+        .from(table)
+        .update({ deleted_at: nowIso })
+        .eq(userColumn, user.id)
+        .is("deleted_at", null)
+    ),
+    supabaseAdmin
+      .from("profiles")
+      .update({
+        deleted_at: nowIso,
+        nickname: null,
+        avatar_url: null,
+        ballet_started_at: null,
+        expo_push_token: null,
+      })
+      .eq("id", user.id)
+      .is("deleted_at", null),
+  ]);
 
-    if (error) {
-      console.error(`Failed to soft delete rows from ${table}`, error);
-      return NextResponse.json(
-        { message: "회원탈퇴 처리 중 오류가 발생했어요." },
-        { status: 500 }
-      );
-    }
-  }
-
-  const { error: profileSoftDeleteError } = await supabaseAdmin
-    .from("profiles")
-    .update({
-      deleted_at: nowIso,
-      nickname: null,
-      avatar_url: null,
-      ballet_started_at: null,
-      expo_push_token: null,
-    })
-    .eq("id", user.id)
-    .is("deleted_at", null);
-
-  if (profileSoftDeleteError) {
-    console.error("Failed to soft delete profile", profileSoftDeleteError);
+  const failedResult = softDeleteResults.find((r) => r.error);
+  if (failedResult) {
+    console.error("Failed to soft delete rows", failedResult.error);
     return NextResponse.json(
       { message: "회원탈퇴 처리 중 오류가 발생했어요." },
       { status: 500 }
     );
   }
 
+  // Phase 2: auth user 메타데이터 업데이트
   const { error: markDeletedError } = await supabaseAdmin.auth.admin.updateUserById(
     user.id,
     {

@@ -145,9 +145,12 @@ export default function CalendarPage() {
     setSettingsLoaded(true);
   }, [user]);
 
-  // user 변경 시: fetchCounts + fetchSettings 병렬 실행
+  // user 변경 시 fetchSettings 포함, 월 변경 시 fetchCounts만 실행
+  // prevUserIdRef로 user/월 변경을 구분해 fetchCounts 중복 호출 방지
+  const prevUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user) {
+      prevUserIdRef.current = null;
       setRecordCounts({});
       setMoodAverages({});
       setWeekStartMonday(false);
@@ -155,15 +158,14 @@ export default function CalendarPage() {
       setSettingsLoaded(true);
       return;
     }
-    void Promise.all([fetchCounts(), fetchSettings()]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  // 월 변경 시: counts만 재실행 (settings 재실행 불필요)
-  useEffect(() => {
-    if (!user) return;
-    void fetchCounts();
-  }, [start, end, user, fetchCounts]);
+    const userChanged = prevUserIdRef.current !== user.id;
+    prevUserIdRef.current = user.id;
+    if (userChanged) {
+      void Promise.all([fetchCounts(), fetchSettings()]);
+    } else {
+      void fetchCounts();
+    }
+  }, [user, start, end, fetchCounts, fetchSettings]);
 
   const isInitialSettingsLoad = useRef(true);
   useEffect(() => {
