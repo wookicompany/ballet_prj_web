@@ -4,6 +4,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type Dispatch,
   type KeyboardEvent,
@@ -41,22 +42,8 @@ type SavedCenterOrder = {
   order_text: string;
 };
 
-export default function SavedCenterOrdersPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
-  const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedCenterOrder[]>([]);
-  const [listLoading, setListLoading] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "" });
-  const [orderTags, setOrderTags] = useState<string[]>([]);
-  const [orderInput, setOrderInput] = useState("");
-  const [deleteTarget, setDeleteTarget] =
-    useState<SavedCenterOrder | null>(null);
-
-  const renderListSkeleton = () => (
+function CenterOrderListSkeleton() {
+  return (
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, index) => (
         <div
@@ -72,6 +59,22 @@ export default function SavedCenterOrdersPage() {
       ))}
     </div>
   );
+}
+
+export default function SavedCenterOrdersPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
+  const [items, setItems] = useState<SavedCenterOrder[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "" });
+  const [orderTags, setOrderTags] = useState<string[]>([]);
+  const [orderInput, setOrderInput] = useState("");
+  const [deleteTarget, setDeleteTarget] =
+    useState<SavedCenterOrder | null>(null);
 
   const addOrderTags = (
     rawValue: string,
@@ -146,7 +149,7 @@ export default function SavedCenterOrdersPage() {
     setSheetOpen(true);
   };
 
-  const handleOpenEdit = (item: SavedCenterOrder) => {
+  const handleOpenEdit = useCallback((item: SavedCenterOrder) => {
     setEditingId(item.id);
     setForm({ name: item.name });
     setOrderTags(
@@ -156,7 +159,7 @@ export default function SavedCenterOrdersPage() {
     );
     setOrderInput("");
     setSheetOpen(true);
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -224,6 +227,69 @@ export default function SavedCenterOrdersPage() {
     setDeleteTarget(null);
   };
 
+  const renderedItems = useMemo(
+    () =>
+      items.map((item) => (
+        <div
+          key={item.id}
+          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Layers className="h-4 w-4 shrink-0 text-[#17171c]/50" />
+              <span className="truncate text-sm font-medium text-[#17171c]">
+                {item.name}
+              </span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#17171c]/70"
+                onClick={() => handleOpenEdit(item)}
+                aria-label="센터 순서 수정"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#17171c]/70"
+                onClick={() => setDeleteTarget(item)}
+                aria-label="센터 순서 삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          {item.order_text ? (
+            <div className="mt-2 w-full flex flex-wrap items-center gap-2">
+              {item.order_text
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+                .map((tag, index, arr) => (
+                  <div
+                    key={`${item.id}-${tag}-${index}`}
+                    className="flex items-center gap-2"
+                  >
+                    <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-sm">
+                      {tag}
+                    </span>
+                    {index < arr.length - 1 ? (
+                      <span className="text-sm text-[#17171c]/40">&gt;</span>
+                    ) : null}
+                  </div>
+                ))}
+            </div>
+          ) : null}
+        </div>
+      )),
+    [items, handleOpenEdit]
+  );
+
   if (!loading && !user) {
     return (
       <MobileContainer>
@@ -273,7 +339,7 @@ export default function SavedCenterOrdersPage() {
 
         <section className="space-y-3">
           {loading || listLoading ? (
-            renderListSkeleton()
+            <CenterOrderListSkeleton />
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
@@ -281,66 +347,7 @@ export default function SavedCenterOrdersPage() {
               </p>
             </div>
           ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-black/5 bg-white px-4 py-4"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <Layers className="h-4 w-4 shrink-0 text-[#17171c]/50" />
-                    <span className="truncate text-sm font-medium text-[#17171c]">
-                      {item.name}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#17171c]/70"
-                      onClick={() => handleOpenEdit(item)}
-                      aria-label="센터 순서 수정"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#17171c]/70"
-                      onClick={() => setDeleteTarget(item)}
-                      aria-label="센터 순서 삭제"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {item.order_text ? (
-                  <div className="mt-2 w-full flex flex-wrap items-center gap-2">
-                    {item.order_text
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                      .map((tag, index, arr) => (
-                        <div
-                          key={`${item.id}-${tag}-${index}`}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="inline-flex h-7 items-center rounded-full bg-secondary px-2 text-sm">
-                            {tag}
-                          </span>
-                          {index < arr.length - 1 ? (
-                            <span className="text-sm text-[#17171c]/40">
-                              &gt;
-                            </span>
-                          ) : null}
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
-              </div>
-            ))
+            renderedItems
           )}
         </section>
       </main>

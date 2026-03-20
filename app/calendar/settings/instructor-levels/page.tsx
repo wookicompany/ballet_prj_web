@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
@@ -33,20 +33,8 @@ type SavedInstructorLevel = {
   level: string;
 };
 
-export default function SavedInstructorLevelsPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
-  const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedInstructorLevel[]>([]);
-  const [listLoading, setListLoading] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ instructor: "", level: "" });
-  const [deleteTarget, setDeleteTarget] =
-    useState<SavedInstructorLevel | null>(null);
-
-  const renderListSkeleton = () => (
+function InstructorLevelListSkeleton() {
+  return (
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, index) => (
         <div
@@ -62,6 +50,20 @@ export default function SavedInstructorLevelsPage() {
       ))}
     </div>
   );
+}
+
+export default function SavedInstructorLevelsPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
+  const [items, setItems] = useState<SavedInstructorLevel[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ instructor: "", level: "" });
+  const [deleteTarget, setDeleteTarget] =
+    useState<SavedInstructorLevel | null>(null);
 
   const resetForm = () => {
     setForm({ instructor: "", level: "" });
@@ -103,11 +105,11 @@ export default function SavedInstructorLevelsPage() {
     setSheetOpen(true);
   };
 
-  const handleOpenEdit = (item: SavedInstructorLevel) => {
+  const handleOpenEdit = useCallback((item: SavedInstructorLevel) => {
     setEditingId(item.id);
     setForm({ instructor: item.instructor, level: item.level });
     setSheetOpen(true);
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -175,6 +177,52 @@ export default function SavedInstructorLevelsPage() {
     setDeleteTarget(null);
   };
 
+  const renderedItems = useMemo(
+    () =>
+      items.map((item) => (
+        <div
+          key={item.id}
+          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm font-medium text-[#17171c]">
+                <UserRound className="h-4 w-4 text-[#17171c]/50" />
+                {item.instructor}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-[#17171c]/60">
+                <Layers className="h-3.5 w-3.5" />
+                {item.level}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#17171c]/70"
+                onClick={() => handleOpenEdit(item)}
+                aria-label="강사님 & 레벨 수정"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#17171c]/70"
+                onClick={() => setDeleteTarget(item)}
+                aria-label="강사님 & 레벨 삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )),
+    [items, handleOpenEdit]
+  );
+
   if (!loading && !user) {
     return (
       <MobileContainer>
@@ -224,7 +272,7 @@ export default function SavedInstructorLevelsPage() {
 
         <section className="space-y-3">
           {loading || listLoading ? (
-            renderListSkeleton()
+            <InstructorLevelListSkeleton />
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
@@ -232,47 +280,7 @@ export default function SavedInstructorLevelsPage() {
               </p>
             </div>
           ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-black/5 bg-white px-4 py-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm font-medium text-[#17171c]">
-                      <UserRound className="h-4 w-4 text-[#17171c]/50" />
-                      {item.instructor}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-[#17171c]/60">
-                      <Layers className="h-3.5 w-3.5" />
-                      {item.level}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#17171c]/70"
-                      onClick={() => handleOpenEdit(item)}
-                      aria-label="강사님 & 레벨 수정"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#17171c]/70"
-                      onClick={() => setDeleteTarget(item)}
-                      aria-label="강사님 & 레벨 삭제"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
+            renderedItems
           )}
         </section>
       </main>
