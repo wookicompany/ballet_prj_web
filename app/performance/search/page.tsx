@@ -51,14 +51,14 @@ type SectionConfig = {
 
 const SECTION_CONFIG: Record<string, SectionConfig> = {
   popular: {
-    title: "지금 가장 반응이 많은 공연이에요",
+    title: "지금 가장 반응이 많은 공연을 모아봤어요",
   },
   scheduled: {
-    title: "곧 만날 수 있는 공연을 모았어요",
+    title: "곧 만날 수 있는 공연을 모아봤어요",
     prfstate: "공연예정",
   },
   awards: {
-    title: "수상작 공연만 모아봤어요",
+    title: "수상작 공연을 모아봤어요",
   },
   ongoing: {
     title: "지금 바로 관람할 수 있어요",
@@ -69,7 +69,7 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     prfstate: "공연완료",
   },
   visit: {
-    title: "해외 팀이 참여한 공연만 모아봤어요",
+    title: "해외 팀이 참여한 공연을 모아봤어요",
     detailFlag: "visit",
   },
   child: {

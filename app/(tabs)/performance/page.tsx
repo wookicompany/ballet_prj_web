@@ -527,7 +527,7 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    지금 가장 반응이 많은 공연이에요
+                    지금 가장 반응이 많은 공연을 모아봤어요
                   </h2>
                 </div>
                 <Button
@@ -556,7 +556,7 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    곧 만날 수 있는 공연을 모았어요
+                    곧 만날 수 있는 공연을 모아봤어요
                   </h2>
                 </div>
                 <Button
@@ -587,7 +587,7 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    해외 팀이 참여한 공연만 모아봤어요
+                    해외 팀이 참여한 공연을 모아봤어요
                   </h2>
                 </div>
                 <Button
@@ -647,7 +647,7 @@ export default function PerformanceListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">
-                    수상작 공연만 모아봤어요
+                    수상작 공연을 모아봤어요
                   </h2>
                 </div>
                 <Button
