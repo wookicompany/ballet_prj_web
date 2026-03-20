@@ -27,6 +27,8 @@ export default function ProfileMenuPage() {
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchNoticeReadStatus = async () => {
       if (loading) return;
       if (!user) {
@@ -40,21 +42,29 @@ export default function ProfileMenuPage() {
         return;
       }
 
-      const response = await fetch("/api/notices/read-status", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      if (!response.ok) {
-        setHasUnreadNotices(false);
-        return;
-      }
+      try {
+        const response = await fetch("/api/notices/read-status", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setHasUnreadNotices(false);
+          return;
+        }
 
-      const payload = (await response.json()) as { has_unread?: boolean };
-      setHasUnreadNotices(payload.has_unread === true);
+        const payload = (await response.json()) as { has_unread?: boolean };
+        setHasUnreadNotices(payload.has_unread === true);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        setHasUnreadNotices(false);
+      }
     };
 
     void fetchNoticeReadStatus();
+
+    return () => controller.abort();
   }, [user, loading, openLoginSheet]);
 
   if (loading) {
