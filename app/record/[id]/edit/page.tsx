@@ -149,6 +149,7 @@ type FormState = {
   center_order: string;
   did_well: string;
   improve_next: string;
+  memo: string;
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
@@ -364,6 +365,7 @@ export default function RecordEditPage() {
     center_order: "",
     did_well: "",
     improve_next: "",
+    memo: "",
     workout_activity_label: null,
     workout_source_name: null,
     workout_device_name: null,
@@ -575,7 +577,7 @@ export default function RecordEditPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -605,6 +607,7 @@ export default function RecordEditPage() {
           center_order: data.center_order ?? "",
           did_well: data.did_well ?? "",
           improve_next: data.improve_next ?? "",
+          memo: data.memo ?? "",
           workout_activity_label: data.workout_activity_label ?? null,
           workout_source_name: data.workout_source_name ?? null,
           workout_device_name: data.workout_device_name ?? null,
@@ -1290,6 +1293,19 @@ export default function RecordEditPage() {
                     ...prev,
                     improve_next: event.target.value,
                   }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-[#17171c]/60">
+                오늘의 발레를 자유롭게 기록해보세요!
+              </Label>
+              <Textarea
+                className="mt-2 min-h-[120px] text-base"
+                rows={3}
+                value={form.memo}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, memo: event.target.value }))
                 }
               />
             </div>

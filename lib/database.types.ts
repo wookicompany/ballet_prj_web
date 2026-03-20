@@ -975,20 +975,18 @@ export type Database = {
         Row: {
           bar_order: string | null
           center_order: string | null
-          class_review: string | null
           content: string
           created_at: string
           deleted_at: string | null
           did_well: string | null
           end_time: string
-          feedback: string | null
           id: string
           improve_next: string | null
           instructor: string | null
           level: string | null
           location: string | null
+          memo: string | null
           mood: number | null
-          new_learned: string | null
           record_date: string
           start_time: string
           workout_activity_label: string | null
@@ -1004,20 +1002,18 @@ export type Database = {
         Insert: {
           bar_order?: string | null
           center_order?: string | null
-          class_review?: string | null
           content: string
           created_at?: string
           deleted_at?: string | null
           did_well?: string | null
           end_time: string
-          feedback?: string | null
           id?: string
           improve_next?: string | null
           instructor?: string | null
           level?: string | null
           location?: string | null
+          memo?: string | null
           mood?: number | null
-          new_learned?: string | null
           record_date: string
           start_time: string
           workout_activity_label?: string | null
@@ -1033,20 +1029,18 @@ export type Database = {
         Update: {
           bar_order?: string | null
           center_order?: string | null
-          class_review?: string | null
           content?: string
           created_at?: string
           deleted_at?: string | null
           did_well?: string | null
           end_time?: string
-          feedback?: string | null
           id?: string
           improve_next?: string | null
           instructor?: string | null
           level?: string | null
           location?: string | null
+          memo?: string | null
           mood?: number | null
-          new_learned?: string | null
           record_date?: string
           start_time?: string
           workout_activity_label?: string | null

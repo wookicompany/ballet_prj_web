@@ -18,6 +18,7 @@ const pickRecordPayload = (body: Record<string, unknown>) => ({
   center_order: typeof body.center_order === "string" ? body.center_order : "",
   did_well: typeof body.did_well === "string" ? body.did_well : "",
   improve_next: typeof body.improve_next === "string" ? body.improve_next : "",
+  memo: typeof body.memo === "string" ? body.memo : "",
   workout_activity_label:
     typeof body.workout_activity_label === "string"
       ? body.workout_activity_label

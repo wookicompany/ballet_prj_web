@@ -124,6 +124,7 @@ type FormState = {
   center_order: string;
   did_well: string;
   improve_next: string;
+  memo: string;
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
@@ -289,6 +290,7 @@ function RecordNewContent() {
     center_order: "",
     did_well: "",
     improve_next: "",
+    memo: "",
     workout_activity_label: null,
     workout_source_name: null,
     workout_device_name: null,
@@ -1157,6 +1159,19 @@ function RecordNewContent() {
                     ...prev,
                     improve_next: event.target.value,
                   }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-[#17171c]/60">
+                오늘의 발레를 자유롭게 기록해보세요!
+              </Label>
+              <Textarea
+                className="mt-2 min-h-[120px] text-base"
+                rows={3}
+                value={form.memo}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, memo: event.target.value }))
                 }
               />
             </div>

@@ -46,6 +46,7 @@ type RecordDetail = {
   center_order: string | null;
   did_well: string | null;
   improve_next: string | null;
+  memo: string | null;
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
@@ -162,7 +163,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -254,7 +255,7 @@ export default function RecordDetailPage() {
     : locationAddress;
   const hasCard2 =
     !!record.mood || !!record.content || hasWorkoutInfo ||
-    !!record.did_well || !!record.improve_next;
+    !!record.did_well || !!record.improve_next || !!record.memo;
   const hasCard3 = barOrderTags.length > 0 || centerOrderTags.length > 0;
 
   return (
@@ -488,6 +489,16 @@ export default function RecordDetailPage() {
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.improve_next}
+                  </div>
+                </div>
+              ) : null}
+              {record.memo ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    오늘의 발레를 자유롭게 기록해보세요!
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.memo}
                   </div>
                 </div>
               ) : null}
