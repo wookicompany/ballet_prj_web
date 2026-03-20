@@ -24,6 +24,7 @@ import BottomSheet from "@/components/sheets/BottomSheet";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
@@ -146,6 +147,9 @@ export default function PerformanceReviewDetailPage() {
   >({});
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
+  const [deletingComment, setDeletingComment] = useState(false);
+  const [updatingComment, setUpdatingComment] = useState(false);
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
@@ -555,6 +559,7 @@ export default function PerformanceReviewDetailPage() {
     }
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
+    setUpdatingComment(true);
     const response = await fetch(`/api/review-comments/${commentId}`, {
       method: "PATCH",
       headers: {
@@ -564,6 +569,7 @@ export default function PerformanceReviewDetailPage() {
       body: JSON.stringify({ content: trimmed }),
     });
     if (!response.ok) {
+      setUpdatingComment(false);
       toast("댓글을 수정하지 못했어요.");
       return;
     }
@@ -572,6 +578,7 @@ export default function PerformanceReviewDetailPage() {
         comment.id === commentId ? { ...comment, content: trimmed } : comment
       )
     );
+    setUpdatingComment(false);
     setEditingCommentId(null);
     setEditingCommentContent("");
   };
@@ -590,6 +597,7 @@ export default function PerformanceReviewDetailPage() {
     }
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
+    setDeletingComment(true);
     const response = await fetch(
       `/api/review-comments/${deleteCommentId}/delete`,
       {
@@ -600,11 +608,13 @@ export default function PerformanceReviewDetailPage() {
       }
     );
     if (!response.ok) {
+      setDeletingComment(false);
       toast("댓글을 삭제하지 못했어요.");
       return;
     }
     setComments((prev) => prev.filter((comment) => comment.id !== deleteCommentId));
     setCommentCount((prev) => Math.max(0, prev - 1));
+    setDeletingComment(false);
     setDeleteCommentId(null);
   };
 
@@ -775,8 +785,33 @@ export default function PerformanceReviewDetailPage() {
     );
   }
 
+  const handleDeleteReview = async () => {
+    sendHapticToApp();
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    setDeletingReview(true);
+    const response = await fetch(`/api/reviews/${reviewId}/delete`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    if (!response.ok) {
+      setDeletingReview(false);
+      toast("리뷰를 삭제하지 못했어요.");
+      return;
+    }
+    invalidatePerformanceHomeCache();
+    router.replace(`/performance/${performanceId}`);
+  };
+
   return (
     <MobileContainer>
+      {deletingReview ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12">
         <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
           <Button
@@ -1077,14 +1112,16 @@ export default function PerformanceReviewDetailPage() {
                             type="button"
                             variant="outline"
                             className="h-9 flex-1"
+                            disabled={updatingComment}
                             onClick={() => handleUpdateComment(comment.id)}
                           >
-                            저장
+                            {updatingComment ? <Spinner size="sm" /> : "저장"}
                           </Button>
                           <Button
                             type="button"
                             variant="outline"
                             className="h-9 flex-1"
+                            disabled={updatingComment}
                             onClick={() => {
                               setEditingCommentId(null);
                               setEditingCommentContent("");
@@ -1264,27 +1301,7 @@ export default function PerformanceReviewDetailPage() {
             <AlertDialogAction
               variant="outline"
               className="flex-1 text-red-500 hover:text-red-500"
-              onClick={async () => {
-                sendHapticToApp();
-                if (!user) {
-                  openLoginSheet();
-                  return;
-                }
-                const session = await ensureSessionOrLogin(openLoginSheet);
-                if (!session) return;
-                const response = await fetch(`/api/reviews/${reviewId}/delete`, {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                });
-                if (!response.ok) {
-                  toast("리뷰를 삭제하지 못했어요.");
-                  return;
-                }
-                invalidatePerformanceHomeCache();
-                router.replace(`/performance/${performanceId}`);
-              }}
+              onClick={handleDeleteReview}
             >
               삭제할게요
             </AlertDialogAction>
@@ -1310,9 +1327,10 @@ export default function PerformanceReviewDetailPage() {
             <AlertDialogAction
               variant="outline"
               className="flex-1 text-red-500 hover:text-red-500"
+              disabled={deletingComment}
               onClick={handleDeleteComment}
             >
-              삭제할게요
+              {deletingComment ? <Spinner size="sm" /> : "삭제할게요"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -232,6 +233,7 @@ export default function PerformanceDetailPage() {
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
   const [visualApi, setVisualApi] = useState<CarouselApi>();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deletingReview, setDeletingReview] = useState(false);
   const [reportTargetId, setReportTargetId] = useState<string | null>(null);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [reportReason, setReportReason] = useState<ReportReasonCode>("SPAM");
@@ -756,6 +758,7 @@ export default function PerformanceDetailPage() {
     }
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) return;
+    setDeletingReview(true);
     const response = await fetch(`/api/reviews/${deleteTargetId}/delete`, {
       method: "DELETE",
       headers: {
@@ -764,6 +767,7 @@ export default function PerformanceDetailPage() {
     });
 
     if (!response.ok) {
+      setDeletingReview(false);
       toast("리뷰를 삭제하지 못했어요.");
       return;
     }
@@ -796,6 +800,7 @@ export default function PerformanceDetailPage() {
       return next;
     });
     await refreshReviewSummary();
+    setDeletingReview(false);
     setDeleteTargetId(null);
   };
 
@@ -914,6 +919,7 @@ export default function PerformanceDetailPage() {
 
   return (
     <MobileContainer>
+      {deletingReview ? <LoadingOverlay /> : null}
       <main className="pb-12">
         <header
           className={`sticky top-0 z-20 h-12 flex items-center justify-between px-4 transition-colors duration-200 ${
@@ -1688,11 +1694,10 @@ export default function PerformanceDetailPage() {
             <AlertDialogAction
               variant="outline"
               className="flex-1 text-red-500 hover:text-red-500"
-              onClick={async () => {
-                await handleDeleteReview();
-              }}
+              disabled={deletingReview}
+              onClick={handleDeleteReview}
             >
-              삭제할게요
+              {deletingReview ? <Spinner size="sm" /> : "삭제할게요"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

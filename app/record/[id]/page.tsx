@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
-import LoadingOverlay from "@/components/ui/loading-overlay";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
