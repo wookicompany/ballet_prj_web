@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { getAdminToken } from "@/lib/adminUtils";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import {
@@ -66,15 +66,14 @@ export default function AdminLayout({
   const [isAdmin, setIsAdmin] = useState(false);
 
   const checkAdmin = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-    if (!session?.access_token) {
+    const token = await getAdminToken();
+    if (!token) {
       setAdminChecked(true);
       setIsAdmin(false);
       return;
     }
     const res = await fetch("/api/admin/me", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setIsAdmin(true);

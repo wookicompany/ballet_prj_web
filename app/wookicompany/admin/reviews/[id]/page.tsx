@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { REPORT_REASON_OPTIONS } from "@/lib/reports";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
@@ -42,22 +43,8 @@ export default function AdminReviewDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatDateTime = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
   const fetchDetail = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -86,13 +73,18 @@ export default function AdminReviewDetailPage() {
   }, [fetchDetail]);
 
   const handleDelete = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/reviews/${id}/delete`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) router.replace("/wookicompany/admin/reviews");
+      if (res.ok) {
+        router.replace("/wookicompany/admin/reviews");
+      } else {
+        toast.error("리뷰 삭제에 실패했습니다.");
+      }
+    } catch {
+      toast.error("리뷰 삭제 중 오류가 발생했습니다.");
     } finally {
       setDeleting(false);
     }
@@ -212,7 +204,7 @@ export default function AdminReviewDetailPage() {
             </div>
             <div className="rounded-md border p-3 lg:col-span-2">
               <p className="text-xs text-muted-foreground">작성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(review.created_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(review.created_at)}</p>
             </div>
             <div className="rounded-md border p-3 lg:col-span-3">
               <p className="text-xs text-muted-foreground">작성자 ID</p>
@@ -237,7 +229,7 @@ export default function AdminReviewDetailPage() {
                   <li key={r.id} className="rounded-lg border p-3 text-sm">
                     <div className="flex justify-between text-muted-foreground">
                       <span>{r.reporter_nickname ?? r.reporter_user_id}</span>
-                      <span>{formatDateTime(r.created_at)}</span>
+                      <span>{formatAdminDateTime(r.created_at)}</span>
                     </div>
                     <p className="mt-1 font-medium">{reasonLabel(r.reason_code)}</p>
                     {r.reason_detail ? (

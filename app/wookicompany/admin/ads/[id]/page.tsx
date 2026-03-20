@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { AD_PLACEMENTS, AdPlacement } from "@/lib/ads";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,20 +75,6 @@ export default function AdminAdDetailPage() {
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatDateTime = useCallback((value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  }, []);
-
   const canSubmit = useMemo(
     () =>
       AD_PLACEMENTS.includes(placement) && !submitting,
@@ -101,8 +87,7 @@ export default function AdminAdDetailPage() {
   }, []);
 
   const fetchDetail = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -140,7 +125,7 @@ export default function AdminAdDetailPage() {
       setError("필수 입력값을 확인해 주세요.");
       return;
     }
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요해요.");
       return;
@@ -349,16 +334,16 @@ export default function AdminAdDetailPage() {
             <div className="rounded-md border p-3 lg:col-span-2">
               <p className="text-xs text-muted-foreground">노출 기간 (KST)</p>
               <p className="mt-1 font-medium">
-                {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
+                {formatAdminDateTime(ad.start_at)} ~ {formatAdminDateTime(ad.end_at)}
               </p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">생성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(ad.created_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(ad.created_at)}</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">수정일</p>
-              <p className="mt-1 font-medium">{formatDateTime(ad.updated_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(ad.updated_at)}</p>
             </div>
           </div>
 
@@ -416,7 +401,7 @@ export default function AdminAdDetailPage() {
               <div>
                 <dt className="text-muted-foreground">노출 시작/종료 (KST)</dt>
                 <dd>
-                  {formatDateTime(ad.start_at)} ~ {formatDateTime(ad.end_at)}
+                  {formatAdminDateTime(ad.start_at)} ~ {formatAdminDateTime(ad.end_at)}
                 </dd>
               </div>
               <div>

@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -52,24 +53,10 @@ export default function AdminNoticeDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatDateTime = (value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
   const canSave = !!editTitle.trim() && !!editContent.trim() && !submitting;
 
   const fetchDetail = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -105,7 +92,7 @@ export default function AdminNoticeDetailPage() {
   }, [fetchDetail]);
 
   const handleSave = useCallback(async () => {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getAdminToken();
     if (!token || !notice) return;
     if (!editTitle.trim() || !editContent.trim()) {
       setError("제목과 내용을 입력해 주세요.");
@@ -147,7 +134,7 @@ export default function AdminNoticeDetailPage() {
   }, [id, notice, editTitle, editContent, editIsPublished]);
 
   const handleDelete = useCallback(async () => {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getAdminToken();
     if (!token) return;
     setDeleting(true);
     try {
@@ -305,15 +292,15 @@ export default function AdminNoticeDetailPage() {
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">게시일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.published_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(notice.published_at)}</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">생성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.created_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(notice.created_at)}</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">수정일</p>
-              <p className="mt-1 font-medium">{formatDateTime(notice.updated_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(notice.updated_at)}</p>
             </div>
           </div>
 
@@ -342,13 +329,13 @@ export default function AdminNoticeDetailPage() {
                     {CONTENT_MAX_LENGTH.toLocaleString("ko-KR")}
                   </span>
                 </div>
-                <textarea
+                <Textarea
                   id="edit-content"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={12}
                   maxLength={CONTENT_MAX_LENGTH}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[260px]"
+                  className="min-h-[260px]"
                 />
               </div>
               <div className="flex items-center space-x-2">

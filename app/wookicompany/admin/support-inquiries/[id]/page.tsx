@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,23 +27,8 @@ export default function AdminSupportInquiryDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const formatDateTime = (value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
   const fetchDetail = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -153,7 +138,7 @@ export default function AdminSupportInquiryDetailPage() {
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">접수일</p>
-              <p className="mt-1 font-medium">{formatDateTime(inquiry.created_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(inquiry.created_at)}</p>
             </div>
             <div className="rounded-md border p-3 lg:col-span-2">
               <p className="text-xs text-muted-foreground">답변 이메일</p>

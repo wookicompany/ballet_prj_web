@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,23 +48,8 @@ export default function AdminNoticesPage() {
     "all"
   );
 
-  const formatDateTime = useCallback((value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  }, []);
-
   const fetchNotices = useCallback(async (pageOffset: number) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -230,10 +215,10 @@ export default function AdminNoticesPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatDateTime(n.published_at)}
+                          {formatAdminDateTime(n.published_at)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatDateTime(n.created_at)}
+                          {formatAdminDateTime(n.created_at)}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>

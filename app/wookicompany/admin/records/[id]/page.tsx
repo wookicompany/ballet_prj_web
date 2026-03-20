@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 type RecordDetail = {
@@ -94,18 +95,6 @@ export default function AdminRecordDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const formatDateLabel = (value: string) => value.replaceAll("-", ".");
-  const formatDateTime = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
   const formatTime = (value: string) => value.slice(0, 5);
   const formatLocation = (value: string | null) => {
     const parsed = parseLocationValue(value);
@@ -120,8 +109,7 @@ export default function AdminRecordDetailPage() {
       : "미입력";
 
   const fetchDetail = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -152,8 +140,7 @@ export default function AdminRecordDetailPage() {
   }, [fetchDetail]);
 
   const handleDelete = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) return;
     setDeleting(true);
     try {
@@ -163,7 +150,11 @@ export default function AdminRecordDetailPage() {
       });
       if (res.ok) {
         router.replace("/wookicompany/admin/records");
+      } else {
+        toast.error("기록 삭제에 실패했습니다.");
       }
+    } catch {
+      toast.error("기록 삭제 중 오류가 발생했습니다.");
     } finally {
       setDeleting(false);
     }
@@ -288,7 +279,7 @@ export default function AdminRecordDetailPage() {
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">작성일</p>
-              <p className="mt-1 font-medium">{formatDateTime(record.created_at)}</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(record.created_at)}</p>
             </div>
           </div>
 
@@ -355,7 +346,7 @@ export default function AdminRecordDetailPage() {
                   <li key={m.id} className="rounded-md border p-3 text-sm">
                     <p className="mb-1 text-xs text-muted-foreground">
                       {m.media_type === "image" ? "이미지" : "미디어"} ·{" "}
-                      {formatDateTime(m.created_at)}
+                      {formatAdminDateTime(m.created_at)}
                     </p>
                     <a
                       href={m.url}

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -32,8 +33,7 @@ export default function AdminNoticeNewPage() {
       setError("제목과 내용을 입력해 주세요.");
       return;
     }
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       return;
@@ -138,7 +138,7 @@ export default function AdminNoticeNewPage() {
                   {content.length.toLocaleString("ko-KR")} / {CONTENT_MAX_LENGTH.toLocaleString("ko-KR")}
                 </span>
               </div>
-              <textarea
+              <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -146,7 +146,7 @@ export default function AdminNoticeNewPage() {
                 maxLength={CONTENT_MAX_LENGTH}
                 required
                 rows={12}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[260px]"
+                className="min-h-[260px]"
               />
               <p className="text-xs text-muted-foreground">
                 줄바꿈을 포함한 원문 그대로 사용자에게 표시됩니다.

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 
-import { supabase } from "@/lib/supabaseClient";
+import { getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -17,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { AD_PLACEMENTS } from "@/lib/ads";
 
 type AdRow = {
@@ -40,8 +41,7 @@ export default function AdminAdsPage() {
   }, []);
 
   const fetchAds = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
       setLoading(false);
@@ -83,8 +83,7 @@ export default function AdminAdsPage() {
 
   const handleToggle = useCallback(
     async (ad: AdRow, nextActive: boolean) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const token = await getAdminToken();
       if (!token) {
         setError("로그인이 필요합니다.");
         return;
@@ -106,14 +105,16 @@ export default function AdminAdsPage() {
           setError(payload.message ?? "상태 변경에 실패했습니다.");
           return;
         }
-        await fetchAds();
+        setAds((prev) =>
+          prev.map((a) => (a.id === ad.id ? { ...a, is_active: nextActive } : a))
+        );
       } catch {
         setError("상태 변경 중 오류가 발생했습니다.");
       } finally {
         setUpdatingPlacement(null);
       }
     },
-    [fetchAds]
+    []
   );
 
   return (
@@ -130,6 +131,12 @@ export default function AdminAdsPage() {
             >
               <RefreshCw className="mr-1.5 size-4" />
               새로고침
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/wookicompany/admin/ads/new">
+                <Plus className="mr-1.5 size-4" />
+                새 광고
+              </Link>
             </Button>
           </div>
         }

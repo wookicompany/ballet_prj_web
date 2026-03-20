@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -70,22 +70,8 @@ export default function AdminReviewsPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
-  const formatDateTime = useCallback((value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  }, []);
-
   const fetchReviews = useCallback(async (offset: number) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setReviewsError("로그인이 필요합니다.");
       setReviewsLoading(false);
@@ -113,8 +99,7 @@ export default function AdminReviewsPage() {
   }, []);
 
   const fetchComments = useCallback(async (offset: number) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setCommentsError("로그인이 필요합니다.");
       setCommentsLoading(false);
@@ -309,7 +294,7 @@ export default function AdminReviewsPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {formatDateTime(r.created_at)}
+                              {formatAdminDateTime(r.created_at)}
                             </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" asChild>
@@ -434,7 +419,7 @@ export default function AdminReviewsPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {formatDateTime(c.created_at)}
+                              {formatAdminDateTime(c.created_at)}
                             </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" asChild>

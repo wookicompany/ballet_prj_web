@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { supabase } from "@/lib/supabaseClient";
+import { getAdminToken } from "@/lib/adminUtils";
 import { AD_PLACEMENTS, AdPlacement } from "@/lib/ads";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,7 @@ export default function AdminAdNewPage() {
       setError("필수 입력값을 확인해 주세요.");
       return;
     }
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요해요.");
       return;

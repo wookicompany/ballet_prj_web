@@ -32,10 +32,10 @@ export const GET = async (request: Request) => {
   const userIds = (rows ?? []).map((r) => r.id);
   const [recordCountsRes, reviewCountsRes] = await Promise.all([
     userIds.length > 0
-      ? result.supabaseAdmin.from("records").select("user_id").is("deleted_at", null)
+      ? result.supabaseAdmin.from("records").select("user_id").is("deleted_at", null).in("user_id", userIds)
       : { data: [] as { user_id: string }[] },
     userIds.length > 0
-      ? result.supabaseAdmin.from("performance_reviews").select("user_id").is("deleted_at", null)
+      ? result.supabaseAdmin.from("performance_reviews").select("user_id").is("deleted_at", null).in("user_id", userIds)
       : { data: [] as { user_id: string }[] },
   ]);
 
