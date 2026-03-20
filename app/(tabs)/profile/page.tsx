@@ -117,6 +117,8 @@ export default function ProfilePage() {
   const cardSentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const requestedRecordPagesRef = useRef<Set<number>>(new Set());
+  const loadingReviewsRef = useRef(loadingReviews);
+  const loadingRecordsRef = useRef(loadingRecords);
 
   useEffect(() => {
     const fetchNoticeReadStatus = async () => {
@@ -150,58 +152,59 @@ export default function ProfilePage() {
     void fetchNoticeReadStatus();
   }, [user, pathname, loading, openLoginSheet]);
 
+  // fetchProfile + fetchReviewOrder + fetchRecordOrder를 1개 effect로 통합
+  // React 렌더 사이클 지연 2회 제거
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (loading) return;
-      if (pathname !== "/profile") return;
+    const fetchAll = async () => {
+      if (loading || pathname !== "/profile") return;
       if (!user) {
         openLoginSheet();
         return;
       }
+
       setProfileLoading(true);
       setReviewSectionLoading(true);
       setRecordSectionLoading(true);
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,nickname,avatar_url,ballet_started_at")
-        .eq("id", user.id)
-        .single();
+      // Step 1: user_id만 필요한 쿼리 3개 병렬 실행
+      const [profileRes, recordStatsRes, reviewCountRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,nickname,avatar_url,ballet_started_at")
+          .eq("id", user.id)
+          .single(),
+        supabase
+          .from("records")
+          .select("start_time,end_time")
+          .eq("user_id", user.id)
+          .is("deleted_at", null),
+        supabase
+          .from("performance_reviews")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .is("deleted_at", null),
+      ]);
 
-      if (!data) {
+      if (!profileRes.data) {
         await supabase.from("profiles").insert({ id: user.id });
-        setProfile({
-          id: user.id,
-          nickname: null,
-          avatar_url: null,
-          ballet_started_at: null,
-        });
+        setProfile({ id: user.id, nickname: null, avatar_url: null, ballet_started_at: null });
       } else {
-        setProfile(data as Profile);
+        setProfile(profileRes.data as Profile);
       }
 
-      const { data: recordRows } = await supabase
-        .from("records")
-        .select("start_time,end_time")
-        .eq("user_id", user.id)
-        .is("deleted_at", null);
+      const recordStatsLocal = recordStatsRes.data ?? [];
+      setRecordCount(recordStatsLocal.length);
+      setTotalMinutes(
+        recordStatsLocal.reduce(
+          (sum, record) => sum + (toMinutes(record.end_time) - toMinutes(record.start_time)),
+          0
+        )
+      );
 
-      if (recordRows) {
-        setRecordCount(recordRows.length);
-        const minutes = recordRows.reduce((sum, record) => {
-          return sum + (toMinutes(record.end_time) - toMinutes(record.start_time));
-        }, 0);
-        setTotalMinutes(minutes);
-      }
+      const reviewCountLocal = reviewCountRes.count ?? 0;
+      setReviewCount(reviewCountLocal);
 
-      const { count } = await supabase
-        .from("performance_reviews")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("deleted_at", null);
-      const nextCount = count ?? 0;
-      setReviewCount(nextCount);
-
+      // 페이지네이션 상태 초기화
       setReviews([]);
       setReviewLikeCounts({});
       setReviewCommentCounts({});
@@ -213,43 +216,65 @@ export default function ProfilePage() {
       setReviewOrderReady(false);
       setRecordOrderReady(false);
       setShowMoreRecords(false);
-      setRecordPage(0);
-      if ((recordRows?.length ?? 0) === 0) {
+      setShowMoreReviews(false);
+      setRecordPage(recordStatsLocal.length === 0 ? 0 : 1);
+      setReviewPage(reviewCountLocal === 0 ? 0 : 1);
+      requestedPagesRef.current = new Set();
+      requestedRecordPagesRef.current = new Set();
+
+      if (recordStatsLocal.length === 0) {
         setHasMoreRecords(false);
         setRecordOrderReady(true);
         setRecordSectionLoading(false);
       } else {
         setHasMoreRecords(true);
-        setRecordPage(1);
       }
-      if (nextCount === 0) {
+      if (reviewCountLocal === 0) {
         setHasMoreReviews(false);
-        setShowMoreReviews(false);
-        setReviewPage(0);
         setReviewOrderReady(true);
         setReviewSectionLoading(false);
       } else {
         setHasMoreReviews(true);
-        setShowMoreReviews(false);
-        setReviewPage(1);
       }
-      requestedPagesRef.current = new Set();
-      requestedRecordPagesRef.current = new Set();
+
       setProfileLoading(false);
-    };
 
-    fetchProfile();
-  }, [user, pathname, loading, openLoginSheet]);
+      // Step 2: 리뷰 순서 + 기록 순서 병렬 조회 (React 사이클 없이 직접 실행)
+      const [reviewOrderRes, recordOrderRes] = await Promise.all([
+        reviewCountLocal > 0
+          ? supabase
+              .from("performance_reviews")
+              .select("id,created_at")
+              .eq("user_id", user.id)
+              .is("deleted_at", null)
+          : Promise.resolve({ data: [] as Array<{ id: string; created_at: string }>, error: null }),
+        recordStatsLocal.length > 0
+          ? supabase
+              .from("records")
+              .select("id,record_date,created_at")
+              .eq("user_id", user.id)
+              .is("deleted_at", null)
+              .order("record_date", { ascending: false })
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [] as Array<{ id: string }>, error: null }),
+      ]);
 
-  useEffect(() => {
-    const fetchReviewOrder = async () => {
-      if (pathname !== "/profile") return;
-      if (!user) return;
-      if (profileLoading) return;
-      const userId = user?.id;
-      if (!userId) return;
+      // 기록 순서 처리
+      const recordOrderRows = (recordOrderRes.data ?? []) as Array<{ id: string }>;
+      if (recordOrderRes.error || recordOrderRows.length === 0) {
+        setOrderedRecordIds([]);
+        setHasMoreRecords(false);
+        setRecordOrderReady(true);
+        setRecordSectionLoading(false);
+      } else {
+        setOrderedRecordIds(recordOrderRows.map((row) => row.id));
+        setHasMoreRecords(true);
+        setRecordOrderReady(true);
+      }
 
-      if (reviewCount === 0) {
+      // 리뷰 순서 처리
+      const reviewOrderRows = (reviewOrderRes.data ?? []) as Array<{ id: string; created_at: string }>;
+      if (reviewOrderRes.error || reviewOrderRows.length === 0) {
         setOrderedReviewIds([]);
         setHasMoreReviews(false);
         setReviewOrderReady(true);
@@ -257,33 +282,8 @@ export default function ProfilePage() {
         return;
       }
 
-      setReviewOrderReady(false);
-      setReviewSectionLoading(true);
-
-      const { data: reviewRows, error: reviewError } = await supabase
-        .from("performance_reviews")
-        .select("id,created_at")
-        .eq("user_id", userId)
-        .is("deleted_at", null);
-
-      if (reviewError) {
-        setOrderedReviewIds([]);
-        setHasMoreReviews(false);
-        setReviewOrderReady(true);
-        setReviewSectionLoading(false);
-        return;
-      }
-
-      const rows = (reviewRows ?? []) as Array<{ id: string; created_at: string }>;
-      if (rows.length === 0) {
-        setOrderedReviewIds([]);
-        setHasMoreReviews(false);
-        setReviewOrderReady(true);
-        setReviewSectionLoading(false);
-        return;
-      }
-
-      const reviewIds = rows.map((row) => row.id);
+      // Step 3: 리뷰 정렬용 좋아요+댓글 수 (reviewIds에 의존)
+      const reviewIds = reviewOrderRows.map((row) => row.id);
       const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
         supabase
           .from("performance_review_likes")
@@ -299,21 +299,16 @@ export default function ProfilePage() {
 
       const likeCountByReviewId: Record<string, number> = {};
       (likeRows ?? []).forEach((row) => {
-        likeCountByReviewId[row.review_id] =
-          (likeCountByReviewId[row.review_id] ?? 0) + 1;
+        likeCountByReviewId[row.review_id] = (likeCountByReviewId[row.review_id] ?? 0) + 1;
       });
-
       const commentCountByReviewId: Record<string, number> = {};
       (commentRows ?? []).forEach((row) => {
-        commentCountByReviewId[row.review_id] =
-          (commentCountByReviewId[row.review_id] ?? 0) + 1;
+        commentCountByReviewId[row.review_id] = (commentCountByReviewId[row.review_id] ?? 0) + 1;
       });
 
-      const sorted = [...rows].sort((a, b) => {
-        const scoreA =
-          (likeCountByReviewId[a.id] ?? 0) + (commentCountByReviewId[a.id] ?? 0);
-        const scoreB =
-          (likeCountByReviewId[b.id] ?? 0) + (commentCountByReviewId[b.id] ?? 0);
+      const sorted = [...reviewOrderRows].sort((a, b) => {
+        const scoreA = (likeCountByReviewId[a.id] ?? 0) + (commentCountByReviewId[a.id] ?? 0);
+        const scoreB = (likeCountByReviewId[b.id] ?? 0) + (commentCountByReviewId[b.id] ?? 0);
         if (scoreA !== scoreB) return scoreB - scoreA;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -323,89 +318,26 @@ export default function ProfilePage() {
       setReviewOrderReady(true);
     };
 
-    fetchReviewOrder();
-  }, [user, pathname, reviewCount, profileLoading]);
+    fetchAll();
+  }, [user, loading, pathname, openLoginSheet]);
+
+  useEffect(() => { loadingReviewsRef.current = loadingReviews; }, [loadingReviews]);
+  useEffect(() => { loadingRecordsRef.current = loadingRecords; }, [loadingRecords]);
 
   useEffect(() => {
-    const fetchRecordOrder = async () => {
-      if (pathname !== "/profile") return;
-      if (!user) return;
-      if (profileLoading) return;
-      const userId = user?.id;
-      if (!userId) return;
+    if (!cardSentinelRef.current || (!hasMoreReviews && !hasMoreRecords)) return;
 
-      if (recordCount === 0) {
-        setOrderedRecordIds([]);
-        setHasMoreRecords(false);
-        setRecordOrderReady(true);
-        setRecordSectionLoading(false);
-        return;
-      }
-
-      setRecordOrderReady(false);
-      setRecordSectionLoading(true);
-
-      const { data: recordRows, error: recordError } = await supabase
-        .from("records")
-        .select("id,record_date,created_at")
-        .eq("user_id", userId)
-        .is("deleted_at", null)
-        .order("record_date", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (recordError) {
-        setOrderedRecordIds([]);
-        setHasMoreRecords(false);
-        setRecordOrderReady(true);
-        setRecordSectionLoading(false);
-        return;
-      }
-
-      const rows = (recordRows ?? []) as Array<{ id: string }>;
-      if (rows.length === 0) {
-        setOrderedRecordIds([]);
-        setHasMoreRecords(false);
-        setRecordOrderReady(true);
-        setRecordSectionLoading(false);
-        return;
-      }
-
-      setOrderedRecordIds(rows.map((row) => row.id));
-      setHasMoreRecords(true);
-      setRecordOrderReady(true);
-    };
-
-    fetchRecordOrder();
-  }, [user, pathname, recordCount, profileLoading]);
-
-  useEffect(() => {
-    if (!cardSentinelRef.current) return;
-    if (activeTab === "reviews") {
-      if (!showMoreReviews || loadingReviews || !hasMoreReviews) return;
-    } else if (!showMoreRecords || loadingRecords || !hasMoreRecords) {
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) {
-        if (activeTab === "reviews") {
-          setReviewPage((prev) => prev + 1);
-        } else {
-          setRecordPage((prev) => prev + 1);
-        }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      if (activeTab === "reviews" && showMoreReviews && !loadingReviewsRef.current) {
+        setReviewPage((prev) => prev + 1);
+      } else if (activeTab !== "reviews" && showMoreRecords && !loadingRecordsRef.current) {
+        setRecordPage((prev) => prev + 1);
       }
     });
     observer.observe(cardSentinelRef.current);
     return () => observer.disconnect();
-  }, [
-    activeTab,
-    showMoreReviews,
-    loadingReviews,
-    hasMoreReviews,
-    showMoreRecords,
-    loadingRecords,
-    hasMoreRecords,
-  ]);
+  }, [activeTab, showMoreReviews, hasMoreReviews, showMoreRecords, hasMoreRecords]);
 
   useEffect(() => {
     const fetchReviewsPage = async () => {
@@ -465,19 +397,40 @@ export default function ProfilePage() {
           setHasMoreReviews(false);
         }
 
+        const reviewIds = nextRows.map((row) => row.id);
         const performanceIds = Array.from(
           new Set(nextRows.map((row) => row.performance_id))
         );
-        const { data: performanceRows } = await supabase
-          .from("kopis_performances")
-          .select("mt20id,prfnm,poster")
-          .in("mt20id", performanceIds);
+
+        // Step 2: kopis_performances + likes + comments + images 4개 병렬
+        const [performanceRes, likeRes, commentRes, imageRes] = await Promise.all([
+          supabase
+            .from("kopis_performances")
+            .select("mt20id,prfnm,poster")
+            .in("mt20id", performanceIds),
+          supabase
+            .from("performance_review_likes")
+            .select("review_id")
+            .in("review_id", reviewIds)
+            .is("deleted_at", null),
+          supabase
+            .from("performance_review_comments")
+            .select("review_id")
+            .in("review_id", reviewIds)
+            .is("deleted_at", null),
+          supabase
+            .from("performance_review_images")
+            .select("review_id,url")
+            .in("review_id", reviewIds)
+            .eq("user_id", userId)
+            .is("deleted_at", null),
+        ]);
 
         const performanceMap = new Map<
           string,
           { name: string | null; poster: string | null }
         >();
-        (performanceRows ?? []).forEach((row) => {
+        (performanceRes.data ?? []).forEach((row) => {
           performanceMap.set(row.mt20id, { name: row.prfnm, poster: row.poster });
         });
 
@@ -496,51 +449,29 @@ export default function ProfilePage() {
           return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
         });
 
-        const reviewIds = nextRows.map((row) => row.id);
-        if (reviewIds.length > 0) {
-          const [likeRes, commentRes, imageRes] = await Promise.all([
-            supabase
-              .from("performance_review_likes")
-              .select("review_id")
-              .in("review_id", reviewIds)
-              .is("deleted_at", null),
-            supabase
-              .from("performance_review_comments")
-              .select("review_id")
-              .in("review_id", reviewIds)
-              .is("deleted_at", null),
-            supabase
-              .from("performance_review_images")
-              .select("review_id,url")
-              .in("review_id", reviewIds)
-              .eq("user_id", userId)
-              .is("deleted_at", null),
-          ]);
+        const nextLikeCounts: Record<string, number> = {};
+        (likeRes.data ?? []).forEach((row) => {
+          nextLikeCounts[row.review_id] =
+            (nextLikeCounts[row.review_id] ?? 0) + 1;
+        });
+        setReviewLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
 
-          const nextLikeCounts: Record<string, number> = {};
-          (likeRes.data ?? []).forEach((row) => {
-            nextLikeCounts[row.review_id] =
-              (nextLikeCounts[row.review_id] ?? 0) + 1;
-          });
-          setReviewLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
+        const nextCommentCounts: Record<string, number> = {};
+        (commentRes.data ?? []).forEach((row) => {
+          nextCommentCounts[row.review_id] =
+            (nextCommentCounts[row.review_id] ?? 0) + 1;
+        });
+        setReviewCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
 
-          const nextCommentCounts: Record<string, number> = {};
-          (commentRes.data ?? []).forEach((row) => {
-            nextCommentCounts[row.review_id] =
-              (nextCommentCounts[row.review_id] ?? 0) + 1;
-          });
-          setReviewCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
-
-          const nextImages: Record<string, string[]> = {};
-          (imageRes.data ?? []).forEach((row) => {
-            nextImages[row.review_id] = [
-              ...(nextImages[row.review_id] ?? []),
-              row.url,
-            ];
-          });
-          if (Object.keys(nextImages).length > 0) {
-            setReviewImages((prev) => ({ ...prev, ...nextImages }));
-          }
+        const nextImages: Record<string, string[]> = {};
+        (imageRes.data ?? []).forEach((row) => {
+          nextImages[row.review_id] = [
+            ...(nextImages[row.review_id] ?? []),
+            row.url,
+          ];
+        });
+        if (Object.keys(nextImages).length > 0) {
+          setReviewImages((prev) => ({ ...prev, ...nextImages }));
         }
       } finally {
         setLoadingReviews(false);
@@ -580,12 +511,21 @@ export default function ProfilePage() {
         const userId = user?.id;
         if (!userId) return;
 
-        const { data: recordRows, error } = await supabase
-          .from("records")
-          .select("id,record_date,start_time,end_time,content,mood,created_at")
-          .in("id", pageRecordIds)
-          .eq("user_id", userId)
-          .is("deleted_at", null);
+        // records + record_media 병렬 조회
+        const [{ data: recordRows, error }, { data: mediaRows }] = await Promise.all([
+          supabase
+            .from("records")
+            .select("id,record_date,start_time,end_time,content,mood,created_at")
+            .in("id", pageRecordIds)
+            .eq("user_id", userId)
+            .is("deleted_at", null),
+          supabase
+            .from("record_media")
+            .select("record_id,url,created_at")
+            .in("record_id", pageRecordIds)
+            .is("deleted_at", null)
+            .order("created_at", { ascending: true }),
+        ]);
 
         if (error) {
           return;
@@ -636,12 +576,6 @@ export default function ProfilePage() {
           const existing = new Set(prev.map((row) => row.id));
           return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
         });
-        const { data: mediaRows } = await supabase
-          .from("record_media")
-          .select("record_id,url,created_at")
-          .in("record_id", pageRecordIds)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: true });
         const nextMediaById: Record<string, { urls: string[]; count: number }> = {};
         (mediaRows ?? []).forEach((row) => {
           if (!nextMediaById[row.record_id]) {

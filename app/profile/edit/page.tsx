@@ -68,7 +68,7 @@ export default function ProfileEditPage() {
     };
 
     fetchProfile();
-  }, [user, loading, openLoginSheet]);
+  }, [user, loading]);
 
   const handleSave = async () => {
     if (!user || loading) return;
