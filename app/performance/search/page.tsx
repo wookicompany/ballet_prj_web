@@ -51,7 +51,7 @@ type SectionConfig = {
 
 const SECTION_CONFIG: Record<string, SectionConfig> = {
   popular: {
-    title: "지금 가장 반응이 많은 공연을 모아봤어요",
+    title: "가장 반응이 많은 공연을 모아봤어요",
   },
   scheduled: {
     title: "곧 만날 수 있는 공연을 모아봤어요",
@@ -61,7 +61,7 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     title: "수상작 공연을 모아봤어요",
   },
   ongoing: {
-    title: "지금 바로 관람할 수 있어요",
+    title: "지금 바로 관람할 수 있는 공연을 모아봤어요",
     prfstate: "공연중",
   },
   completed: {
@@ -347,10 +347,17 @@ function PerformanceSearchContent() {
       }
 
       const fetched = (data as PerformanceItem[]) ?? [];
+      const STATE_ORDER: Record<string, number> = { "공연중": 0, "공연예정": 1, "공연완료": 2 };
       const ordered = useOrderedSlice && sliceIds
-        ? fetched.sort(
-            (a, b) => sliceIds.indexOf(a.mt20id) - sliceIds.indexOf(b.mt20id)
-          )
+        ? sectionKey === "visit"
+          ? fetched.sort((a, b) => {
+              const stateDiff = (STATE_ORDER[a.prfstate ?? ""] ?? 3) - (STATE_ORDER[b.prfstate ?? ""] ?? 3);
+              if (stateDiff !== 0) return stateDiff;
+              return (a.prfpdfrom ?? "").localeCompare(b.prfpdfrom ?? "");
+            })
+          : fetched.sort(
+              (a, b) => sliceIds.indexOf(a.mt20id) - sliceIds.indexOf(b.mt20id)
+            )
         : fetched;
 
       setItems((prev) => {
