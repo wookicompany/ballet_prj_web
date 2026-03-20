@@ -1200,7 +1200,7 @@ export default function PerformanceDetailPage() {
                                   <span className="text-[#17171c]/70">
                                     {relatesItems.map((r, i) => (
                                       <span key={i}>
-                                        {i > 0 && ", "}
+                                        {i > 0 && <span className="mx-1 text-[#17171c]/30">|</span>}
                                         {r.relateurl ? (
                                           <a
                                             href={r.relateurl}
