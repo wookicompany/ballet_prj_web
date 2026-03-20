@@ -430,7 +430,7 @@ export default function CalendarPage() {
                     {cell.day ?? ""}
                   </span>
                 </div>
-                <div className="flex flex-1 items-center justify-center overflow-visible pt-1 min-h-[52px]">
+                <div className="flex h-[52px] shrink-0 items-center justify-center overflow-visible pt-1">
                   {moodValue ? (
                     <div className="relative h-full w-full overflow-visible">
                       <AnimatedImage
