@@ -71,6 +71,98 @@
 - 환경변수는 `.env.local`에만 관리한다.
 - `.env.local`은 절대 커밋하지 않는다.
 
+## 성능 최적화
+
+### 데이터 패칭
+
+- 서로 의존하지 않는 DB 호출은 반드시 `Promise.all`로 병렬화한다. 순차 `await`는 의존 관계가 있는 경우에만 사용한다.
+
+  ```typescript
+  // 나쁜 예 — 순차 워터폴
+  const a = await supabase.from("table_a").select("...");
+  const b = await supabase.from("table_b").select("...");
+
+  // 좋은 예 — 병렬
+  const [a, b] = await Promise.all([
+    supabase.from("table_a").select("..."),
+    supabase.from("table_b").select("..."),
+  ]);
+  ```
+
+- 연관 테이블 데이터(예: `record_media`)는 별도 쿼리 대신 Supabase 중첩 select 1쿼리로 처리한다.
+
+  ```typescript
+  supabase.from("records").select("id, ..., record_media(id, url, deleted_at)")
+  ```
+
+- 중첩 select로 가져온 연관 데이터에 `deleted_at`이 있는 경우, 클라이언트에서 반드시 `.filter((m) => !m.deleted_at)`로 후처리한다.
+
+  ```typescript
+  const activeMedia = (data.record_media ?? []).filter((m) => !m.deleted_at);
+  ```
+
+- 같은 트리거(`user`, `id` 등)로 시작하는 복수 `useEffect`는 하나의 함수로 통합하고 `Promise.all`로 병렬 실행한다. React 렌더 사이클 낭비를 줄인다.
+
+### React 훅
+
+- 콜백 함수는 `useCallback`으로 감싸 불필요한 자식 리렌더와 `useEffect` 재실행을 방지한다.
+- 렌더마다 재계산되는 배열/객체(카드 목록, 필터 결과 등)는 `useMemo`로 메모이제이션한다.
+- `IntersectionObserver` 콜백 내에서 참조하는 `loading` 상태는 observer deps에 넣지 않고 `useRef`로 동기화해 observer 재생성을 방지한다.
+
+  ```typescript
+  const loadingRef = useRef(loading);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !loadingRef.current) fetchMore();
+    });
+    // deps에 loading 없음
+  }, [hasMore]);
+  ```
+
+- 앱 초기화 시 `AuthProvider`의 `onAuthStateChange`에서 `INITIAL_SESSION` 이벤트는 `getSession()`과 중복이므로 early return 처리한다.
+
+  ```typescript
+  supabase.auth.onAuthStateChange((event, nextSession) => {
+    if (event === "INITIAL_SESSION") return;
+    setSession(nextSession ?? null);
+  });
+  ```
+
+### 낙관적 업데이트 (Optimistic UI)
+
+- CUD 완료 후 목록을 서버에서 재조회(`fetchItems()`)하지 않고, 로컬 state를 직접 업데이트한다. 불필요한 네트워크 왕복을 없애고 즉각적인 UI 반응을 제공한다.
+
+  ```typescript
+  // Create
+  setItems((prev) => [newItem, ...prev]);
+  // Update
+  setItems((prev) => prev.map((i) => (i.id === editingId ? updatedItem : i)));
+  // Delete
+  setItems((prev) => prev.filter((i) => i.id !== targetId));
+  ```
+
+### 화면 전환
+
+- 뒤로가기 이동은 `router.push(이전경로)` 대신 `router.back()`을 사용한다. 히스토리를 올바르게 유지하고 불필요한 페이지 마운트를 피한다.
+- 같은 레벨의 탐색(날짜 이동, 탭 전환 등)은 `router.push` 대신 `router.replace`를 사용해 히스토리 스택이 쌓이지 않게 한다.
+
+### DB 인덱스
+
+- WHERE 조건에 자주 쓰이는 컬럼(`user_id`, `deleted_at`, `review_id` 등)은 인덱스 존재 여부를 사전에 확인하고, 없으면 Supabase MCP `apply_migration`으로 추가한다.
+- 새 테이블 생성 시 `user_id`를 기준으로 조회하는 쿼리가 있다면 인덱스를 함께 추가한다.
+- 반복 조회하는 상태 데이터(예: 동의 여부)는 `useRef` 캐시로 중복 API 호출을 방지한다.
+
+  ```typescript
+  const consentCacheRef = useRef<boolean | null>(null);
+  if (consentCacheRef.current === true) return true; // 캐시 히트
+  const ok = await fetchConsentStatus();
+  consentCacheRef.current = ok;
+  ```
+
+---
+
 ## 검증
 
 - UI 변경 후에는 `npm run dev`로 최소 렌더링 확인을 한다.

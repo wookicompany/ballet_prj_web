@@ -16,6 +16,7 @@
 - 라우트 네이밍 (현재 구현)
   - `/`: 루트 페이지
   - `/auth/callback`: 소셜 로그인 콜백 처리
+  - `/auth/kakao/logout/callback`: 카카오 로그아웃 콜백 처리
   - `/calendar`: 월 캘린더 탭
   - `/day/[date]`: 일별 타임라인
   - `/record/new`: 기록 작성
@@ -24,6 +25,8 @@
   - `/profile`: 프로필 탭
   - `/profile/edit`: 프로필 편집
   - `/profile/menu`: 프로필 설정 메뉴
+  - `/profile/account`: 로그아웃/회원탈퇴
+  - `/profile/account/info`: 계정 정보
   - `/profile/data-management`: 데이터 관리
   - `/support`: 고객지원
   - `/notice`: 공지사항 목록
@@ -87,7 +90,7 @@
 
 ### 인증/로그인
 
-- 로그인 제공자: 카카오 + 구글
+- 로그인 제공자: 카카오 + 애플
 - 세션 유지: Supabase Auth 기본 세션 사용
 - 로그인 성공 후 이동: `/calendar`
 
