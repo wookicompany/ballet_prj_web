@@ -1170,6 +1170,11 @@ export default function PerformanceDetailPage() {
                         );
                       }
 
+                      const relatesItems = (detail.relates ?? []).filter(
+                        (r): r is { relatenm?: string | null; relateurl?: string | null } =>
+                          typeof r === "object" && r !== null,
+                      );
+
                       return (
                         <Table>
                           <TableBody className="text-[#17171c]/70 text-xs">
@@ -1186,6 +1191,34 @@ export default function PerformanceDetailPage() {
                               </TableCell>
                             </TableRow>
                           ))}
+                            {relatesItems.length > 0 && (
+                              <TableRow className="border-black/5 hover:bg-transparent">
+                                <TableCell className="text-[#17171c]/50 py-2.5 align-top">
+                                  예매처
+                                </TableCell>
+                                <TableCell className="whitespace-normal break-words py-2.5">
+                                  <span className="text-[#17171c]/70">
+                                    {relatesItems.map((r, i) => (
+                                      <span key={i}>
+                                        {i > 0 && ", "}
+                                        {r.relateurl ? (
+                                          <a
+                                            href={r.relateurl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline underline-offset-2"
+                                          >
+                                            {r.relatenm || r.relateurl}
+                                          </a>
+                                        ) : (
+                                          <span>{r.relatenm}</span>
+                                        )}
+                                      </span>
+                                    ))}
+                                  </span>
+                                </TableCell>
+                              </TableRow>
+                            )}
                           </TableBody>
                         </Table>
                       );
