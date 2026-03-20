@@ -170,7 +170,7 @@ export default function AdminAdDetailPage() {
   ]);
 
   const handleDelete = useCallback(async () => {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getAdminToken();
     if (!token) return;
     setDeleting(true);
     try {

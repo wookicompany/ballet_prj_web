@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trash2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 const TITLE_MAX_LENGTH = 120;
@@ -144,7 +145,11 @@ export default function AdminNoticeDetailPage() {
       });
       if (res.ok) {
         router.replace("/wookicompany/admin/notices");
+      } else {
+        toast.error("공지 삭제에 실패했습니다.");
       }
+    } catch {
+      toast.error("공지 삭제 중 오류가 발생했습니다.");
     } finally {
       setDeleting(false);
     }
