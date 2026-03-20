@@ -87,7 +87,7 @@ export default function ProfilePage() {
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [recordMediaById, setRecordMediaById] = useState<
-    Record<string, { url: string; count: number }>
+    Record<string, { urls: string[]; count: number }>
   >({});
   const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(
     {}
@@ -642,13 +642,16 @@ export default function ProfilePage() {
           .in("record_id", pageRecordIds)
           .is("deleted_at", null)
           .order("created_at", { ascending: true });
-        const nextMediaById: Record<string, { url: string; count: number }> = {};
+        const nextMediaById: Record<string, { urls: string[]; count: number }> = {};
         (mediaRows ?? []).forEach((row) => {
           if (!nextMediaById[row.record_id]) {
-            nextMediaById[row.record_id] = { url: row.url, count: 1 };
+            nextMediaById[row.record_id] = { urls: [row.url], count: 1 };
             return;
           }
           nextMediaById[row.record_id].count += 1;
+          if (nextMediaById[row.record_id].urls.length < 3) {
+            nextMediaById[row.record_id].urls.push(row.url);
+          }
         });
         if (Object.keys(nextMediaById).length > 0) {
           setRecordMediaById((prev) => ({ ...prev, ...nextMediaById }));
@@ -908,27 +911,33 @@ export default function ProfilePage() {
                       <p className="mt-1 text-xs text-[#17171c]/60">
                         {formatRecordTimeRange(record.startTime, record.endTime)}
                       </p>
-                    </div>
-                    {recordMediaById[record.id] ? (
-                      <div className="relative h-14 w-14 shrink-0 overflow-visible">
-                        <div className="h-full w-full overflow-hidden rounded-lg border border-black/5 bg-white">
-                          <AnimatedImage
-                            src={recordMediaById[record.id].url}
-                            alt="기록 미디어"
-                            width={1600}
-                            height={1600}
-                            unoptimized
-                            draggable={false}
-                            className="h-full w-full object-cover"
-                          />
+                      {recordMediaById[record.id] ? (
+                        <div className="mt-2 flex gap-1.5">
+                          {recordMediaById[record.id].urls.map((url, idx) => {
+                            const isLast = idx === recordMediaById[record.id].urls.length - 1;
+                            const remaining = recordMediaById[record.id].count - recordMediaById[record.id].urls.length;
+                            return (
+                              <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-black/5">
+                                <AnimatedImage
+                                  src={url}
+                                  alt="기록 미디어"
+                                  width={1600}
+                                  height={1600}
+                                  unoptimized
+                                  draggable={false}
+                                  className="h-full w-full object-cover"
+                                />
+                                {isLast && remaining > 0 ? (
+                                  <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
+                                    <span className="text-sm font-medium text-white">+{remaining}</span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
                         </div>
-                        {recordMediaById[record.id].count > 1 ? (
-                          <span className="absolute -right-1.5 -top-1.5 rounded-full bg-black/80 px-1.5 py-0.5 text-xs text-white shadow-sm">
-                            {recordMediaById[record.id].count}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </div>
                   </button>
                 ))}
                 {!showMoreRecords && recordCount > RECORD_PAGE_SIZE_INITIAL ? (
@@ -961,16 +970,17 @@ export default function ProfilePage() {
               {Array.from({ length: 1 }).map((_, index) => (
                 <div
                   key={`profile-review-loading-skeleton-${index}`}
-                  className="flex items-start gap-3 rounded-lg border border-black/5 bg-white p-3"
+                  className="flex flex-col gap-3 rounded-lg border border-black/5 bg-white p-3"
                 >
-                  <Skeleton className="h-20 w-14 shrink-0 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-4/5" />
-                    <Skeleton className="h-3 w-2/3" />
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="h-20 w-14 shrink-0 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-4/5" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
                   </div>
-                  <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
                 </div>
               ))}
             </div>
@@ -984,7 +994,7 @@ export default function ProfilePage() {
                 <button
                   key={review.id}
                   type="button"
-                  className="flex w-full items-start gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                  className="flex w-full flex-col rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
                   onClick={() => {
                     sendHapticToApp();
                     router.push(
@@ -993,85 +1003,95 @@ export default function ProfilePage() {
                   }}
                   aria-label="리뷰 상세 보기"
                 >
-                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5">
-                    {review.performancePoster ? (
-                      <AnimatedImage
-                        src={review.performancePoster}
-                        alt={`${review.performanceName ?? "공연"} 포스터`}
-                        width={1600}
-                        height={1600}
-                        unoptimized
-                        draggable={false}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
-                        이미지 없음
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }, (_, index) => {
-                        const ratio = getStarFillRatio(review.rating, index + 1);
-                        return (
-                          <div
-                            key={`${review.id}-star-${index}`}
-                            className="relative h-4 w-4"
-                          >
-                            <Star className="h-4 w-4 text-brand" fill="none" />
-                            <div
-                              className="absolute inset-0 overflow-hidden"
-                              style={{ width: `${ratio * 100}%` }}
-                            >
-                              <Star
-                                className="h-4 w-4 text-brand"
-                                fill="currentColor"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {review.content ? (
-                      <p className="mt-2 line-clamp-1 text-sm text-[#17171c]/70">
-                        {review.content}
-                      </p>
-                    ) : null}
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-4 text-xs text-[#17171c]">
-                        <span className="inline-flex items-center gap-1">
-                          <Heart className="h-4 w-4 text-[#17171c]" />
-                          {reviewLikeCounts[review.id] ?? 0}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <MessageCircle className="h-4 w-4 text-[#17171c]" />
-                          {reviewCommentCounts[review.id] ?? 0}
-                        </span>
-                      </div>
-                      <div className="whitespace-nowrap text-xs text-[#17171c]/50">
-                        {formatReviewDate(review.createdAt)}
-                      </div>
-                    </div>
-                    {reviewImages[review.id]?.length ? (
-                      <div className="mt-2 relative h-14 w-14 overflow-hidden rounded-lg border border-black/5 bg-white">
+                  <div className="flex w-full items-start gap-3">
+                    <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5">
+                      {review.performancePoster ? (
                         <AnimatedImage
-                          src={reviewImages[review.id][0]}
-                          alt="리뷰 이미지"
+                          src={review.performancePoster}
+                          alt={`${review.performanceName ?? "공연"} 포스터`}
                           width={1600}
                           height={1600}
                           unoptimized
                           draggable={false}
-                          className="h-full w-full object-contain"
+                          className="h-full w-full object-cover"
                         />
-                        {reviewImages[review.id].length > 1 ? (
-                          <span className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-xs text-white">
-                            {reviewImages[review.id].length}
-                          </span>
-                        ) : null}
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-[#17171c]/50">
+                          이미지 없음
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const ratio = getStarFillRatio(review.rating, index + 1);
+                          return (
+                            <div
+                              key={`${review.id}-star-${index}`}
+                              className="relative h-4 w-4"
+                            >
+                              <Star className="h-4 w-4 text-brand" fill="none" />
+                              <div
+                                className="absolute inset-0 overflow-hidden"
+                                style={{ width: `${ratio * 100}%` }}
+                              >
+                                <Star
+                                  className="h-4 w-4 text-brand"
+                                  fill="currentColor"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : null}
+                      {review.content ? (
+                        <p className="mt-2 line-clamp-1 text-sm text-[#17171c]/70">
+                          {review.content}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-4 text-xs text-[#17171c]">
+                          <span className="inline-flex items-center gap-1">
+                            <Heart className="h-4 w-4 text-[#17171c]" />
+                            {reviewLikeCounts[review.id] ?? 0}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <MessageCircle className="h-4 w-4 text-[#17171c]" />
+                            {reviewCommentCounts[review.id] ?? 0}
+                          </span>
+                        </div>
+                        <div className="whitespace-nowrap text-xs text-[#17171c]/50">
+                          {formatReviewDate(review.createdAt)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  {reviewImages[review.id]?.length ? (
+                    <div className="mt-2 flex gap-1.5">
+                      {reviewImages[review.id].slice(0, 3).map((url, idx) => {
+                        const isLast = idx === Math.min(reviewImages[review.id].length, 3) - 1;
+                        const remaining = reviewImages[review.id].length - 3;
+                        return (
+                          <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-black/5">
+                            <AnimatedImage
+                              src={url}
+                              alt="리뷰 이미지"
+                              width={1600}
+                              height={1600}
+                              unoptimized
+                              draggable={false}
+                              className="h-full w-full object-cover"
+                            />
+                            {isLast && remaining > 0 ? (
+                              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
+                                <span className="text-sm font-medium text-white">+{remaining}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </button>
               ))}
               {!showMoreReviews && reviewCount > REVIEW_PAGE_SIZE_INITIAL ? (
