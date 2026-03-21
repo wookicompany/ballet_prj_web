@@ -138,7 +138,7 @@ export default function PerformanceListPage() {
         const engagementList = (engagementRows ?? []) as EngagementSummary[];
         const engagementScores = engagementList.map((item) => ({
           id: item.performance_id,
-          score: item.view_count * 1 + item.review_count * 5 + item.comment_count * 3,
+          score: item.view_count * 1 + item.review_count * 10 + item.comment_count * 5,
         }));
         const activeEngagement = engagementScores.filter((item) => item.score > 0);
         const nextPopularIds = activeEngagement.length
