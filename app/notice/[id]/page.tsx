@@ -34,11 +34,6 @@ const formatPublishedDate = (value: string | null) => {
   }).format(date);
 };
 
-const toParagraphs = (content: string) =>
-  content
-    .split(/\n+/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
 
 export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
   const router = useRouter();
@@ -160,12 +155,10 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
                 {formatPublishedDate(item.published_at)}
               </p>
             </header>
-            <div className="space-y-4">
-              {toParagraphs(item.content).map((paragraph) => (
-                <p key={paragraph} className="whitespace-pre-wrap text-sm text-[#17171c]/80">
-                  {paragraph}
-                </p>
-              ))}
+            <div>
+              <p className="whitespace-pre-wrap text-sm text-[#17171c]/80">
+                {item.content}
+              </p>
             </div>
           </article>
         ) : null}
