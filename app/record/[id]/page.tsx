@@ -430,6 +430,36 @@ export default function RecordDetailPage() {
                   </div>
                 </div>
               ) : null}
+              {record.did_well ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    오늘 잘했던 점을 남겨보세요.
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.did_well}
+                  </div>
+                </div>
+              ) : null}
+              {record.improve_next ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    다음에는 무엇을 더 신경 쓰면 좋을까요?
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.improve_next}
+                  </div>
+                </div>
+              ) : null}
+              {record.memo ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    더 남기고 싶은 이야기가 있다면 적어보세요.
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.memo}
+                  </div>
+                </div>
+              ) : null}
               {hasWorkoutInfo ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -469,36 +499,6 @@ export default function RecordDetailPage() {
                         ? "-"
                         : `${record.workout_max_bpm} BPM`}
                     </div>
-                  </div>
-                </div>
-              ) : null}
-              {record.did_well ? (
-                <div>
-                  <Label className="text-sm text-[#17171c]/60">
-                    오늘 잘했던 점을 남겨보세요.
-                  </Label>
-                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
-                    {record.did_well}
-                  </div>
-                </div>
-              ) : null}
-              {record.improve_next ? (
-                <div>
-                  <Label className="text-sm text-[#17171c]/60">
-                    다음에는 무엇을 더 신경 쓰면 좋을까요?
-                  </Label>
-                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
-                    {record.improve_next}
-                  </div>
-                </div>
-              ) : null}
-              {record.memo ? (
-                <div>
-                  <Label className="text-sm text-[#17171c]/60">
-                    더 남기고 싶은 이야기가 있다면 적어보세요.
-                  </Label>
-                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
-                    {record.memo}
                   </div>
                 </div>
               ) : null}
