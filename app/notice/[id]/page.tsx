@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
 import { ChevronLeft } from "lucide-react";
 
@@ -58,13 +58,14 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
   useEffect(() => {
     if (!noticeId) return;
 
-    let isMounted = true;
+    const controller = new AbortController();
     const loadNotice = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await fetch(`/api/notices/${noticeId}`, {
           cache: "no-store",
+          signal: controller.signal,
         });
         if (response.status === 404) {
           setError("공지사항을 찾을 수 없어요.");
@@ -76,7 +77,6 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
         }
 
         const payload = (await response.json()) as { item?: NoticeDetail };
-        if (!isMounted) return;
 
         if (!payload.item) {
           setError("공지사항을 찾을 수 없어요.");
@@ -84,17 +84,17 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
           return;
         }
         setItem(payload.item);
-      } catch {
-        if (!isMounted) return;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         setError("공지사항을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
     void loadNotice();
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [noticeId]);
 
@@ -136,8 +136,16 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
         </header>
 
         {loading ? (
-          <div className="flex min-h-[160px] items-center justify-center">
-            <Spinner size="lg" />
+          <div className="space-y-4 rounded-xl border border-black/5 bg-white p-4">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
           </div>
         ) : null}
 

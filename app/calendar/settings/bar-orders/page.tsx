@@ -45,7 +45,7 @@ type SavedBarOrder = {
 function BarOrderListSkeleton() {
   return (
     <div className="space-y-3">
-      {Array.from({ length: 1 }).map((_, index) => (
+      {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={`bar-order-skeleton-${index}`}
           className="rounded-xl border border-black/5 bg-white px-4 py-4"
