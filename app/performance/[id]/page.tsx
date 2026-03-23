@@ -52,6 +52,7 @@ import { ensureSessionOrLogin } from "@/lib/authSession";
 import {
   ChevronLeft,
   Copy,
+  ExternalLink,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -1193,29 +1194,33 @@ export default function PerformanceDetailPage() {
                           ))}
                             {relatesItems.length > 0 && (
                               <TableRow className="border-black/5 hover:bg-transparent">
-                                <TableCell className="text-[#17171c]/50 py-2.5 align-top">
+                                <TableCell className="text-[#17171c]/50 py-2.5 align-middle">
                                   예매처
                                 </TableCell>
-                                <TableCell className="whitespace-normal break-words py-2.5">
-                                  <span className="text-[#17171c]/70">
-                                    {relatesItems.map((r, i) => (
-                                      <span key={i}>
-                                        {i > 0 && <span className="mx-1 text-[#17171c]/30">|</span>}
-                                        {r.relateurl ? (
-                                          <a
-                                            href={r.relateurl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="underline underline-offset-2"
-                                          >
-                                            {r.relatenm || r.relateurl}
-                                          </a>
-                                        ) : (
-                                          <span>{r.relatenm}</span>
-                                        )}
-                                      </span>
-                                    ))}
-                                  </span>
+                                <TableCell className="py-2.5">
+                                  <div className="flex flex-wrap gap-2">
+                                    {relatesItems.map((r, i) =>
+                                      r.relateurl ? (
+                                        <a
+                                          key={i}
+                                          href={r.relateurl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-xs text-[#17171c]/70"
+                                        >
+                                          {r.relatenm || r.relateurl}
+                                          <ExternalLink className="size-3 text-[#17171c]/40" />
+                                        </a>
+                                      ) : (
+                                        <span
+                                          key={i}
+                                          className="inline-flex items-center rounded-full border border-black/10 px-3 py-1 text-xs text-[#17171c]/50"
+                                        >
+                                          {r.relatenm}
+                                        </span>
+                                      ),
+                                    )}
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             )}
