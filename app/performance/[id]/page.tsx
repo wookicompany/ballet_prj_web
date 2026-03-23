@@ -39,7 +39,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import ImageViewer from "@/components/ui/image-viewer";
-import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import { openUrlInApp, sendHapticToApp } from "@/lib/reactNativeWebView";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import {
@@ -1201,16 +1201,23 @@ export default function PerformanceDetailPage() {
                                   <div className="flex flex-wrap gap-2">
                                     {relatesItems.map((r, i) =>
                                       r.relateurl ? (
-                                        <a
+                                        <button
                                           key={i}
-                                          href={r.relateurl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
+                                          type="button"
+                                          onClick={() => {
+                                            fetch(`/api/performances/${performanceId}/booking-click`, {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ relatenm: r.relatenm, relateurl: r.relateurl }),
+                                            }).catch(() => {});
+                                            const opened = openUrlInApp(r.relateurl!, detail.prfnm ?? undefined);
+                                            if (!opened) window.open(r.relateurl!, "_blank", "noopener,noreferrer");
+                                          }}
                                           className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-xs text-[#17171c]/70"
                                         >
                                           {r.relatenm || r.relateurl}
                                           <ExternalLink className="size-3 text-[#17171c]/40" />
-                                        </a>
+                                        </button>
                                       ) : (
                                         <span
                                           key={i}

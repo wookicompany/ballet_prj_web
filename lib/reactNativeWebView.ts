@@ -35,6 +35,15 @@ export function sendAuthTokenToApp(accessToken: string): void {
   );
 }
 
+/** WebView일 때만 앱에 URL 열기 요청 전달. 브라우저에서는 false 반환 */
+export function openUrlInApp(url: string, title?: string): boolean {
+  if (!isInReactNativeWebView()) return false;
+  window.ReactNativeWebView?.postMessage(
+    JSON.stringify({ type: "open_url", url, title })
+  );
+  return true;
+}
+
 /** WebView일 때만 앱에 로그아웃 이벤트 전달. 브라우저에서는 no-op */
 export function sendLogoutToApp(): void {
   if (typeof window === "undefined") return;
