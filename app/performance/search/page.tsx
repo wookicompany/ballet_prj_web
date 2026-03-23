@@ -60,10 +60,6 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
   awards: {
     title: "수상작 공연을 모아봤어요",
   },
-  ongoing: {
-    title: "지금 바로 관람할 수 있는 공연을 모아봤어요",
-    prfstate: "공연중",
-  },
   completed: {
     title: "막을 내린 공연을 모아봤어요",
     prfstate: "공연완료",

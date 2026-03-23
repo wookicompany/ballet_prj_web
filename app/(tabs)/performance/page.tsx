@@ -46,7 +46,6 @@ type EngagementSummary = {
 type SectionBuckets = {
   popular: PerformanceItem[];
   scheduled: PerformanceItem[];
-  ongoing: PerformanceItem[];
   awards: PerformanceItem[];
   completed: PerformanceItem[];
   visit: PerformanceItem[];
@@ -61,7 +60,6 @@ type PerformanceHomePayload = {
 const EMPTY_SECTIONS: SectionBuckets = {
   popular: [],
   scheduled: [],
-  ongoing: [],
   awards: [],
   completed: [],
   visit: [],
@@ -179,15 +177,6 @@ export default function PerformanceListPage() {
           .order("prfpdfrom", { ascending: true })
           .limit(12);
 
-        const ongoingQuery = supabase
-          .from("kopis_performances")
-          .select(baseSelect)
-          .is("deleted_at", null)
-          .eq("is_active", true)
-          .eq("prfstate", "공연중")
-          .order("prfpdto", { ascending: true })
-          .limit(12);
-
         const completedQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
@@ -242,11 +231,10 @@ export default function PerformanceListPage() {
               .in("mt20id", awardIds)
           : null;
 
-        const [popularRes, scheduledRes, ongoingRes, completedRes, awardsRes, visitRes] =
+        const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
           await Promise.all([
             popularQuery,
             scheduledQuery,
-            ongoingQuery,
             completedQuery,
             awardsQuery ?? Promise.resolve({ data: [] }),
             visitQuery ?? Promise.resolve({ data: [] }),
@@ -255,7 +243,6 @@ export default function PerformanceListPage() {
         if (
           popularRes.error ||
           scheduledRes.error ||
-          ongoingRes.error ||
           completedRes.error ||
           awardIdsRes.error ||
           visitIdsRes.error ||
@@ -292,7 +279,6 @@ export default function PerformanceListPage() {
           sections: {
             popular: orderedPopular,
             scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
-            ongoing: (ongoingRes.data ?? []) as PerformanceItem[],
             awards: orderedAwards,
             completed: (completedRes.data ?? []) as PerformanceItem[],
             visit: orderedVisit,
@@ -408,11 +394,6 @@ export default function PerformanceListPage() {
     [sections.scheduled, ratingMap, renderCard]
   );
 
-  const ongoingCards = useMemo(
-    () => sections.ongoing.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
-    [sections.ongoing, ratingMap, renderCard]
-  );
-
   const completedCards = useMemo(
     () => sections.completed.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
     [sections.completed, ratingMap, renderCard]
@@ -494,7 +475,6 @@ export default function PerformanceListPage() {
 
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
-            {renderSectionSkeleton("ongoing")}
             {renderSectionSkeleton("scheduled")}
             {renderSectionSkeleton("completed")}
             {renderSectionSkeleton("visit")}
@@ -567,31 +547,6 @@ export default function PerformanceListPage() {
                 </div>
                 <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                   {popularCards}
-                </div>
-              </section>
-            )}
-
-            {ongoingCards.length > 0 && (
-              <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold">
-                      지금 바로 관람할 수 있는 공연을 모아봤어요
-                    </h2>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-[#17171c]/50"
-                    onClick={() => router.push("/performance/search?section=ongoing")}
-                    aria-label="공연중 더보기"
-                  >
-                    <ChevronRight className="size-5" />
-                  </Button>
-                </div>
-                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                  {ongoingCards}
                 </div>
               </section>
             )}
