@@ -957,7 +957,7 @@ export default function RecordEditPage() {
       }
     }
 
-    router.replace(`/record/${params.id}`);
+    router.back();
   };
 
   const mediaItems = useMemo(() => {
