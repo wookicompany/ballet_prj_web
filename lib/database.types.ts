@@ -227,6 +227,75 @@ export type Database = {
         }
         Relationships: []
       }
+      kopis_performance_awards: {
+        Row: {
+          awards: string | null
+          awards_raw: string | null
+          created_at: string
+          deleted_at: string | null
+          fcltynm: string | null
+          genrenm: string | null
+          id: string
+          is_active: boolean
+          mt20id: string
+          poster: string | null
+          prfnm: string | null
+          prfpdfrom: string | null
+          prfpdto: string | null
+          prfstate: string | null
+          updated_at: string
+        }
+        Insert: {
+          awards?: string | null
+          awards_raw?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          id?: string
+          is_active?: boolean
+          mt20id: string
+          poster?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Update: {
+          awards?: string | null
+          awards_raw?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fcltynm?: string | null
+          genrenm?: string | null
+          id?: string
+          is_active?: boolean
+          mt20id?: string
+          poster?: string | null
+          prfnm?: string | null
+          prfpdfrom?: string | null
+          prfpdto?: string | null
+          prfstate?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
+            columns: ["mt20id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
+        ]
+      }
       kopis_performance_details: {
         Row: {
           area: string | null
@@ -359,75 +428,6 @@ export type Database = {
           },
         ]
       }
-      kopis_performance_awards: {
-        Row: {
-          awards: string | null
-          awards_raw: string | null
-          created_at: string
-          deleted_at: string | null
-          fcltynm: string | null
-          genrenm: string | null
-          id: string
-          is_active: boolean
-          mt20id: string
-          poster: string | null
-          prfnm: string | null
-          prfpdfrom: string | null
-          prfpdto: string | null
-          prfstate: string | null
-          updated_at: string
-        }
-        Insert: {
-          awards?: string | null
-          awards_raw?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          fcltynm?: string | null
-          genrenm?: string | null
-          id?: string
-          is_active?: boolean
-          mt20id: string
-          poster?: string | null
-          prfnm?: string | null
-          prfpdfrom?: string | null
-          prfpdto?: string | null
-          prfstate?: string | null
-          updated_at?: string
-        }
-        Update: {
-          awards?: string | null
-          awards_raw?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          fcltynm?: string | null
-          genrenm?: string | null
-          id?: string
-          is_active?: boolean
-          mt20id?: string
-          poster?: string | null
-          prfnm?: string | null
-          prfpdfrom?: string | null
-          prfpdto?: string | null
-          prfstate?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
-            columns: ["mt20id"]
-            isOneToOne: false
-            referencedRelation: "kopis_performances"
-            referencedColumns: ["mt20id"]
-          },
-          {
-            foreignKeyName: "kopis_performance_awards_mt20id_fkey"
-            columns: ["mt20id"]
-            isOneToOne: false
-            referencedRelation: "performance_engagement_summaries"
-            referencedColumns: ["performance_id"]
-          },
-        ]
-      }
       kopis_performances: {
         Row: {
           area: string | null
@@ -479,36 +479,6 @@ export type Database = {
         }
         Relationships: []
       }
-      notices: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          is_published: boolean
-          published_at: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_published?: boolean
-          published_at?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_published?: boolean
-          published_at?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       notice_reads: {
         Row: {
           created_at: string
@@ -548,20 +518,77 @@ export type Database = {
           },
         ]
       }
+      notices: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_published: boolean
+          published_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      performance_booking_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          performance_id: string
+          relatenm: string | null
+          relateurl: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          performance_id: string
+          relatenm?: string | null
+          relateurl?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          performance_id?: string
+          relatenm?: string | null
+          relateurl?: string | null
+        }
+        Relationships: []
+      }
       performance_review_comment_likes: {
         Row: {
           comment_id: string
           created_at: string
+          deleted_at: string | null
           user_id: string
         }
         Insert: {
           comment_id: string
           created_at?: string
+          deleted_at?: string | null
           user_id: string
         }
         Update: {
           comment_id?: string
           created_at?: string
+          deleted_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -585,6 +612,7 @@ export type Database = {
         Row: {
           comment_id: string
           created_at: string
+          deleted_at: string | null
           id: string
           reason_code: string
           reason_detail: string | null
@@ -593,6 +621,7 @@ export type Database = {
         Insert: {
           comment_id: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           reason_code: string
           reason_detail?: string | null
@@ -601,6 +630,7 @@ export type Database = {
         Update: {
           comment_id?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           reason_code?: string
           reason_detail?: string | null
@@ -671,6 +701,7 @@ export type Database = {
       performance_review_images: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           review_id: string
           url: string
@@ -678,6 +709,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           review_id: string
           url: string
@@ -685,6 +717,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           review_id?: string
           url?: string
@@ -710,16 +743,19 @@ export type Database = {
       performance_review_likes: {
         Row: {
           created_at: string
+          deleted_at: string | null
           review_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           review_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           review_id?: string
           user_id?: string
         }
@@ -743,6 +779,7 @@ export type Database = {
       performance_review_reports: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           reason_code: string
           reason_detail: string | null
@@ -751,6 +788,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           reason_code: string
           reason_detail?: string | null
@@ -759,6 +797,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           reason_code?: string
           reason_detail?: string | null
@@ -989,15 +1028,15 @@ export type Database = {
           mood: number | null
           record_date: string
           start_time: string
-          workout_activity_label: string | null
+          updated_at: string
+          user_id: string
           workout_active_energy_kcal: number | null
+          workout_activity_label: string | null
           workout_avg_bpm: number | null
           workout_device_name: string | null
           workout_max_bpm: number | null
           workout_source_name: string | null
           workout_total_energy_kcal: number | null
-          updated_at: string
-          user_id: string
         }
         Insert: {
           bar_order?: string | null
@@ -1016,15 +1055,15 @@ export type Database = {
           mood?: number | null
           record_date: string
           start_time: string
-          workout_activity_label?: string | null
+          updated_at?: string
+          user_id: string
           workout_active_energy_kcal?: number | null
+          workout_activity_label?: string | null
           workout_avg_bpm?: number | null
           workout_device_name?: string | null
           workout_max_bpm?: number | null
           workout_source_name?: string | null
           workout_total_energy_kcal?: number | null
-          updated_at?: string
-          user_id: string
         }
         Update: {
           bar_order?: string | null
@@ -1043,15 +1082,15 @@ export type Database = {
           mood?: number | null
           record_date?: string
           start_time?: string
-          workout_activity_label?: string | null
+          updated_at?: string
+          user_id?: string
           workout_active_energy_kcal?: number | null
+          workout_activity_label?: string | null
           workout_avg_bpm?: number | null
           workout_device_name?: string | null
           workout_max_bpm?: number | null
           workout_source_name?: string | null
           workout_total_energy_kcal?: number | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -1066,23 +1105,29 @@ export type Database = {
       saved_bar_orders: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
-          order_text: string | null
+          order_text: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
-          order_text?: string | null
+          order_text?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
-          order_text?: string | null
+          order_text?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1098,23 +1143,29 @@ export type Database = {
       saved_center_orders: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
-          order_text: string | null
+          order_text: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
-          order_text?: string | null
+          order_text?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
-          order_text?: string | null
+          order_text?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1130,6 +1181,7 @@ export type Database = {
       saved_instructor_levels: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           instructor: string
           level: string
@@ -1138,6 +1190,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           instructor: string
           level: string
@@ -1146,6 +1199,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           instructor?: string
           level?: string
@@ -1167,6 +1221,7 @@ export type Database = {
           address_base: string | null
           address_detail: string | null
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
           updated_at: string
@@ -1176,6 +1231,7 @@ export type Database = {
           address_base?: string | null
           address_detail?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
           updated_at?: string
@@ -1185,6 +1241,7 @@ export type Database = {
           address_base?: string | null
           address_detail?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
           updated_at?: string
@@ -1204,6 +1261,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           nickname: string | null
@@ -1213,6 +1271,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           nickname?: string | null
@@ -1222,6 +1281,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           nickname?: string | null
@@ -1242,6 +1302,7 @@ export type Database = {
         Row: {
           agreed_at: string
           created_at: string
+          deleted_at: string | null
           id: string
           privacy_version: string
           terms_version: string
@@ -1251,6 +1312,7 @@ export type Database = {
         Insert: {
           agreed_at?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           privacy_version: string
           terms_version: string
@@ -1260,6 +1322,7 @@ export type Database = {
         Update: {
           agreed_at?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           privacy_version?: string
           terms_version?: string
@@ -1316,14 +1379,9 @@ export type Database = {
       }
     }
     Functions: {
-      get_calendar_users_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_performance_users_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_calendar_users_count: { Args: never; Returns: number }
+      get_performance_users_count: { Args: never; Returns: number }
+      purge_soft_deleted_accounts: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
