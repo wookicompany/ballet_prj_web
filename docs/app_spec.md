@@ -138,7 +138,9 @@
 - 유효성: `date`, `start_time`, `end_time`, `mood` 누락 시 저장 불가
 - 시간 유효성: `end_time < start_time`인 경우 저장 불가 + 오류 메시지 표시
 
-### 주소 검색(WebView 브릿지)
+### WebView 브릿지
+
+#### 주소 검색
 
 - 적용 화면: `/record/new`, `/record/[id]/edit`, `/calendar/settings/locations`
 - 일반 브라우저: 기존 Kakao Postcode 팝업 흐름 사용
@@ -147,6 +149,16 @@
   - RN -> 웹: `address_selected` 메시지 전송 (`address`, `roadAddress`, `jibunAddress`)
   - 웹 반영 우선순위: `address` -> `roadAddress` -> `jibunAddress`
   - 주소가 변경되면 상세 주소(`address_detail`)는 초기화
+
+#### 인앱 URL 열기
+
+- 적용 화면: `/performance/[id]` 예매처 링크 클릭
+- 구현: `lib/reactNativeWebView.ts`의 `openUrlInApp(url, title?)` 함수
+- React Native WebView:
+  - 웹 -> RN: `{ type: "open_url", url, title }` postMessage 전송
+  - RN: `expo-web-browser`의 `openBrowserAsync`로 인앱 브라우저 실행
+- 일반 브라우저 폴백: `window.open(url, '_blank')`
+- RN 환경 감지: `window.ReactNativeWebView` 존재 여부 확인 (`lib/reactNativeWebView.ts`의 `isInReactNativeWebView()`)
 
 ### 미디어 처리
 
@@ -222,14 +234,19 @@
   - 카드 우상단 트로피 아이콘 배지 노출
   - `kopis_performance_awards`에 매칭되는 공연만 표시
 
-#### 공연 목록 섹션 구성 (아이디어)
+#### 공연 목록 섹션 구성 (구현)
 
-- **인기 공연**: 리뷰 수/평균 별점 기준 (내부 데이터)
-- **공개 예정작**: `prfpdfrom`이 오늘 이후인 공연
-- **현재 공연**: `prfpdfrom` ≤ 오늘 ≤ `prfpdto`
-- **곧 종료**: `prfpdto`가 30일 이내인 공연
-- **오픈런**: `openrun = Y` 기준
-- **지역/공연장 묶음**: `area`, `fcltynm` 기준 추천 섹션
+| 섹션 키 | 제목 | 필터 조건 | 정렬 |
+|---------|------|----------|------|
+| `popular` | 가장 반응이 많은 공연을 모아봤어요 | 리뷰/평점 수 기반 | 평균 별점 × 가중치 내림차순 |
+| `scheduled` | 곧 만날 수 있는 공연을 모아봤어요 | `prfstate = '공연예정'` | `prfpdfrom` 오름차순 |
+| `ongoing` | 지금 바로 관람할 수 있는 공연을 모아봤어요 | `prfstate = '공연중'` | `prfpdto` 오름차순 (마감 임박 우선) |
+| `visit` | 해외 팀이 참여한 공연을 모아봤어요 | `visit = 'Y'` | 상태 우선순위(공연중 > 공연예정 > 공연완료) + `prfpdfrom` 오름차순 |
+| `completed` | 막을 내린 공연을 모아봤어요 | `prfstate = '공연완료'` | `updatedate` 내림차순 |
+| `awards` | 수상작 공연을 모아봤어요 | `kopis_performance_awards` 매칭 | `prfpdfrom` 내림차순 |
+
+- 각 섹션은 홈에서 최대 6개 카드 노출 후 "더보기" → `/performance/search?section={key}` 이동
+- 섹션 순서: `popular` → `scheduled` → `ongoing` → `visit` → `completed` → `awards`
 
 ### 공연 상세
 
@@ -249,7 +266,11 @@
   - `prfstate`: 공연상태
   - `styurls`: 소개이미지목록 (모든 소개이미지)
   - `dtguidance`: 공연시간
-  - `relates`: 예매처목록 (모든 예매처 정보)
+  - `relates`: 예매처목록 (`relatenm`: 예매처명, `relateurl`: 예매처 URL)
+- 예매처 UI
+  - 예매처 링크가 있는 항목은 칩(chip) 버튼 형태로 렌더링 (`rounded-full border`)
+  - 칩 우측에 `ExternalLink` 아이콘 표시
+  - 클릭 시 클릭 이벤트 추적(`POST /api/performances/[id]/booking-click`) 후 인앱 브라우저로 URL 오픈
 - 수상 정보
   - 공연 제목 위에 트로피 아이콘 + 수상 목록 노출
   - 수상 목록은 줄바꿈 문자열(`<br>`, `&lt;br&gt;`) 파싱 후 라인 단위로 렌더링
@@ -297,6 +318,16 @@
   - `POST /api/review-comments/[id]/report`: 댓글 신고
   - 요청 body: `reason_code`, `detail?`
   - 응답: `report_count`, `is_hidden`
+
+#### 예매처 클릭 추적
+
+- 사용자가 공연 상세에서 예매처 칩을 클릭하면 클릭 이벤트를 기록
+- 인증 불필요 (익명 추적)
+- DB 테이블: `performance_booking_clicks` (`id`, `performance_id`, `relatenm`, `relateurl`, `created_at`)
+- API: `POST /api/performances/[id]/booking-click`
+  - 요청 body: `relatenm`, `relateurl`
+  - 응답: `{ ok: true }`
+- 클릭 후 `openUrlInApp`으로 인앱 브라우저 실행 (폴백: `window.open`)
 
 #### 공연 리뷰 댓글
 
