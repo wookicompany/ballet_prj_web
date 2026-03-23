@@ -546,183 +546,159 @@ export default function PerformanceListPage() {
         </section>
 
         <div className="space-y-7">
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    가장 반응이 많은 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=popular")}
-                  aria-label="인기 공연 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {popularCards.length ? (
-                  popularCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {popularCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      가장 반응이 많은 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() => router.push("/performance/search?section=popular")}
+                    aria-label="인기 공연 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {popularCards}
+                </div>
+              </section>
+            )}
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    지금 바로 관람할 수 있는 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=ongoing")}
-                  aria-label="공연중 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {ongoingCards.length ? (
-                  ongoingCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {ongoingCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      지금 바로 관람할 수 있는 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() => router.push("/performance/search?section=ongoing")}
+                    aria-label="공연중 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {ongoingCards}
+                </div>
+              </section>
+            )}
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    곧 만날 수 있는 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() =>
-                    router.push("/performance/search?section=scheduled")
-                  }
-                  aria-label="공연예정 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {scheduledCards.length ? (
-                  scheduledCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {scheduledCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      곧 만날 수 있는 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() =>
+                      router.push("/performance/search?section=scheduled")
+                    }
+                    aria-label="공연예정 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {scheduledCards}
+                </div>
+              </section>
+            )}
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    막을 내린 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() =>
-                    router.push("/performance/search?section=completed")
-                  }
-                  aria-label="공연 완료 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {completedCards.length ? (
-                  completedCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {completedCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      막을 내린 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() =>
+                      router.push("/performance/search?section=completed")
+                    }
+                    aria-label="공연 완료 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {completedCards}
+                </div>
+              </section>
+            )}
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    해외 팀이 참여한 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=visit")}
-                  aria-label="해외 팀 공연 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {visitCards.length ? (
-                  visitCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {visitCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      해외 팀이 참여한 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() => router.push("/performance/search?section=visit")}
+                    aria-label="해외 팀 공연 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {visitCards}
+                </div>
+              </section>
+            )}
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">
-                    수상작 공연을 모아봤어요
-                  </h2>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#17171c]/50"
-                  onClick={() => router.push("/performance/search?section=awards")}
-                  aria-label="수상작 더보기"
-                >
-                  <ChevronRight className="size-5" />
-                </Button>
-              </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
-                {awardCards.length ? (
-                  awardCards
-                ) : (
-                  <div className="text-sm text-[#17171c]/50">
-                    표시할 공연이 없어요.
+            {awardCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      수상작 공연을 모아봤어요
+                    </h2>
                   </div>
-                )}
-              </div>
-            </section>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() => router.push("/performance/search?section=awards")}
+                    aria-label="수상작 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {awardCards}
+                </div>
+              </section>
+            )}
 
         </div>
       </main>
