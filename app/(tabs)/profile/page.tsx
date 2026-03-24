@@ -832,7 +832,7 @@ export default function ProfilePage() {
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#17171c]/5">
                       {record.mood ? (
                         <AnimatedImage
-                          src={`/mood/cat-${record.mood}.svg`}
+                          src={`/mood/mood_dark_face_${record.mood}.png`}
                           alt={`기분 ${record.mood}단계`}
                           width={1600}
                           height={1600}

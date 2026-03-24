@@ -31,7 +31,7 @@ export default function MoodSelector({
           >
             <span className="flex aspect-square w-full items-center justify-center rounded-full overflow-hidden p-2">
               <Image
-                src={`/mood/cat-${moodValue}.svg`}
+                src={`/mood/mood_dark_face_${moodValue}.png`}
                 alt={`기분 ${moodValue}단계`}
                 width={1600}
                 height={1600}

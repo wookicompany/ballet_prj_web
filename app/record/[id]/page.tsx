@@ -408,7 +408,7 @@ export default function RecordDetailPage() {
                   <div className="mt-2">
                     <div className="h-16 w-16 rounded-full bg-[#17171c]/5 p-3">
                       <AnimatedImage
-                        src={`/mood/cat-${record.mood}.svg`}
+                        src={`/mood/mood_dark_face_${record.mood}.png`}
                         alt={`기분 ${record.mood}단계`}
                         width={1600}
                         height={1600}

@@ -434,7 +434,7 @@ export default function CalendarPage() {
                   {moodValue ? (
                     <div className="relative h-full w-full overflow-visible">
                       <AnimatedImage
-                        src={`/mood/cat-${moodValue}.svg`}
+                        src={`/mood/mood_dark_face_${moodValue}.png`}
                         alt={`기분 ${moodValue}단계`}
                         width={1600}
                         height={1600}

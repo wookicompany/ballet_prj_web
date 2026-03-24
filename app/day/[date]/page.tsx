@@ -227,7 +227,7 @@ export default function DayPage() {
                 <div className="flex h-full w-full items-center justify-between gap-2">
                   {record.mood ? (
                     <AnimatedImage
-                      src={`/mood/cat-${record.mood}.svg`}
+                      src={`/mood/mood_dark_face_${record.mood}.png`}
                       alt="오늘 발레 기분"
                       width={1600}
                       height={1600}
