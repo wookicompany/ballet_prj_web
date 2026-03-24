@@ -829,7 +829,7 @@ export default function ProfilePage() {
                     }}
                     aria-label="기록 상세 보기"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white">
                       {record.mood ? (
                         <AnimatedImage
                           src={`/mood/mood_dark_face_${record.mood}.png`}
@@ -838,7 +838,7 @@ export default function ProfilePage() {
                           height={1600}
                           unoptimized
                           draggable={false}
-                          className="h-8 w-8 object-contain"
+                          className="h-10 w-10 object-contain"
                         />
                       ) : (
                         <User className="h-5 w-5 text-[#17171c]/45" />
