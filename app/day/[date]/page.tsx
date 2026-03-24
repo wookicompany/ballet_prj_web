@@ -233,7 +233,7 @@ export default function DayPage() {
                       height={1600}
                       unoptimized
                       draggable={false}
-                      className="h-9 w-9 shrink-0"
+                      className="h-9 w-9 shrink-0 object-contain"
                     />
                   ) : (
                     <div className="h-9 w-9 shrink-0 rounded-full bg-black/5" />

@@ -838,7 +838,7 @@ export default function ProfilePage() {
                           height={1600}
                           unoptimized
                           draggable={false}
-                          className="h-8 w-8"
+                          className="h-8 w-8 object-contain"
                         />
                       ) : (
                         <User className="h-5 w-5 text-[#17171c]/45" />
