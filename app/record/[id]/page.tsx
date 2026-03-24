@@ -406,7 +406,7 @@ export default function RecordDetailPage() {
                     오늘 발레는 어땠나요?
                   </Label>
                   <div className="mt-2">
-                    <div className="h-16 w-16 rounded-full bg-[#17171c]/5 p-3">
+                    <div className="h-16 w-16 rounded-full bg-white p-3">
                       <AnimatedImage
                         src={`/mood/mood_dark_face_${record.mood}.png`}
                         alt={`기분 ${record.mood}단계`}

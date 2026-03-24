@@ -829,7 +829,7 @@ export default function ProfilePage() {
                     }}
                     aria-label="기록 상세 보기"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#17171c]/5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
                       {record.mood ? (
                         <AnimatedImage
                           src={`/mood/mood_dark_face_${record.mood}.png`}
