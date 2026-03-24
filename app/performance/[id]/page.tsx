@@ -400,7 +400,7 @@ export default function PerformanceDetailPage() {
   }, [performanceId]);
 
   useEffect(() => {
-    const handlePageShow = () => {
+    const applyReviewRefreshIfNeeded = () => {
       const flagCreated = sessionStorage.getItem(`review-created:${performanceId}`);
       const flagUpdated = sessionStorage.getItem(`review-updated:${performanceId}`);
       if (!flagCreated && !flagUpdated) return;
@@ -426,8 +426,12 @@ export default function PerformanceDetailPage() {
       setReviewRefreshKey((k) => k + 1);
     };
 
-    window.addEventListener("pageshow", handlePageShow);
-    return () => window.removeEventListener("pageshow", handlePageShow);
+    // Next.js SPA router.back() 시 컴포넌트가 재마운트되므로 마운트 시점에 바로 체크
+    applyReviewRefreshIfNeeded();
+
+    // bfcache 복원 시에도 감지하기 위해 pageshow 이벤트도 유지
+    window.addEventListener("pageshow", applyReviewRefreshIfNeeded);
+    return () => window.removeEventListener("pageshow", applyReviewRefreshIfNeeded);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [performanceId]);
 
