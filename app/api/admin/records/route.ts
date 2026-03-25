@@ -25,7 +25,16 @@ export const GET = async (request: Request) => {
     .order("created_at", { ascending: false });
   if (q) query = query.ilike("content", `%${q}%`);
 
-  const { data: rows, error } = await query.range(offset, offset + limit - 1);
+  let countQuery = result.supabaseAdmin
+    .from("records")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
+
+  const [{ data: rows, error }, { count }] = await Promise.all([
+    query.range(offset, offset + limit - 1),
+    countQuery,
+  ]);
 
   if (error) {
     console.error("admin records list", error);
@@ -49,13 +58,6 @@ export const GET = async (request: Request) => {
     nickname: profilesMap[r.user_id]?.nickname ?? null,
     avatar_url: profilesMap[r.user_id]?.avatar_url ?? null,
   }));
-
-  let countQuery = result.supabaseAdmin
-    .from("records")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
-  const { count } = await countQuery;
 
   return NextResponse.json({
     records: recordsWithProfile,

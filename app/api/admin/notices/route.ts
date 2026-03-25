@@ -24,16 +24,18 @@ export const GET = async (request: Request) => {
     .order("created_at", { ascending: false });
   if (q) query = query.ilike("title", `%${q}%`);
 
-  const { data: rows, error } = await query.range(offset, offset + limit - 1);
+  let countQuery = result.supabaseAdmin.from("notices").select("id", { count: "exact", head: true });
+  if (q) countQuery = countQuery.ilike("title", `%${q}%`);
+
+  const [{ data: rows, error }, { count }] = await Promise.all([
+    query.range(offset, offset + limit - 1),
+    countQuery,
+  ]);
 
   if (error) {
     console.error("admin notices list", error);
     return NextResponse.json({ message: "Failed to list notices" }, { status: 500 });
   }
-
-  let countQuery = result.supabaseAdmin.from("notices").select("id", { count: "exact", head: true });
-  if (q) countQuery = countQuery.ilike("title", `%${q}%`);
-  const { count } = await countQuery;
 
   return NextResponse.json({
     notices: rows ?? [],

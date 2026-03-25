@@ -25,7 +25,16 @@ export const GET = async (request: Request) => {
     .order("created_at", { ascending: false });
   if (q) query = query.ilike("content", `%${q}%`);
 
-  const { data: rows, error } = await query.range(offset, offset + limit - 1);
+  let countQuery = result.supabaseAdmin
+    .from("performance_reviews")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
+
+  const [{ data: rows, error }, { count }] = await Promise.all([
+    query.range(offset, offset + limit - 1),
+    countQuery,
+  ]);
 
   if (error) {
     console.error("admin reviews list", error);
@@ -34,6 +43,7 @@ export const GET = async (request: Request) => {
 
   const performanceIds = [...new Set((rows ?? []).map((r) => r.performance_id))];
   const userIds = [...new Set((rows ?? []).map((r) => r.user_id))];
+  const reviewIds = (rows ?? []).map((r) => r.id);
 
   const [performancesRes, profilesRes, reportsCountRes] = await Promise.all([
     performanceIds.length > 0
@@ -42,7 +52,9 @@ export const GET = async (request: Request) => {
     userIds.length > 0
       ? result.supabaseAdmin.from("profiles").select("id, nickname").in("id", userIds)
       : { data: [] as { id: string; nickname: string | null }[] },
-    result.supabaseAdmin.from("performance_review_reports").select("review_id"),
+    reviewIds.length > 0
+      ? result.supabaseAdmin.from("performance_review_reports").select("review_id").in("review_id", reviewIds)
+      : { data: [] as { review_id: string }[] },
   ]);
 
   const prfnmMap: Record<string, string> = {};
@@ -64,13 +76,6 @@ export const GET = async (request: Request) => {
     nickname: nicknameMap[r.user_id] ?? null,
     report_count: reportCountMap[r.id] ?? 0,
   }));
-
-  let countQuery = result.supabaseAdmin
-    .from("performance_reviews")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
-  const { count } = await countQuery;
 
   return NextResponse.json({
     reviews,

@@ -25,7 +25,16 @@ export const GET = async (request: Request) => {
     .order("created_at", { ascending: false });
   if (q) query = query.ilike("content", `%${q}%`);
 
-  const { data: rows, error } = await query.range(offset, offset + limit - 1);
+  let countQuery = result.supabaseAdmin
+    .from("performance_review_comments")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
+
+  const [{ data: rows, error }, { count }] = await Promise.all([
+    query.range(offset, offset + limit - 1),
+    countQuery,
+  ]);
 
   if (error) {
     console.error("admin review-comments list", error);
@@ -35,6 +44,8 @@ export const GET = async (request: Request) => {
   const reviewIds = [...new Set((rows ?? []).map((r) => r.review_id))];
   const userIds = [...new Set((rows ?? []).map((r) => r.user_id))];
 
+  const commentIds = (rows ?? []).map((r) => r.id);
+
   const [reviewsData, profilesData, reportsData] = await Promise.all([
     reviewIds.length > 0
       ? result.supabaseAdmin.from("performance_reviews").select("id, performance_id").in("id", reviewIds)
@@ -42,7 +53,9 @@ export const GET = async (request: Request) => {
     userIds.length > 0
       ? result.supabaseAdmin.from("profiles").select("id, nickname").in("id", userIds)
       : { data: [] as { id: string; nickname: string | null }[] },
-    result.supabaseAdmin.from("performance_review_comment_reports").select("comment_id"),
+    commentIds.length > 0
+      ? result.supabaseAdmin.from("performance_review_comment_reports").select("comment_id").in("comment_id", commentIds)
+      : { data: [] as { comment_id: string }[] },
   ]);
 
   const perfIds = [...new Set((reviewsData.data ?? []).map((r) => r.performance_id))];
@@ -73,12 +86,6 @@ export const GET = async (request: Request) => {
     report_count: reportCountMap[r.id] ?? 0,
   }));
 
-  let countQuery = result.supabaseAdmin
-    .from("performance_review_comments")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
-  const { count } = await countQuery;
 
   return NextResponse.json({
     comments,

@@ -31,24 +31,25 @@ export const GET = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  const { data: profile } = await result.supabaseAdmin
-    .from("profiles")
-    .select("nickname, avatar_url")
-    .eq("id", recordRow.user_id)
-    .maybeSingle();
+  const [{ data: profile }, { data: media }] = await Promise.all([
+    result.supabaseAdmin
+      .from("profiles")
+      .select("nickname, avatar_url")
+      .eq("id", recordRow.user_id)
+      .maybeSingle(),
+    result.supabaseAdmin
+      .from("record_media")
+      .select("id, media_type, url, created_at")
+      .eq("record_id", id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true }),
+  ]);
 
   const record = {
     ...recordRow,
     nickname: profile?.nickname ?? null,
     avatar_url: profile?.avatar_url ?? null,
   };
-
-  const { data: media } = await result.supabaseAdmin
-    .from("record_media")
-    .select("id, media_type, url, created_at")
-    .eq("record_id", id)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
 
   return NextResponse.json({ record, media: media ?? [] });
 };

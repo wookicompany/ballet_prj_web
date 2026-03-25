@@ -94,22 +94,23 @@ export const GET = async (request: Request) => {
   );
   const offset = Number(searchParams.get("offset")) || 0;
 
-  const { data: rows, error } = await result.supabaseAdmin
-    .from("ads")
-    .select(
-      "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
-    )
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const [{ data: rows, error }, { count }] = await Promise.all([
+    result.supabaseAdmin
+      .from("ads")
+      .select(
+        "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
+      )
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1),
+    result.supabaseAdmin
+      .from("ads")
+      .select("id", { count: "exact", head: true }),
+  ]);
 
   if (error) {
     console.error("admin ads list", error);
     return NextResponse.json({ message: "Failed to list ads" }, { status: 500 });
   }
-
-  const { count } = await result.supabaseAdmin
-    .from("ads")
-    .select("id", { count: "exact", head: true });
 
   return NextResponse.json({
     ads: rows ?? [],

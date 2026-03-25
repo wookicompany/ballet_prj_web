@@ -25,7 +25,16 @@ export const GET = async (request: Request) => {
     .order("created_at", { ascending: false });
   if (q) query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
 
-  const { data: inquiries, error } = await query.range(offset, offset + limit - 1);
+  let countQuery = result.supabaseAdmin
+    .from("support_inquiries")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  if (q) countQuery = countQuery.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
+
+  const [{ data: inquiries, error }, { count }] = await Promise.all([
+    query.range(offset, offset + limit - 1),
+    countQuery,
+  ]);
 
   if (error) {
     console.error("admin support inquiries list", error);
@@ -34,13 +43,6 @@ export const GET = async (request: Request) => {
       { status: 500 }
     );
   }
-
-  let countQuery = result.supabaseAdmin
-    .from("support_inquiries")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  if (q) countQuery = countQuery.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
-  const { count } = await countQuery;
 
   return NextResponse.json({
     inquiries: inquiries ?? [],
