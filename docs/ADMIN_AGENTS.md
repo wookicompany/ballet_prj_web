@@ -32,6 +32,13 @@
 - 조회 시 `deleted_at IS NULL` 조건을 적용한다(records, performance_reviews, performance_review_comments, profiles 등).
 - 삭제는 소프트 삭제(`deleted_at` 설정)로만 수행한다. 기존 앱 정책과 동일.
 
+## DB 쿼리 최적화
+
+- **병렬화**: 서로 의존관계가 없는 쿼리는 `Promise.all([...])` 로 묶어 동시에 실행한다. 특히 목록 API의 `rows` 조회와 `count` 조회는 항상 병렬로 처리한다.
+- **의존 쿼리**: 이전 쿼리 결과가 필요한 쿼리(예: rows의 user_id로 profiles 조회)는 순차 실행. 그 이후 단계에서 다시 독립 쿼리가 있으면 `Promise.all`로 묶는다.
+- **전체 스캔 방지**: 신고(reports) 등 관계 테이블 조회 시 필터 없이 전체 테이블을 읽지 않는다. 앞 단계에서 얻은 ID 목록으로 `.in("column", ids)` 필터를 반드시 추가한다. ids가 빈 배열이면 빈 결과를 바로 반환한다.
+- **인덱스**: `ORDER BY` 또는 `WHERE` 에 자주 쓰이는 컬럼은 인덱스를 추가한다. Supabase MCP `apply_migration`으로 적용하고 `admin_spec.md` DB 섹션에 기록한다.
+
 ## 문서
 
 - 어드민 경로·메뉴·API·지표·CRUD 범위는 [docs/admin_spec.md](admin_spec.md)에 기록한다.
