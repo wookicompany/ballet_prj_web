@@ -148,6 +148,81 @@
 - 뒤로가기 이동은 `router.push(이전경로)` 대신 `router.back()`을 사용한다. 히스토리를 올바르게 유지하고 불필요한 페이지 마운트를 피한다.
 - 같은 레벨의 탐색(날짜 이동, 탭 전환 등)은 `router.push` 대신 `router.replace`를 사용해 히스토리 스택이 쌓이지 않게 한다.
 
+### 뒤로가기 스크롤 복원 — 인메모리 페이지 캐시 패턴
+
+Next.js App Router는 뒤로가기 시 스크롤을 자동 복원하지 않는다.
+**콘텐츠를 즉시 렌더하면 브라우저 기본 scroll restoration이 자동으로 작동**하므로,
+페이지 단위 인메모리 캐시(`lib/xxxCache.ts`)를 적용하는 것으로 충분하다. `scrollY` 수동 저장은 불필요하다.
+
+#### 캐시 모듈 구조 (`lib/performanceHomeCache.ts` 동일 패턴)
+
+```typescript
+// lib/xxxCache.ts
+let cache: unknown | null = null;
+let cacheDirty = false;
+
+export const getXxxCache = <T>() => {
+  if (cacheDirty) return null;
+  return cache as T | null;
+};
+export const setXxxCache = <T>(value: T) => {
+  cache = value;
+  cacheDirty = false;
+};
+export const invalidateXxxCache = () => {
+  cacheDirty = true;
+};
+```
+
+캐시 키가 필요한 경우(userId, sectionKey 등)는 `Map<string, unknown>`으로 구현한다.
+
+#### 페이지 적용 방법
+
+```typescript
+// 1. useState 초기값에서 캐시 참조 → 첫 렌더에 콘텐츠 높이 확보
+const cached = getXxxCache<Payload>();
+const [items, setItems] = useState(() => cached?.items ?? []);
+const [loading, setLoading] = useState(() => !cached);
+
+// 2. 캐시 있으면 fetch 생략 (useEffect 내부)
+useEffect(() => {
+  if (getXxxCache<Payload>()) return; // 캐시 가드
+  fetchData();
+}, []);
+
+// 3. fetch 완료 후 캐시 저장
+setXxxCache<Payload>({ items, ... });
+```
+
+#### 무한 스크롤 페이지 — `requestedPagesRef` 초기화
+
+캐시 복원 시 `requestedPagesRef`가 빈 Set이면 IntersectionObserver가 이미 로드된 페이지를 중복 요청한다.
+`page`를 캐시에 포함하고 mount 시 아래처럼 초기화한다.
+
+```typescript
+const cached = getXxxCache<Payload>();
+const [page, setPage] = useState(() => cached?.page ?? 0);
+
+const requestedPagesRef = useRef(
+  new Set(cached ? Array.from({ length: cached.page + 1 }, (_, i) => i) : [])
+);
+```
+
+#### 캐시 invalidation 규칙
+
+- 기록/리뷰 **생성·수정·삭제** 직후 관련 캐시를 반드시 `invalidateXxxCache()`로 무효화한다.
+- 무효화하지 않으면 뒤로가기 시 이전 데이터가 그대로 노출된다.
+- 현재 적용된 캐시 모듈과 invalidation 연동 위치:
+
+| 캐시 모듈 | 적용 페이지 | invalidation 호출 위치 |
+|-----------|------------|----------------------|
+| `lib/performanceHomeCache.ts` | `/performance` | 리뷰 생성·수정·삭제 |
+| `lib/noticeCache.ts` | `/notice` | (읽음 상태는 재조회로 자동 갱신) |
+| `lib/performanceSearchCache.ts` | `/performance/search` | — |
+| `lib/performanceSearchInputCache.ts` | `/performance/search-input` | — |
+| `lib/profileCache.ts` | `/profile` | 기록·리뷰 생성·수정·삭제 |
+| `lib/performanceDetailCache.ts` | `/performance/[id]` | 리뷰 생성·수정·삭제 |
+
 ### DB 인덱스
 
 - WHERE 조건에 자주 쓰이는 컬럼(`user_id`, `deleted_at`, `review_id` 등)은 인덱스 존재 여부를 사전에 확인하고, 없으면 Supabase MCP `apply_migration`으로 추가한다.

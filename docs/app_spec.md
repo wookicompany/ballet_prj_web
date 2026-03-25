@@ -119,7 +119,7 @@
 
 - `date` (YYYY-MM-DD)
 - `start_time`, `end_time`
-- `mood` (5단계 이미지 기반 UI)
+- `mood` (8단계 이미지 기반 UI)
 
 #### 선택
 
