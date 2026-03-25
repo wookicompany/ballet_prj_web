@@ -125,7 +125,7 @@ export const PATCH = async (
     !Number.isFinite(moodValue) ||
     !Number.isInteger(moodValue) ||
     moodValue < 1 ||
-    moodValue > 5 ||
+    moodValue > 8 ||
     Number.isNaN(workoutActiveEnergy) ||
     Number.isNaN(workoutTotalEnergy) ||
     Number.isNaN(workoutAvgBpm) ||

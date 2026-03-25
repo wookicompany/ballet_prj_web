@@ -104,7 +104,7 @@ export default function CalendarPage() {
     Object.keys(moodTotals).forEach((date) => {
       const avg = moodTotals[date] / (moodCounts[date] ?? 1);
       const rounded = Math.round(avg);
-      averages[date] = Math.min(5, Math.max(1, rounded));
+      averages[date] = Math.min(8, Math.max(1, rounded));
     });
     setMoodAverages(averages);
   }, [user, start, end]);

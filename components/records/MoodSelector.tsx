@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
-const MOODS = [1, 2, 3, 4, 5];
+const MOODS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function MoodSelector({
   value,
@@ -13,7 +13,7 @@ export default function MoodSelector({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className="grid w-full grid-cols-5 gap-2">
+    <div className="grid w-full grid-cols-4 gap-2">
       {MOODS.map((moodValue) => {
         const isActive = value === moodValue;
 
