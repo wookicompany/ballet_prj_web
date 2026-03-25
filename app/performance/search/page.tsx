@@ -14,6 +14,7 @@ import {
   getSeoulTodayDate,
   parseDateKey,
 } from "@/lib/kstDateTime";
+import { getSearchCache, setSearchCache } from "@/lib/performanceSearchCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
@@ -47,6 +48,18 @@ type SectionConfig = {
   title: string;
   prfstate?: string;
   detailFlag?: string;
+};
+
+type PerformanceSearchCachePayload = {
+  sectionKey: string;
+  items: PerformanceItem[];
+  ratingMap: Record<string, RatingSummary>;
+  engagementMap: Record<string, EngagementSummary>;
+  page: number;
+  hasMore: boolean;
+  orderedIds: string[] | null;
+  orderedReady: boolean;
+  filters: { startDate: string; endDate: string };
 };
 
 const SECTION_CONFIG: Record<string, SectionConfig> = {
@@ -95,23 +108,42 @@ function PerformanceSearchContent() {
     return formatSeoulDateKey(next);
   }, [defaultStart]);
 
-  const [filters, setFilters] = useState(() => ({
-    startDate: sectionConfig ? "" : defaultStart,
-    endDate: sectionConfig ? "" : defaultEnd,
-  }));
-  const [loading, setLoading] = useState(true);
+  const searchCached = getSearchCache<PerformanceSearchCachePayload>(sectionKey);
+
+  const [filters, setFilters] = useState(() =>
+    searchCached?.sectionKey === sectionKey
+      ? searchCached.filters
+      : { startDate: sectionConfig ? "" : defaultStart, endDate: sectionConfig ? "" : defaultEnd }
+  );
+  const [loading, setLoading] = useState(() => searchCached?.sectionKey === sectionKey ? false : true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [items, setItems] = useState<PerformanceItem[]>([]);
-  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>({});
-  const [engagementMap, setEngagementMap] = useState<
-    Record<string, EngagementSummary>
-  >({});
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [orderedIds, setOrderedIds] = useState<string[] | null>(null);
-  const [orderedReady, setOrderedReady] = useState(false);
+  const [items, setItems] = useState<PerformanceItem[]>(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.items : []
+  );
+  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.ratingMap : {}
+  );
+  const [engagementMap, setEngagementMap] = useState<Record<string, EngagementSummary>>(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.engagementMap : {}
+  );
+  const [page, setPage] = useState(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.page : 0
+  );
+  const [hasMore, setHasMore] = useState(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.hasMore : true
+  );
+  const [orderedIds, setOrderedIds] = useState<string[] | null>(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.orderedIds : null
+  );
+  const [orderedReady, setOrderedReady] = useState(() =>
+    searchCached?.sectionKey === sectionKey ? searchCached.orderedReady : false
+  );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef(new Set<number>());
+  const requestedPagesRef = useRef(
+    searchCached?.sectionKey === sectionKey
+      ? new Set(Array.from({ length: searchCached.page + 1 }, (_, i) => i))
+      : new Set<number>()
+  );
   const loadingRef = useRef(loading);
   const loadingMoreRef = useRef(loadingMore);
 
@@ -419,6 +451,7 @@ function PerformanceSearchContent() {
   );
 
   useEffect(() => {
+    if (getSearchCache<PerformanceSearchCachePayload>(sectionKey)?.sectionKey === sectionKey) return;
     setItems([]);
     setRatingMap({});
     setEngagementMap({});
@@ -428,12 +461,14 @@ function PerformanceSearchContent() {
     setLoadingMore(false);
     requestedPagesRef.current = new Set();
     fetchOrderedIds();
-  }, [fetchOrderedIds]);
+  }, [fetchOrderedIds, sectionKey]);
 
   useEffect(() => {
     if (!orderedReady) return;
+    const cached = getSearchCache<PerformanceSearchCachePayload>(sectionKey);
+    if (cached?.sectionKey === sectionKey && cached.items.length > 0) return;
     fetchPage(0);
-  }, [fetchPage, orderedReady]);
+  }, [fetchPage, orderedReady, sectionKey]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
@@ -451,6 +486,21 @@ function PerformanceSearchContent() {
   useEffect(() => {
     loadingMoreRef.current = loadingMore;
   }, [loadingMore]);
+
+  useEffect(() => {
+    if (!orderedReady || loading || loadingMore) return;
+    setSearchCache<PerformanceSearchCachePayload>(sectionKey, {
+      sectionKey,
+      items,
+      ratingMap,
+      engagementMap,
+      page,
+      hasMore,
+      orderedIds,
+      orderedReady,
+      filters,
+    });
+  }, [sectionKey, items, ratingMap, engagementMap, page, hasMore, orderedIds, orderedReady, filters, loading, loadingMore]);
 
   useEffect(() => {
     const target = sentinelRef.current;

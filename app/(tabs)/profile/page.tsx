@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
@@ -42,6 +43,26 @@ type RecordSummary = {
   content: string;
   mood: number | null;
   createdAt: string;
+};
+
+type ProfileCachePayload = {
+  profile: Profile | null;
+  recordCount: number;
+  totalMinutes: number;
+  reviewCount: number;
+  reviews: ReviewSummary[];
+  records: RecordSummary[];
+  recordMediaById: Record<string, { urls: string[]; count: number }>;
+  reviewLikeCounts: Record<string, number>;
+  reviewCommentCounts: Record<string, number>;
+  reviewImages: Record<string, string[]>;
+  reviewPage: number;
+  hasMoreReviews: boolean;
+  recordPage: number;
+  hasMoreRecords: boolean;
+  orderedReviewIds: string[];
+  orderedRecordIds: string[];
+  activeTab: "records" | "reviews";
 };
 
 const REVIEW_PAGE_SIZE_INITIAL = 5;
@@ -79,44 +100,49 @@ export default function ProfilePage() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [recordCount, setRecordCount] = useState(0);
-  const [totalMinutes, setTotalMinutes] = useState(0);
+
+  const profileCached = user && !loading ? getProfileCache<ProfileCachePayload>(user.id) : null;
+
+  const [profile, setProfile] = useState<Profile | null>(() => profileCached?.profile ?? null);
+  const [recordCount, setRecordCount] = useState(() => profileCached?.recordCount ?? 0);
+  const [totalMinutes, setTotalMinutes] = useState(() => profileCached?.totalMinutes ?? 0);
   const [avatarOpen, setAvatarOpen] = useState(false);
-  const [reviewCount, setReviewCount] = useState(0);
-  const [reviews, setReviews] = useState<ReviewSummary[]>([]);
-  const [records, setRecords] = useState<RecordSummary[]>([]);
-  const [recordMediaById, setRecordMediaById] = useState<
-    Record<string, { urls: string[]; count: number }>
-  >({});
-  const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(
-    {}
-  );
-  const [reviewCommentCounts, setReviewCommentCounts] = useState<
-    Record<string, number>
-  >({});
-  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
-  const [reviewPage, setReviewPage] = useState(0);
-  const [hasMoreReviews, setHasMoreReviews] = useState(true);
+  const [reviewCount, setReviewCount] = useState(() => profileCached?.reviewCount ?? 0);
+  const [reviews, setReviews] = useState<ReviewSummary[]>(() => profileCached?.reviews ?? []);
+  const [records, setRecords] = useState<RecordSummary[]>(() => profileCached?.records ?? []);
+  const [recordMediaById, setRecordMediaById] = useState<Record<string, { urls: string[]; count: number }>>(() => profileCached?.recordMediaById ?? {});
+  const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(() => profileCached?.reviewLikeCounts ?? {});
+  const [reviewCommentCounts, setReviewCommentCounts] = useState<Record<string, number>>(() => profileCached?.reviewCommentCounts ?? {});
+  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>(() => profileCached?.reviewImages ?? {});
+  const [reviewPage, setReviewPage] = useState(() => profileCached?.reviewPage ?? 0);
+  const [hasMoreReviews, setHasMoreReviews] = useState(() => profileCached?.hasMoreReviews ?? true);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showMoreReviews, setShowMoreReviews] = useState(false);
-  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
-  const [reviewOrderReady, setReviewOrderReady] = useState(false);
-  const [reviewSectionLoading, setReviewSectionLoading] = useState(true);
-  const [recordPage, setRecordPage] = useState(0);
-  const [hasMoreRecords, setHasMoreRecords] = useState(true);
+  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>(() => profileCached?.orderedReviewIds ?? []);
+  const [reviewOrderReady, setReviewOrderReady] = useState(() => !!profileCached);
+  const [reviewSectionLoading, setReviewSectionLoading] = useState(() => !profileCached);
+  const [recordPage, setRecordPage] = useState(() => profileCached?.recordPage ?? 0);
+  const [hasMoreRecords, setHasMoreRecords] = useState(() => profileCached?.hasMoreRecords ?? true);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [showMoreRecords, setShowMoreRecords] = useState(false);
-  const [orderedRecordIds, setOrderedRecordIds] = useState<string[]>([]);
-  const [recordOrderReady, setRecordOrderReady] = useState(false);
-  const [recordSectionLoading, setRecordSectionLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"records" | "reviews">("records");
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [orderedRecordIds, setOrderedRecordIds] = useState<string[]>(() => profileCached?.orderedRecordIds ?? []);
+  const [recordOrderReady, setRecordOrderReady] = useState(() => !!profileCached);
+  const [recordSectionLoading, setRecordSectionLoading] = useState(() => !profileCached);
+  const [activeTab, setActiveTab] = useState<"records" | "reviews">(() => profileCached?.activeTab ?? "records");
+  const [profileLoading, setProfileLoading] = useState(() => !profileCached);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
 
   const cardSentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef<Set<number>>(new Set());
-  const requestedRecordPagesRef = useRef<Set<number>>(new Set());
+  const requestedPagesRef = useRef<Set<number>>(
+    profileCached
+      ? new Set(Array.from({ length: profileCached.reviewPage }, (_, i) => i + 1))
+      : new Set()
+  );
+  const requestedRecordPagesRef = useRef<Set<number>>(
+    profileCached
+      ? new Set(Array.from({ length: profileCached.recordPage }, (_, i) => i + 1))
+      : new Set()
+  );
   const loadingReviewsRef = useRef(loadingReviews);
   const loadingRecordsRef = useRef(loadingRecords);
 
@@ -172,6 +198,8 @@ export default function ProfilePage() {
         openLoginSheet();
         return;
       }
+
+      if (getProfileCache<ProfileCachePayload>(user.id)) return;
 
       setProfileLoading(true);
       setReviewSectionLoading(true);
@@ -334,6 +362,35 @@ export default function ProfilePage() {
 
   useEffect(() => { loadingReviewsRef.current = loadingReviews; }, [loadingReviews]);
   useEffect(() => { loadingRecordsRef.current = loadingRecords; }, [loadingRecords]);
+
+  useEffect(() => {
+    if (!user || profileLoading || !reviewOrderReady || !recordOrderReady) return;
+    setProfileCache<ProfileCachePayload>(user.id, {
+      profile,
+      recordCount,
+      totalMinutes,
+      reviewCount,
+      reviews,
+      records,
+      recordMediaById,
+      reviewLikeCounts,
+      reviewCommentCounts,
+      reviewImages,
+      reviewPage,
+      hasMoreReviews,
+      recordPage,
+      hasMoreRecords,
+      orderedReviewIds,
+      orderedRecordIds,
+      activeTab,
+    });
+  }, [
+    user, profile, recordCount, totalMinutes, reviewCount, reviews, records,
+    recordMediaById, reviewLikeCounts, reviewCommentCounts, reviewImages,
+    reviewPage, hasMoreReviews, recordPage, hasMoreRecords,
+    orderedReviewIds, orderedRecordIds, activeTab,
+    profileLoading, reviewOrderReady, recordOrderReady,
+  ]);
 
   useEffect(() => {
     if (!cardSentinelRef.current || (!hasMoreReviews && !hasMoreRecords)) return;

@@ -29,6 +29,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { Activity, CalendarDays, ChevronLeft, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -231,6 +232,7 @@ export default function RecordDetailPage() {
       return;
     }
 
+    invalidateProfileCache(user.id);
     router.replace(`/day/${record.record_date}`);
   };
 

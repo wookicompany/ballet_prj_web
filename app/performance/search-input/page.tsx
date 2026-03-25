@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseDateKey } from "@/lib/kstDateTime";
+import { getSearchInputCache, setSearchInputCache } from "@/lib/performanceSearchInputCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, MessageCircle, Search, Star } from "lucide-react";
@@ -52,6 +53,19 @@ const formatDateRange = (from?: string | null, to?: string | null) => {
   return `${start} ~ ${end}`;
 };
 
+type PerformanceSearchInputCachePayload = {
+  keyword: string;
+  draft: { keyword: string };
+  filters: { keyword: string };
+  items: PerformanceItem[];
+  ratingMap: Record<string, RatingSummary>;
+  engagementMap: Record<string, EngagementSummary>;
+  page: number;
+  hasMore: boolean;
+  matchedIds: string[] | null;
+  hasSearched: boolean;
+};
+
 const RECENT_STORAGE_KEY = "recent_performances";
 const RECENT_SEARCH_KEY = "recent_performance_searches";
 const RECENT_SEARCH_LIMIT = 10;
@@ -61,31 +75,32 @@ export default function PerformanceSearchInputPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [draft, setDraft] = useState(() => ({
-    keyword: "",
-  }));
-  const [filters, setFilters] = useState(draft);
+  const inputCached = getSearchInputCache<PerformanceSearchInputCachePayload>();
+
+  const [draft, setDraft] = useState(() => inputCached?.draft ?? { keyword: "" });
+  const [filters, setFilters] = useState(() => inputCached?.filters ?? { keyword: "" });
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [items, setItems] = useState<PerformanceItem[]>([]);
-  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>({});
-  const [engagementMap, setEngagementMap] = useState<
-    Record<string, EngagementSummary>
-  >({});
+  const [items, setItems] = useState<PerformanceItem[]>(() => inputCached?.items ?? []);
+  const [ratingMap, setRatingMap] = useState<Record<string, RatingSummary>>(() => inputCached?.ratingMap ?? {});
+  const [engagementMap, setEngagementMap] = useState<Record<string, EngagementSummary>>(() => inputCached?.engagementMap ?? {});
   const [recentItems, setRecentItems] = useState<RecentPerformance[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(() => inputCached?.hasSearched ?? false);
   const [isFocused, setIsFocused] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [matchedIds, setMatchedIds] = useState<string[] | null>(null);
+  const [page, setPage] = useState(() => inputCached?.page ?? 0);
+  const [hasMore, setHasMore] = useState(() => inputCached?.hasMore ?? false);
+  const [matchedIds, setMatchedIds] = useState<string[] | null>(() => inputCached?.matchedIds ?? null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef(new Set<number>());
+  const requestedPagesRef = useRef(
+    inputCached
+      ? new Set(Array.from({ length: inputCached.page + 1 }, (_, i) => i))
+      : new Set<number>()
+  );
 
   useEffect(() => {
-    const nextFilters = {
-      keyword: "",
-    };
+    if (getSearchInputCache<PerformanceSearchInputCachePayload>()) return;
+    const nextFilters = { keyword: "" };
     setDraft(nextFilters);
     setFilters(nextFilters);
   }, []);
@@ -302,8 +317,26 @@ export default function PerformanceSearchInputPage() {
   };
   useEffect(() => {
     if (!hasSearched) return;
+    const cached = getSearchInputCache<PerformanceSearchInputCachePayload>();
+    if (cached?.keyword === filters.keyword.trim() && cached.items.length > 0) return;
     fetchPage(0);
-  }, [fetchPage, hasSearched]);
+  }, [fetchPage, hasSearched, filters.keyword]);
+
+  useEffect(() => {
+    if (!hasSearched || loading || loadingMore) return;
+    setSearchInputCache<PerformanceSearchInputCachePayload>({
+      keyword: filters.keyword.trim(),
+      draft,
+      filters,
+      items,
+      ratingMap,
+      engagementMap,
+      page,
+      hasMore,
+      matchedIds,
+      hasSearched,
+    });
+  }, [hasSearched, items, ratingMap, engagementMap, page, hasMore, matchedIds, filters, draft, loading, loadingMore]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;

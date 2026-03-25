@@ -9,12 +9,19 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
+import { getNoticeCache, setNoticeCache } from "@/lib/noticeCache";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type NoticeListItem = {
   id: string;
   title: string;
   published_at: string | null;
+};
+
+type NoticeCachePayload = {
+  items: NoticeListItem[];
+  readNoticeIds: string[];
+  isReadStatusReady: boolean;
 };
 
 const formatPublishedDate = (value: string | null) => {
@@ -33,11 +40,14 @@ export default function NoticePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<NoticeListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const cached = getNoticeCache<NoticeCachePayload>();
+
+  const [items, setItems] = useState<NoticeListItem[]>(() => cached?.items ?? []);
+  const [loading, setLoading] = useState(() => !cached);
   const [error, setError] = useState<string | null>(null);
-  const [readNoticeIds, setReadNoticeIds] = useState<string[]>([]);
-  const [isReadStatusReady, setIsReadStatusReady] = useState(false);
+  const [readNoticeIds, setReadNoticeIds] = useState<string[]>(() => cached?.readNoticeIds ?? []);
+  const [isReadStatusReady, setIsReadStatusReady] = useState(() => cached?.isReadStatusReady ?? false);
 
   const renderNoticeSkeleton = () => (
     <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
@@ -51,6 +61,7 @@ export default function NoticePage() {
   );
 
   useEffect(() => {
+    if (getNoticeCache<NoticeCachePayload>()) return;
     let isMounted = true;
 
     const loadNotices = async () => {
@@ -65,7 +76,13 @@ export default function NoticePage() {
 
         const payload = (await response.json()) as { items?: NoticeListItem[] };
         if (!isMounted) return;
-        setItems(Array.isArray(payload.items) ? payload.items : []);
+        const nextItems = Array.isArray(payload.items) ? payload.items : [];
+        setItems(nextItems);
+        setNoticeCache<NoticeCachePayload>({
+          items: nextItems,
+          readNoticeIds: [],
+          isReadStatusReady: false,
+        });
       } catch {
         if (!isMounted) return;
         setError("공지사항을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -110,10 +127,18 @@ export default function NoticePage() {
         return;
       }
       const payload = (await response.json()) as { read_notice_ids?: string[] };
-      setReadNoticeIds(
-        Array.isArray(payload.read_notice_ids) ? payload.read_notice_ids : []
-      );
+      const nextIds = Array.isArray(payload.read_notice_ids) ? payload.read_notice_ids : [];
+      setReadNoticeIds(nextIds);
       setIsReadStatusReady(true);
+
+      const existing = getNoticeCache<NoticeCachePayload>();
+      if (existing) {
+        setNoticeCache<NoticeCachePayload>({
+          ...existing,
+          readNoticeIds: nextIds,
+          isReadStatusReady: true,
+        });
+      }
     };
 
     void fetchReadStatus();

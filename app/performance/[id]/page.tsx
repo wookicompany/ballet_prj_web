@@ -42,6 +42,7 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { openUrlInApp, sendHapticToApp } from "@/lib/reactNativeWebView";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
+import { getDetailCache, setDetailCache, invalidateDetailCache } from "@/lib/performanceDetailCache";
 import {
   REPORT_REASON_OPTIONS,
   REPORT_THRESHOLD,
@@ -162,6 +163,26 @@ const getStarFillRatio = (rating10: number, starIndex: number) => {
   return value >= 1 ? 1 : 0;
 };
 
+type PerformanceDetailCachePayload = {
+  detail: PerformanceDetail | null;
+  facilityDetail: FacilityDetail | null;
+  awardDetail: AwardDetail | null;
+  reviewCount: number;
+  reviewAverage: number | null;
+  reviews: ReviewItem[];
+  profiles: Record<string, ProfileSummary>;
+  profileResolvedMap: Record<string, boolean>;
+  likeCounts: Record<string, number>;
+  likedMap: Record<string, boolean>;
+  commentCounts: Record<string, number>;
+  reviewImages: Record<string, string[]>;
+  reviewReportCounts: Record<string, number>;
+  hasMoreReviews: boolean;
+  reviewPage: number;
+  orderedReviewIds: string[];
+  reviewOrderReady: boolean;
+};
+
 const RECENT_STORAGE_KEY = "recent_performances";
 const RECENT_LIMIT = 12;
 
@@ -206,29 +227,28 @@ export default function PerformanceDetailPage() {
   const performanceId = params.id;
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<PerformanceDetail | null>(null);
-  const [reviewCount, setReviewCount] = useState(0);
-  const [reviewAverage, setReviewAverage] = useState<number | null>(null);
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, ProfileSummary>>({});
-  const [profileResolvedMap, setProfileResolvedMap] = useState<
-    Record<string, boolean>
-  >({});
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
-  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
-  const [reviewReportCounts, setReviewReportCounts] = useState<
-    Record<string, number>
-  >({});
-  const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
-  const [awardDetail, setAwardDetail] = useState<AwardDetail | null>(null);
+
+  const detailCached = getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "");
+
+  const [loading, setLoading] = useState(() => !detailCached);
+  const [detail, setDetail] = useState<PerformanceDetail | null>(() => detailCached?.detail ?? null);
+  const [reviewCount, setReviewCount] = useState(() => detailCached?.reviewCount ?? 0);
+  const [reviewAverage, setReviewAverage] = useState<number | null>(() => detailCached?.reviewAverage ?? null);
+  const [reviews, setReviews] = useState<ReviewItem[]>(() => detailCached?.reviews ?? []);
+  const [profiles, setProfiles] = useState<Record<string, ProfileSummary>>(() => detailCached?.profiles ?? {});
+  const [profileResolvedMap, setProfileResolvedMap] = useState<Record<string, boolean>>(() => detailCached?.profileResolvedMap ?? {});
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>(() => detailCached?.likeCounts ?? {});
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>(() => detailCached?.likedMap ?? {});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(() => detailCached?.commentCounts ?? {});
+  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>(() => detailCached?.reviewImages ?? {});
+  const [reviewReportCounts, setReviewReportCounts] = useState<Record<string, number>>(() => detailCached?.reviewReportCounts ?? {});
+  const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(() => detailCached?.facilityDetail ?? null);
+  const [awardDetail, setAwardDetail] = useState<AwardDetail | null>(() => detailCached?.awardDetail ?? null);
   const [loadingReviews, setLoadingReviews] = useState(false);
-  const [hasMoreReviews, setHasMoreReviews] = useState(true);
-  const [reviewPage, setReviewPage] = useState(0);
-  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>([]);
-  const [reviewOrderReady, setReviewOrderReady] = useState(false);
+  const [hasMoreReviews, setHasMoreReviews] = useState(() => detailCached?.hasMoreReviews ?? true);
+  const [reviewPage, setReviewPage] = useState(() => detailCached?.reviewPage ?? 0);
+  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>(() => detailCached?.orderedReviewIds ?? []);
+  const [reviewOrderReady, setReviewOrderReady] = useState(() => !!detailCached);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
@@ -249,11 +269,17 @@ export default function PerformanceDetailPage() {
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef<Set<number>>(new Set());
+  const requestedPagesRef = useRef<Set<number>>(
+    detailCached
+      ? new Set(Array.from({ length: detailCached.reviewPage }, (_, i) => i + 1))
+      : new Set()
+  );
   const viewTrackedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
+      if (getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "")) return;
+
       setLoading(true);
 
       // Step 1: performanceId만 필요한 쿼리 4개 병렬 실행
@@ -380,6 +406,7 @@ export default function PerformanceDetailPage() {
   }, [performanceId]);
 
   useEffect(() => {
+    if (getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "")) return;
     setReviews([]);
     setProfiles({});
     setProfileResolvedMap({});
@@ -397,6 +424,7 @@ export default function PerformanceDetailPage() {
     setReviewOrderReady(false);
     setActiveVisualIndex(0);
     requestedPagesRef.current = new Set();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [performanceId]);
 
   useEffect(() => {
@@ -451,6 +479,7 @@ export default function PerformanceDetailPage() {
 
   useEffect(() => {
     const fetchReviewOrder = async () => {
+      if (getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "")) return;
       setReviewOrderReady(false);
       const { data: reviewRows, error: reviewError } = await supabase
         .from("performance_reviews")
@@ -697,6 +726,35 @@ export default function PerformanceDetailPage() {
     reviewOrderReady,
   ]);
 
+  useEffect(() => {
+    if (loading || !reviewOrderReady || !detail) return;
+    const userId = user?.id ?? "";
+    setDetailCache<PerformanceDetailCachePayload>(performanceId, userId, {
+      detail,
+      facilityDetail,
+      awardDetail,
+      reviewCount,
+      reviewAverage,
+      reviews,
+      profiles,
+      profileResolvedMap,
+      likeCounts,
+      likedMap,
+      commentCounts,
+      reviewImages,
+      reviewReportCounts,
+      hasMoreReviews,
+      reviewPage,
+      orderedReviewIds,
+      reviewOrderReady,
+    });
+  }, [
+    performanceId, loading, reviewOrderReady, detail, facilityDetail, awardDetail,
+    reviewCount, reviewAverage, reviews, profiles, profileResolvedMap,
+    likeCounts, likedMap, commentCounts, reviewImages, reviewReportCounts,
+    hasMoreReviews, reviewPage, orderedReviewIds, user,
+  ]);
+
   const refreshReviewSummary = async () => {
     const { data: ratings } = await supabase
       .from("performance_reviews")
@@ -790,6 +848,7 @@ export default function PerformanceDetailPage() {
     }
 
     invalidatePerformanceHomeCache();
+    invalidateDetailCache(performanceId);
     setReviews((prev) => prev.filter((review) => review.id !== deleteTargetId));
     setLikeCounts((prev) => {
       const next = { ...prev };

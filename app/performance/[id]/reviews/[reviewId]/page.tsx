@@ -31,6 +31,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
+import { invalidateDetailCache } from "@/lib/performanceDetailCache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import {
   REPORT_REASON_OPTIONS,
   REPORT_THRESHOLD,
@@ -834,6 +836,8 @@ export default function PerformanceReviewDetailPage() {
       return;
     }
     invalidatePerformanceHomeCache();
+    invalidateDetailCache(performanceId);
+    if (user) invalidateProfileCache(user.id);
     router.replace(`/performance/${performanceId}`);
   };
 

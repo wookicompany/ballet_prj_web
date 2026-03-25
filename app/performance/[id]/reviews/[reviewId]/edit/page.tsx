@@ -15,6 +15,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
+import { invalidateDetailCache } from "@/lib/performanceDetailCache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
@@ -215,6 +217,8 @@ export default function PerformanceReviewEditPage() {
     }
 
     invalidatePerformanceHomeCache();
+    invalidateDetailCache(performanceId);
+    if (user) invalidateProfileCache(user.id);
     sessionStorage.setItem(`review-updated:${performanceId}`, "1");
     router.back();
   };

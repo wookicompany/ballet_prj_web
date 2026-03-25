@@ -49,6 +49,7 @@ import {
 } from "@/lib/reactNativeWebView";
 import type { AppPlatform, HealthSyncErrorCode } from "@/lib/reactNativeWebView";
 import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { supabase } from "@/lib/supabaseClient";
 import {
   Activity,
@@ -925,6 +926,7 @@ function RecordNewContent() {
       });
     }
 
+    invalidateProfileCache(user.id);
     router.replace("/calendar");
   };
 
