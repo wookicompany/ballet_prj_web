@@ -32,6 +32,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  getCenterOrdersCache,
+  setCenterOrdersCache,
+  invalidateCenterOrdersCache,
+} from "@/lib/centerOrdersCache";
 import { CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -61,12 +66,15 @@ function CenterOrderListSkeleton() {
   );
 }
 
+type CenterOrdersCachePayload = { items: SavedCenterOrder[] };
+
 export default function SavedCenterOrdersPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedCenterOrder[]>([]);
-  const [listLoading, setListLoading] = useState(false);
+  const cached = getCenterOrdersCache<CenterOrdersCachePayload>();
+  const [items, setItems] = useState<SavedCenterOrder[]>(() => cached?.items ?? []);
+  const [listLoading, setListLoading] = useState(() => !cached);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -136,11 +144,13 @@ export default function SavedCenterOrdersPage() {
       items: SavedCenterOrder[];
     };
     setItems(payload.items ?? []);
+    setCenterOrdersCache<CenterOrdersCachePayload>({ items: payload.items ?? [] });
     setListLoading(false);
   }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
+    if (getCenterOrdersCache<CenterOrdersCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
 
@@ -200,6 +210,7 @@ export default function SavedCenterOrdersPage() {
     } else {
       setItems((prev) => [item, ...prev]);
     }
+    invalidateCenterOrdersCache();
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -224,6 +235,7 @@ export default function SavedCenterOrdersPage() {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== targetId));
+    invalidateCenterOrdersCache();
     setDeleteTarget(null);
   };
 

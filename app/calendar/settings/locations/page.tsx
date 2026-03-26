@@ -24,6 +24,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  getLocationsCache,
+  setLocationsCache,
+  invalidateLocationsCache,
+} from "@/lib/locationsCache";
 import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,12 +58,15 @@ function LocationListSkeleton() {
   );
 }
 
+type LocationsCachePayload = { items: SavedLocation[] };
+
 export default function SavedLocationsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedLocation[]>([]);
-  const [listLoading, setListLoading] = useState(false);
+  const cached = getLocationsCache<LocationsCachePayload>();
+  const [items, setItems] = useState<SavedLocation[]>(() => cached?.items ?? []);
+  const [listLoading, setListLoading] = useState(() => !cached);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -94,11 +102,13 @@ export default function SavedLocationsPage() {
     }
     const payload = (await response.json()) as { items: SavedLocation[] };
     setItems(payload.items ?? []);
+    setLocationsCache<LocationsCachePayload>({ items: payload.items ?? [] });
     setListLoading(false);
   }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
+    if (getLocationsCache<LocationsCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
 
@@ -155,6 +165,7 @@ export default function SavedLocationsPage() {
     } else {
       setItems((prev) => [item, ...prev]);
     }
+    invalidateLocationsCache();
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -176,6 +187,7 @@ export default function SavedLocationsPage() {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== targetId));
+    invalidateLocationsCache();
     setDeleteTarget(null);
   };
 

@@ -222,6 +222,10 @@ const requestedPagesRef = useRef(
 | `lib/performanceSearchInputCache.ts` | `/performance/search-input` | — |
 | `lib/profileCache.ts` | `/profile` | 기록·리뷰 생성·수정·삭제 |
 | `lib/performanceDetailCache.ts` | `/performance/[id]` | 리뷰 생성·수정·삭제 |
+| `lib/locationsCache.ts` | `/calendar/settings/locations` | 항목 추가·수정·삭제 |
+| `lib/instructorLevelsCache.ts` | `/calendar/settings/instructor-levels` | 항목 추가·수정·삭제 |
+| `lib/barOrdersCache.ts` | `/calendar/settings/bar-orders` | 항목 추가·수정·삭제 |
+| `lib/centerOrdersCache.ts` | `/calendar/settings/center-orders` | 항목 추가·수정·삭제 |
 
 ### DB 인덱스
 

@@ -32,6 +32,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  getBarOrdersCache,
+  setBarOrdersCache,
+  invalidateBarOrdersCache,
+} from "@/lib/barOrdersCache";
 import { BAR_ORDER_TAGS } from "@/lib/orderTags";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -61,12 +66,15 @@ function BarOrderListSkeleton() {
   );
 }
 
+type BarOrdersCachePayload = { items: SavedBarOrder[] };
+
 export default function SavedBarOrdersPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedBarOrder[]>([]);
-  const [listLoading, setListLoading] = useState(false);
+  const cached = getBarOrdersCache<BarOrdersCachePayload>();
+  const [items, setItems] = useState<SavedBarOrder[]>(() => cached?.items ?? []);
+  const [listLoading, setListLoading] = useState(() => !cached);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -133,11 +141,13 @@ export default function SavedBarOrdersPage() {
     }
     const payload = (await response.json()) as { items: SavedBarOrder[] };
     setItems(payload.items ?? []);
+    setBarOrdersCache<BarOrdersCachePayload>({ items: payload.items ?? [] });
     setListLoading(false);
   }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
+    if (getBarOrdersCache<BarOrdersCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
 
@@ -195,6 +205,7 @@ export default function SavedBarOrdersPage() {
     } else {
       setItems((prev) => [item, ...prev]);
     }
+    invalidateBarOrdersCache();
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -216,6 +227,7 @@ export default function SavedBarOrdersPage() {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== targetId));
+    invalidateBarOrdersCache();
     setDeleteTarget(null);
   };
 

@@ -24,6 +24,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  getInstructorLevelsCache,
+  setInstructorLevelsCache,
+  invalidateInstructorLevelsCache,
+} from "@/lib/instructorLevelsCache";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,12 +57,15 @@ function InstructorLevelListSkeleton() {
   );
 }
 
+type InstructorLevelsCachePayload = { items: SavedInstructorLevel[] };
+
 export default function SavedInstructorLevelsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [items, setItems] = useState<SavedInstructorLevel[]>([]);
-  const [listLoading, setListLoading] = useState(false);
+  const cached = getInstructorLevelsCache<InstructorLevelsCachePayload>();
+  const [items, setItems] = useState<SavedInstructorLevel[]>(() => cached?.items ?? []);
+  const [listLoading, setListLoading] = useState(() => !cached);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -92,11 +100,13 @@ export default function SavedInstructorLevelsPage() {
       items: SavedInstructorLevel[];
     };
     setItems(payload.items ?? []);
+    setInstructorLevelsCache<InstructorLevelsCachePayload>({ items: payload.items ?? [] });
     setListLoading(false);
   }, [openLoginSheet, user]);
 
   useEffect(() => {
     if (!user) return;
+    if (getInstructorLevelsCache<InstructorLevelsCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
 
@@ -150,6 +160,7 @@ export default function SavedInstructorLevelsPage() {
     } else {
       setItems((prev) => [item, ...prev]);
     }
+    invalidateInstructorLevelsCache();
     setSaving(false);
     setSheetOpen(false);
     resetForm();
@@ -174,6 +185,7 @@ export default function SavedInstructorLevelsPage() {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== targetId));
+    invalidateInstructorLevelsCache();
     setDeleteTarget(null);
   };
 
