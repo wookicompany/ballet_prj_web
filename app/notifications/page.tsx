@@ -53,7 +53,7 @@ export default function NotificationsPage() {
 
   const renderSkeleton = () => (
     <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
-      {Array.from({ length: 4 }).map((_, index) => (
+      {Array.from({ length: 3 }).map((_, index) => (
         <div key={`notification-skeleton-${index}`} className="px-4 py-3">
           <Skeleton className="h-4 w-3/4" />
           <Skeleton className="mt-2 h-3 w-20" />
