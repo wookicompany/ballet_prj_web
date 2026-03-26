@@ -1009,7 +1009,7 @@ export default function PerformanceDetailPage() {
             className={
               headerIsTransparent
                 ? "text-white hover:bg-white/10"
-                : "text-[#17171c]/70 hover:bg-black/5"
+                : "text-[#17171c]/70 hover:bg-[#17171c]/5"
             }
             onClick={() => router.back()}
             aria-label="뒤로"
@@ -1021,18 +1021,18 @@ export default function PerformanceDetailPage() {
 
         {loading ? (
           <div className="-mt-12 space-y-5">
-            <section className="relative h-[400px] w-full overflow-hidden bg-black/5">
+            <section className="relative h-[400px] w-full overflow-hidden bg-[#17171c]/5">
               <Skeleton className="h-full w-full" />
             </section>
             <div className="space-y-4 px-4">
-              <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+              <section className="rounded-2xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
                 <Skeleton className="h-5 w-2/3" />
                 <div className="mt-2 space-y-2">
                   <Skeleton className="h-3 w-1/2" />
                   <Skeleton className="h-3 w-1/3" />
                 </div>
               </section>
-              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+              <section className="space-y-3 rounded-xl border border-[#17171c]/5 bg-white p-4">
                 <Skeleton className="h-4 w-20" />
                 <div className="space-y-2">
                   <Skeleton className="h-3 w-full" />
@@ -1040,13 +1040,13 @@ export default function PerformanceDetailPage() {
                   <Skeleton className="h-3 w-2/3" />
                 </div>
               </section>
-              <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+              <section className="space-y-3 rounded-xl border border-[#17171c]/5 bg-white p-4">
                 <Skeleton className="h-4 w-16" />
                 <div className="space-y-3">
                   {Array.from({ length: 2 }).map((_, index) => (
                     <div
                       key={`review-skeleton-${index}`}
-                      className="rounded-lg border border-black/5 p-3"
+                      className="rounded-lg border border-[#17171c]/5 p-3"
                     >
                       <Skeleton className="h-3 w-24" />
                       <Skeleton className="mt-2 h-3 w-full" />
@@ -1124,7 +1124,7 @@ export default function PerformanceDetailPage() {
             </section>
 
             <div className="space-y-5 px-4 pb-2">
-              <section className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+              <section className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
                 <h1 className="text-lg font-semibold leading-snug text-[#17171c]">
                   {detail.prfnm || "공연명 미정"}
                 </h1>
@@ -1172,9 +1172,9 @@ export default function PerformanceDetailPage() {
                   </div>
                 ) : null}
               </section>
-              <section className="space-y-4 rounded-2xl border border-black/5 bg-white p-5 text-sm text-[#17171c] shadow-sm">
+              <section className="space-y-4 rounded-2xl border border-[#17171c]/5 bg-white p-5 text-sm text-[#17171c] shadow-sm">
                 <div className="flex w-full">
-                  <div className="relative flex w-full rounded-xl bg-black/5 p-1.5 text-xs text-[#17171c]/60">
+                  <div className="relative flex w-full rounded-xl bg-[#17171c]/5 p-1.5 text-xs text-[#17171c]/60">
                     <div
                       className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 ease-out"
                       style={{
@@ -1250,7 +1250,7 @@ export default function PerformanceDetailPage() {
                             {perfItems.map((item) => (
                             <TableRow
                               key={item.label}
-                              className="border-black/5 hover:bg-transparent"
+                              className="border-[#17171c]/5 hover:bg-transparent"
                             >
                               <TableCell className="text-[#17171c]/50 py-2.5">
                                 {item.label}
@@ -1261,7 +1261,7 @@ export default function PerformanceDetailPage() {
                             </TableRow>
                           ))}
                             {relatesItems.length > 0 && (
-                              <TableRow className="border-black/5 hover:bg-transparent">
+                              <TableRow className="border-[#17171c]/5 hover:bg-transparent">
                                 <TableCell className="text-[#17171c]/50 py-2.5 align-middle">
                                   예매처
                                 </TableCell>
@@ -1281,7 +1281,7 @@ export default function PerformanceDetailPage() {
                                             const opened = openUrlInApp(r.relateurl!, detail.prfnm ?? undefined);
                                             if (!opened) window.open(r.relateurl!, "_blank", "noopener,noreferrer");
                                           }}
-                                          className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-xs text-[#17171c]/70"
+                                          className="inline-flex items-center gap-1 rounded-full border border-[#17171c]/10 px-3 py-1 text-xs text-[#17171c]/70"
                                         >
                                           {r.relatenm || r.relateurl}
                                           <ExternalLink className="size-3 text-[#17171c]/40" />
@@ -1289,7 +1289,7 @@ export default function PerformanceDetailPage() {
                                       ) : (
                                         <span
                                           key={i}
-                                          className="inline-flex items-center rounded-full border border-black/10 px-3 py-1 text-xs text-[#17171c]/50"
+                                          className="inline-flex items-center rounded-full border border-[#17171c]/10 px-3 py-1 text-xs text-[#17171c]/50"
                                         >
                                           {r.relatenm}
                                         </span>
@@ -1305,7 +1305,7 @@ export default function PerformanceDetailPage() {
                     })()}
                     {formatOptionalText(detail.sty) ? (
                       <>
-                        <Separator className="my-4 bg-black/5" />
+                        <Separator className="my-4 bg-[#17171c]/5" />
                         <div className="space-y-2">
                           <h4 className="text-xs font-semibold text-[#17171c]">줄거리</h4>
                           <p
@@ -1417,7 +1417,7 @@ export default function PerformanceDetailPage() {
                           {items.map((item) => (
                             <TableRow
                               key={item.label}
-                              className="border-black/5 hover:bg-transparent"
+                              className="border-[#17171c]/5 hover:bg-transparent"
                             >
                               <TableCell className="text-[#17171c]/50 py-2.5">
                                 {item.label}
@@ -1431,7 +1431,7 @@ export default function PerformanceDetailPage() {
                                     </span>
                                     <button
                                       type="button"
-                                      className="shrink-0 rounded p-1 text-[#17171c]/50 hover:bg-black/5 hover:text-[#17171c]"
+                                      className="shrink-0 rounded p-1 text-[#17171c]/50 hover:bg-[#17171c]/5 hover:text-[#17171c]"
                                       onClick={() => {
                                         navigator.clipboard
                                           .writeText(item.value as string)
@@ -1460,14 +1460,14 @@ export default function PerformanceDetailPage() {
                 )}
               </section>
 
-              <section className="space-y-5 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+              <section className="space-y-5 rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold text-[#17171c]">리뷰</h3>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-9 w-9 rounded-lg p-0 text-[#17171c]/70 hover:bg-black/5"
+                    className="h-9 w-9 rounded-lg p-0 text-[#17171c]/70 hover:bg-[#17171c]/5"
                     onClick={() => {
                       if (!user) {
                         openLoginSheet();
@@ -1506,7 +1506,7 @@ export default function PerformanceDetailPage() {
                       return (
                         <div
                           key={review.id}
-                          className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-black/5"
+                          className="rounded-xl border border-[#17171c]/5 bg-[#17171c]/[0.02] p-3 text-sm text-[#17171c] transition-colors active:bg-[#17171c]/5"
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -1705,7 +1705,7 @@ export default function PerformanceDetailPage() {
                       {Array.from({ length: 2 }).map((_, index) => (
                         <div
                           key={`loading-review-${index}`}
-                          className="rounded-xl border border-black/5 bg-black/[0.02] p-4"
+                          className="rounded-xl border border-[#17171c]/5 bg-[#17171c]/[0.02] p-4"
                         >
                           <Skeleton className="h-3 w-24" />
                           <Skeleton className="mt-2 h-3 w-full" />
@@ -1753,8 +1753,8 @@ export default function PerformanceDetailPage() {
                   type="button"
                   className={`flex h-14 w-full items-center justify-between rounded-lg border px-3 text-left text-sm transition ${
                     selected
-                      ? "border-[#17171c]/40 bg-black/5 text-[#17171c]"
-                      : "border-black/10 text-[#17171c]/80"
+                      ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                      : "border-[#17171c]/10 text-[#17171c]/80"
                   }`}
                   onClick={() => setReportReason(option.code)}
                 >
@@ -1770,7 +1770,7 @@ export default function PerformanceDetailPage() {
             <textarea
               value={reportDetail}
               onChange={(event) => setReportDetail(event.target.value)}
-              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
+              className="min-h-[120px] w-full rounded-md border border-[#17171c]/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
               maxLength={400}
               placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
             />

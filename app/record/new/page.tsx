@@ -977,7 +977,7 @@ function RecordNewContent() {
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-transparent"
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="사진 추가"
               >
@@ -1347,7 +1347,7 @@ function RecordNewContent() {
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
                   {barOrderTags.length === 0 ? (
                     <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -1459,7 +1459,7 @@ function RecordNewContent() {
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
                   {centerOrderTags.length === 0 ? (
                     <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -1583,7 +1583,7 @@ function RecordNewContent() {
                     {healthSyncing ? <Spinner size="sm" /> : "불러오기"}
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px]">
+                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px]">
                   <div className="flex items-start justify-end">
                     <p className="text-xs text-[#17171c]/60">
                       {workoutCard?.deviceName ?? "-"}
@@ -1634,7 +1634,7 @@ function RecordNewContent() {
           <div className="grid grid-cols-3 gap-3">
             <div
               ref={yearListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {years.map((year) => (
                 <Button
@@ -1651,7 +1651,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={monthListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {months.map((month) => {
                 const value = String(month).padStart(2, "0");
@@ -1671,7 +1671,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={dayListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {Array.from(
                 { length: new Date(dateDraft.year, dateDraft.month, 0).getDate() },
@@ -1721,7 +1721,7 @@ function RecordNewContent() {
           onOpenChange={setStartSheetOpen}
         >
           <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
               <div
                 className={`flex h-10 items-center justify-center rounded-md text-sm ${
                   Number(startDraft.hour) < 12
@@ -1743,7 +1743,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={startHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {hours.map((hour) => (
                 <Button
@@ -1760,7 +1760,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={startMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {minutes.map((minute) => (
                 <Button
@@ -1797,7 +1797,7 @@ function RecordNewContent() {
           onOpenChange={setEndSheetOpen}
         >
           <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
               <div
                 className={`flex h-10 items-center justify-center rounded-md text-sm ${
                   Number(endDraft.hour) < 12
@@ -1819,7 +1819,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={endHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {hours.map((hour) => (
                 <Button
@@ -1836,7 +1836,7 @@ function RecordNewContent() {
             </div>
             <div
               ref={endMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2"
+              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
             >
               {minutes.map((minute) => (
                 <Button
@@ -1878,7 +1878,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedLocations.length === 0 ? (
-              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 장소가 아직 없어요.
                 </p>
@@ -1950,7 +1950,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedInstructorLevels.length === 0 ? (
-              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 강사님 & 레벨이 아직 없어요.
                 </p>
@@ -2020,7 +2020,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedBarOrders.length === 0 ? (
-              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 바 순서가 아직 없어요.
                 </p>
@@ -2113,7 +2113,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedCenterOrders.length === 0 ? (
-              <div className="rounded-lg border border-black/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 센터 순서가 아직 없어요.
                 </p>

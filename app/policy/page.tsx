@@ -27,7 +27,7 @@ export default function PolicyPage() {
           <div className="w-9" />
         </header>
 
-        <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+        <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
           <Button
             type="button"
             variant="ghost"

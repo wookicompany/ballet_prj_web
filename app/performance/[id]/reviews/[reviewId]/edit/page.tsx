@@ -311,7 +311,7 @@ export default function PerformanceReviewEditPage() {
             <Textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              className="min-h-[200px] border-black/5 bg-[#fafafa] text-base"
+              className="min-h-[200px] border-[#17171c]/5 bg-[#fafafa] text-base"
               maxLength={300}
             />
           </section>
@@ -326,7 +326,7 @@ export default function PerformanceReviewEditPage() {
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
               <button
                 type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-black/10 bg-[#fafafa]"
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-[#fafafa]"
                 onClick={() => (canUploadMore ? fileInputRef.current?.click() : null)}
                 aria-label="사진 추가"
                 disabled={!canUploadMore}

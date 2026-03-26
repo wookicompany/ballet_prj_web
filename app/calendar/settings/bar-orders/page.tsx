@@ -48,7 +48,7 @@ function BarOrderListSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={`bar-order-skeleton-${index}`}
-          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+          className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4"
         >
           <div className="space-y-2">
             <Skeleton className="h-4 w-28" />
@@ -224,7 +224,7 @@ export default function SavedBarOrdersPage() {
       items.map((item) => (
         <div
           key={item.id}
-          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+          className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -333,7 +333,7 @@ export default function SavedBarOrdersPage() {
           {loading || listLoading ? (
             <BarOrderListSkeleton />
           ) : items.length === 0 ? (
-            <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
+            <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
                 저장된 바 순서가 아직 없어요.
               </p>
@@ -365,7 +365,7 @@ export default function SavedBarOrdersPage() {
           </div>
           <div className="space-y-3">
             <Label className="text-sm text-[#17171c]/60">바(bar) 순서</Label>
-            <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3 min-h-[48px] flex items-center">
+            <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
               {orderTags.length === 0 ? (
                 <p className="text-sm text-[#17171c]/40">
                   선택된 순서가 여기 표시돼요.

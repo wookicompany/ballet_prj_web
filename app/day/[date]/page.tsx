@@ -175,7 +175,7 @@ export default function DayPage() {
                 variant="ghost"
                 className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 h-auto font-normal ${
                   isActive
-                    ? "bg-black/5 text-[#17171c] shadow-sm hover:bg-black/5 hover:text-[#17171c]"
+                    ? "bg-[#17171c]/5 text-[#17171c] shadow-sm hover:bg-[#17171c]/5 hover:text-[#17171c]"
                     : "text-[#17171c]/60 hover:bg-transparent hover:text-[#17171c]/60"
                 }`}
                 onClick={() => router.replace(`/day/${item.key}`)}
@@ -220,7 +220,7 @@ export default function DayPage() {
               <Button
                 key={record.id}
                 type="button"
-                className="absolute left-12 right-2 h-auto rounded-2xl border border-black/5 bg-white px-2.5 py-1.5 text-left text-sm text-[#17171c] shadow-sm hover:bg-white hover:text-[#17171c]"
+                className="absolute left-12 right-2 h-auto rounded-2xl border border-[#17171c]/5 bg-white px-2.5 py-1.5 text-left text-sm text-[#17171c] shadow-sm hover:bg-white hover:text-[#17171c]"
                 style={{ top: `${top}px`, height: `${clampedHeight}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
@@ -236,7 +236,7 @@ export default function DayPage() {
                       className="h-9 w-9 shrink-0 object-contain"
                     />
                   ) : (
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-black/5" />
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-[#17171c]/5" />
                   )}
                   <div className="min-w-0 flex-1 text-center">
                     <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
@@ -244,7 +244,7 @@ export default function DayPage() {
                     </p>
                   </div>
                   {media?.url ? (
-                    <div className="relative h-9 w-9 shrink-0 rounded-lg bg-black/5">
+                    <div className="relative h-9 w-9 shrink-0 rounded-lg bg-[#17171c]/5">
                       <AnimatedImage
                         src={media.url}
                         alt="기록 미디어"

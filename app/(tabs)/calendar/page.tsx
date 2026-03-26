@@ -382,7 +382,7 @@ export default function CalendarPage() {
             );
           })}
         </section>
-        <div className="h-px w-full bg-black/5" />
+        <div className="h-px w-full bg-[#17171c]/5" />
 
         <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
           {cells.map((cell, index) => {
@@ -408,7 +408,7 @@ export default function CalendarPage() {
                 key={`${index}-${dateStr}`}
                 type="button"
                 variant="outline"
-                className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-black/5 overflow-visible ${
+                className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-[#17171c]/5 overflow-visible ${
                   isEmpty ? "opacity-40" : ""
                 }`}
                 disabled={isEmpty}
@@ -467,7 +467,7 @@ export default function CalendarPage() {
           onOpenChange={setMonthSheetOpen}
         >
         <div className="grid grid-cols-2 gap-3">
-          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
             {yearOptions.map((year) => (
               <Button
                 key={`calendar-year-${year}`}
@@ -488,7 +488,7 @@ export default function CalendarPage() {
               </Button>
             ))}
           </div>
-          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
             {monthOptions.map((month) => (
               <Button
                 key={`calendar-month-${month}`}

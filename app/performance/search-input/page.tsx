@@ -396,7 +396,7 @@ export default function PerformanceSearchInputPage() {
                 setDraft((prev) => ({ ...prev, keyword: event.target.value }))
               }
               placeholder="공연명이나 출연진을 검색해요"
-              className="h-12 rounded-2xl border border-black/5 bg-white pl-9 text-base placeholder:text-sm shadow-sm"
+              className="h-12 rounded-2xl border border-[#17171c]/5 bg-white pl-9 text-base placeholder:text-sm shadow-sm"
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onKeyDown={(event) => {
@@ -408,10 +408,10 @@ export default function PerformanceSearchInputPage() {
             />
           </div>
         </header>
-        <div className="mt-4 h-px bg-black/5" />
+        <div className="mt-4 h-px bg-[#17171c]/5" />
 
         {isFocused && user ? (
-          <section className="mt-5 space-y-3 rounded-2xl border border-black/5 bg-white p-4">
+          <section className="mt-5 space-y-3 rounded-2xl border border-[#17171c]/5 bg-white p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-[#17171c]">
                 최근 검색어
@@ -429,7 +429,7 @@ export default function PerformanceSearchInputPage() {
               ) : null}
             </div>
             {recentSearches.length ? (
-              <div className="divide-y divide-black/5">
+              <div className="divide-y divide-[#17171c]/5">
                 {recentSearches.map((term) => (
                   <button
                     key={term}
@@ -448,7 +448,7 @@ export default function PerformanceSearchInputPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-black/10 text-sm text-[#17171c]/60">
+              <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#17171c]/10 text-sm text-[#17171c]/60">
                 최근 검색어가 없어요.
               </div>
             )}
@@ -456,7 +456,7 @@ export default function PerformanceSearchInputPage() {
         ) : null}
 
         {!hasSearched && !isFocused && user ? (
-          <section className="mt-5 space-y-3 rounded-2xl border border-black/5 bg-white p-4">
+          <section className="mt-5 space-y-3 rounded-2xl border border-[#17171c]/5 bg-white p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-[#17171c]">
                 최근 본 공연
@@ -482,7 +482,7 @@ export default function PerformanceSearchInputPage() {
                       sendHapticToApp();
                       router.push(`/performance/${item.id}`);
                     }}
-                    className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/5"
+                    className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#17171c]/5"
                   >
                     {item.poster ? (
                       <AnimatedImage
@@ -499,7 +499,7 @@ export default function PerformanceSearchInputPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-black/10 text-sm text-[#17171c]/60">
+              <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#17171c]/10 text-sm text-[#17171c]/60">
                 최근 본 공연이 없어요.
               </div>
             )}
@@ -507,13 +507,13 @@ export default function PerformanceSearchInputPage() {
         ) : null}
 
         {hasSearched ? (
-          <section className="mt-5 overflow-hidden rounded-2xl border border-black/5 bg-white">
+          <section className="mt-5 overflow-hidden rounded-2xl border border-[#17171c]/5 bg-white">
           {loading ? (
             <div className="space-y-4 px-4 py-4">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`search-skeleton-${index}`}
-                  className="flex w-full gap-3 border-b border-black/5 pb-4"
+                  className="flex w-full gap-3 border-b border-[#17171c]/5 pb-4"
                 >
                   <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
                   <div className="flex-1 space-y-2">
@@ -544,9 +544,9 @@ export default function PerformanceSearchInputPage() {
                   sendHapticToApp();
                   router.push(`/performance/${item.mt20id}`);
                 }}
-                className="flex w-full gap-3 border-b border-black/5 px-4 py-4 text-left last:border-b-0"
+                className="flex w-full gap-3 border-b border-[#17171c]/5 px-4 py-4 text-left last:border-b-0"
               >
-                <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
+                <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-[#17171c]/5">
                   {item.poster ? (
                     <AnimatedImage
                       src={item.poster}
@@ -591,7 +591,7 @@ export default function PerformanceSearchInputPage() {
             {Array.from({ length: 2 }).map((_, index) => (
               <div
                 key={`search-skeleton-more-${index}`}
-                className="flex w-full gap-3 border-b border-black/5 px-4 pb-4"
+                className="flex w-full gap-3 border-b border-[#17171c]/5 px-4 pb-4"
               >
                 <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
                 <div className="flex-1 space-y-2">

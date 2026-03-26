@@ -95,7 +95,7 @@ export function LoginSheetProvider({
           {SHOW_GOOGLE_LOGIN ? (
             <Button
               variant="outline"
-              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-white text-[#17171c] hover:bg-black/5`}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-white text-[#17171c] hover:bg-[#17171c]/5`}
               disabled={loading}
               onClick={() => void handleSocialLogin("google")}
             >

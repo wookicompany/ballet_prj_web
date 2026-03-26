@@ -187,7 +187,7 @@ export default function ProfileEditPage() {
         <div className="space-y-6">
           <section className="flex flex-col items-center gap-4">
             <div className="relative">
-              <div className="h-24 w-24 overflow-hidden rounded-full border border-black/10 bg-black/5">
+              <div className="h-24 w-24 overflow-hidden rounded-full border border-[#17171c]/10 bg-[#17171c]/5">
                 {avatarUrl ? (
                   <AnimatedImage
                     src={avatarUrl}
@@ -204,7 +204,7 @@ export default function ProfileEditPage() {
                   </div>
                 )}
               </div>
-              <Label className="absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white text-[#17171c]/60 shadow-sm">
+              <Label className="absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#17171c]/10 bg-white text-[#17171c]/60 shadow-sm">
                 <Input
                   type="file"
                   accept="image/*"
@@ -286,7 +286,7 @@ export default function ProfileEditPage() {
         </div>
         <BottomSheet open={dateSheetOpen} onOpenChange={setDateSheetOpen}>
           <div className="grid grid-cols-2 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
               {years.map((year) => (
                 <Button
                   key={`career-year-${year}`}
@@ -306,7 +306,7 @@ export default function ProfileEditPage() {
                 </Button>
               ))}
             </div>
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-black/5 p-2">
+            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
               {months.map((month) => {
                 const value = String(month).padStart(2, "0");
                 const isFutureMonth =

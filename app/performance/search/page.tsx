@@ -545,7 +545,7 @@ function PerformanceSearchContent() {
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`performance-skeleton-${index}`}
-                  className="flex w-full gap-3 border-b border-black/5 py-4"
+                  className="flex w-full gap-3 border-b border-[#17171c]/5 py-4"
                 >
                   <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
                   <div className="flex-1 space-y-2">
@@ -576,9 +576,9 @@ function PerformanceSearchContent() {
                     sendHapticToApp();
                     router.push(`/performance/${item.mt20id}`);
                   }}
-                  className="flex w-full gap-3 border-b border-black/5 py-4 text-left"
+                  className="flex w-full gap-3 border-b border-[#17171c]/5 py-4 text-left"
                 >
-                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-black/5">
+                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-[#17171c]/5">
                     {item.poster ? (
                       <AnimatedImage
                         src={item.poster}
@@ -622,7 +622,7 @@ function PerformanceSearchContent() {
             {Array.from({ length: 2 }).map((_, index) => (
               <div
                 key={`performance-skeleton-more-${index}`}
-                className="flex w-full gap-3 border-b border-black/5 py-4"
+                className="flex w-full gap-3 border-b border-[#17171c]/5 py-4"
               >
                 <Skeleton className="h-20 w-14 shrink-0 rounded-md" />
                 <div className="flex-1 space-y-2">

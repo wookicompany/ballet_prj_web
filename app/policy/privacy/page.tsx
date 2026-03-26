@@ -70,7 +70,7 @@ export default function PrivacyPage() {
           <div className="w-9" />
         </header>
 
-        <div className="space-y-6 rounded-xl border border-black/5 bg-white p-4 text-sm text-[#17171c]">
+        <div className="space-y-6 rounded-xl border border-[#17171c]/5 bg-white p-4 text-sm text-[#17171c]">
           <p className="text-xs text-[#17171c]/60">
             시행일: 2026.03.15
           </p>

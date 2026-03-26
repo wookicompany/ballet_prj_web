@@ -136,9 +136,9 @@ export default function ProfileAccountInfoPage() {
           <div className="w-9" />
         </header>
 
-        <section className="rounded-xl border border-black/5 bg-white p-4">
+        <section className="rounded-xl border border-[#17171c]/5 bg-white p-4">
           <div className="flex items-center gap-3">
-            <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 bg-black/5">
+            <div className="h-14 w-14 overflow-hidden rounded-full border border-[#17171c]/10 bg-[#17171c]/5">
               {account?.avatar_url ? (
                 <AnimatedImage
                   src={account.avatar_url}
@@ -161,18 +161,18 @@ export default function ProfileAccountInfoPage() {
             </div>
           </div>
           <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-black/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[#17171c]/5 px-3 py-2">
               <dt className="inline-flex items-center gap-2 text-[#17171c]/60">
                 <Mail className="h-4 w-4" />
                 이메일
               </dt>
               <dd className="text-right font-medium text-[#17171c]">{displayEmail}</dd>
             </div>
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-black/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[#17171c]/5 px-3 py-2">
               <dt className="text-[#17171c]/60">로그인 방식</dt>
               <dd className="font-medium text-[#17171c]">{displayProvider}</dd>
             </div>
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-black/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[#17171c]/5 px-3 py-2">
               <dt className="text-[#17171c]/60">계정 생성일</dt>
               <dd className="font-medium text-[#17171c]">{displayCreatedAt}</dd>
             </div>

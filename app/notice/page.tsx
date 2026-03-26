@@ -50,7 +50,7 @@ export default function NoticePage() {
   const [isReadStatusReady, setIsReadStatusReady] = useState(() => cached?.isReadStatusReady ?? false);
 
   const renderNoticeSkeleton = () => (
-    <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+    <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
       {Array.from({ length: 3 }).map((_, index) => (
         <div key={`notice-skeleton-${index}`} className="px-4 py-3">
           <Skeleton className="h-4 w-3/4" />
@@ -167,19 +167,19 @@ export default function NoticePage() {
         ) : null}
 
         {!loading && error ? (
-          <div className="rounded-xl border border-black/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
+          <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
             {error}
           </div>
         ) : null}
 
         {!loading && !error && items.length === 0 ? (
-          <div className="rounded-xl border border-black/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
+          <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
             등록된 공지사항이 아직 없어요.
           </div>
         ) : null}
 
         {!loading && !error && items.length > 0 ? (
-          <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+          <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
             {items.map((item) => (
               <Button
                 key={item.id}

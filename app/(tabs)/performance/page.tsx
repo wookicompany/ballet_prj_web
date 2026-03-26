@@ -329,7 +329,7 @@ export default function PerformanceListPage() {
           }}
           className="flex w-[140px] shrink-0 snap-start flex-col text-left transition-opacity duration-200 active:opacity-70"
         >
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black/5">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[#17171c]/5">
             {options?.badgeLabel ? (
               <Badge className="absolute left-2 top-2 z-10 rounded-md bg-black/70 text-white">
                 {options.badgeLabel}

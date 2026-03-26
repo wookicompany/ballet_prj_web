@@ -108,13 +108,13 @@ export default function UserProfileSummarySheet({
           <Spinner size="lg" />
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-black/5 bg-black/[0.02] p-4 text-sm text-[#17171c]/70">
+        <div className="rounded-xl border border-[#17171c]/5 bg-[#17171c]/[0.02] p-4 text-sm text-[#17171c]/70">
           {error}
         </div>
       ) : summary ? (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="h-20 w-20 overflow-hidden rounded-full border border-black/10 bg-black/5">
+            <div className="h-20 w-20 overflow-hidden rounded-full border border-[#17171c]/10 bg-[#17171c]/5">
               {summary.avatar_url ? (
                 <AnimatedImage
                   src={summary.avatar_url}
@@ -142,7 +142,7 @@ export default function UserProfileSummarySheet({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 divide-x divide-black/10 rounded-xl border border-black/5 bg-white py-3">
+          <div className="grid grid-cols-3 divide-x divide-[#17171c]/10 rounded-xl border border-[#17171c]/5 bg-white py-3">
             <div className="flex flex-col items-center justify-center px-2">
               <p className="text-sm font-semibold leading-none text-[#17171c]">
                 {summary.record_count}
@@ -164,7 +164,7 @@ export default function UserProfileSummarySheet({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-black/5 bg-black/[0.02] p-4 text-sm text-[#17171c]/70">
+        <div className="rounded-xl border border-[#17171c]/5 bg-[#17171c]/[0.02] p-4 text-sm text-[#17171c]/70">
           사용자 정보를 찾을 수 없어요.
         </div>
       )}

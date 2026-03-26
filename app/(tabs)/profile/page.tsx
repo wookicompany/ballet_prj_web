@@ -752,7 +752,7 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        <section className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+        <section className="rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           {shouldShowProfileSkeleton ? (
             <>
               <div className="flex items-center gap-4">
@@ -771,7 +771,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  className="h-20 w-20 overflow-hidden rounded-full border border-black/10 bg-black/5"
+                  className="h-20 w-20 overflow-hidden rounded-full border border-[#17171c]/10 bg-[#17171c]/5"
                   onClick={() => {
                     if (profile.avatar_url) {
                       setAvatarOpen(true);
@@ -809,7 +809,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 divide-x divide-black/10 rounded-xl border border-black/5 bg-white py-3">
+              <div className="mt-4 grid grid-cols-3 divide-x divide-[#17171c]/10 rounded-xl border border-[#17171c]/5 bg-white py-3">
                 <div className="flex flex-col items-center justify-center px-2">
                   <p className="text-sm font-semibold leading-none text-[#17171c]">
                     {recordCount}
@@ -842,9 +842,9 @@ export default function ProfilePage() {
           )}
         </section>
 
-        <section className="mt-6 space-y-4 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+        <section className="mt-6 space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="relative inline-flex w-full rounded-lg bg-black/5 p-1">
+            <div className="relative inline-flex w-full rounded-lg bg-[#17171c]/5 p-1">
               <div
                 className="absolute bottom-1 top-1 rounded-md bg-[#17171c] transition-all duration-200 ease-out"
                 style={{
@@ -884,7 +884,7 @@ export default function ProfilePage() {
                 {Array.from({ length: 1 }).map((_, index) => (
                   <div
                     key={`profile-record-loading-skeleton-${index}`}
-                    className="flex items-start gap-3 rounded-lg border border-black/5 bg-white p-3"
+                    className="flex items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
                   >
                     <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
                     <div className="flex-1 space-y-2">
@@ -905,7 +905,7 @@ export default function ProfilePage() {
                   <button
                     key={record.id}
                     type="button"
-                    className="flex w-full items-start gap-3 rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                    className="flex w-full items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
                     onClick={() => {
                       sendHapticToApp();
                       router.push(`/record/${record.id}`);
@@ -945,7 +945,7 @@ export default function ProfilePage() {
                             const isLast = idx === recordMediaById[record.id].urls.length - 1;
                             const remaining = recordMediaById[record.id].count - recordMediaById[record.id].urls.length;
                             return (
-                              <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-black/5">
+                              <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-[#17171c]/5">
                                 <AnimatedImage
                                   src={url}
                                   alt="기록 미디어"
@@ -998,7 +998,7 @@ export default function ProfilePage() {
               {Array.from({ length: 1 }).map((_, index) => (
                 <div
                   key={`profile-review-loading-skeleton-${index}`}
-                  className="flex flex-col gap-3 rounded-lg border border-black/5 bg-white p-3"
+                  className="flex flex-col gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
                 >
                   <div className="flex items-start gap-3">
                     <Skeleton className="h-20 w-14 shrink-0 rounded-lg" />
@@ -1022,7 +1022,7 @@ export default function ProfilePage() {
                 <button
                   key={review.id}
                   type="button"
-                  className="flex w-full flex-col rounded-lg border border-black/5 bg-white p-3 text-left text-sm"
+                  className="flex w-full flex-col rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
                   onClick={() => {
                     sendHapticToApp();
                     router.push(
@@ -1032,7 +1032,7 @@ export default function ProfilePage() {
                   aria-label="리뷰 상세 보기"
                 >
                   <div className="flex w-full items-start gap-3">
-                    <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-black/5 bg-black/5">
+                    <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-[#17171c]/5 bg-[#17171c]/5">
                       {review.performancePoster ? (
                         <AnimatedImage
                           src={review.performancePoster}
@@ -1100,7 +1100,7 @@ export default function ProfilePage() {
                         const isLast = idx === Math.min(reviewImages[review.id].length, 3) - 1;
                         const remaining = reviewImages[review.id].length - 3;
                         return (
-                          <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-black/5">
+                          <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-[#17171c]/5">
                             <AnimatedImage
                               src={url}
                               alt="리뷰 이미지"

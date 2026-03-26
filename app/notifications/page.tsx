@@ -52,7 +52,7 @@ export default function NotificationsPage() {
   const initialized = useRef(false);
 
   const renderSkeleton = () => (
-    <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+    <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
       {Array.from({ length: 3 }).map((_, index) => (
         <div key={`notification-skeleton-${index}`} className="px-4 py-3">
           <Skeleton className="h-4 w-3/4" />
@@ -141,13 +141,13 @@ export default function NotificationsPage() {
         {loading ? renderSkeleton() : null}
 
         {!loading && items.length === 0 ? (
-          <div className="rounded-xl border border-black/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
+          <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
             받은 알림이 없어요.
           </div>
         ) : null}
 
         {!loading && items.length > 0 ? (
-          <section className="divide-y divide-black/5 rounded-xl border border-black/5 bg-white">
+          <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
             {items.map((item) => (
               <Button
                 key={item.id}

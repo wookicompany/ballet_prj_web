@@ -25,7 +25,7 @@ export default function MoodSelector({
             className={`h-auto w-full aspect-square rounded-full p-0 ${
               isActive
                 ? "border-[#17171c] bg-[#17171c]/5"
-                : "border-black/10"
+                : "border-[#17171c]/10"
             }`}
             onClick={() => onChange(moodValue)}
           >

@@ -875,12 +875,12 @@ export default function PerformanceReviewDetailPage() {
           </Button>
         </header>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-4">
+        <section className="space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
           {performance ? (
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="h-24 w-16 overflow-hidden rounded-lg border border-black/5 bg-black/5"
+                className="h-24 w-16 overflow-hidden rounded-lg border border-[#17171c]/5 bg-[#17171c]/5"
                 onClick={() => {
                   sendHapticToApp();
                   router.push(`/performance/${performance.mt20id}`);
@@ -912,7 +912,7 @@ export default function PerformanceReviewDetailPage() {
             </div>
           ) : null}
 
-          <Separator className="bg-black/5" />
+          <Separator className="bg-[#17171c]/5" />
 
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm text-[#17171c]/60">
@@ -1003,7 +1003,7 @@ export default function PerformanceReviewDetailPage() {
           </div>
         </section>
 
-        <section className="mt-6 space-y-4 rounded-xl border border-black/5 bg-white p-4">
+        <section className="mt-6 space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-[#17171c]">댓글</h2>
             {commentSummary ? (
@@ -1031,7 +1031,7 @@ export default function PerformanceReviewDetailPage() {
                   event.currentTarget.blur();
                 }
               }}
-              className="h-10 min-h-10 flex-1 resize-none rounded-md border border-black/5 bg-white px-3 py-2 text-base leading-5 placeholder:text-sm placeholder:leading-5 text-[#17171c] overflow-y-hidden focus:outline-none"
+              className="h-10 min-h-10 flex-1 resize-none rounded-md border border-[#17171c]/5 bg-white px-3 py-2 text-base leading-5 placeholder:text-sm placeholder:leading-5 text-[#17171c] overflow-y-hidden focus:outline-none"
               maxLength={300}
               placeholder="댓글을 입력해 주세요."
             />
@@ -1056,7 +1056,7 @@ export default function PerformanceReviewDetailPage() {
                 return (
                   <div
                     key={comment.id}
-                    className="rounded-xl border border-black/5 bg-black/[0.02] p-3 text-base text-[#17171c] transition-colors active:bg-black/5"
+                    className="rounded-xl border border-[#17171c]/5 bg-[#17171c]/[0.02] p-3 text-base text-[#17171c] transition-colors active:bg-[#17171c]/5"
                   >
                     <div className="flex items-center justify-between text-sm text-[#17171c]/60">
                       <div className="flex min-w-0 items-center gap-1">
@@ -1136,7 +1136,7 @@ export default function PerformanceReviewDetailPage() {
                           onChange={(event) =>
                             setEditingCommentContent(event.target.value)
                           }
-                          className="min-h-[120px] w-full rounded-md border border-black/5 bg-white p-3 text-base text-[#17171c] focus:outline-none"
+                          className="min-h-[120px] w-full rounded-md border border-[#17171c]/5 bg-white p-3 text-base text-[#17171c] focus:outline-none"
                           maxLength={300}
                         />
                         <div className="flex gap-2">
@@ -1276,8 +1276,8 @@ export default function PerformanceReviewDetailPage() {
                   type="button"
                   className={`flex h-14 w-full items-center justify-between rounded-lg border px-3 text-left text-sm transition ${
                     selected
-                      ? "border-[#17171c]/40 bg-black/5 text-[#17171c]"
-                      : "border-black/10 text-[#17171c]/80"
+                      ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
+                      : "border-[#17171c]/10 text-[#17171c]/80"
                   }`}
                   onClick={() => setReportReason(option.code)}
                 >
@@ -1293,7 +1293,7 @@ export default function PerformanceReviewDetailPage() {
             <textarea
               value={reportDetail}
               onChange={(event) => setReportDetail(event.target.value)}
-              className="min-h-[120px] w-full rounded-md border border-black/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
+              className="min-h-[120px] w-full rounded-md border border-[#17171c]/10 bg-white px-3 py-2 text-base text-[#17171c] placeholder:text-sm focus:outline-none"
               maxLength={400}
               placeholder="추가로 전달할 내용을 입력해 주세요. (선택사항)"
             />

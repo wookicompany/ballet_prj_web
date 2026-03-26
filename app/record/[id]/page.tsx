@@ -352,7 +352,7 @@ export default function RecordDetailPage() {
                       className={`h-1.5 w-1.5 rounded-full transition ${
                         index === activeMediaIndex
                           ? "bg-[#17171c]"
-                          : "bg-black/15"
+                          : "bg-[#17171c]/15"
                       }`}
                     />
                   ))}
@@ -362,7 +362,7 @@ export default function RecordDetailPage() {
           ) : null}
 
           {/* 카드 1: 날짜 / 장소 / 강사 */}
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-3">
+          <div className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm space-y-3">
             <div className="flex items-start gap-3">
               <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
               <span className="text-sm text-[#17171c]">
@@ -401,7 +401,7 @@ export default function RecordDetailPage() {
 
           {/* 카드 2: 기분 / 기록 / 회고 */}
           {hasCard2 ? (
-            <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-4">
+            <div className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm space-y-4">
               {record.mood ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
@@ -472,7 +472,7 @@ export default function RecordDetailPage() {
                       {record.workout_device_name || "-"}
                     </span>
                   </div>
-                  <div className="space-y-2 rounded-lg border border-black/10 bg-white p-3">
+                  <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3">
                     <div className="flex items-center gap-2 text-sm text-[#17171c]/80">
                       <Activity className="h-4 w-4" />
                       <span>활동 칼로리 소모량:</span>
@@ -509,7 +509,7 @@ export default function RecordDetailPage() {
 
           {/* 카드 3: 바 / 센터 순서 */}
           {hasCard3 ? (
-            <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm space-y-4">
+            <div className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm space-y-4">
               {barOrderTags.length > 0 ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">

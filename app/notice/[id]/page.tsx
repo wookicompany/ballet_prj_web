@@ -136,7 +136,7 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
         </header>
 
         {loading ? (
-          <div className="space-y-4 rounded-xl border border-black/5 bg-white p-4">
+          <div className="space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
             <div className="space-y-2">
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-3 w-24" />
@@ -150,13 +150,13 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
         ) : null}
 
         {!loading && error ? (
-          <div className="rounded-xl border border-black/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
+          <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-5 text-sm text-[#17171c]/60">
             {error}
           </div>
         ) : null}
 
         {!loading && !error && item ? (
-          <article className="space-y-4 rounded-xl border border-black/5 bg-white p-4">
+          <article className="space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
             <header className="space-y-2">
               <h2 className="text-base font-semibold text-[#17171c]">{item.title}</h2>
               <p className="text-xs text-[#17171c]/50">

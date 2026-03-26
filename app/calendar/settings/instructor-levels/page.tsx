@@ -39,7 +39,7 @@ function InstructorLevelListSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={`instructor-level-skeleton-${index}`}
-          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+          className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4"
         >
           <div className="space-y-2">
             <Skeleton className="h-4 w-28" />
@@ -182,7 +182,7 @@ export default function SavedInstructorLevelsPage() {
       items.map((item) => (
         <div
           key={item.id}
-          className="rounded-xl border border-black/5 bg-white px-4 py-4"
+          className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -274,7 +274,7 @@ export default function SavedInstructorLevelsPage() {
           {loading || listLoading ? (
             <InstructorLevelListSkeleton />
           ) : items.length === 0 ? (
-            <div className="rounded-xl border border-black/5 bg-white px-4 py-6 text-center">
+            <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
                 저장된 강사님 & 레벨이 아직 없어요.
               </p>

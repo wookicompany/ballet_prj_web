@@ -146,7 +146,7 @@ export function ConsentSheetProvider({
         description="서비스 이용을 위해 필수 약관에 동의해 주세요."
       >
         <div className="space-y-6">
-          <section className="space-y-3 rounded-xl border border-black/5 bg-white p-4">
+          <section className="space-y-3 rounded-xl border border-[#17171c]/5 bg-white p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Checkbox

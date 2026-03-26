@@ -20,7 +20,7 @@ export default function TabBar() {
   const isProfile = pathname.startsWith("/profile");
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-[430px] border-t border-black/5 bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-[430px] border-t border-[#17171c]/5 bg-white pb-[env(safe-area-inset-bottom)]">
       <div className="grid h-14 grid-cols-3">
         <Button
           variant="ghost"
