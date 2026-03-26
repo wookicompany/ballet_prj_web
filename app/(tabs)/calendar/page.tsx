@@ -421,7 +421,7 @@ export default function CalendarPage() {
                   <span
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${
                       isToday
-                        ? "bg-brand text-white"
+                        ? "bg-[#17171c] text-white"
                         : highlightWeekend && isWeekend
                           ? weekendClass
                           : "text-[#17171c]"
