@@ -16,7 +16,7 @@ import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { Heart, MessageCircle, Menu, Star, User } from "lucide-react";
+import { Bell, Heart, MessageCircle, Menu, Star, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -131,6 +131,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"records" | "reviews">(() => profileCached?.activeTab ?? "records");
   const [profileLoading, setProfileLoading] = useState(() => !profileCached);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const cardSentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef<Set<number>>(
@@ -149,41 +150,51 @@ export default function ProfilePage() {
   useEffect(() => {
     const controller = new AbortController();
 
-    const fetchNoticeReadStatus = async () => {
+    const fetchBadgeStatus = async () => {
       if (loading) return;
       if (pathname !== "/profile") return;
       if (!user) {
         setHasUnreadNotices(false);
+        setHasUnreadNotifications(false);
         return;
       }
 
       const accessToken = await getAccessToken(openLoginSheet);
       if (!accessToken) {
         setHasUnreadNotices(false);
+        setHasUnreadNotifications(false);
         return;
       }
 
+      const headers = { Authorization: `Bearer ${accessToken}` };
+
       try {
-        const response = await fetch("/api/notices/read-status", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          signal: controller.signal,
-        });
-        if (!response.ok) {
+        const [noticesRes, notificationsRes] = await Promise.all([
+          fetch("/api/notices/read-status", { headers, signal: controller.signal }),
+          fetch("/api/notifications/unread-status", { headers, signal: controller.signal }),
+        ]);
+
+        if (noticesRes.ok) {
+          const payload = (await noticesRes.json()) as { has_unread?: boolean };
+          setHasUnreadNotices(payload.has_unread === true);
+        } else {
           setHasUnreadNotices(false);
-          return;
         }
 
-        const payload = (await response.json()) as { has_unread?: boolean };
-        setHasUnreadNotices(payload.has_unread === true);
+        if (notificationsRes.ok) {
+          const payload = (await notificationsRes.json()) as { has_unread?: boolean };
+          setHasUnreadNotifications(payload.has_unread === true);
+        } else {
+          setHasUnreadNotifications(false);
+        }
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         setHasUnreadNotices(false);
+        setHasUnreadNotifications(false);
       }
     };
 
-    void fetchNoticeReadStatus();
+    void fetchBadgeStatus();
     return () => {
       controller.abort();
     };
@@ -711,19 +722,34 @@ export default function ProfilePage() {
       <main className="px-4 pb-[140px]">
         <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold">프로필</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="relative text-[#17171c]/70"
-            onClick={() => router.push("/profile/menu")}
-            aria-label="더보기"
-          >
-            <Menu className="size-6" />
-            {hasUnreadNotices ? (
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
-            ) : null}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="relative text-[#17171c]/70"
+              onClick={() => router.push("/notifications")}
+              aria-label="알림"
+            >
+              <Bell className="size-6" />
+              {hasUnreadNotifications ? (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
+              ) : null}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="relative text-[#17171c]/70"
+              onClick={() => router.push("/profile/menu")}
+              aria-label="더보기"
+            >
+              <Menu className="size-6" />
+              {hasUnreadNotices ? (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
+              ) : null}
+            </Button>
+          </div>
         </header>
 
         <section className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">

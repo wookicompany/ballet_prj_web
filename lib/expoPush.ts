@@ -30,6 +30,13 @@ export async function sendExpoPushToUser(
     const expoPushToken = profile?.expo_push_token;
     if (!isValidExpoPushToken(expoPushToken)) return;
 
+    await supabase.from("user_notifications").insert({
+      user_id: userId,
+      title: payload.title,
+      body: payload.body ?? null,
+      link: payload.link,
+    });
+
     const authToken = process.env.EXPO_ACCESS_TOKEN;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
