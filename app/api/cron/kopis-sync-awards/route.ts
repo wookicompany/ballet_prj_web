@@ -29,7 +29,8 @@ const getDefaultDateRange = () => {
   const now = new Date();
   const start = new Date(now);
   const end = new Date(now);
-  end.setDate(end.getDate() + 365);
+  start.setMonth(start.getMonth() - 6);
+  end.setMonth(end.getMonth() + 6);
   return {
     stdate: getDateKey(start),
     eddate: getDateKey(end),
