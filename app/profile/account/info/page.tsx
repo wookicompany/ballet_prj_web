@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import AnimatedImage from "@/components/ui/animated-image";
 import { getAccessToken } from "@/lib/authSession";
-import { ChevronLeft, Mail, User } from "lucide-react";
+import { ChevronLeft, User } from "lucide-react";
 import { toast } from "sonner";
 
 type AccountPayload = {
@@ -162,10 +162,7 @@ export default function ProfileAccountInfoPage() {
           </div>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-2 rounded-lg border border-[#17171c]/5 px-3 py-2">
-              <dt className="inline-flex items-center gap-2 text-[#17171c]/60">
-                <Mail className="h-4 w-4" />
-                이메일
-              </dt>
+              <dt className="text-[#17171c]/60">이메일</dt>
               <dd className="text-right font-medium text-[#17171c]">{displayEmail}</dd>
             </div>
             <div className="flex items-center justify-between gap-2 rounded-lg border border-[#17171c]/5 px-3 py-2">
