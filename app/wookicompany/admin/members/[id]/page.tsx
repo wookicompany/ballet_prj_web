@@ -8,8 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+
+type RecentRecord = { id: string; record_date: string; content: string; created_at: string };
+type RecentReview = { id: string; content: string; created_at: string };
+type RecentComment = { id: string; content: string; created_at: string };
 
 export default function AdminMemberDetailPage() {
   const params = useParams();
@@ -19,6 +23,9 @@ export default function AdminMemberDetailPage() {
   const [recordCount, setRecordCount] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
+  const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([]);
+  const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
+  const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +54,9 @@ export default function AdminMemberDetailPage() {
       setRecordCount(data.record_count ?? 0);
       setReviewCount(data.review_count ?? 0);
       setCommentCount(data.comment_count ?? 0);
+      setRecentRecords(data.recent_records ?? []);
+      setRecentReviews(data.recent_reviews ?? []);
+      setRecentComments(data.recent_comments ?? []);
     } catch {
       setError("회원 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -172,13 +182,90 @@ export default function AdminMemberDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-md border p-4">
-            <p className="text-sm font-medium">활동 요약</p>
-            <ul className="mt-3 grid gap-2 text-sm">
-              <li className="tabular-nums">캘린더 기록: {recordCount}건</li>
-              <li className="tabular-nums">공연 리뷰: {reviewCount}건</li>
-              <li className="tabular-nums">공연 댓글: {commentCount}건</li>
-            </ul>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* 캘린더 기록 */}
+            <div className="rounded-md border">
+              <div className="flex items-center justify-between border-b px-4 py-2.5">
+                <p className="text-sm font-medium">캘린더 기록</p>
+                <span className="text-xs text-muted-foreground tabular-nums">총 {recordCount}건</span>
+              </div>
+              {recentRecords.length === 0 ? (
+                <p className="px-4 py-6 text-center text-xs text-muted-foreground">기록이 없습니다.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentRecords.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/wookicompany/admin/records/${item.id}`}
+                        className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-muted/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{item.content || "(내용 없음)"}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{item.record_date}</p>
+                        </div>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 공연 리뷰 */}
+            <div className="rounded-md border">
+              <div className="flex items-center justify-between border-b px-4 py-2.5">
+                <p className="text-sm font-medium">공연 리뷰</p>
+                <span className="text-xs text-muted-foreground tabular-nums">총 {reviewCount}건</span>
+              </div>
+              {recentReviews.length === 0 ? (
+                <p className="px-4 py-6 text-center text-xs text-muted-foreground">리뷰가 없습니다.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentReviews.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/wookicompany/admin/reviews/${item.id}`}
+                        className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-muted/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{item.content || "(내용 없음)"}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(item.created_at)}</p>
+                        </div>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 공연 댓글 */}
+            <div className="rounded-md border">
+              <div className="flex items-center justify-between border-b px-4 py-2.5">
+                <p className="text-sm font-medium">공연 댓글</p>
+                <span className="text-xs text-muted-foreground tabular-nums">총 {commentCount}건</span>
+              </div>
+              {recentComments.length === 0 ? (
+                <p className="px-4 py-6 text-center text-xs text-muted-foreground">댓글이 없습니다.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentComments.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/wookicompany/admin/reviews/comments/${item.id}`}
+                        className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-muted/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{item.content || "(내용 없음)"}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(item.created_at)}</p>
+                        </div>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
