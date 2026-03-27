@@ -133,7 +133,7 @@ export default function AdminMembersPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="닉네임/유저 ID 검색"
+                placeholder="사용자 검색"
                 className="pl-9"
               />
             </div>

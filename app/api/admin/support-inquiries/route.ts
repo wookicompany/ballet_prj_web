@@ -23,13 +23,13 @@ export const GET = async (request: Request) => {
     .select("id, user_id, email, nickname, title, content, created_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
-  if (q) query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
+  if (q) query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%,nickname.ilike.%${q}%,user_id.ilike.%${q}%`);
 
   let countQuery = result.supabaseAdmin
     .from("support_inquiries")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
-  if (q) countQuery = countQuery.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
+  if (q) countQuery = countQuery.or(`title.ilike.%${q}%,content.ilike.%${q}%,nickname.ilike.%${q}%,user_id.ilike.%${q}%`);
 
   const [{ data: inquiries, error }, { count }] = await Promise.all([
     query.range(offset, offset + limit - 1),

@@ -121,7 +121,7 @@ export default function AdminSupportInquiriesPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목/내용 검색"
+              placeholder="사용자/제목/내용 검색"
               className="pl-9"
             />
           </div>
@@ -152,7 +152,7 @@ export default function AdminSupportInquiriesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>제목</TableHead>
-                    <TableHead>닉네임</TableHead>
+                    <TableHead>사용자</TableHead>
                     <TableHead>이메일</TableHead>
                     <TableHead>접수일</TableHead>
                     <TableHead className="w-10" />

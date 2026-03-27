@@ -215,7 +215,7 @@ export default function AdminReviewsPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="내용 검색"
+            placeholder="사용자/내용 검색"
             className="pl-9"
           />
         </div>
@@ -253,7 +253,7 @@ export default function AdminReviewsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>공연</TableHead>
-                        <TableHead>작성자</TableHead>
+                        <TableHead>사용자</TableHead>
                         <TableHead>평점</TableHead>
                         <TableHead className="max-w-[200px]">내용</TableHead>
                         <TableHead>신고</TableHead>
@@ -380,7 +380,7 @@ export default function AdminReviewsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>공연</TableHead>
-                        <TableHead>작성자</TableHead>
+                        <TableHead>사용자</TableHead>
                         <TableHead className="max-w-[200px]">내용</TableHead>
                         <TableHead>신고</TableHead>
                         <TableHead>작성일</TableHead>

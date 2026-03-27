@@ -18,18 +18,35 @@ export const GET = async (request: Request) => {
   const offset = Number(searchParams.get("offset")) || 0;
   const q = searchParams.get("q")?.trim() || "";
 
+  let matchingUserIds: string[] = [];
+  if (q) {
+    const { data: matchingProfiles } = await result.supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .or(`nickname.ilike.%${q}%,id.ilike.%${q}%`)
+      .is("deleted_at", null)
+      .limit(500);
+    matchingUserIds = (matchingProfiles ?? []).map((p) => p.id);
+  }
+
+  const buildOrStr = () => {
+    const parts = [`content.ilike.%${q}%`];
+    if (matchingUserIds.length > 0) parts.push(`user_id.in.(${matchingUserIds.join(",")})`);
+    return parts.join(",");
+  };
+
   let query = result.supabaseAdmin
     .from("performance_reviews")
     .select("id, performance_id, user_id, rating, content, created_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
-  if (q) query = query.ilike("content", `%${q}%`);
+  if (q) query = query.or(buildOrStr());
 
   let countQuery = result.supabaseAdmin
     .from("performance_reviews")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
-  if (q) countQuery = countQuery.ilike("content", `%${q}%`);
+  if (q) countQuery = countQuery.or(buildOrStr());
 
   const [{ data: rows, error }, { count }] = await Promise.all([
     query.range(offset, offset + limit - 1),

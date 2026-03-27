@@ -129,7 +129,7 @@ export default function AdminRecordsPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="내용 검색"
+              placeholder="사용자/내용 검색"
               className="pl-9"
             />
           </div>
