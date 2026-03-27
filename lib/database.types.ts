@@ -1417,6 +1417,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_activity_counts_by_user_ids: {
+        Args: { user_ids: string[] }
+        Returns: {
+          comment_count: number
+          record_count: number
+          review_count: number
+          user_id: string
+        }[]
+      }
       get_calendar_users_count: { Args: never; Returns: number }
       get_performance_users_count: { Args: never; Returns: number }
       purge_soft_deleted_accounts: { Args: never; Returns: Json }
@@ -1552,4 +1561,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
