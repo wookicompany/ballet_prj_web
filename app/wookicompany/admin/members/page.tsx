@@ -36,6 +36,7 @@ type MemberRow = {
   created_at: string;
   record_count: number;
   review_count: number;
+  comment_count: number;
 };
 
 export default function AdminMembersPage() {
@@ -46,7 +47,7 @@ export default function AdminMembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activityFilter, setActivityFilter] = useState<
-    "all" | "has_record" | "has_review"
+    "all" | "has_record" | "has_review" | "has_comment"
   >("all");
 
   const searchInit = useRef(true);
@@ -97,6 +98,7 @@ export default function AdminMembersPage() {
     return members.filter((member) => {
       if (activityFilter === "has_record" && member.record_count <= 0) return false;
       if (activityFilter === "has_review" && member.review_count <= 0) return false;
+      if (activityFilter === "has_comment" && member.comment_count <= 0) return false;
       return true;
     });
   }, [members, activityFilter]);
@@ -156,6 +158,13 @@ export default function AdminMembersPage() {
             >
               리뷰 있음
             </Button>
+            <Button
+              variant={activityFilter === "has_comment" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActivityFilter("has_comment")}
+            >
+              댓글 있음
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -187,13 +196,14 @@ export default function AdminMembersPage() {
                     <TableHead>가입일</TableHead>
                     <TableHead>기록 수</TableHead>
                     <TableHead>리뷰 수</TableHead>
+                    <TableHead>댓글 수</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredMembers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         {searchQuery.trim() || activityFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "회원이 없습니다."}
@@ -221,6 +231,7 @@ export default function AdminMembersPage() {
                         </TableCell>
                         <TableCell className="tabular-nums">{m.record_count}</TableCell>
                         <TableCell className="tabular-nums">{m.review_count}</TableCell>
+                        <TableCell className="tabular-nums">{m.comment_count}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>
                             <Link href={`/wookicompany/admin/members/${m.id}`}>

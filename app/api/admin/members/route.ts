@@ -42,12 +42,15 @@ export const GET = async (request: Request) => {
   }
 
   const userIds = (rows ?? []).map((r) => r.id);
-  const [recordCountsRes, reviewCountsRes] = await Promise.all([
+  const [recordCountsRes, reviewCountsRes, commentCountsRes] = await Promise.all([
     userIds.length > 0
       ? result.supabaseAdmin.from("records").select("user_id").is("deleted_at", null).in("user_id", userIds)
       : { data: [] as { user_id: string }[] },
     userIds.length > 0
       ? result.supabaseAdmin.from("performance_reviews").select("user_id").is("deleted_at", null).in("user_id", userIds)
+      : { data: [] as { user_id: string }[] },
+    userIds.length > 0
+      ? result.supabaseAdmin.from("performance_review_comments").select("user_id").is("deleted_at", null).in("user_id", userIds)
       : { data: [] as { user_id: string }[] },
   ]);
 
@@ -59,11 +62,16 @@ export const GET = async (request: Request) => {
   for (const r of reviewCountsRes.data ?? []) {
     reviewCount[r.user_id] = (reviewCount[r.user_id] ?? 0) + 1;
   }
+  const commentCount: Record<string, number> = {};
+  for (const r of commentCountsRes.data ?? []) {
+    commentCount[r.user_id] = (commentCount[r.user_id] ?? 0) + 1;
+  }
 
   const members = (rows ?? []).map((r) => ({
     ...r,
     record_count: recordCount[r.id] ?? 0,
     review_count: reviewCount[r.id] ?? 0,
+    comment_count: commentCount[r.id] ?? 0,
   }));
 
   return NextResponse.json({
