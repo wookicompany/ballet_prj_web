@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
@@ -52,39 +52,54 @@ export default function DayPage() {
   const dateStr = params.date;
   const todayKey = useMemo(() => formatSeoulDateKey(), []);
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      if (!user) {
-        setRecords([]);
-        setMediaByRecord({});
-        return;
+  const fetchRecords = useCallback(async () => {
+    if (!user) {
+      setRecords([]);
+      setMediaByRecord({});
+      return;
+    }
+    const { data } = await supabase
+      .from("records")
+      .select("id,start_time,end_time,content,mood,record_media(record_id,url,created_at,deleted_at)")
+      .eq("user_id", user.id)
+      .eq("record_date", dateStr)
+      .is("deleted_at", null)
+      .order("start_time");
+
+    const nextRecords = (data as RecordItem[]) ?? [];
+    setRecords(nextRecords);
+
+    // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 중첩 select 후 클라이언트 필터링
+    const nextMedia: Record<string, { url: string | null; count: number }> = {};
+    nextRecords.forEach((record) => {
+      const activeMedia = (record.record_media ?? [])
+        .filter((m) => !m.deleted_at)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      if (activeMedia.length > 0) {
+        nextMedia[record.id] = { url: activeMedia[0].url, count: activeMedia.length };
       }
-      const { data } = await supabase
-        .from("records")
-        .select("id,start_time,end_time,content,mood,record_media(record_id,url,created_at,deleted_at)")
-        .eq("user_id", user.id)
-        .eq("record_date", dateStr)
-        .is("deleted_at", null)
-        .order("start_time");
-
-      const nextRecords = (data as RecordItem[]) ?? [];
-      setRecords(nextRecords);
-
-      // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 중첩 select 후 클라이언트 필터링
-      const nextMedia: Record<string, { url: string | null; count: number }> = {};
-      nextRecords.forEach((record) => {
-        const activeMedia = (record.record_media ?? [])
-          .filter((m) => !m.deleted_at)
-          .sort((a, b) => a.created_at.localeCompare(b.created_at));
-        if (activeMedia.length > 0) {
-          nextMedia[record.id] = { url: activeMedia[0].url, count: activeMedia.length };
-        }
-      });
-      setMediaByRecord(nextMedia);
-    };
-
-    fetchRecords();
+    });
+    setMediaByRecord(nextMedia);
   }, [user, dateStr]);
+
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      const flag = sessionStorage.getItem(`record-changed:${dateStr}`);
+      if (!flag) return;
+      sessionStorage.removeItem(`record-changed:${dateStr}`);
+      fetchRecords();
+    };
+    window.addEventListener("pageshow", handleRefresh);
+    window.addEventListener("popstate", handleRefresh);
+    return () => {
+      window.removeEventListener("pageshow", handleRefresh);
+      window.removeEventListener("popstate", handleRefresh);
+    };
+  }, [dateStr, fetchRecords]);
 
   const hourLabels = useMemo(() => {
     return Array.from({ length: 18 }, (_, idx) => idx + 6);

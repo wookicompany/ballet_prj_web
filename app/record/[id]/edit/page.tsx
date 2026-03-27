@@ -959,6 +959,7 @@ export default function RecordEditPage() {
     }
 
     if (user) invalidateProfileCache(user.id);
+    sessionStorage.setItem(`record-changed:${form.record_date}`, "1");
     router.back();
   };
 

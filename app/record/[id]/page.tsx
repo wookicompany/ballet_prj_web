@@ -233,7 +233,8 @@ export default function RecordDetailPage() {
     }
 
     invalidateProfileCache(user.id);
-    router.replace(`/day/${record.record_date}`);
+    sessionStorage.setItem(`record-changed:${record.record_date}`, "1");
+    router.back();
   };
 
   const barOrderTags = parseOrderTags(record.bar_order);
