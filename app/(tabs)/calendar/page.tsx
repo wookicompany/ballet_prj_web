@@ -43,6 +43,7 @@ export default function CalendarPage() {
   const { openLoginSheet } = useLoginSheet();
   const { ensureConsent } = useConsentSheet();
   const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
+  const [todayStr, setTodayStr] = useState<string>("");
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
@@ -187,10 +188,22 @@ export default function CalendarPage() {
     void persistSettings();
   }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
 
+  useEffect(() => {
+    const today = getSeoulTodayDate();
+    setCurrentDate(today);
+    setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
+    const update = () => setTodayStr(formatSeoulDateKey());
+    update();
+    const handler = () => {
+      if (document.visibilityState === "visible") update();
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
+
   const monthLabel = `${currentDate.getFullYear()}년 ${
     currentDate.getMonth() + 1
   }월`;
-  const todayStr = formatSeoulDateKey();
   const yearOptions = useMemo(() => {
     const currentYear = currentDate.getFullYear();
     const startYear = 2025;
