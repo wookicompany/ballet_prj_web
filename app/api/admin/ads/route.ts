@@ -54,39 +54,6 @@ export const GET = async (request: Request) => {
   const result = await getAdminFromRequest(request);
   if (!result.admin) return result.errorResponse;
 
-  const { data: existingSlots, error: existingSlotsError } = await result.supabaseAdmin
-    .from("ads")
-    .select("placement");
-  if (existingSlotsError) {
-    console.error("admin ads list placements", existingSlotsError);
-    return NextResponse.json({ message: "Failed to list ads" }, { status: 500 });
-  }
-
-  const existingPlacementSet = new Set(
-    (existingSlots ?? []).map((row) => row.placement)
-  );
-  const missingPlacements = AD_PLACEMENTS.filter(
-    (placement) => !existingPlacementSet.has(placement)
-  );
-
-  if (missingPlacements.length > 0) {
-    const { error: seedError } = await result.supabaseAdmin.from("ads").insert(
-      missingPlacements.map((placement) => ({
-        placement,
-        provider: AD_PROVIDER,
-        title: getDefaultTitle(placement),
-        description: null,
-        is_active: false,
-        start_at: ADSENSE_DEFAULT_START_AT,
-        end_at: ADSENSE_DEFAULT_END_AT,
-      }))
-    );
-    if (seedError) {
-      console.error("admin ads seed placements", seedError);
-      return NextResponse.json({ message: "Failed to prepare ad slots" }, { status: 500 });
-    }
-  }
-
   const { searchParams } = new URL(request.url);
   const limit = Math.min(
     Number(searchParams.get("limit")) || DEFAULT_LIMIT,
@@ -118,6 +85,44 @@ export const GET = async (request: Request) => {
     limit,
     offset,
   });
+};
+
+export const PUT = async (request: Request) => {
+  const result = await getAdminFromRequest(request);
+  if (!result.admin) return result.errorResponse;
+
+  const { data: existingSlots, error: existingSlotsError } = await result.supabaseAdmin
+    .from("ads")
+    .select("placement");
+  if (existingSlotsError) {
+    console.error("admin ads seed placements check", existingSlotsError);
+    return NextResponse.json({ message: "Failed to check ad slots" }, { status: 500 });
+  }
+
+  const existingPlacementSet = new Set((existingSlots ?? []).map((row) => row.placement));
+  const missingPlacements = AD_PLACEMENTS.filter((placement) => !existingPlacementSet.has(placement));
+
+  if (missingPlacements.length === 0) {
+    return NextResponse.json({ seeded: 0 });
+  }
+
+  const { error: seedError } = await result.supabaseAdmin.from("ads").insert(
+    missingPlacements.map((placement) => ({
+      placement,
+      provider: AD_PROVIDER,
+      title: getDefaultTitle(placement),
+      description: null,
+      is_active: false,
+      start_at: ADSENSE_DEFAULT_START_AT,
+      end_at: ADSENSE_DEFAULT_END_AT,
+    }))
+  );
+  if (seedError) {
+    console.error("admin ads seed placements", seedError);
+    return NextResponse.json({ message: "Failed to seed ad slots" }, { status: 500 });
+  }
+
+  return NextResponse.json({ seeded: missingPlacements.length });
 };
 
 export const POST = async (request: Request) => {

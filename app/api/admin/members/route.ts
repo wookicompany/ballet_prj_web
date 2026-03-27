@@ -42,36 +42,22 @@ export const GET = async (request: Request) => {
   }
 
   const userIds = (rows ?? []).map((r) => r.id);
-  const [recordCountsRes, reviewCountsRes, commentCountsRes] = await Promise.all([
-    userIds.length > 0
-      ? result.supabaseAdmin.from("records").select("user_id").is("deleted_at", null).in("user_id", userIds)
-      : { data: [] as { user_id: string }[] },
-    userIds.length > 0
-      ? result.supabaseAdmin.from("performance_reviews").select("user_id").is("deleted_at", null).in("user_id", userIds)
-      : { data: [] as { user_id: string }[] },
-    userIds.length > 0
-      ? result.supabaseAdmin.from("performance_review_comments").select("user_id").is("deleted_at", null).in("user_id", userIds)
-      : { data: [] as { user_id: string }[] },
-  ]);
 
-  const recordCount: Record<string, number> = {};
-  for (const r of recordCountsRes.data ?? []) {
-    recordCount[r.user_id] = (recordCount[r.user_id] ?? 0) + 1;
-  }
-  const reviewCount: Record<string, number> = {};
-  for (const r of reviewCountsRes.data ?? []) {
-    reviewCount[r.user_id] = (reviewCount[r.user_id] ?? 0) + 1;
-  }
-  const commentCount: Record<string, number> = {};
-  for (const r of commentCountsRes.data ?? []) {
-    commentCount[r.user_id] = (commentCount[r.user_id] ?? 0) + 1;
+  type ActivityCountRow = { user_id: string; record_count: number; review_count: number; comment_count: number };
+  const activityCounts: ActivityCountRow[] = userIds.length > 0
+    ? ((await result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: userIds })).data ?? []) as ActivityCountRow[]
+    : [];
+
+  const activityMap: Record<string, ActivityCountRow> = {};
+  for (const row of activityCounts) {
+    activityMap[row.user_id] = row;
   }
 
   const members = (rows ?? []).map((r) => ({
     ...r,
-    record_count: recordCount[r.id] ?? 0,
-    review_count: reviewCount[r.id] ?? 0,
-    comment_count: commentCount[r.id] ?? 0,
+    record_count: activityMap[r.id]?.record_count ?? 0,
+    review_count: activityMap[r.id]?.review_count ?? 0,
+    comment_count: activityMap[r.id]?.comment_count ?? 0,
   }));
 
   return NextResponse.json({
