@@ -113,6 +113,21 @@ export const PATCH = async (request: Request) => {
     payload.ballet_started_at = nextBalletStartedAt;
   }
 
+  const { data: existingProfile, error: profileFetchError } =
+    await auth.supabaseAdmin
+      .from("profiles")
+      .select("deleted_at")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+
+  if (profileFetchError) {
+    console.error("Failed to fetch profile", profileFetchError);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+  if (existingProfile?.deleted_at) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+
   const { error: updateError } = await auth.supabaseAdmin
     .from("profiles")
     .upsert(payload);

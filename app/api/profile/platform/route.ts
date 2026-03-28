@@ -28,6 +28,7 @@ export const POST = async (request: Request) => {
       app_platform_updated_at: new Date().toISOString(),
     })
     .eq("id", auth.user.id)
+    .is("deleted_at", null)
     .select("id")
     .single();
 

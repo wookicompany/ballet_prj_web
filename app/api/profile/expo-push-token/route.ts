@@ -30,6 +30,7 @@ export const POST = async (request: Request) => {
     .from("profiles")
     .update({ expo_push_token: rawToken || null })
     .eq("id", auth.user.id)
+    .is("deleted_at", null)
     .select("id")
     .single();
 
