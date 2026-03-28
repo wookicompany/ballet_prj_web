@@ -16,7 +16,7 @@ import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { Bell, Heart, MessageCircle, Menu, Star, User } from "lucide-react";
+import { Bell, Heart, MessageCircle, Settings, Star, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -744,7 +744,7 @@ export default function ProfilePage() {
               onClick={() => router.push("/profile/menu")}
               aria-label="더보기"
             >
-              <Menu className="size-6" />
+              <Settings className="size-6" />
               {hasUnreadNotices ? (
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
               ) : null}
