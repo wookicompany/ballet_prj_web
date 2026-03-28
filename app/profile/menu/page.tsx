@@ -91,7 +91,7 @@ export default function ProfileMenuPage() {
           >
             <ChevronLeft className="size-6" />
           </Button>
-          <h1 className="text-base font-semibold">더보기</h1>
+          <h1 className="text-base font-semibold">설정</h1>
           <div className="w-9" />
         </header>
 
