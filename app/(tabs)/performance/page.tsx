@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
@@ -16,7 +15,7 @@ import {
 } from "@/lib/performanceHomeCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronRight, Info, Search, Star } from "lucide-react";
+import { ChevronRight, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -437,27 +436,7 @@ export default function PerformanceListPage() {
       <>
         <main className="px-4 pb-16">
           <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-0">
-              <h1 className="text-xl font-semibold">공연</h1>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-lg"
-                    className="-ml-1 text-[#17171c]/70"
-                    aria-label="출처 KOPIS"
-                  >
-                    <Info className="size-4" strokeWidth={2.5} />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm font-semibold text-[#17171c]">
-                  공연 정보는 KOPIS 데이터를 바탕으로 안내드리고 있어요.
-                  출처는 (재)예술경영지원센터 공연예술통합전산망이에요.
-                  사이트 주소는 www.kopis.or.kr이에요.
-                </PopoverContent>
-              </Popover>
-            </div>
+            <h1 className="text-xl font-semibold">공연</h1>
             <Button
               type="button"
               variant="ghost"
@@ -489,27 +468,7 @@ export default function PerformanceListPage() {
     <>
       <main className="px-4 pb-16">
         <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-0">
-            <h1 className="text-xl font-semibold">공연</h1>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  className="-ml-1 text-[#17171c]/70"
-                  aria-label="출처 KOPIS"
-                >
-                  <Info className="size-4" strokeWidth={2.5} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 text-sm font-semibold text-[#17171c]">
-                공연 정보는 KOPIS(공연예술통합전산망) API 데이터를 기반으로 제공해요.
-                <br />
-                KOPIS는 (재)예술경영지원센터가 운영하는 공식 공연 정보 서비스예요.
-              </PopoverContent>
-            </Popover>
-          </div>
+          <h1 className="text-xl font-semibold">공연</h1>
           <Button
             type="button"
             variant="ghost"
