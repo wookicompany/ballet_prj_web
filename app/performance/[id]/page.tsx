@@ -1322,7 +1322,7 @@ export default function PerformanceDetailPage() {
                             className="mt-1 w-full text-xs text-[#17171c]/60"
                             onClick={() => setStoryExpanded((prev) => !prev)}
                           >
-                            {storyExpanded ? "접기" : "더보기"}
+                            {storyExpanded ? "접기" : "더 보기"}
                           </Button>
                         </div>
                       </>
