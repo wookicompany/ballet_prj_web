@@ -104,7 +104,7 @@ export default function AdminRecordDetailPage() {
     return parts.length > 0 ? parts.join(" | ") : "미입력";
   };
   const moodText =
-    typeof record?.mood === "number" && record.mood >= 1 && record.mood <= 5
+    typeof record?.mood === "number" && record.mood >= 1 && record.mood <= 8
       ? `${record.mood}점`
       : "미입력";
 
