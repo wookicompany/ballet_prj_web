@@ -1,26 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 export const POST = async (request: Request) => {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
   const body = await request.json();
@@ -42,11 +27,11 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await auth.supabaseAdmin
     .from("performance_reviews")
     .insert({
       performance_id: performanceId,
-      user_id: userData.user.id,
+      user_id: auth.user.id,
       rating,
       content,
     })

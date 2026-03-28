@@ -1,35 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 export const DELETE = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: review, error: reviewError } = await supabaseAdmin
+  const { data: review, error: reviewError } = await auth.supabaseAdmin
     .from("performance_reviews")
-    .select("id, user_id")
+    .select("id, user_id, deleted_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,15 +26,15 @@ export const DELETE = async (
     );
   }
 
-  if (!review) {
+  if (!review || review.deleted_at) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  if (review.user_id !== userData.user.id) {
+  if (review.user_id !== auth.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await auth.supabaseAdmin
     .from("performance_reviews")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id);

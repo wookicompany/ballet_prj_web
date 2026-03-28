@@ -1,33 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 export const POST = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: review, error: reviewError } = await supabaseAdmin
+  const { data: review, error: reviewError } = await auth.supabaseAdmin
     .from("performance_reviews")
     .select("id, user_id, deleted_at")
     .eq("id", id)
@@ -45,7 +30,7 @@ export const POST = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  if (review.user_id !== userData.user.id) {
+  if (review.user_id !== auth.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -61,12 +46,12 @@ export const POST = async (
     return NextResponse.json({ ok: true });
   }
 
-  const { error: insertError } = await supabaseAdmin
+  const { error: insertError } = await auth.supabaseAdmin
     .from("performance_review_images")
     .insert(
       cleanedUrls.map((url: string) => ({
         review_id: id,
-        user_id: userData.user.id,
+        user_id: auth.user.id,
         url,
       }))
     );
@@ -87,27 +72,12 @@ export const DELETE = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: review, error: reviewError } = await supabaseAdmin
+  const { data: review, error: reviewError } = await auth.supabaseAdmin
     .from("performance_reviews")
     .select("id, user_id, deleted_at")
     .eq("id", id)
@@ -125,7 +95,7 @@ export const DELETE = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  if (review.user_id !== userData.user.id) {
+  if (review.user_id !== auth.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -139,7 +109,7 @@ export const DELETE = async (
     return NextResponse.json({ ok: true });
   }
 
-  const { data: rows, error: rowsError } = await supabaseAdmin
+  const { data: rows, error: rowsError } = await auth.supabaseAdmin
     .from("performance_review_images")
     .select("id, user_id, review_id")
     .in("id", cleanedIds);
@@ -153,13 +123,13 @@ export const DELETE = async (
   }
 
   const unauthorized = (rows ?? []).some(
-    (row) => row.user_id !== userData.user.id || row.review_id !== id
+    (row) => row.user_id !== auth.user.id || row.review_id !== id
   );
   if (unauthorized || (rows ?? []).length !== cleanedIds.length) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  const { error: deleteError } = await supabaseAdmin
+  const { error: deleteError } = await auth.supabaseAdmin
     .from("performance_review_images")
     .delete()
     .in("id", cleanedIds);
