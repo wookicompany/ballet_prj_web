@@ -50,6 +50,10 @@ import {
 import type { AppPlatform, HealthSyncErrorCode } from "@/lib/reactNativeWebView";
 import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { getLocationsCache, setLocationsCache } from "@/lib/locationsCache";
+import { getInstructorLevelsCache, setInstructorLevelsCache } from "@/lib/instructorLevelsCache";
+import { getBarOrdersCache, setBarOrdersCache } from "@/lib/barOrdersCache";
+import { getCenterOrdersCache, setCenterOrdersCache } from "@/lib/centerOrdersCache";
 import { supabase } from "@/lib/supabaseClient";
 import {
   Activity,
@@ -334,6 +338,11 @@ function RecordNewContent() {
 
   const fetchSavedLocations = useCallback(async () => {
     if (!user) return;
+    const cached = getLocationsCache<{ items: SavedLocation[] }>();
+    if (cached) {
+      setSavedLocations(cached.items);
+      return;
+    }
     setSavedLocationsLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
@@ -351,12 +360,19 @@ function RecordNewContent() {
       return;
     }
     const payload = (await response.json()) as { items: SavedLocation[] };
-    setSavedLocations(payload.items ?? []);
+    const items = payload.items ?? [];
+    setSavedLocations(items);
+    setLocationsCache<{ items: SavedLocation[] }>({ items });
     setSavedLocationsLoading(false);
   }, [openLoginSheet, user]);
 
   const fetchSavedInstructorLevels = useCallback(async () => {
     if (!user) return;
+    const cached = getInstructorLevelsCache<{ items: SavedInstructorLevel[] }>();
+    if (cached) {
+      setSavedInstructorLevels(cached.items);
+      return;
+    }
     setSavedInstructorLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
@@ -376,7 +392,9 @@ function RecordNewContent() {
     const payload = (await response.json()) as {
       items: SavedInstructorLevel[];
     };
-    setSavedInstructorLevels(payload.items ?? []);
+    const items = payload.items ?? [];
+    setSavedInstructorLevels(items);
+    setInstructorLevelsCache<{ items: SavedInstructorLevel[] }>({ items });
     setSavedInstructorLoading(false);
   }, [openLoginSheet, user]);
 
@@ -412,6 +430,11 @@ function RecordNewContent() {
 
   const fetchSavedBarOrders = useCallback(async () => {
     if (!user) return;
+    const cached = getBarOrdersCache<{ items: SavedBarOrder[] }>();
+    if (cached) {
+      setSavedBarOrders(cached.items);
+      return;
+    }
     setSavedBarOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
@@ -429,12 +452,19 @@ function RecordNewContent() {
       return;
     }
     const payload = (await response.json()) as { items: SavedBarOrder[] };
-    setSavedBarOrders(payload.items ?? []);
+    const items = payload.items ?? [];
+    setSavedBarOrders(items);
+    setBarOrdersCache<{ items: SavedBarOrder[] }>({ items });
     setSavedBarOrdersLoading(false);
   }, [openLoginSheet, user]);
 
   const fetchSavedCenterOrders = useCallback(async () => {
     if (!user) return;
+    const cached = getCenterOrdersCache<{ items: SavedCenterOrder[] }>();
+    if (cached) {
+      setSavedCenterOrders(cached.items);
+      return;
+    }
     setSavedCenterOrdersLoading(true);
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) {
@@ -454,7 +484,9 @@ function RecordNewContent() {
     const payload = (await response.json()) as {
       items: SavedCenterOrder[];
     };
-    setSavedCenterOrders(payload.items ?? []);
+    const items = payload.items ?? [];
+    setSavedCenterOrders(items);
+    setCenterOrdersCache<{ items: SavedCenterOrder[] }>({ items });
     setSavedCenterOrdersLoading(false);
   }, [openLoginSheet, user]);
 
