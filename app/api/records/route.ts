@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 const pickRecordPayload = (body: Record<string, unknown>) => ({
   record_date: String(body.record_date ?? ""),
@@ -63,24 +63,9 @@ const parseNullableBpm = (value: string | number | null) => {
 };
 
 export const POST = async (request: Request) => {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
   const body = await request.json();
@@ -121,10 +106,10 @@ export const POST = async (request: Request) => {
     workout_max_bpm: workoutMaxBpm,
   };
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await auth.supabaseAdmin
     .from("records")
     .insert({
-      user_id: userData.user.id,
+      user_id: auth.user.id,
       ...normalizedPayload,
     })
     .select("id, record_date")

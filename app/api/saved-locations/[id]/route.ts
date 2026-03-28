@@ -14,11 +14,15 @@ export const PATCH = async (
 
   const existing = await auth.supabaseAdmin
     .from("saved_locations")
-    .select("id, user_id")
+    .select("id, user_id, deleted_at")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (existing.error || !existing.data) {
+  if (existing.error) {
+    console.error("Failed to load saved location", existing.error);
+    return NextResponse.json({ message: "Failed to load saved location" }, { status: 500 });
+  }
+  if (!existing.data || existing.data.deleted_at) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
   if (existing.data.user_id !== auth.user.id) {
@@ -45,6 +49,7 @@ export const PATCH = async (
     })
     .eq("id", id)
     .eq("user_id", auth.user.id)
+    .is("deleted_at", null)
     .select("id, name, address_base, address_detail, created_at")
     .single();
 
@@ -71,11 +76,15 @@ export const DELETE = async (
 
   const existing = await auth.supabaseAdmin
     .from("saved_locations")
-    .select("id, user_id")
+    .select("id, user_id, deleted_at")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (existing.error || !existing.data) {
+  if (existing.error) {
+    console.error("Failed to load saved location", existing.error);
+    return NextResponse.json({ message: "Failed to load saved location" }, { status: 500 });
+  }
+  if (!existing.data || existing.data.deleted_at) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
   if (existing.data.user_id !== auth.user.id) {
@@ -84,7 +93,7 @@ export const DELETE = async (
 
   const { error } = await auth.supabaseAdmin
     .from("saved_locations")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", auth.user.id);
 

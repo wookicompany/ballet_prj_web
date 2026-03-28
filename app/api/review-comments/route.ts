@@ -1,27 +1,12 @@
 import { NextResponse } from "next/server";
 
+import { getUserFromRequest } from "@/lib/apiAuth";
 import { sendExpoPushToUser } from "@/lib/expoPush";
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (request: Request) => {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
   const body = await request.json();
@@ -35,7 +20,7 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
-  const { data: review, error: reviewError } = await supabaseAdmin
+  const { data: review, error: reviewError } = await auth.supabaseAdmin
     .from("performance_reviews")
     .select("id, user_id, performance_id")
     .eq("id", reviewId)
@@ -54,11 +39,11 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await auth.supabaseAdmin
     .from("performance_review_comments")
     .insert({
       review_id: reviewId,
-      user_id: userData.user.id,
+      user_id: auth.user.id,
       content,
     })
     .select("id, content, created_at, user_id")
@@ -74,7 +59,7 @@ export const POST = async (request: Request) => {
 
   if (
     review.user_id &&
-    review.user_id !== userData.user.id &&
+    review.user_id !== auth.user.id &&
     review.performance_id
   ) {
     void sendExpoPushToUser(review.user_id, {

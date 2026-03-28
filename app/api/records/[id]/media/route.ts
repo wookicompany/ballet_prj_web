@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/apiAuth";
 
 type MediaItem = {
   url: string;
@@ -12,27 +12,12 @@ export const POST = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: record, error: recordError } = await supabaseAdmin
+  const { data: record, error: recordError } = await auth.supabaseAdmin
     .from("records")
     .select("id, user_id, deleted_at")
     .eq("id", id)
@@ -50,7 +35,7 @@ export const POST = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  if (record.user_id !== userData.user.id) {
+  if (record.user_id !== auth.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -68,12 +53,12 @@ export const POST = async (
     return NextResponse.json({ ok: true });
   }
 
-  const { error: insertError } = await supabaseAdmin
+  const { error: insertError } = await auth.supabaseAdmin
     .from("record_media")
     .insert(
       cleanedItems.map((item: MediaItem) => ({
         record_id: id,
-        user_id: userData.user.id,
+        user_id: auth.user.id,
         url: item.url.trim(),
         media_type: item.media_type,
       }))
@@ -95,27 +80,12 @@ export const DELETE = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    if (userError) {
-      console.error("Failed to validate user token", userError);
-    }
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: record, error: recordError } = await supabaseAdmin
+  const { data: record, error: recordError } = await auth.supabaseAdmin
     .from("records")
     .select("id, user_id, deleted_at")
     .eq("id", id)
@@ -133,7 +103,7 @@ export const DELETE = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  if (record.user_id !== userData.user.id) {
+  if (record.user_id !== auth.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -147,7 +117,7 @@ export const DELETE = async (
     return NextResponse.json({ ok: true });
   }
 
-  const { data: rows, error: rowsError } = await supabaseAdmin
+  const { data: rows, error: rowsError } = await auth.supabaseAdmin
     .from("record_media")
     .select("id, user_id, record_id")
     .in("id", cleanedIds);
@@ -161,13 +131,13 @@ export const DELETE = async (
   }
 
   const unauthorized = (rows ?? []).some(
-    (row) => row.user_id !== userData.user.id || row.record_id !== id
+    (row) => row.user_id !== auth.user.id || row.record_id !== id
   );
   if (unauthorized || (rows ?? []).length !== cleanedIds.length) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  const { error: deleteError } = await supabaseAdmin
+  const { error: deleteError } = await auth.supabaseAdmin
     .from("record_media")
     .delete()
     .in("id", cleanedIds);
