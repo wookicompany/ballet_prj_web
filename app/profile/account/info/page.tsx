@@ -7,7 +7,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import AnimatedImage from "@/components/ui/animated-image";
 import { getAccessToken } from "@/lib/authSession";
 import { ChevronLeft, User } from "lucide-react";
@@ -96,8 +96,45 @@ export default function ProfileAccountInfoPage() {
   if (loading || loadingAccount) {
     return (
       <MobileContainer>
-        <main className="flex min-h-screen items-center justify-center">
-          <Spinner size="lg" />
+        <main className="px-4 pb-12">
+          <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => router.back()}
+              aria-label="뒤로"
+            >
+              <ChevronLeft className="size-6" />
+            </Button>
+            <h1 className="text-base font-semibold">계정 정보</h1>
+            <div className="w-9" />
+          </header>
+
+          <section className="rounded-xl border border-[#17171c]/5 bg-white p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-14 w-14 rounded-full shrink-0" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-[#17171c]/5 px-3 py-2">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-[#17171c]/5 px-3 py-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-[#17171c]/5 px-3 py-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+          </section>
         </main>
       </MobileContainer>
     );
