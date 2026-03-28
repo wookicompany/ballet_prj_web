@@ -21,7 +21,11 @@ export const DELETE = async (
     .eq("id", id)
     .maybeSingle();
 
-  if (fetchError || !row || row.deleted_at) {
+  if (fetchError) {
+    console.error("Failed to load comment", fetchError);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+  if (!row || row.deleted_at) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

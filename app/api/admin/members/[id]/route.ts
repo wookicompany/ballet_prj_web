@@ -22,7 +22,11 @@ export const GET = async (
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (profileError || !profile) {
+  if (profileError) {
+    console.error("Failed to load profile", profileError);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+  if (!profile) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

@@ -22,7 +22,11 @@ export const GET = async (
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (reviewError || !review) {
+  if (reviewError) {
+    console.error("Failed to load review", reviewError);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+  if (!review) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

@@ -22,7 +22,11 @@ export const GET = async (
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (commentError || !comment) {
+  if (commentError) {
+    console.error("Failed to load comment", commentError);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+  if (!comment) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

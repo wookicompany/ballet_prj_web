@@ -22,7 +22,8 @@ export const POST = async (request: Request) => {
   const { data, error } = await supabaseAdmin
     .from("profiles")
     .select("id,nickname,avatar_url")
-    .in("id", userIds);
+    .in("id", userIds)
+    .is("deleted_at", null);
 
   if (error) {
     console.error("Failed to load public profiles", error);
