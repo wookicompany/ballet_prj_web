@@ -403,7 +403,7 @@ export default function CalendarPage() {
             const dateStr = cell.date ? formatDate(cell.date) : "";
             const count = recordCounts[dateStr] ?? 0;
             const moodValue = moodAverages[dateStr];
-            const isToday = dateStr === todayStr;
+            const isToday = !!dateStr && dateStr === todayStr;
             const dayOfWeek = cell.date ? cell.date.getDay() : null;
             const isSaturday = dayOfWeek === 6;
             const isSunday = dayOfWeek === 0;
