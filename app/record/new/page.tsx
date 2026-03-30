@@ -959,6 +959,9 @@ function RecordNewContent() {
     }
 
     invalidateProfileCache(user.id);
+    if (form.record_date) {
+      sessionStorage.setItem(`record-changed:${form.record_date}`, "1");
+    }
     router.replace("/calendar");
   };
 

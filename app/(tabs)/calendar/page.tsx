@@ -52,7 +52,16 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const { ensureConsent } = useConsentSheet();
-  const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("calendar-current-month");
+      if (saved) {
+        const [year, month] = saved.split("-").map(Number);
+        if (year && month) return new Date(year, month - 1, 1);
+      }
+    }
+    return getSeoulTodayDate();
+  });
   const [todayStr, setTodayStr] = useState<string>("");
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
@@ -64,7 +73,10 @@ export default function CalendarPage() {
       month: today.getMonth() + 1,
     };
   });
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return sessionStorage.getItem("calendar-selected-date") ?? "";
+  });
   const [selectedDateRecords, setSelectedDateRecords] = useState<SelectedRecord[]>([]);
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
@@ -236,16 +248,18 @@ export default function CalendarPage() {
   }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
 
   useEffect(() => {
-    const today = getSeoulTodayDate();
-    setCurrentDate(today);
-    setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
     const update = () => {
       const key = formatSeoulDateKey();
       setTodayStr(key);
     };
     update();
     const handler = () => {
-      if (document.visibilityState === "visible") update();
+      if (document.visibilityState !== "visible") return;
+      const today = getSeoulTodayDate();
+      setCurrentDate(today);
+      setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
+      sessionStorage.removeItem("calendar-current-month");
+      update();
     };
     document.addEventListener("visibilitychange", handler);
     return () => document.removeEventListener("visibilitychange", handler);
@@ -272,8 +286,13 @@ export default function CalendarPage() {
   const changeMonthBy = useCallback((delta: -1 | 1) => {
     if (swipeLockedRef.current) return;
     swipeLockedRef.current = true;
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    setCurrentDate((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() + delta, 1);
+      sessionStorage.setItem("calendar-current-month", `${next.getFullYear()}-${next.getMonth() + 1}`);
+      return next;
+    });
     setSelectedDate("");
+    sessionStorage.removeItem("calendar-selected-date");
     if (swipeLockTimeoutRef.current) {
       window.clearTimeout(swipeLockTimeoutRef.current);
     }
@@ -511,6 +530,7 @@ export default function CalendarPage() {
                     if (!cell.date) return;
                     sendHapticToApp();
                     setSelectedDate(dateStr);
+                    sessionStorage.setItem("calendar-selected-date", dateStr);
                   }}
                 >
                   {moodValue ? (
@@ -636,7 +656,9 @@ export default function CalendarPage() {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)
               );
+              sessionStorage.setItem("calendar-current-month", `${monthDraft.year}-${monthDraft.month}`);
               setSelectedDate("");
+              sessionStorage.removeItem("calendar-selected-date");
               setMonthSheetOpen(false);
             }}
           >
