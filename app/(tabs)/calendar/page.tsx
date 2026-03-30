@@ -558,10 +558,10 @@ export default function CalendarPage() {
                     height={1600}
                     unoptimized
                     draggable={false}
-                    className="h-9 w-9 shrink-0 object-contain"
+                    className="h-10 w-10 shrink-0 object-contain"
                   />
                 ) : (
-                  <div className="h-9 w-9 shrink-0 rounded-full bg-[#17171c]/5" />
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-[#17171c]/5" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-[#17171c]/45">
@@ -571,7 +571,7 @@ export default function CalendarPage() {
                     {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
                   </p>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+                <ChevronRight className="size-5 shrink-0 text-[#17171c]/30" />
               </button>
             ))}
           </section>
