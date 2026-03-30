@@ -469,7 +469,7 @@ export default function CalendarPage() {
         </section>
         <div className="h-px bg-[#17171c]/5 mx-1" />
 
-        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr px-1">
+        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr px-1 mt-1">
           {cells.map((cell, index) => {
             const isEmpty = !cell.date;
             const dateStr = cell.date ? formatDate(cell.date) : "";
