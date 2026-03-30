@@ -241,7 +241,6 @@ export default function CalendarPage() {
     const update = () => {
       const key = formatSeoulDateKey();
       setTodayStr(key);
-      setSelectedDate(key);
     };
     update();
     const handler = () => {
@@ -476,7 +475,7 @@ export default function CalendarPage() {
                 key={`${index}-${dateStr}`}
                 className={`relative flex h-full min-h-20 flex-col overflow-visible ${
                   isEmpty ? "opacity-40" : ""
-                }`}
+                } ${isSelected ? "ring-1 ring-inset ring-[#17171c]/20 rounded-md" : ""}`}
               >
                 {/* 상단: 날짜 숫자 → 일별 타임라인 이동 */}
                 <button
@@ -505,9 +504,7 @@ export default function CalendarPage() {
                 <button
                   type="button"
                   disabled={isEmpty}
-                  className={`flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1 ${
-                    isSelected && count > 0 ? "bg-[#17171c]/5" : "hover:bg-[#17171c]/5"
-                  }`}
+                  className="flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1 hover:bg-[#17171c]/5"
                   onClick={() => {
                     if (!cell.date) return;
                     setSelectedDate(dateStr);
