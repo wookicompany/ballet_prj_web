@@ -529,8 +529,13 @@ export default function CalendarPage() {
                   onClick={() => {
                     if (!cell.date) return;
                     sendHapticToApp();
-                    setSelectedDate(dateStr);
-                    sessionStorage.setItem("calendar-selected-date", dateStr);
+                    const next = dateStr === selectedDate ? "" : dateStr;
+                    setSelectedDate(next);
+                    if (next) {
+                      sessionStorage.setItem("calendar-selected-date", next);
+                    } else {
+                      sessionStorage.removeItem("calendar-selected-date");
+                    }
                   }}
                 >
                   {moodValue ? (
