@@ -6,6 +6,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
@@ -484,6 +485,7 @@ export default function CalendarPage() {
                   className="flex w-full items-start justify-center pt-1 hover:bg-[#17171c]/5"
                   onClick={() => {
                     if (!cell.date) return;
+                    sendHapticToApp();
                     router.push(`/day/${dateStr}`);
                   }}
                 >
@@ -507,6 +509,7 @@ export default function CalendarPage() {
                   className="flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1 hover:bg-[#17171c]/5"
                   onClick={() => {
                     if (!cell.date) return;
+                    sendHapticToApp();
                     setSelectedDate(dateStr);
                   }}
                 >
@@ -547,7 +550,7 @@ export default function CalendarPage() {
               <button
                 key={record.id}
                 type="button"
-                onClick={() => router.push(`/record/${record.id}`)}
+                onClick={() => { sendHapticToApp(); router.push(`/record/${record.id}`); }}
                 className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#17171c]/5"
               >
                 {record.mood ? (
