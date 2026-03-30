@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
@@ -33,6 +33,15 @@ function getMonthBounds(date: Date) {
   return { start, end };
 }
 
+type SelectedRecord = {
+  id: string;
+  start_time: string;
+  end_time: string;
+  content: string;
+  mood: number | null;
+  created_at: string;
+};
+
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_TRANSITION_LOCK_MS = 240;
 const CALENDAR_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_CALENDAR_HOME;
@@ -54,6 +63,8 @@ export default function CalendarPage() {
       month: today.getMonth() + 1,
     };
   });
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDateRecords, setSelectedDateRecords] = useState<SelectedRecord[]>([]);
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -146,6 +157,41 @@ export default function CalendarPage() {
     setSettingsLoaded(true);
   }, [user]);
 
+  const fetchRecordsForDate = useCallback(async (date: string) => {
+    if (!user || !date) {
+      setSelectedDateRecords([]);
+      return;
+    }
+    const { data } = await supabase
+      .from("records")
+      .select("id, start_time, end_time, content, mood, created_at")
+      .eq("user_id", user.id)
+      .eq("record_date", date)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+    setSelectedDateRecords((data as SelectedRecord[]) ?? []);
+  }, [user]);
+
+  useEffect(() => {
+    fetchRecordsForDate(selectedDate);
+  }, [selectedDate, fetchRecordsForDate]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (!selectedDate) return;
+      const flag = sessionStorage.getItem(`record-changed:${selectedDate}`);
+      if (!flag) return;
+      sessionStorage.removeItem(`record-changed:${selectedDate}`);
+      fetchRecordsForDate(selectedDate);
+    };
+    window.addEventListener("pageshow", handleRefresh);
+    window.addEventListener("popstate", handleRefresh);
+    return () => {
+      window.removeEventListener("pageshow", handleRefresh);
+      window.removeEventListener("popstate", handleRefresh);
+    };
+  }, [selectedDate, fetchRecordsForDate]);
+
   // user 변경 시 fetchSettings 포함, 월 변경 시 fetchCounts만 실행
   // prevUserIdRef로 user/월 변경을 구분해 fetchCounts 중복 호출 방지
   const prevUserIdRef = useRef<string | null>(null);
@@ -192,7 +238,11 @@ export default function CalendarPage() {
     const today = getSeoulTodayDate();
     setCurrentDate(today);
     setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
-    const update = () => setTodayStr(formatSeoulDateKey());
+    const update = () => {
+      const key = formatSeoulDateKey();
+      setTodayStr(key);
+      setSelectedDate(key);
+    };
     update();
     const handler = () => {
       if (document.visibilityState === "visible") update();
@@ -223,6 +273,7 @@ export default function CalendarPage() {
     if (swipeLockedRef.current) return;
     swipeLockedRef.current = true;
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    setSelectedDate("");
     if (swipeLockTimeoutRef.current) {
       window.clearTimeout(swipeLockTimeoutRef.current);
     }
@@ -416,23 +467,27 @@ export default function CalendarPage() {
                   : ""
               : "";
 
+            const isSelected = !!dateStr && dateStr === selectedDate;
+
             return (
-              <Button
+              <div
                 key={`${index}-${dateStr}`}
-                type="button"
-                variant="outline"
-                className={`relative flex h-full min-h-20 flex-col items-center justify-start gap-2 rounded-none border-none bg-white p-1 text-sm hover:bg-[#17171c]/5 overflow-visible ${
+                className={`relative flex h-full min-h-20 flex-col overflow-visible ${
                   isEmpty ? "opacity-40" : ""
                 }`}
-                disabled={isEmpty}
-                onClick={() => {
-                  if (!cell.date) return;
-                  router.push(`/day/${dateStr}`);
-                }}
               >
-                <div className="flex w-full items-start justify-center">
+                {/* 상단: 날짜 숫자 → 일별 타임라인 이동 */}
+                <button
+                  type="button"
+                  disabled={isEmpty}
+                  className="flex w-full items-start justify-center pt-1 hover:bg-[#17171c]/5"
+                  onClick={() => {
+                    if (!cell.date) return;
+                    router.push(`/day/${dateStr}`);
+                  }}
+                >
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
                       isToday
                         ? "bg-[#17171c] text-white"
                         : highlightWeekend && isWeekend
@@ -442,8 +497,20 @@ export default function CalendarPage() {
                   >
                     {cell.day ?? ""}
                   </span>
-                </div>
-                <div className="flex h-[52px] shrink-0 items-center justify-center overflow-visible pt-1">
+                </button>
+
+                {/* 하단: 무드(고양이) 영역 → 기록 리스트 인라인 표시 */}
+                <button
+                  type="button"
+                  disabled={isEmpty}
+                  className={`flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1 ${
+                    isSelected && count > 0 ? "bg-[#17171c]/5" : "hover:bg-[#17171c]/5"
+                  }`}
+                  onClick={() => {
+                    if (!cell.date) return;
+                    setSelectedDate(dateStr);
+                  }}
+                >
                   {moodValue ? (
                     <div className="relative h-full w-full overflow-visible">
                       <AnimatedImage
@@ -463,16 +530,53 @@ export default function CalendarPage() {
                       ) : null}
                     </div>
                   ) : null}
-                </div>
+                </button>
+
                 {!moodValue && count >= 2 ? (
-                  <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white">
+                  <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white pointer-events-none">
                     {count}
                   </Badge>
                 ) : null}
-              </Button>
+              </div>
             );
           })}
         </section>
+
+        {selectedDateRecords.length > 0 && (
+          <section className="mt-2 divide-y divide-[#17171c]/5">
+            {selectedDateRecords.map((record) => (
+              <button
+                key={record.id}
+                type="button"
+                onClick={() => router.push(`/record/${record.id}`)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#17171c]/5"
+              >
+                {record.mood ? (
+                  <AnimatedImage
+                    src={`/mood/mood_dark_face_${record.mood}.png`}
+                    alt="기분"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
+                    className="h-9 w-9 shrink-0 object-contain"
+                  />
+                ) : (
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-[#17171c]/5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-[#17171c]/45">
+                    {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
+                  </p>
+                  <p className="truncate text-sm font-medium text-[#17171c]">
+                    {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
+                  </p>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+              </button>
+            ))}
+          </section>
+        )}
       </div>
 
         <BottomSheet
@@ -530,6 +634,7 @@ export default function CalendarPage() {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)
               );
+              setSelectedDate("");
               setMonthSheetOpen(false);
             }}
           >
