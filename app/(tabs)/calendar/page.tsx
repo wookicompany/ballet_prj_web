@@ -420,7 +420,7 @@ export default function CalendarPage() {
       </header>
 
       <div
-        className="touch-pan-y"
+        className="touch-pan-y px-1"
         onTouchStart={handleCalendarTouchStart}
         onTouchEnd={handleCalendarTouchEnd}
         onTouchCancel={handleCalendarTouchCancel}
@@ -523,7 +523,7 @@ export default function CalendarPage() {
                         loading="eager"
                       />
                       {count >= 2 ? (
-                        <Badge className="absolute -right-1 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
+                        <Badge className="absolute right-0.5 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
                           {count}
                         </Badge>
                       ) : null}
@@ -532,7 +532,7 @@ export default function CalendarPage() {
                 </button>
 
                 {!moodValue && count >= 2 ? (
-                  <Badge className="absolute right-1 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white pointer-events-none">
+                  <Badge className="absolute right-2 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white pointer-events-none">
                     {count}
                   </Badge>
                 ) : null}
@@ -548,7 +548,7 @@ export default function CalendarPage() {
                 key={record.id}
                 type="button"
                 onClick={() => router.push(`/record/${record.id}`)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#17171c]/5"
+                className="flex w-full items-center gap-3 py-3 text-left hover:bg-[#17171c]/5"
               >
                 {record.mood ? (
                   <AnimatedImage
