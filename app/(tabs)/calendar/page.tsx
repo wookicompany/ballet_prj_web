@@ -420,12 +420,12 @@ export default function CalendarPage() {
       </header>
 
       <div
-        className="touch-pan-y px-1"
+        className="touch-pan-y"
         onTouchStart={handleCalendarTouchStart}
         onTouchEnd={handleCalendarTouchEnd}
         onTouchCancel={handleCalendarTouchCancel}
       >
-        <section className="grid grid-cols-7 gap-0 pb-2 text-center text-sm text-[#17171c]/60">
+        <section className="grid grid-cols-7 gap-0 pb-2 px-1 text-center text-sm text-[#17171c]/60">
           {weekLabels.map((day) => {
             const isSaturday = day === "토";
             const isSunday = day === "일";
@@ -447,9 +447,9 @@ export default function CalendarPage() {
             );
           })}
         </section>
-        <div className="h-px w-full bg-[#17171c]/5" />
+        <div className="h-px bg-[#17171c]/5 mx-1" />
 
-        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr">
+        <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr px-1">
           {cells.map((cell, index) => {
             const isEmpty = !cell.date;
             const dateStr = cell.date ? formatDate(cell.date) : "";
@@ -548,7 +548,7 @@ export default function CalendarPage() {
                 key={record.id}
                 type="button"
                 onClick={() => router.push(`/record/${record.id}`)}
-                className="flex w-full items-center gap-3 py-3 text-left hover:bg-[#17171c]/5"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#17171c]/5"
               >
                 {record.mood ? (
                   <AnimatedImage
@@ -558,10 +558,10 @@ export default function CalendarPage() {
                     height={1600}
                     unoptimized
                     draggable={false}
-                    className="h-10 w-10 shrink-0 object-contain"
+                    className="h-11 w-11 shrink-0 object-contain"
                   />
                 ) : (
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-[#17171c]/5" />
+                  <div className="h-11 w-11 shrink-0 rounded-full bg-[#17171c]/5" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-[#17171c]/45">
