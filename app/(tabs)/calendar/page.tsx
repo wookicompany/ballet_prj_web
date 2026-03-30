@@ -52,16 +52,7 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const { ensureConsent } = useConsentSheet();
-  const [currentDate, setCurrentDate] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("calendar-current-month");
-      if (saved) {
-        const [year, month] = saved.split("-").map(Number);
-        if (year && month) return new Date(year, month - 1, 1);
-      }
-    }
-    return getSeoulTodayDate();
-  });
+  const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [todayStr, setTodayStr] = useState<string>("");
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
@@ -73,10 +64,7 @@ export default function CalendarPage() {
       month: today.getMonth() + 1,
     };
   });
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return sessionStorage.getItem("calendar-selected-date") ?? "";
-  });
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedDateRecords, setSelectedDateRecords] = useState<SelectedRecord[]>([]);
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
@@ -248,6 +236,18 @@ export default function CalendarPage() {
   }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
 
   useEffect(() => {
+    // hydration 이후 sessionStorage 복원
+    const savedMonth = sessionStorage.getItem("calendar-current-month");
+    if (savedMonth) {
+      const [year, month] = savedMonth.split("-").map(Number);
+      if (year && month) {
+        setCurrentDate(new Date(year, month - 1, 1));
+        setMonthDraft({ year, month });
+      }
+    }
+    const savedDate = sessionStorage.getItem("calendar-selected-date");
+    if (savedDate) setSelectedDate(savedDate);
+
     const update = () => {
       const key = formatSeoulDateKey();
       setTodayStr(key);
