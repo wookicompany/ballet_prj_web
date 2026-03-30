@@ -542,7 +542,7 @@ export default function CalendarPage() {
         </section>
 
         {selectedDateRecords.length > 0 && (
-          <section className="mt-2 divide-y divide-[#17171c]/5">
+          <section className="mt-2 divide-y divide-[#17171c]/5 border-t border-[#17171c]/5">
             {selectedDateRecords.map((record) => (
               <button
                 key={record.id}
