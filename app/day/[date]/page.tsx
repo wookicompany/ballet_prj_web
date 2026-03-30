@@ -47,6 +47,7 @@ export default function DayPage() {
   const [mediaByRecord, setMediaByRecord] = useState<
     Record<string, { url: string | null; count: number }>
   >({});
+  const [datesWithRecords, setDatesWithRecords] = useState<Set<string>>(new Set());
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const dateStr = params.date;
@@ -82,16 +83,43 @@ export default function DayPage() {
     setMediaByRecord(nextMedia);
   }, [user, dateStr]);
 
+  const fetchStripCounts = useCallback(async () => {
+    if (!user) {
+      setDatesWithRecords(new Set());
+      return;
+    }
+    const base = parseDateKey(dateStr);
+    if (!base || Number.isNaN(base.getTime())) return;
+    const fmt = (d: Date) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    const startDate = new Date(base);
+    startDate.setDate(base.getDate() - 3);
+    const endDate = new Date(base);
+    endDate.setDate(base.getDate() + 3);
+    const { data } = await supabase
+      .from("records")
+      .select("record_date")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .gte("record_date", fmt(startDate))
+      .lte("record_date", fmt(endDate));
+    setDatesWithRecords(new Set((data ?? []).map((r) => r.record_date)));
+  }, [user, dateStr]);
+
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    void Promise.all([fetchRecords(), fetchStripCounts()]);
+  }, [fetchRecords, fetchStripCounts]);
 
   useEffect(() => {
     const handleRefresh = () => {
       const flag = sessionStorage.getItem(`record-changed:${dateStr}`);
       if (!flag) return;
       sessionStorage.removeItem(`record-changed:${dateStr}`);
-      fetchRecords();
+      void Promise.all([fetchRecords(), fetchStripCounts()]);
     };
     window.addEventListener("pageshow", handleRefresh);
     window.addEventListener("popstate", handleRefresh);
@@ -99,7 +127,7 @@ export default function DayPage() {
       window.removeEventListener("pageshow", handleRefresh);
       window.removeEventListener("popstate", handleRefresh);
     };
-  }, [dateStr, fetchRecords]);
+  }, [dateStr, fetchRecords, fetchStripCounts]);
 
   const hourLabels = useMemo(() => {
     return Array.from({ length: 18 }, (_, idx) => idx + 6);
@@ -197,6 +225,11 @@ export default function DayPage() {
               >
                 <span className="text-xs">{item.day}</span>
                 <span className="text-sm font-semibold">{item.date}</span>
+                {datesWithRecords.has(item.key) ? (
+                  <span className="h-1 w-1 rounded-full bg-[#17171c]/40" />
+                ) : (
+                  <span className="h-1 w-1" />
+                )}
               </Button>
             );
           })}
