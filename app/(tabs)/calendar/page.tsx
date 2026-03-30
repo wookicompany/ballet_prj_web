@@ -361,8 +361,10 @@ export default function CalendarPage() {
     const firstDay = weekStartMonday ? (startDay + 6) % 7 : startDay;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+    const rowCount = Math.ceil((firstDay + daysInMonth) / 7);
+    const totalCells = rowCount * 7;
     const result: Array<{ date: Date | null; day: number | null }> = [];
-    for (let i = 0; i < 42; i += 1) {
+    for (let i = 0; i < totalCells; i += 1) {
       const dayNumber = i - firstDay + 1;
       if (dayNumber < 1 || dayNumber > daysInMonth) {
         result.push({ date: null, day: null });
