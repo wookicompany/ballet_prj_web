@@ -14,6 +14,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { getSeoulDateParts, parseDateKey } from "@/lib/kstDateTime";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { supabase } from "@/lib/supabaseClient";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { CalendarDays, Camera, ChevronLeft, User } from "lucide-react";
@@ -122,6 +123,7 @@ export default function ProfileEditPage() {
       return;
     }
 
+    invalidateProfileCache(user.id);
     setSaving(false);
     router.replace("/profile");
   };
