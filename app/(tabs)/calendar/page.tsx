@@ -237,12 +237,18 @@ export default function CalendarPage() {
       setSettingsLoaded(true);
       return;
     }
+    // popstate 미수신(컴포넌트 리마운트) 시 record-changed:* 키를 직접 처리
+    // 마지막 기록 삭제 후 data=[]가 반환되어도 force=true면 가드를 통과해 고양이 제거 가능
+    const pendingKeys = Object.keys(sessionStorage).filter(k => k.startsWith("record-changed:"));
+    const force = pendingKeys.length > 0;
+    if (force) pendingKeys.forEach(k => sessionStorage.removeItem(k));
+
     const userChanged = prevUserIdRef.current !== user.id;
     prevUserIdRef.current = user.id;
     if (userChanged) {
-      void Promise.all([fetchCounts(), fetchSettings()]);
+      void Promise.all([fetchCounts(force), fetchSettings()]);
     } else {
-      void fetchCounts();
+      void fetchCounts(force);
     }
   }, [user, start, end, fetchCounts, fetchSettings]);
 
