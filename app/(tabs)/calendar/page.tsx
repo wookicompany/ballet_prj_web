@@ -110,8 +110,8 @@ export default function CalendarPage() {
       .gte("record_date", formatDate(start))
       .lte("record_date", formatDate(end));
 
-    if (error || !data) {
-      // 에러 시 기존 state와 캐시 유지 (초기화하지 않음)
+    if (error || !data || data.length === 0) {
+      // 에러 또는 빈 응답(토큰 갱신 타이밍 등) 시 기존 state와 캐시 유지 (초기화하지 않음)
       return;
     }
 
