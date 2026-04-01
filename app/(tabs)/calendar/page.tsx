@@ -285,6 +285,8 @@ export default function CalendarPage() {
       setCurrentDate(today);
       setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
       sessionStorage.removeItem("calendar-current-month");
+      setSelectedDate("");
+      sessionStorage.removeItem("calendar-selected-date");
       update();
     };
     document.addEventListener("visibilitychange", handler);
