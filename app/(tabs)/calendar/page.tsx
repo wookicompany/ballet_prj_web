@@ -95,7 +95,7 @@ export default function CalendarPage() {
     [currentDate]
   );
 
-  const fetchCounts = useCallback(async () => {
+  const fetchCounts = useCallback(async (force = false) => {
     if (!user) {
       setRecordCounts({});
       setMoodAverages({});
@@ -110,8 +110,13 @@ export default function CalendarPage() {
       .gte("record_date", formatDate(start))
       .lte("record_date", formatDate(end));
 
-    if (error || !data || data.length === 0) {
-      // 에러 또는 빈 응답(토큰 갱신 타이밍 등) 시 기존 state와 캐시 유지 (초기화하지 않음)
+    if (error || !data) {
+      // 에러 시 기존 state와 캐시 유지
+      return;
+    }
+
+    if (!force && data.length === 0) {
+      // 빈 응답(토큰 갱신 타이밍 등) 시 기존 state 유지 — record-changed로 호출된 경우(force=true)는 통과
       return;
     }
 
@@ -206,7 +211,7 @@ export default function CalendarPage() {
       );
       if (changedKeys.length === 0) return;
       changedKeys.forEach(k => sessionStorage.removeItem(k));
-      void fetchCounts();
+      void fetchCounts(true);
       if (selectedDate && changedKeys.includes(`record-changed:${selectedDate}`)) {
         fetchRecordsForDate(selectedDate);
       }
