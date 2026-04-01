@@ -54,8 +54,24 @@ export default function CalendarPage() {
   const { ensureConsent } = useConsentSheet();
   const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
   const [todayStr, setTodayStr] = useState<string>("");
-  const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
-  const [moodAverages, setMoodAverages] = useState<Record<string, number>>({});
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>(() => {
+    try {
+      const savedMonth = sessionStorage.getItem("calendar-current-month");
+      const today = getSeoulTodayDate();
+      const monthKey = savedMonth ?? `${today.getFullYear()}-${today.getMonth() + 1}`;
+      const saved = sessionStorage.getItem(`calendar-record-counts:${monthKey}`);
+      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
+    } catch { return {}; }
+  });
+  const [moodAverages, setMoodAverages] = useState<Record<string, number>>(() => {
+    try {
+      const savedMonth = sessionStorage.getItem("calendar-current-month");
+      const today = getSeoulTodayDate();
+      const monthKey = savedMonth ?? `${today.getFullYear()}-${today.getMonth() + 1}`;
+      const saved = sessionStorage.getItem(`calendar-mood-averages:${monthKey}`);
+      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
+    } catch { return {}; }
+  });
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => {
     const today = getSeoulTodayDate();
@@ -95,8 +111,7 @@ export default function CalendarPage() {
       .lte("record_date", formatDate(end));
 
     if (error || !data) {
-      setRecordCounts({});
-      setMoodAverages({});
+      // 에러 시 기존 state와 캐시 유지 (초기화하지 않음)
       return;
     }
 
@@ -112,13 +127,20 @@ export default function CalendarPage() {
           (moodCounts[record.record_date] ?? 0) + 1;
       }
     });
-    setRecordCounts(counts);
     const averages: Record<string, number> = {};
     Object.keys(moodTotals).forEach((date) => {
       const avg = moodTotals[date] / (moodCounts[date] ?? 1);
       const rounded = Math.round(avg);
       averages[date] = Math.min(8, Math.max(1, rounded));
     });
+
+    const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
+    try {
+      sessionStorage.setItem(`calendar-record-counts:${monthKey}`, JSON.stringify(counts));
+      sessionStorage.setItem(`calendar-mood-averages:${monthKey}`, JSON.stringify(averages));
+    } catch { /* sessionStorage 용량 초과 등 무시 */ }
+
+    setRecordCounts(counts);
     setMoodAverages(averages);
   }, [user, start, end]);
 
