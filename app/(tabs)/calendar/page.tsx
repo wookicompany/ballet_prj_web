@@ -184,6 +184,7 @@ export default function CalendarPage() {
       if (!flag) return;
       sessionStorage.removeItem(`record-changed:${selectedDate}`);
       fetchRecordsForDate(selectedDate);
+      void fetchCounts();
     };
     window.addEventListener("pageshow", handleRefresh);
     window.addEventListener("popstate", handleRefresh);
@@ -191,7 +192,7 @@ export default function CalendarPage() {
       window.removeEventListener("pageshow", handleRefresh);
       window.removeEventListener("popstate", handleRefresh);
     };
-  }, [selectedDate, fetchRecordsForDate]);
+  }, [selectedDate, fetchRecordsForDate, fetchCounts]);
 
   // user 변경 시 fetchSettings 포함, 월 변경 시 fetchCounts만 실행
   // prevUserIdRef로 user/월 변경을 구분해 fetchCounts 중복 호출 방지
