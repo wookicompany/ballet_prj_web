@@ -201,12 +201,15 @@ export default function CalendarPage() {
 
   useEffect(() => {
     const handleRefresh = () => {
-      if (!selectedDate) return;
-      const flag = sessionStorage.getItem(`record-changed:${selectedDate}`);
-      if (!flag) return;
-      sessionStorage.removeItem(`record-changed:${selectedDate}`);
-      fetchRecordsForDate(selectedDate);
+      const changedKeys = Object.keys(sessionStorage).filter(k =>
+        k.startsWith("record-changed:")
+      );
+      if (changedKeys.length === 0) return;
+      changedKeys.forEach(k => sessionStorage.removeItem(k));
       void fetchCounts();
+      if (selectedDate && changedKeys.includes(`record-changed:${selectedDate}`)) {
+        fetchRecordsForDate(selectedDate);
+      }
     };
     window.addEventListener("pageshow", handleRefresh);
     window.addEventListener("popstate", handleRefresh);

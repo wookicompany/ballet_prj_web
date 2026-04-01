@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image, { type ImageProps } from "next/image";
 
 import { cn } from "@/lib/utils";
@@ -12,9 +12,18 @@ export default function AnimatedImage({
   ...props
 }: ImageProps) {
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [props.src]);
 
   return (
     <Image
+      ref={imgRef}
       {...props}
       onLoad={(event) => {
         setLoaded(true);
