@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,14 +62,12 @@ export default function BrandPage() {
 
         <div>
           {loading ? (
-            <div className="divide-y divide-[#17171c]/5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-3">
-                  <Skeleton className="size-16 rounded-xl shrink-0" />
-                  <div className="flex flex-1 flex-col gap-1.5">
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <Skeleton className="aspect-square w-full rounded-2xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
               ))}
             </div>
@@ -80,38 +78,37 @@ export default function BrandPage() {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-[#17171c]/5">
+            <ul className="grid grid-cols-2 gap-3">
               {brands.map((brand) => (
                 <li key={brand.id}>
                   <button
                     type="button"
                     onClick={() => router.push(`/brand/${brand.id}`)}
-                    className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
+                    className="flex w-full flex-col gap-2 transition-opacity duration-200 active:opacity-70"
                   >
-                    <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
+                    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7]">
                       {brand.logo_url ? (
                         <Image
                           src={brand.logo_url}
                           alt={brand.name_ko}
-                          width={64}
-                          height={64}
+                          width={200}
+                          height={200}
                           className="size-full object-cover"
                         />
                       ) : (
                         <div className="size-full" />
                       )}
                     </div>
-                    <div className="flex flex-1 flex-col items-start gap-0.5 overflow-hidden">
-                      <span className="text-sm font-medium text-[#17171c] truncate w-full text-left">
+                    <div className="flex flex-col gap-0.5 overflow-hidden px-1">
+                      <span className="text-sm font-medium text-[#17171c] truncate text-left">
                         {brand.name_ko}
                       </span>
                       {brand.name_en && (
-                        <span className="text-xs text-[#17171c]/50 truncate w-full text-left">
+                        <span className="text-xs text-[#17171c]/50 truncate text-left">
                           {brand.name_en}
                         </span>
                       )}
                     </div>
-                    <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
                   </button>
                 </li>
               ))}
