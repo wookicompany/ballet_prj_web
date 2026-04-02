@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   Facebook,
+  FilePenLine,
   Globe,
   Instagram,
   Link,
@@ -84,7 +85,7 @@ const LINK_ITEMS: LinkItem[] = [
     key: "naver_blog_url",
     label: "네이버 블로그",
     linkType: "naver_blog",
-    icon: <Link className="size-5 text-[#17171c]/60" />,
+    icon: <FilePenLine className="size-5 text-[#17171c]/60" />,
   },
   {
     key: "tiktok_url",
@@ -164,7 +165,7 @@ export default function BrandDetailPage({
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-[#17171c]/5 last:border-0"
+                    className="flex items-center gap-3 px-4 py-4 border-b border-[#17171c]/5 last:border-0"
                   >
                     <Skeleton className="size-5 rounded" />
                     <Skeleton className="h-4 w-24" />
@@ -214,7 +215,7 @@ export default function BrandDetailPage({
                           <button
                             type="button"
                             onClick={() => handleLinkClick(url, item.linkType)}
-                            className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
+                            className="flex w-full items-center gap-3 px-4 py-4 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
                           >
                             {item.icon}
                             <span className="flex-1 text-left text-sm text-[#17171c]">
