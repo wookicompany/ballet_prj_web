@@ -10,6 +10,7 @@ import {
   Globe,
   Instagram,
   Link,
+  Music,
   Twitter,
   Youtube,
 } from "lucide-react";
@@ -91,7 +92,7 @@ const LINK_ITEMS: LinkItem[] = [
     key: "tiktok_url",
     label: "틱톡",
     linkType: "tiktok",
-    icon: <Link className="size-5 text-[#17171c]/60" />,
+    icon: <Music className="size-5 text-[#17171c]/60" />,
   },
 ];
 
