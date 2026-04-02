@@ -107,7 +107,7 @@
 - 텍스트 기본 색상: `#17171c`
 - 상단 헤더: “YYYY년 M월” 텍스트 + 연월 선택 버튼(바텀시트)
 - 설정: 우측 상단 설정 버튼
-- 날짜 선택: 클릭 시 항상 `/day/[date]`로 이동
+- 날짜 선택: 클릭 시 하단에 해당 날짜의 기록 목록 인라인 토글 표시. 기록 클릭 시 `/record/[id]`로 이동
 - 오늘 날짜: 자동 강조(브랜드 색상 사용)
 - 기록 표시: 날짜 아래에 작은 칩/점 형태의 이미지로 건수 노출
   - 1개: 이미지 1개 표시
@@ -358,4 +358,5 @@
 - 회원탈퇴: 설정 화면에 포함
 - 데이터 관리: `/profile/data-management`에서 안내
 - 캘린더 설정: 캘린더 설정 진입 후 바 주문/센터 주문/강사 레벨/장소 목록 관리 (각각 CRUD API: `saved-bar-orders`, `saved-center-orders`, `saved-instructor-levels`, `saved-locations`)
+- 캘린더 표시 설정(주 시작 요일, 주말 강조): `PATCH /api/profile/calendar-settings` API로 저장 (`calendar_week_start_monday`, `calendar_highlight_weekend` 필드, `Authorization: Bearer <token>` 인증 필수)
 - 공지사항: 더보기(`/profile/menu`)에서 공지사항(`/notice`)으로 진입
