@@ -360,3 +360,31 @@
 - 캘린더 설정: 캘린더 설정 진입 후 바 주문/센터 주문/강사 레벨/장소 목록 관리 (각각 CRUD API: `saved-bar-orders`, `saved-center-orders`, `saved-instructor-levels`, `saved-locations`)
 - 캘린더 표시 설정(주 시작 요일, 주말 강조): `PATCH /api/profile/calendar-settings` API로 저장 (`calendar_week_start_monday`, `calendar_highlight_weekend` 필드, `Authorization: Bearer <token>` 인증 필수)
 - 공지사항: 더보기(`/profile/menu`)에서 공지사항(`/notice`)으로 진입
+
+## 브랜드 탭
+
+- 탭바: 캘린더 / 공연 / **브랜드** / 프로필 (4개, `grid-cols-4`, Tag 아이콘)
+- 로그인 불필요 (공연 탭과 동일)
+- DB 테이블: `ballet_brands` (id, name_ko, name_en, logo_url, SNS URL 8개, is_active, sort_order, created_at, updated_at), `brand_link_clicks` (id, brand_id, link_type, created_at)
+
+### 브랜드 홈 (`/brand`)
+- 헤더: "브랜드" 타이틀 + 검색 아이콘 → `/brand/search-input`
+- 1열 리스트: 로고(64×64 rounded-xl) + name_ko / name_en + ChevronRight
+- `lib/brandHomeCache.ts`로 캐시 (뒤로가기 시 즉시 렌더)
+- 빈 상태: "아직 등록된 브랜드가 없어요."
+
+### 브랜드 검색 (`/brand/search-input`)
+- 검색어 없음 → 전체 목록, 검색어 있음 → name_ko / name_en ilike 필터링
+- 결과는 홈과 동일한 리스트 패턴
+
+### 브랜드 상세 (`/brand/[id]`) — `(tabs)` 외부
+- 카드 ①: 로고(96×96 rounded-2xl) + name_ko + name_en
+- 카드 ②: 있는 SNS 링크만 노출, lucide 아이콘(Globe/Instagram/Facebook/Youtube/Twitter/Link)
+- 링크 클릭 시: `openUrlInApp` 내부 웹뷰 + `POST /api/brands/[id]/link-click` 추적
+
+### API
+- `GET /api/brands` — is_active=true 목록, sort_order ASC
+- `GET /api/brands/[id]` — 단건 상세
+- `POST /api/brands/[id]/link-click` — 링크 클릭 추적 (인증 불필요)
+- `GET+POST /api/admin/brands` — 어드민 목록/생성
+- `GET+PATCH+DELETE /api/admin/brands/[id]` — 어드민 상세/수정/삭제

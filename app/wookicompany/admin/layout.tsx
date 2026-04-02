@@ -29,6 +29,7 @@ import {
   LogOut,
   Megaphone,
   MessageSquare,
+  Tag,
   Users,
 } from "lucide-react";
 
@@ -42,6 +43,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/wookicompany/admin/records", label: "캘린더 기록 관리", icon: CalendarDays },
       { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리", icon: MessageSquare },
+      { href: "/wookicompany/admin/brands", label: "브랜드 관리", icon: Tag },
       { href: "/wookicompany/admin/notices", label: "공지사항 관리", icon: Bell },
       { href: "/wookicompany/admin/support-inquiries", label: "문의 관리", icon: Inbox },
       { href: "/wookicompany/admin/ads", label: "광고 관리", icon: Megaphone },

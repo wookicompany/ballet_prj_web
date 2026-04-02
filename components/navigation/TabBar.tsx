@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
-import { Calendar, Theater, User } from "lucide-react";
+import { Calendar, Tag, Theater, User } from "lucide-react";
 
 export default function TabBar() {
   const router = useRouter();
@@ -17,11 +17,12 @@ export default function TabBar() {
 
   const isCalendar = pathname.startsWith("/calendar");
   const isPerformance = pathname.startsWith("/performance");
+  const isBrand = pathname.startsWith("/brand");
   const isProfile = pathname.startsWith("/profile");
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-[430px] border-t border-[#17171c]/5 bg-white pb-[env(safe-area-inset-bottom)]">
-      <div className="grid h-14 grid-cols-3">
+      <div className="grid h-14 grid-cols-4">
         <Button
           variant="ghost"
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
@@ -43,6 +44,17 @@ export default function TabBar() {
         >
           <Theater className="size-5" />
           공연
+        </Button>
+        <Button
+          variant="ghost"
+          className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
+            isBrand ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
+          }`}
+          onClick={() => router.push("/brand")}
+          type="button"
+        >
+          <Tag className="size-5" />
+          브랜드
         </Button>
         <Button
           variant="ghost"

@@ -59,6 +59,92 @@ export type Database = {
         }
         Relationships: []
       }
+      ballet_brands: {
+        Row: {
+          created_at: string
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          is_active: boolean
+          logo_url: string | null
+          name_en: string | null
+          name_ko: string
+          naver_blog_url: string | null
+          sort_order: number
+          threads_url: string | null
+          tiktok_url: string | null
+          updated_at: string
+          website_url: string | null
+          x_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          name_en?: string | null
+          name_ko: string
+          naver_blog_url?: string | null
+          sort_order?: number
+          threads_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+          x_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          name_en?: string | null
+          name_ko?: string
+          naver_blog_url?: string | null
+          sort_order?: number
+          threads_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+          x_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      brand_link_clicks: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+          link_type: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+          link_type: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+          link_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_link_clicks_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "ballet_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cron_job_runs: {
         Row: {
           counts_json: Json | null
@@ -570,7 +656,22 @@ export type Database = {
           relatenm?: string | null
           relateurl?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "performance_booking_clicks_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "performance_booking_clicks_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
+        ]
       }
       performance_review_comment_likes: {
         Row: {
