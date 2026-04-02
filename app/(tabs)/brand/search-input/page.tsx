@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
-import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +61,7 @@ export default function BrandSearchInputPage() {
   }, [query, allBrands]);
 
   return (
-    <MobileContainer>
+    <>
       <main className="px-4 pb-16 pt-2">
         <header className="flex items-center gap-2 pt-2">
           <Button
@@ -149,6 +148,6 @@ export default function BrandSearchInputPage() {
           )}
         </div>
       </main>
-    </MobileContainer>
+    </>
   );
 }
