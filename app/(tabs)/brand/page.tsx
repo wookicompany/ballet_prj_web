@@ -86,7 +86,7 @@ export default function BrandPage() {
                     onClick={() => router.push(`/brand/${brand.id}`)}
                     className="flex w-full flex-col gap-2 transition-opacity duration-200 active:opacity-70"
                   >
-                    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7]">
+                    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
                       {brand.logo_url ? (
                         <Image
                           src={brand.logo_url}

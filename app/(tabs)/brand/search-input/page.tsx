@@ -117,7 +117,7 @@ export default function BrandSearchInputPage() {
                     onClick={() => router.push(`/brand/${brand.id}`)}
                     className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                   >
-                    <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
+                    <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
                       {brand.logo_url ? (
                         <Image
                           src={brand.logo_url}
