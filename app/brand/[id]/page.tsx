@@ -181,7 +181,7 @@ export default function BrandDetailPage({
             <>
               <section className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="size-24 overflow-hidden rounded-2xl border border-[#17171c]/5 bg-[#f5f5f7]">
+                  <div className="size-24 overflow-hidden rounded-2xl bg-[#f5f5f7]">
                     {brand.logo_url ? (
                       <Image
                         src={brand.logo_url}
