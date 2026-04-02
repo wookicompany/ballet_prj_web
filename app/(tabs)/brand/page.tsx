@@ -62,7 +62,7 @@ export default function BrandPage() {
 
         <div>
           {loading ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-8">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-2">
                   <Skeleton className="aspect-square w-full rounded-2xl" />
@@ -78,7 +78,7 @@ export default function BrandPage() {
               </p>
             </div>
           ) : (
-            <ul className="grid grid-cols-2 gap-3">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-8">
               {brands.map((brand) => (
                 <li key={brand.id}>
                   <button
