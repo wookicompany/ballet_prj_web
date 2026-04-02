@@ -13,7 +13,8 @@ export const GET = async () => {
       "id, name_ko, name_en, logo_url, website_url, instagram_url, facebook_url, threads_url, youtube_url, x_url, naver_blog_url, tiktok_url, sort_order"
     )
     .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("brands list", error);

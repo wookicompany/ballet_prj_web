@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { openUrlInApp } from "@/lib/reactNativeWebView";
 
@@ -134,38 +135,42 @@ export default function BrandDetailPage({
 
   return (
     <MobileContainer>
-      <main className="flex min-h-screen flex-col bg-[#f5f5f7] pb-safe">
-        <header className="sticky top-0 z-20 flex h-12 items-center bg-white px-2">
-          <button
+      <main className="flex min-h-screen flex-col bg-white px-4 pb-10">
+        <header className="sticky top-0 z-20 -mx-4 flex h-12 items-center justify-between bg-white px-2">
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-lg"
+            className="text-[#17171c]/70"
             onClick={() => router.back()}
-            className="flex size-9 items-center justify-center rounded-full hover:bg-[#17171c]/5"
+            aria-label="뒤로"
           >
-            <ChevronLeft className="size-5 text-[#17171c]" />
-          </button>
+            <ChevronLeft className="size-6" />
+          </Button>
+          <div className="w-9" />
         </header>
 
-        <div className="flex flex-col gap-3 p-4">
+        <div className="mt-2 flex flex-col gap-3">
           {loading ? (
             <>
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <section className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
                 <div className="flex flex-col items-center gap-3">
                   <Skeleton className="size-24 rounded-2xl" />
                   <Skeleton className="h-5 w-32" />
                   <Skeleton className="h-4 w-24" />
                 </div>
-              </div>
-              <div className="rounded-2xl bg-white shadow-sm">
+              </section>
+              <section className="rounded-2xl border border-[#17171c]/5 bg-white shadow-sm">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 px-4 py-4 border-b border-[#17171c]/5 last:border-0"
+                    className="flex items-center gap-3 px-4 py-3 border-b border-[#17171c]/5 last:border-0"
                   >
                     <Skeleton className="size-5 rounded" />
                     <Skeleton className="h-4 w-24" />
                   </div>
                 ))}
-              </div>
+              </section>
             </>
           ) : !brand ? (
             <div className="flex flex-1 items-center justify-center py-24">
@@ -173,7 +178,7 @@ export default function BrandDetailPage({
             </div>
           ) : (
             <>
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <section className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
                 <div className="flex flex-col items-center gap-2">
                   <div className="size-24 overflow-hidden rounded-2xl border border-[#17171c]/5 bg-[#f5f5f7]">
                     {brand.logo_url ? (
@@ -197,10 +202,10 @@ export default function BrandDetailPage({
                     </p>
                   )}
                 </div>
-              </div>
+              </section>
 
               {activeLinks.length > 0 && (
-                <div className="rounded-2xl border border-[#17171c]/5 bg-white shadow-sm">
+                <section className="rounded-2xl border border-[#17171c]/5 bg-white shadow-sm">
                   <ul className="divide-y divide-[#17171c]/5">
                     {activeLinks.map((item) => {
                       const url = brand[item.key as keyof Brand] as string;
@@ -209,7 +214,7 @@ export default function BrandDetailPage({
                           <button
                             type="button"
                             onClick={() => handleLinkClick(url, item.linkType)}
-                            className="flex w-full items-center gap-3 px-4 py-4 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
+                            className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
                           >
                             {item.icon}
                             <span className="flex-1 text-left text-sm text-[#17171c]">
@@ -221,7 +226,7 @@ export default function BrandDetailPage({
                       );
                     })}
                   </ul>
-                </div>
+                </section>
               )}
             </>
           )}

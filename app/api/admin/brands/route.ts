@@ -26,7 +26,8 @@ export const GET = async (request: Request) => {
     .select(
       "id, name_ko, name_en, logo_url, is_active, sort_order, created_at, updated_at"
     )
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
   if (q) {
     query = query.or(`name_ko.ilike.%${q}%,name_en.ilike.%${q}%`);
   }
