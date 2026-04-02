@@ -216,6 +216,7 @@ const requestedPagesRef = useRef(
 
 | 캐시 모듈 | 적용 페이지 | invalidation 호출 위치 |
 |-----------|------------|----------------------|
+| `lib/calendarHomeCache.ts` | `/calendar` | 기록 생성·수정·삭제 |
 | `lib/performanceHomeCache.ts` | `/performance` | 리뷰 생성·수정·삭제 |
 | `lib/noticeCache.ts` | `/notice` | (읽음 상태는 재조회로 자동 갱신) |
 | `lib/performanceSearchCache.ts` | `/performance/search` | — |

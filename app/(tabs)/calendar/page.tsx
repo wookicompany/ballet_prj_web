@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
@@ -18,14 +17,22 @@ import {
   formatSeoulDateKey,
   getSeoulTodayDate,
 } from "@/lib/kstDateTime";
+import { getAccessToken } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import {
+  getCalendarMonthData,
+  setCalendarMonthData,
+  invalidateCalendarCache,
+  getCalendarNavState,
+  setCalendarNavState,
+} from "@/lib/calendarHomeCache";
 
-function formatDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function getWeekendClass(isSaturday: boolean, isSunday: boolean, highlight: boolean): string {
+  if (!highlight) return "";
+  if (isSaturday) return "text-blue-600";
+  if (isSunday) return "text-red-500";
+  return "";
 }
 
 function getMonthBounds(date: Date) {
@@ -52,35 +59,36 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const { ensureConsent } = useConsentSheet();
-  const [currentDate, setCurrentDate] = useState(() => getSeoulTodayDate());
+
+  const cachedNav = getCalendarNavState();
+
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (cachedNav) return new Date(cachedNav.year, cachedNav.month - 1, 1);
+    return getSeoulTodayDate();
+  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialMonthKey = useMemo(() => {
+    const d = cachedNav
+      ? new Date(cachedNav.year, cachedNav.month - 1, 1)
+      : getSeoulTodayDate();
+    return `${d.getFullYear()}-${d.getMonth() + 1}`;
+  }, []);
+
+  const cachedMonthData = getCalendarMonthData(initialMonthKey);
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>(
+    () => cachedMonthData?.recordCounts ?? {}
+  );
+  const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
+    () => cachedMonthData?.moodAverages ?? {}
+  );
   const [todayStr, setTodayStr] = useState<string>("");
-  const [recordCounts, setRecordCounts] = useState<Record<string, number>>(() => {
-    try {
-      const savedMonth = sessionStorage.getItem("calendar-current-month");
-      const today = getSeoulTodayDate();
-      const monthKey = savedMonth ?? `${today.getFullYear()}-${today.getMonth() + 1}`;
-      const saved = sessionStorage.getItem(`calendar-record-counts:${monthKey}`);
-      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
-    } catch { return {}; }
-  });
-  const [moodAverages, setMoodAverages] = useState<Record<string, number>>(() => {
-    try {
-      const savedMonth = sessionStorage.getItem("calendar-current-month");
-      const today = getSeoulTodayDate();
-      const monthKey = savedMonth ?? `${today.getFullYear()}-${today.getMonth() + 1}`;
-      const saved = sessionStorage.getItem(`calendar-mood-averages:${monthKey}`);
-      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
-    } catch { return {}; }
-  });
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => {
+    if (cachedNav) return { year: cachedNav.year, month: cachedNav.month };
     const today = getSeoulTodayDate();
-    return {
-      year: today.getFullYear(),
-      month: today.getMonth() + 1,
-    };
+    return { year: today.getFullYear(), month: today.getMonth() + 1 };
   });
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(() => cachedNav?.selectedDate ?? "");
   const [selectedDateRecords, setSelectedDateRecords] = useState<SelectedRecord[]>([]);
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
@@ -95,6 +103,15 @@ export default function CalendarPage() {
     [currentDate]
   );
 
+  // 내비게이션 상태 캐시 동기화
+  useEffect(() => {
+    setCalendarNavState({
+      year: currentDate.getFullYear(),
+      month: currentDate.getMonth() + 1,
+      selectedDate,
+    });
+  }, [currentDate, selectedDate]);
+
   const fetchCounts = useCallback(async (force = false) => {
     if (!user) {
       setRecordCounts({});
@@ -102,21 +119,24 @@ export default function CalendarPage() {
       return;
     }
 
+    const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
+
+    // 캐시 가드: force=true(record-changed 시그널)가 아니고 캐시 있으면 생략
+    if (!force && getCalendarMonthData(monthKey)) return;
+
     const { data, error } = await supabase
       .from("records")
       .select("record_date,mood")
       .eq("user_id", user.id)
       .is("deleted_at", null)
-      .gte("record_date", formatDate(start))
-      .lte("record_date", formatDate(end));
+      .gte("record_date", formatSeoulDateKey(start))
+      .lte("record_date", formatSeoulDateKey(end));
 
     if (error || !data) {
-      // 에러 시 기존 state와 캐시 유지
       return;
     }
 
     if (!force && data.length === 0) {
-      // 빈 응답(토큰 갱신 타이밍 등) 시 기존 state 유지 — record-changed로 호출된 경우(force=true)는 통과
       return;
     }
 
@@ -139,12 +159,7 @@ export default function CalendarPage() {
       averages[date] = Math.min(8, Math.max(1, rounded));
     });
 
-    const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
-    try {
-      sessionStorage.setItem(`calendar-record-counts:${monthKey}`, JSON.stringify(counts));
-      sessionStorage.setItem(`calendar-mood-averages:${monthKey}`, JSON.stringify(averages));
-    } catch { /* sessionStorage 용량 초과 등 무시 */ }
-
+    setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages });
     setRecordCounts(counts);
     setMoodAverages(averages);
   }, [user, start, end]);
@@ -176,11 +191,6 @@ export default function CalendarPage() {
     } else {
       setWeekStartMonday(false);
       setHighlightWeekend(false);
-      await supabase.from("profiles").upsert({
-        id: user.id,
-        calendar_week_start_monday: false,
-        calendar_highlight_weekend: false,
-      });
     }
     setSettingsLoaded(true);
   }, [user]);
@@ -211,8 +221,9 @@ export default function CalendarPage() {
       );
       if (changedKeys.length === 0) return;
       changedKeys.forEach(k => sessionStorage.removeItem(k));
+      invalidateCalendarCache();
       void fetchCounts(true);
-      if (selectedDate && changedKeys.includes(`record-changed:${selectedDate}`)) {
+      if (selectedDate) {
         fetchRecordsForDate(selectedDate);
       }
     };
@@ -224,8 +235,6 @@ export default function CalendarPage() {
     };
   }, [selectedDate, fetchRecordsForDate, fetchCounts]);
 
-  // user 변경 시 fetchSettings 포함, 월 변경 시 fetchCounts만 실행
-  // prevUserIdRef로 user/월 변경을 구분해 fetchCounts 중복 호출 방지
   const prevUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user) {
@@ -237,11 +246,12 @@ export default function CalendarPage() {
       setSettingsLoaded(true);
       return;
     }
-    // popstate 미수신(컴포넌트 리마운트) 시 record-changed:* 키를 직접 처리
-    // 마지막 기록 삭제 후 data=[]가 반환되어도 force=true면 가드를 통과해 고양이 제거 가능
     const pendingKeys = Object.keys(sessionStorage).filter(k => k.startsWith("record-changed:"));
     const force = pendingKeys.length > 0;
-    if (force) pendingKeys.forEach(k => sessionStorage.removeItem(k));
+    if (force) {
+      pendingKeys.forEach(k => sessionStorage.removeItem(k));
+      invalidateCalendarCache();
+    }
 
     const userChanged = prevUserIdRef.current !== user.id;
     prevUserIdRef.current = user.id;
@@ -260,34 +270,30 @@ export default function CalendarPage() {
       return;
     }
     const persistSettings = async () => {
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        calendar_week_start_monday: weekStartMonday,
-        calendar_highlight_weekend: highlightWeekend,
+      const token = await getAccessToken(openLoginSheet);
+      if (!token) return;
+      const res = await fetch("/api/profile/calendar-settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          calendar_week_start_monday: weekStartMonday,
+          calendar_highlight_weekend: highlightWeekend,
+        }),
       });
-      if (error) {
-        toast("캘린더 설정 저장에 실패했습니다.");
+      if (!res.ok) {
+        toast("캘린더 설정 저장에 실패했어요.");
       }
     };
     void persistSettings();
-  }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
+  }, [weekStartMonday, highlightWeekend, user, settingsLoaded, openLoginSheet]);
 
   useEffect(() => {
-    // hydration 이후 sessionStorage 복원
-    const savedMonth = sessionStorage.getItem("calendar-current-month");
-    if (savedMonth) {
-      const [year, month] = savedMonth.split("-").map(Number);
-      if (year && month) {
-        setCurrentDate(new Date(year, month - 1, 1));
-        setMonthDraft({ year, month });
-      }
-    }
-    const savedDate = sessionStorage.getItem("calendar-selected-date");
-    if (savedDate) setSelectedDate(savedDate);
-
     const update = () => {
-      const key = formatSeoulDateKey();
-      setTodayStr(key);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      setTodayStr(formatSeoulDateKey());
     };
     update();
     const handler = () => {
@@ -295,9 +301,7 @@ export default function CalendarPage() {
       const today = getSeoulTodayDate();
       setCurrentDate(today);
       setMonthDraft({ year: today.getFullYear(), month: today.getMonth() + 1 });
-      sessionStorage.removeItem("calendar-current-month");
       setSelectedDate("");
-      sessionStorage.removeItem("calendar-selected-date");
       update();
     };
     document.addEventListener("visibilitychange", handler);
@@ -325,13 +329,8 @@ export default function CalendarPage() {
   const changeMonthBy = useCallback((delta: -1 | 1) => {
     if (swipeLockedRef.current) return;
     swipeLockedRef.current = true;
-    setCurrentDate((prev) => {
-      const next = new Date(prev.getFullYear(), prev.getMonth() + delta, 1);
-      sessionStorage.setItem("calendar-current-month", `${next.getFullYear()}-${next.getMonth() + 1}`);
-      return next;
-    });
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
     setSelectedDate("");
-    sessionStorage.removeItem("calendar-selected-date");
     if (swipeLockTimeoutRef.current) {
       window.clearTimeout(swipeLockTimeoutRef.current);
     }
@@ -358,15 +357,15 @@ export default function CalendarPage() {
         swipeStartPointRef.current = null;
         return;
       }
-      const start = swipeStartPointRef.current;
+      const startPoint = swipeStartPointRef.current;
       swipeStartPointRef.current = null;
-      if (!start) return;
+      if (!startPoint) return;
 
       const point = event.changedTouches[0];
       if (!point) return;
 
-      const deltaX = point.clientX - start.x;
-      const deltaY = point.clientY - start.y;
+      const deltaX = point.clientX - startPoint.x;
+      const deltaY = point.clientY - startPoint.y;
       if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
       if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
 
@@ -380,6 +379,16 @@ export default function CalendarPage() {
     swipeStartPointRef.current = null;
     swipeHandledRef.current = false;
   }, []);
+
+  const handleAddRecord = useCallback(async () => {
+    if (!user) {
+      openLoginSheet();
+      return;
+    }
+    const consentOk = await ensureConsent();
+    if (!consentOk) return;
+    router.push(selectedDate ? `/record/new?date=${selectedDate}` : "/record/new");
+  }, [user, openLoginSheet, ensureConsent, router, selectedDate]);
 
   useEffect(() => {
     if (!monthSheetOpen) return;
@@ -464,15 +473,7 @@ export default function CalendarPage() {
           size="icon-lg"
           className="h-10 w-10 rounded-xl bg-[#17171c] text-white hover:bg-[#17171c]/90"
           aria-label="기록 생성"
-          onClick={async () => {
-            if (!user) {
-              openLoginSheet();
-              return;
-            }
-            const consentOk = await ensureConsent();
-            if (!consentOk) return;
-            router.push(selectedDate ? `/record/new?date=${selectedDate}` : "/record/new");
-          }}
+          onClick={handleAddRecord}
         >
           <Plus className="size-5" strokeWidth={2.8} />
         </Button>
@@ -488,18 +489,11 @@ export default function CalendarPage() {
           {weekLabels.map((day) => {
             const isSaturday = day === "토";
             const isSunday = day === "일";
-            const isWeekend = isSaturday || isSunday;
-            const weekendClass = highlightWeekend
-              ? isSaturday
-                ? "text-blue-600"
-                : isSunday
-                  ? "text-red-500"
-                  : ""
-              : "";
+            const weekendClass = getWeekendClass(isSaturday, isSunday, highlightWeekend);
             return (
               <span
                 key={day}
-                className={`flex items-center justify-center py-1 ${highlightWeekend && isWeekend ? weekendClass : ""}`}
+                className={`flex items-center justify-center py-1 ${weekendClass}`}
               >
                 {day}
               </span>
@@ -511,21 +505,14 @@ export default function CalendarPage() {
         <section className="grid flex-1 grid-cols-7 gap-0 auto-rows-fr px-1 mt-1">
           {cells.map((cell, index) => {
             const isEmpty = !cell.date;
-            const dateStr = cell.date ? formatDate(cell.date) : "";
+            const dateStr = cell.date ? formatSeoulDateKey(cell.date) : "";
             const count = recordCounts[dateStr] ?? 0;
             const moodValue = moodAverages[dateStr];
             const isToday = !!dateStr && dateStr === todayStr;
             const dayOfWeek = cell.date ? cell.date.getDay() : null;
             const isSaturday = dayOfWeek === 6;
             const isSunday = dayOfWeek === 0;
-            const isWeekend = isSaturday || isSunday;
-            const weekendClass = highlightWeekend
-              ? isSaturday
-                ? "text-blue-600"
-                : isSunday
-                  ? "text-red-500"
-                  : ""
-              : "";
+            const weekendClass = getWeekendClass(isSaturday, isSunday, highlightWeekend);
 
             const isSelected = !!dateStr && dateStr === selectedDate;
 
@@ -551,9 +538,7 @@ export default function CalendarPage() {
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
                       isToday
                         ? "bg-[#17171c] text-white"
-                        : highlightWeekend && isWeekend
-                          ? weekendClass
-                          : "text-[#17171c]"
+                        : weekendClass || "text-[#17171c]"
                     }`}
                   >
                     {cell.day ?? ""}
@@ -570,11 +555,6 @@ export default function CalendarPage() {
                     sendHapticToApp();
                     const next = dateStr === selectedDate ? "" : dateStr;
                     setSelectedDate(next);
-                    if (next) {
-                      sessionStorage.setItem("calendar-selected-date", next);
-                    } else {
-                      sessionStorage.removeItem("calendar-selected-date");
-                    }
                   }}
                 >
                   {moodValue ? (
@@ -700,9 +680,7 @@ export default function CalendarPage() {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)
               );
-              sessionStorage.setItem("calendar-current-month", `${monthDraft.year}-${monthDraft.month}`);
               setSelectedDate("");
-              sessionStorage.removeItem("calendar-selected-date");
               setMonthSheetOpen(false);
             }}
           >
