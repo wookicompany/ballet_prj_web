@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getBrandHomeCache } from "@/lib/brandHomeCache";
@@ -62,32 +63,36 @@ export default function BrandSearchInputPage() {
 
   return (
     <MobileContainer>
-      <main className="flex min-h-screen flex-col bg-white pb-[calc(56px+env(safe-area-inset-bottom))]">
-        <header className="sticky top-0 z-20 flex h-12 items-center gap-2 bg-white px-2">
-          <button
+      <main className="px-4 pb-16 pt-2">
+        <header className="flex items-center gap-2 pt-2">
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-lg"
+            className="text-[#17171c]/70"
             onClick={() => router.back()}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-[#17171c]/5"
+            aria-label="뒤로"
           >
-            <ChevronLeft className="size-5 text-[#17171c]" />
-          </button>
+            <ChevronLeft className="size-6" />
+          </Button>
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#17171c]/40" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#17171c]/40" />
             <Input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="브랜드명으로 검색해요"
-              className="h-10 rounded-2xl pl-9 text-base placeholder:text-xs"
+              className="h-12 rounded-2xl border border-[#17171c]/5 bg-white pl-9 text-base placeholder:text-sm shadow-sm"
             />
           </div>
         </header>
+        <div className="mt-4 h-px bg-[#17171c]/5" />
 
-        <div className="flex-1">
+        <div>
           {loading ? (
             <div className="divide-y divide-[#17171c]/5">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <div key={i} className="flex items-center gap-3 py-3">
                   <Skeleton className="size-16 rounded-xl shrink-0" />
                   <div className="flex flex-1 flex-col gap-1.5">
                     <Skeleton className="h-4 w-28" />
@@ -97,7 +102,7 @@ export default function BrandSearchInputPage() {
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center py-24">
+            <div className="flex items-center justify-center py-24">
               <p className="text-sm text-[#17171c]/40">
                 {query.trim()
                   ? "검색 결과가 없어요."
@@ -111,7 +116,7 @@ export default function BrandSearchInputPage() {
                   <button
                     type="button"
                     onClick={() => router.push(`/brand/${brand.id}`)}
-                    className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
+                    className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                   >
                     <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
                       {brand.logo_url ? (

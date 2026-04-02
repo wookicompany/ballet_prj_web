@@ -86,7 +86,7 @@ export default function BrandPage() {
                   <button
                     type="button"
                     onClick={() => router.push(`/brand/${brand.id}`)}
-                    className="flex w-full items-center gap-3 py-3 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
+                    className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                   >
                     <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
                       {brand.logo_url ? (
