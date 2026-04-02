@@ -945,35 +945,6 @@ export default function RecordEditPage() {
         path: `${user.id}/${params.id}/${getSafeFileName(file)}`,
       });
     });
-    for (const upload of uploads) {
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(upload.path, upload.file);
-
-      if (uploadError) {
-        continue;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(upload.path);
-      await fetch(`/api/records/${params.id}/media`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              media_type: upload.media_type,
-              url: urlData.publicUrl,
-            },
-          ],
-        }),
-      });
-    }
-
     if (removedMediaIds.length > 0) {
       const deleteResponse = await fetch(`/api/records/${params.id}/media`, {
         method: "DELETE",
@@ -988,6 +959,37 @@ export default function RecordEditPage() {
         setSaving(false);
         return;
       }
+    }
+
+    const uploadResults = await Promise.all(
+      uploads.map(async (upload) => {
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(upload.path, upload.file);
+        if (error) return null;
+        const { data: urlData } = supabase.storage
+          .from(BUCKET)
+          .getPublicUrl(upload.path);
+        return { media_type: upload.media_type, url: urlData.publicUrl };
+      })
+    );
+
+    const successItems = uploadResults.filter(
+      (r): r is NonNullable<typeof r> => r !== null
+    );
+    if (successItems.length < uploads.length) {
+      toast("일부 이미지 업로드에 실패했어요.");
+    }
+
+    if (successItems.length > 0) {
+      await fetch(`/api/records/${params.id}/media`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items: successItems }),
+      });
     }
 
     if (user) invalidateProfileCache(user.id);
