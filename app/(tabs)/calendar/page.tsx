@@ -121,8 +121,13 @@ export default function CalendarPage() {
 
     const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
 
-    // 캐시 가드: force=true(record-changed 시그널)가 아니고 캐시 있으면 생략
-    if (!force && getCalendarMonthData(monthKey)) return;
+    // 캐시 가드: force=true(record-changed 시그널)가 아니고 캐시 있으면 state 복원 후 생략
+    const cachedMonthData = getCalendarMonthData(monthKey);
+    if (!force && cachedMonthData) {
+      setRecordCounts(cachedMonthData.recordCounts);
+      setMoodAverages(cachedMonthData.moodAverages);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("records")
