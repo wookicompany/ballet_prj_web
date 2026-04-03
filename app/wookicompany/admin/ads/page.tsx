@@ -177,15 +177,15 @@ export default function AdminAdsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>썸네일</TableHead>
-                  <TableHead>광고명</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead>노출 기간</TableHead>
-                  <TableHead className="w-10" />
-                  <TableHead className="w-10" />
+                  <TableHead className="w-[22%]">썸네일</TableHead>
+                  <TableHead className="w-[28%]">광고명</TableHead>
+                  <TableHead className="w-[12%]">상태</TableHead>
+                  <TableHead className="w-[28%]">노출 기간</TableHead>
+                  <TableHead className="w-[5%]" />
+                  <TableHead className="w-[5%]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,10 +200,7 @@ export default function AdminAdsPage() {
                     <TableRow key={ad.id} className="hover:bg-muted/40">
                       <TableCell>
                         {ad.image_url ? (
-                          <div
-                            className="relative overflow-hidden rounded"
-                            style={{ width: 64, height: ad.height }}
-                          >
+                          <div className="relative h-10 w-40 overflow-hidden rounded">
                             <Image
                               src={ad.image_url}
                               alt={ad.title}
@@ -213,10 +210,7 @@ export default function AdminAdsPage() {
                             />
                           </div>
                         ) : (
-                          <div
-                            className="flex items-center justify-center rounded bg-muted text-xs text-muted-foreground"
-                            style={{ width: 64, height: 32 }}
-                          >
+                          <div className="flex h-10 w-40 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
                             없음
                           </div>
                         )}
