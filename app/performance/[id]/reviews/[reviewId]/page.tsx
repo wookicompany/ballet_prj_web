@@ -875,7 +875,7 @@ export default function PerformanceReviewDetailPage() {
           </Button>
         </header>
 
-        <section className="space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
+        <section className="space-y-4 rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
           {performance ? (
             <div className="flex items-center gap-3">
               <button
@@ -1003,7 +1003,7 @@ export default function PerformanceReviewDetailPage() {
           </div>
         </section>
 
-        <section className="mt-6 space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">
+        <section className="mt-6 space-y-4 rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-[#17171c]">댓글</h2>
             {commentSummary ? (
