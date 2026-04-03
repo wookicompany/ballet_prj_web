@@ -841,7 +841,6 @@ export default function ProfilePage() {
                       <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
                     )}
                   </div>
-                  <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
                 </button>
               ))}
             </div>
