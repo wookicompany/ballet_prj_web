@@ -14,6 +14,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { getSeoulDateParts, parseDateKey } from "@/lib/kstDateTime";
+import { compressImage } from "@/lib/compressImage";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { supabase } from "@/lib/supabaseClient";
 import BottomSheet from "@/components/sheets/BottomSheet";
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const BUCKET = "record-media";
+const STORAGE_PREFIX = "/storage/v1/object/public/record-media/";
 const MIN_CAREER_YEAR = 1950;
 
 const formatCareerDateLabel = (value: string | null): string => {
@@ -81,14 +83,25 @@ export default function ProfileEditPage() {
     setSaving(true);
     let nextAvatarUrl = avatarUrl;
     if (imageFile) {
+      const compressed = await compressImage(imageFile);
       const path = `${user.id}/profile/${Date.now()}-${imageFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from(BUCKET)
-        .upload(path, imageFile);
+        .upload(path, compressed);
 
       if (!uploadError) {
         const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
         nextAvatarUrl = data.publicUrl;
+
+        if (avatarUrl && avatarUrl.includes(STORAGE_PREFIX)) {
+          const oldPath = avatarUrl.split(STORAGE_PREFIX)[1];
+          const { error: storageError } = await supabase.storage
+            .from(BUCKET)
+            .remove([oldPath]);
+          if (storageError) {
+            console.error("Failed to delete old avatar", storageError);
+          }
+        }
       }
     }
 

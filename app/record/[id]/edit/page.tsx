@@ -51,6 +51,7 @@ import { getLocationsCache, setLocationsCache } from "@/lib/locationsCache";
 import { getInstructorLevelsCache, setInstructorLevelsCache } from "@/lib/instructorLevelsCache";
 import { getBarOrdersCache, setBarOrdersCache } from "@/lib/barOrdersCache";
 import { getCenterOrdersCache, setCenterOrdersCache } from "@/lib/centerOrdersCache";
+import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
 import {
   Activity,
@@ -963,9 +964,10 @@ export default function RecordEditPage() {
 
     const uploadResults = await Promise.all(
       uploads.map(async (upload) => {
+        const compressed = await compressImage(upload.file);
         const { error } = await supabase.storage
           .from(BUCKET)
-          .upload(upload.path, upload.file);
+          .upload(upload.path, compressed);
         if (error) return null;
         const { data: urlData } = supabase.storage
           .from(BUCKET)

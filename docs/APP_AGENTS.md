@@ -46,6 +46,8 @@
 - 동일 소셜 계정 재로그인 시 `soft_deleted_at`를 제거해 즉시 재활성화하고, 기존 소프트 삭제 데이터는 계속 비노출 상태로 유지한다.
 - 평점(1~10), mood(1~5) 같은 범위는 서버에서 최종 검증한다.
 - 파일 업로드는 클라이언트에서 처리하고, 메타데이터 저장은 서버 API로 통일한다.
+- 이미지 업로드 전 반드시 `lib/compressImage.ts`의 `compressImage()`로 압축한 뒤 Storage에 업로드한다. (압축 실패 시 원본 파일로 폴백)
+- 미디어 삭제 시 DB 행 삭제와 함께 Supabase Storage 파일도 반드시 삭제해야 한다. (`storage.from(bucket).remove(paths)` 사용, 실패 시 `console.error`로 로그만 남김)
 - 프로필 홈 카드 영역은 현재 클라이언트 `supabase` 직접 조회 패턴을 사용한다. (요약/목록 read 전용)
 - `records` 목록 정렬 기본은 `record_date DESC`, 동률 시 `created_at DESC`를 우선한다.
 - records API 현황은 다음을 기준으로 유지한다.

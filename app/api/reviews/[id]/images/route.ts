@@ -111,7 +111,7 @@ export const DELETE = async (
 
   const { data: rows, error: rowsError } = await auth.supabaseAdmin
     .from("performance_review_images")
-    .select("id, user_id, review_id")
+    .select("id, user_id, review_id, url")
     .in("id", cleanedIds);
 
   if (rowsError) {
@@ -140,6 +140,21 @@ export const DELETE = async (
       { message: "Failed to delete images" },
       { status: 500 }
     );
+  }
+
+  const storagePaths = (rows ?? [])
+    .map((row) =>
+      row.url.split("/storage/v1/object/public/record-media/")[1]
+    )
+    .filter(Boolean);
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await auth.supabaseAdmin.storage
+      .from("record-media")
+      .remove(storagePaths);
+    if (storageError) {
+      console.error("Failed to delete storage objects", storageError);
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -18,6 +18,7 @@ import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import { invalidateDetailCache } from "@/lib/performanceDetailCache";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -130,10 +131,11 @@ export default function PerformanceReviewNewPage() {
     if (mediaItems.length > 0) {
       const uploadResults = await Promise.all(
         mediaItems.map(async (item) => {
+          const compressed = await compressImage(item.file);
           const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(item.file)}`;
           const { error: uploadError } = await supabase.storage
             .from(BUCKET)
-            .upload(path, item.file);
+            .upload(path, compressed);
           if (uploadError) return null;
           const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
           return urlData.publicUrl;

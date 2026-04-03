@@ -18,6 +18,7 @@ import { invalidatePerformanceHomeCache } from "@/lib/performanceHomeCache";
 import { invalidateDetailCache } from "@/lib/performanceDetailCache";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -59,10 +60,14 @@ export default function PerformanceReviewEditPage() {
   const [content, setContent] = useState("");
   const [mediaItems, setMediaItems] = useState<PreviewItem[]>([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  const canUploadMore = mediaItems.length + existingImages.length < MAX_IMAGES;
+  const visibleExistingCount = existingImages.filter(
+    (img) => !removedImageIds.includes(img.id)
+  ).length;
+  const canUploadMore = mediaItems.length + visibleExistingCount < MAX_IMAGES;
 
   useEffect(() => {
     return () => {
@@ -134,27 +139,9 @@ export default function PerformanceReviewEditPage() {
     });
   };
 
-  const handleRemoveExisting = async (imageId: string) => {
+  const handleRemoveExisting = (imageId: string) => {
     sendHapticToApp();
-    if (!user) {
-      openLoginSheet();
-      return;
-    }
-    const session = await ensureSessionOrLogin(openLoginSheet);
-    if (!session) return;
-    const response = await fetch(`/api/reviews/${reviewId}/images`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ imageIds: [imageId] }),
-    });
-    if (!response.ok) {
-      toast("이미지를 삭제하지 못했어요.");
-      return;
-    }
-    setExistingImages((prev) => prev.filter((item) => item.id !== imageId));
+    setRemovedImageIds((prev) => [...prev, imageId]);
   };
 
   const handleSubmit = async () => {
@@ -191,13 +178,30 @@ export default function PerformanceReviewEditPage() {
       return;
     }
 
+    if (removedImageIds.length > 0) {
+      const deleteResponse = await fetch(`/api/reviews/${reviewId}/images`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ imageIds: removedImageIds }),
+      });
+      if (!deleteResponse.ok) {
+        toast("이미지 삭제에 실패했습니다.");
+        setSaving(false);
+        return;
+      }
+    }
+
     if (mediaItems.length > 0) {
       const uploadResults = await Promise.all(
         mediaItems.map(async (item) => {
+          const compressed = await compressImage(item.file);
           const path = `${user.id}/performance-reviews/${reviewId}/${getSafeFileName(item.file)}`;
           const { error: uploadError } = await supabase.storage
             .from(BUCKET)
-            .upload(path, item.file);
+            .upload(path, compressed);
           if (uploadError) return null;
           const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
           return urlData.publicUrl;
@@ -320,7 +324,7 @@ export default function PerformanceReviewEditPage() {
             <div className="flex items-center justify-between">
               <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
               <span className="text-xs text-[#17171c]/50">
-                {existingImages.length + mediaItems.length}/{MAX_IMAGES}
+                {visibleExistingCount + mediaItems.length}/{MAX_IMAGES}
               </span>
             </div>
             <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
@@ -333,7 +337,7 @@ export default function PerformanceReviewEditPage() {
               >
                 <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
               </button>
-              {existingImages.map((item) => (
+              {existingImages.filter((item) => !removedImageIds.includes(item.id)).map((item) => (
                 <div
                   key={item.id}
                   className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
