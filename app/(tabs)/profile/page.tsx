@@ -707,44 +707,44 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: 5 }, (_, index) => {
-                          const ratio = getStarFillRatio(review.rating, index + 1);
-                          return (
-                            <div
-                              key={`${review.id}-star-${index}`}
-                              className="relative h-4 w-4"
-                            >
-                              <Star className="h-4 w-4 text-brand" fill="none" />
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }, (_, index) => {
+                            const ratio = getStarFillRatio(review.rating, index + 1);
+                            return (
                               <div
-                                className="absolute inset-0 overflow-hidden"
-                                style={{ width: `${ratio * 100}%` }}
+                                key={`${review.id}-star-${index}`}
+                                className="relative h-4 w-4"
                               >
-                                <Star className="h-4 w-4 text-brand" fill="currentColor" />
+                                <Star className="h-4 w-4 text-brand" fill="none" />
+                                <div
+                                  className="absolute inset-0 overflow-hidden"
+                                  style={{ width: `${ratio * 100}%` }}
+                                >
+                                  <Star className="h-4 w-4 text-brand" fill="currentColor" />
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+                        <p className="shrink-0 text-xs text-[#17171c]/50">
+                          {formatReviewDate(review.createdAt)}
+                        </p>
                       </div>
                       {review.content ? (
                         <p className="mt-2 line-clamp-1 text-sm text-[#17171c]/70">
                           {review.content}
                         </p>
                       ) : null}
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-4 text-xs text-[#17171c]">
-                          <span className="inline-flex items-center gap-1">
-                            <Heart className="h-4 w-4 text-[#17171c]" />
-                            {reviewLikeCounts[review.id] ?? 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MessageCircle className="h-4 w-4 text-[#17171c]" />
-                            {reviewCommentCounts[review.id] ?? 0}
-                          </span>
-                        </div>
-                        <div className="whitespace-nowrap text-xs text-[#17171c]/50">
-                          {formatReviewDate(review.createdAt)}
-                        </div>
+                      <div className="mt-2 flex items-center gap-4 text-xs text-[#17171c]">
+                        <span className="inline-flex items-center gap-1">
+                          <Heart className="h-4 w-4 text-[#17171c]" />
+                          {reviewLikeCounts[review.id] ?? 0}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4 text-[#17171c]" />
+                          {reviewCommentCounts[review.id] ?? 0}
+                        </span>
                       </div>
                     </div>
                   </div>
