@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
@@ -19,39 +19,59 @@ type Brand = {
   sort_order: number;
 };
 
-type CachePayload = { brands: Brand[]; popularBrands: Brand[] };
+type CachePayload = {
+  brands: Brand[];
+  popularBrands: Brand[];
+  page: number;
+  hasMore: boolean;
+};
 
-let brandHomeInFlight: Promise<CachePayload> | null = null;
+const PAGE_SIZE = 12;
 
 export default function BrandPage() {
   const router = useRouter();
   const cached = getBrandHomeCache<CachePayload>();
+
   const [brands, setBrands] = useState<Brand[]>(() => cached?.brands ?? []);
   const [popularBrands, setPopularBrands] = useState<Brand[]>(
     () => cached?.popularBrands ?? []
   );
   const [loading, setLoading] = useState(() => !cached);
+  const [page, setPage] = useState(() => cached?.page ?? 0);
+  const [hasMore, setHasMore] = useState(() => cached?.hasMore ?? true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    const cachedNow = getBrandHomeCache<CachePayload>();
-    if (cachedNow) {
-      setBrands(cachedNow.brands);
-      setPopularBrands(cachedNow.popularBrands);
-      setLoading(false);
-      return;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestedPagesRef = useRef(
+    new Set<number>(
+      cached
+        ? Array.from({ length: (cached.page ?? 0) + 1 }, (_, i) => i)
+        : []
+    )
+  );
+  const loadingRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+
+  const fetchPage = useCallback(async (pageToFetch: number) => {
+    if (pageToFetch === 0) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
     }
 
-    if (!brandHomeInFlight) {
-      brandHomeInFlight = (async () => {
-        const baseSelect = "id, name_ko, name_en, logo_url, sort_order";
+    const rangeStart = pageToFetch * PAGE_SIZE;
+    const rangeEnd = rangeStart + PAGE_SIZE - 1;
+    const baseSelect = "id, name_ko, name_en, logo_url, sort_order";
 
+    try {
+      if (pageToFetch === 0) {
         const [brandsRes, engagementRes] = await Promise.all([
           supabase
             .from("ballet_brands")
             .select(baseSelect)
             .eq("is_active", true)
-            .order("sort_order", { ascending: true })
-            .order("created_at", { ascending: true }),
+            .order("name_ko", { ascending: true })
+            .range(rangeStart, rangeEnd),
           supabase
             .from("brand_engagement_summaries")
             .select("brand_id, view_count")
@@ -60,40 +80,106 @@ export default function BrandPage() {
             .limit(8),
         ]);
 
-        const allBrands = (brandsRes.data ?? []) as Brand[];
+        const fetched = (brandsRes.data ?? []) as Brand[];
         const popularIds = (engagementRes.data ?? [])
           .map((r) => r.brand_id)
           .filter(Boolean) as string[];
 
         let popularList: Brand[] = [];
         if (popularIds.length > 0) {
-          const brandMap = new Map(allBrands.map((b) => [b.id, b]));
+          const res = await supabase
+            .from("ballet_brands")
+            .select(baseSelect)
+            .in("id", popularIds)
+            .eq("is_active", true);
+          const popularMap = new Map(
+            ((res.data ?? []) as Brand[]).map((b) => [b.id, b])
+          );
           popularList = popularIds
-            .map((id) => brandMap.get(id))
+            .map((id) => popularMap.get(id))
             .filter(Boolean) as Brand[];
         }
 
-        return { brands: allBrands, popularBrands: popularList };
-      })();
-    }
+        setBrands(fetched);
+        setPopularBrands(popularList);
+        setHasMore(fetched.length === PAGE_SIZE);
+        setLoading(false);
+      } else {
+        const { data, error } = await supabase
+          .from("ballet_brands")
+          .select(baseSelect)
+          .eq("is_active", true)
+          .order("name_ko", { ascending: true })
+          .range(rangeStart, rangeEnd);
 
-    setLoading(true);
-    try {
-      const result = await brandHomeInFlight;
-      setBrandHomeCache<CachePayload>(result);
-      setBrands(result.brands);
-      setPopularBrands(result.popularBrands);
-      setLoading(false);
+        if (error) {
+          setLoadingMore(false);
+          return;
+        }
+
+        const fetched = (data ?? []) as Brand[];
+        setBrands((prev) => {
+          const seen = new Set(prev.map((b) => b.id));
+          const merged = [...prev];
+          fetched.forEach((b) => {
+            if (!seen.has(b.id)) merged.push(b);
+          });
+          return merged;
+        });
+        setHasMore(fetched.length === PAGE_SIZE);
+        setLoadingMore(false);
+      }
     } catch {
       setLoading(false);
-    } finally {
-      brandHomeInFlight = null;
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (cached) return;
+    fetchPage(0);
+  }, [cached, fetchPage]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+
+  useEffect(() => {
+    if (loading || loadingMore) return;
+    setBrandHomeCache<CachePayload>({ brands, popularBrands, page, hasMore });
+  }, [brands, popularBrands, page, hasMore, loading, loadingMore]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    const nextPage = page + 1;
+    if (requestedPagesRef.current.has(nextPage)) return;
+    requestedPagesRef.current.add(nextPage);
+    setPage(nextPage);
+    fetchPage(nextPage);
+  }, [fetchPage, hasMore, loadingMore, page]);
+
+  useEffect(() => {
+    const target = sentinelRef.current;
+    if (!target || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          !loadingRef.current &&
+          !loadingMoreRef.current
+        ) {
+          loadMore();
+        }
+      },
+      { rootMargin: "120px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, loading]);
 
   const popularCards = useMemo(
     () =>
@@ -128,11 +214,9 @@ export default function BrandPage() {
     [popularBrands, router]
   );
 
-  const allBrandCards = useMemo(() => {
-    const sorted = [...brands].sort((a, b) =>
-      a.name_ko.localeCompare(b.name_ko, "ko")
-    );
-    return sorted.map((brand) => (
+  const allBrandCards = useMemo(
+    () =>
+      brands.map((brand) => (
         <li key={brand.id}>
           <button
             type="button"
@@ -164,8 +248,9 @@ export default function BrandPage() {
             </div>
           </button>
         </li>
-    ));
-  }, [brands, router]);
+      )),
+    [brands, router]
+  );
 
   return (
     <>
@@ -237,6 +322,18 @@ export default function BrandPage() {
               <ul className="grid grid-cols-2 gap-x-6 gap-y-8">
                 {allBrandCards}
               </ul>
+              {loadingMore && (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-8 mt-0">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex flex-col gap-2">
+                      <Skeleton className="aspect-square w-full rounded-2xl" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {hasMore && <div ref={sentinelRef} className="h-1" />}
             </section>
           </div>
         )}

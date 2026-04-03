@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getBrandHomeCache } from "@/lib/brandHomeCache";
+import { supabase } from "@/lib/supabaseClient";
 
 type Brand = {
   id: string;
@@ -18,37 +18,35 @@ type Brand = {
   sort_order: number;
 };
 
-type CachePayload = { brands: Brand[] };
+const PAGE_SIZE = 12;
 
 export default function BrandSearchInputPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
-  const [allBrands, setAllBrands] = useState<Brand[]>(() => {
-    const cached = getBrandHomeCache<CachePayload>();
-    return cached?.brands ?? [];
-  });
-  const [loading, setLoading] = useState(() => !getBrandHomeCache<CachePayload>());
+  const [allBrands, setAllBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    if (getBrandHomeCache<CachePayload>()) return;
-    const fetchBrands = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/brands");
-        if (!res.ok) return;
-        const data = await res.json();
-        setAllBrands(data.brands ?? []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBrands();
+    setLoading(true);
+    supabase
+      .from("ballet_brands")
+      .select("id, name_ko, name_en, logo_url, sort_order")
+      .eq("is_active", true)
+      .order("name_ko", { ascending: true })
+      .then(({ data }) => setAllBrands((data ?? []) as Brand[]))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    setDisplayCount(PAGE_SIZE);
+  }, [query]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -59,6 +57,28 @@ export default function BrandSearchInputPage() {
         (b.name_en?.toLowerCase().includes(q) ?? false)
     );
   }, [query, allBrands]);
+
+  const visibleBrands = useMemo(
+    () => filtered.slice(0, displayCount),
+    [filtered, displayCount]
+  );
+
+  const hasMore = displayCount < filtered.length;
+
+  useEffect(() => {
+    const target = sentinelRef.current;
+    if (!target || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setDisplayCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "120px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   return (
     <>
@@ -109,42 +129,45 @@ export default function BrandSearchInputPage() {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-[#17171c]/5">
-              {filtered.map((brand) => (
-                <li key={brand.id}>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/brand/${brand.id}`)}
-                    className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
-                  >
-                    <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
-                      {brand.logo_url ? (
-                        <Image
-                          src={brand.logo_url}
-                          alt={brand.name_ko}
-                          width={64}
-                          height={64}
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="size-full" />
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col items-start gap-0.5 overflow-hidden">
-                      <span className="text-sm font-medium text-[#17171c] truncate w-full text-left">
-                        {brand.name_ko}
-                      </span>
-                      {brand.name_en && (
-                        <span className="text-xs text-[#17171c]/50 truncate w-full text-left">
-                          {brand.name_en}
+            <>
+              <ul className="divide-y divide-[#17171c]/5">
+                {visibleBrands.map((brand) => (
+                  <li key={brand.id}>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/brand/${brand.id}`)}
+                      className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
+                    >
+                      <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
+                        {brand.logo_url ? (
+                          <Image
+                            src={brand.logo_url}
+                            alt={brand.name_ko}
+                            width={64}
+                            height={64}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div className="size-full" />
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col items-start gap-0.5 overflow-hidden">
+                        <span className="text-sm font-medium text-[#17171c] truncate w-full text-left">
+                          {brand.name_ko}
                         </span>
-                      )}
-                    </div>
-                    <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+                        {brand.name_en && (
+                          <span className="text-xs text-[#17171c]/50 truncate w-full text-left">
+                            {brand.name_en}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {hasMore && <div ref={sentinelRef} className="h-1" />}
+            </>
           )}
         </div>
       </main>
