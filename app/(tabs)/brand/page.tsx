@@ -128,9 +128,11 @@ export default function BrandPage() {
     [popularBrands, router]
   );
 
-  const allBrandCards = useMemo(
-    () =>
-      brands.map((brand) => (
+  const allBrandCards = useMemo(() => {
+    const sorted = [...brands].sort((a, b) =>
+      a.name_ko.localeCompare(b.name_ko, "ko")
+    );
+    return sorted.map((brand) => (
         <li key={brand.id}>
           <button
             type="button"
@@ -162,9 +164,8 @@ export default function BrandPage() {
             </div>
           </button>
         </li>
-      )),
-    [brands, router]
-  );
+    ));
+  }, [brands, router]);
 
   return (
     <>
