@@ -178,7 +178,7 @@ export default function BrandDetailPage({
 
   return (
     <MobileContainer>
-      <main className="flex min-h-screen flex-col bg-white px-4 pb-10">
+      <main className="px-4 pb-10">
         <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
           <Button
             type="button"
