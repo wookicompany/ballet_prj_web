@@ -207,9 +207,10 @@ export default function ProfileEditPage() {
                   <AnimatedImage
                     src={avatarUrl}
                     alt="프로필 이미지"
-                    width={1600}
-                    height={1600}
-                    unoptimized
+                    width={96}
+                    height={96}
+                    sizes="96px"
+                    unoptimized={!!imageFile}
                     draggable={false}
                     className="h-full w-full object-cover"
                   />
