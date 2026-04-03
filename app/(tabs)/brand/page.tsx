@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
@@ -196,7 +196,7 @@ export default function BrandPage() {
         >
           <div className="size-[64px] overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
             {brand.logo_url ? (
-              <Image
+              <AnimatedImage
                 src={brand.logo_url}
                 alt={brand.name_ko}
                 width={64}
@@ -226,7 +226,7 @@ export default function BrandPage() {
           >
             <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
               {brand.logo_url ? (
-                <Image
+                <AnimatedImage
                   src={brand.logo_url}
                   alt={brand.name_ko}
                   width={200}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 
 import type { AdPlacement } from "@/lib/ads";
 import { openUrlInApp } from "@/lib/reactNativeWebView";
@@ -67,7 +67,7 @@ export default function AdBanner({ placement }: Props) {
         onClick={() => void handleClick()}
         aria-label="광고 배너"
       >
-        <Image
+        <AnimatedImage
           src={ad.image_url}
           alt="광고"
           width={430}

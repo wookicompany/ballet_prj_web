@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import AnimatedImage from "@/components/ui/animated-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
@@ -146,7 +146,7 @@ export default function BrandSearchInputPage() {
                     >
                       <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
                         {brand.logo_url ? (
-                          <Image
+                          <AnimatedImage
                             src={brand.logo_url}
                             alt={brand.name_ko}
                             width={64}
