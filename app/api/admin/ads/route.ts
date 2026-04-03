@@ -61,7 +61,7 @@ export const GET = async (request: Request) => {
   let query = result.supabaseAdmin
     .from("ads")
     .select(
-      "id, placement, provider, title, description, is_active, start_at, end_at, image_url, link_url, height, click_count, last_clicked_at, created_at, updated_at"
+      "id, placement, provider, title, description, is_active, start_at, end_at, image_url, link_url, height, impression_count, click_count, last_clicked_at, created_at, updated_at"
     )
     .order("created_at", { ascending: false });
 

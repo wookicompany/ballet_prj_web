@@ -11,10 +11,10 @@ export const POST = async (
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
-  const { error } = await supabaseAdmin.rpc("increment_ad_click", { ad_id: id });
+  const { error } = await supabaseAdmin.rpc("increment_ad_impression", { ad_id: id });
 
   if (error) {
-    console.error("ad click track", error);
+    console.error("ad impression track", error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 

@@ -31,7 +31,11 @@ export default function AdBanner({ placement }: Props) {
         });
         if (!res.ok) return;
         const data = await res.json();
-        setAd((data.ad as AdPayload | null) ?? null);
+        const fetched = (data.ad as AdPayload | null) ?? null;
+        setAd(fetched);
+        if (fetched) {
+          void fetch(`/api/ads/${fetched.id}/impression`, { method: "POST" });
+        }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }

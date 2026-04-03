@@ -32,6 +32,8 @@ type AdRow = {
   end_at: string;
   image_url: string | null;
   height: number;
+  impression_count: number;
+  click_count: number;
 };
 
 type TabPlacement = "performance_home" | "brand_home";
@@ -180,10 +182,12 @@ export default function AdminAdsPage() {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[22%]">썸네일</TableHead>
-                  <TableHead className="w-[28%]">광고명</TableHead>
-                  <TableHead className="w-[12%]">상태</TableHead>
-                  <TableHead className="w-[28%]">노출 기간</TableHead>
+                  <TableHead className="w-[20%]">썸네일</TableHead>
+                  <TableHead className="w-[22%]">광고명</TableHead>
+                  <TableHead className="w-[10%]">노출수</TableHead>
+                  <TableHead className="w-[10%]">클릭수</TableHead>
+                  <TableHead className="w-[10%]">상태</TableHead>
+                  <TableHead className="w-[23%]">노출 기간</TableHead>
                   <TableHead className="w-[5%]" />
                   <TableHead className="w-[5%]" />
                 </TableRow>
@@ -191,7 +195,7 @@ export default function AdminAdsPage() {
               <TableBody>
                 {filteredAds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                       등록된 광고가 없습니다.
                     </TableCell>
                   </TableRow>
@@ -216,6 +220,8 @@ export default function AdminAdsPage() {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{ad.title}</TableCell>
+                      <TableCell className="tabular-nums">{ad.impression_count}</TableCell>
+                      <TableCell className="tabular-nums">{ad.click_count}</TableCell>
                       <TableCell>
                         <Badge variant={ad.is_active ? "default" : "secondary"}>
                           {ad.is_active ? "활성" : "비활성"}

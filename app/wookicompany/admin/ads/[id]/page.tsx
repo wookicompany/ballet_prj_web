@@ -57,6 +57,7 @@ type AdDetail = {
   height: number;
   click_count: number;
   last_clicked_at: string | null;
+  impression_count: number;
   created_at: string;
   updated_at: string;
 };
@@ -417,6 +418,10 @@ export default function AdminAdDetailPage() {
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">높이</p>
               <p className="mt-1 font-medium">{ad.height}px</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">노출수</p>
+              <p className="mt-1 font-medium tabular-nums">{ad.impression_count}</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">클릭수</p>
