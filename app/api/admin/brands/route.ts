@@ -20,12 +20,73 @@ export const GET = async (request: Request) => {
   );
   const offset = Number(searchParams.get("offset")) || 0;
   const q = searchParams.get("q")?.trim() || "";
+  const sort = searchParams.get("sort") || "name_ko"; // "name_ko" | "view_count_desc" | "view_count_asc"
 
+  const isSortByView = sort === "view_count_desc" || sort === "view_count_asc";
+
+  if (isSortByView) {
+    // 1. 검색 조건에 맞는 모든 브랜드 ID 조회
+    let allIdsQuery = result.supabaseAdmin
+      .from("ballet_brands")
+      .select("id");
+    if (q) allIdsQuery = allIdsQuery.or(`name_ko.ilike.%${q}%,name_en.ilike.%${q}%`);
+    const { data: allIdRows, error: idError } = await allIdsQuery;
+    if (idError) {
+      console.error("admin brands list", idError);
+      return NextResponse.json({ message: "Failed to list brands" }, { status: 500 });
+    }
+    const allIds = (allIdRows ?? []).map((r) => r.id);
+    const total = allIds.length;
+
+    // 2. 해당 브랜드들의 조회수 조회
+    const { data: viewRows } = allIds.length
+      ? await result.supabaseAdmin
+          .from("brand_engagement_summaries")
+          .select("brand_id, view_count")
+          .in("brand_id", allIds)
+      : { data: [] };
+
+    const viewCountMap: Record<string, number> = {};
+    for (const row of viewRows ?? []) {
+      if (row.brand_id) viewCountMap[row.brand_id] = row.view_count ?? 0;
+    }
+
+    // 3. 조회수 기준 정렬 후 페이지네이션
+    const sortedIds = [...allIds].sort((a, b) => {
+      const diff = (viewCountMap[a] ?? 0) - (viewCountMap[b] ?? 0);
+      return sort === "view_count_desc" ? -diff : diff;
+    });
+    const pageIds = sortedIds.slice(offset, offset + limit);
+
+    if (pageIds.length === 0) {
+      return NextResponse.json({ brands: [], total, limit, offset });
+    }
+
+    // 4. 페이지 브랜드 상세 조회
+    const { data: rows, error } = await result.supabaseAdmin
+      .from("ballet_brands")
+      .select("id, name_ko, name_en, logo_url, is_active, sort_order, created_at, updated_at")
+      .in("id", pageIds);
+
+    if (error) {
+      console.error("admin brands list", error);
+      return NextResponse.json({ message: "Failed to list brands" }, { status: 500 });
+    }
+
+    // 5. 정렬 순서 복원 후 view_count 병합
+    const rowMap = Object.fromEntries((rows ?? []).map((r) => [r.id, r]));
+    const brands = pageIds
+      .map((id) => rowMap[id])
+      .filter(Boolean)
+      .map((row) => ({ ...row, view_count: viewCountMap[row.id] ?? 0 }));
+
+    return NextResponse.json({ brands, total, limit, offset });
+  }
+
+  // 기본 정렬: 가나다순
   let query = result.supabaseAdmin
     .from("ballet_brands")
-    .select(
-      "id, name_ko, name_en, logo_url, is_active, sort_order, created_at, updated_at"
-    )
+    .select("id, name_ko, name_en, logo_url, is_active, sort_order, created_at, updated_at")
     .order("name_ko", { ascending: true });
   if (q) {
     query = query.or(`name_ko.ilike.%${q}%,name_en.ilike.%${q}%`);
@@ -48,8 +109,26 @@ export const GET = async (request: Request) => {
     return NextResponse.json({ message: "Failed to list brands" }, { status: 500 });
   }
 
+  const brandIds = (rows ?? []).map((r) => r.id);
+  const { data: viewRows } = brandIds.length
+    ? await result.supabaseAdmin
+        .from("brand_engagement_summaries")
+        .select("brand_id, view_count")
+        .in("brand_id", brandIds)
+    : { data: [] };
+
+  const viewCountMap: Record<string, number> = {};
+  for (const row of viewRows ?? []) {
+    if (row.brand_id) viewCountMap[row.brand_id] = row.view_count ?? 0;
+  }
+
+  const brands = (rows ?? []).map((row) => ({
+    ...row,
+    view_count: viewCountMap[row.id] ?? 0,
+  }));
+
   return NextResponse.json({
-    brands: rows ?? [],
+    brands,
     total: count ?? 0,
     limit,
     offset,

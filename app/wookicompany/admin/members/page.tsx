@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight, RefreshCw, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -39,6 +39,12 @@ type MemberRow = {
   comment_count: number;
 };
 
+type SortKey =
+  | "created_at_desc"
+  | "record_count_desc" | "record_count_asc"
+  | "review_count_desc" | "review_count_asc"
+  | "comment_count_desc" | "comment_count_asc";
+
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -46,13 +52,14 @@ export default function AdminMembersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("created_at_desc");
   const [activityFilter, setActivityFilter] = useState<
     "all" | "has_record" | "has_review" | "has_comment"
   >("all");
 
   const searchInit = useRef(true);
 
-  const fetchMembers = useCallback(async (pageOffset: number, q = "") => {
+  const fetchMembers = useCallback(async (pageOffset: number, q = "", s: SortKey = "created_at_desc") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -63,7 +70,7 @@ export default function AdminMembersPage() {
     setError(null);
     try {
       const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
-      const res = await fetch(`/api/admin/members?limit=${LIMIT}&offset=${pageOffset}${qParam}`, {
+      const res = await fetch(`/api/admin/members?limit=${LIMIT}&offset=${pageOffset}${qParam}&sort=${s}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -83,14 +90,28 @@ export default function AdminMembersPage() {
   }, []);
 
   useEffect(() => {
-    fetchMembers(0);
-  }, [fetchMembers]);
+    fetchMembers(0, "", sort);
+  }, [fetchMembers, sort]);
 
   useEffect(() => {
     if (searchInit.current) { searchInit.current = false; return; }
-    const timer = setTimeout(() => { fetchMembers(0, searchQuery); }, 300);
+    const timer = setTimeout(() => { fetchMembers(0, searchQuery, sort); }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchMembers]);
+  }, [searchQuery, fetchMembers, sort]);
+
+  const handleSort = (field: "record_count" | "review_count" | "comment_count") => {
+    const descKey = `${field}_desc` as SortKey;
+    const ascKey = `${field}_asc` as SortKey;
+    const next: SortKey = sort === descKey ? ascKey : descKey;
+    setSort(next);
+    setOffset(0);
+  };
+
+  const SortIcon = ({ field }: { field: "record_count" | "review_count" | "comment_count" }) => {
+    if (sort === `${field}_desc`) return <ArrowDown className="size-3.5" />;
+    if (sort === `${field}_asc`) return <ArrowUp className="size-3.5" />;
+    return <ArrowUpDown className="size-3.5 opacity-40" />;
+  };
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
@@ -111,7 +132,7 @@ export default function AdminMembersPage() {
           <Button
             variant="outline"
             size="sm"
-              onClick={() => fetchMembers(offset, searchQuery)}
+              onClick={() => fetchMembers(offset, searchQuery, sort)}
             disabled={loading}
           >
             <RefreshCw className="mr-1.5 size-4" />
@@ -182,7 +203,7 @@ export default function AdminMembersPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchMembers(offset, searchQuery)}
+                onClick={() => fetchMembers(offset, searchQuery, sort)}
               >
                 다시 시도
               </Button>
@@ -194,9 +215,21 @@ export default function AdminMembersPage() {
                   <TableRow>
                     <TableHead>닉네임</TableHead>
                     <TableHead>가입일</TableHead>
-                    <TableHead>기록 수</TableHead>
-                    <TableHead>리뷰 수</TableHead>
-                    <TableHead>댓글 수</TableHead>
+                    <TableHead>
+                      <button type="button" className="flex items-center gap-1 hover:text-foreground" onClick={() => handleSort("record_count")}>
+                        기록 수 <SortIcon field="record_count" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button type="button" className="flex items-center gap-1 hover:text-foreground" onClick={() => handleSort("review_count")}>
+                        리뷰 수 <SortIcon field="review_count" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button type="button" className="flex items-center gap-1 hover:text-foreground" onClick={() => handleSort("comment_count")}>
+                        댓글 수 <SortIcon field="comment_count" />
+                      </button>
+                    </TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -252,7 +285,7 @@ export default function AdminMembersPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchMembers(offset - LIMIT, searchQuery);
+                          if (currentPage > 1) fetchMembers(offset - LIMIT, searchQuery, sort);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -267,7 +300,7 @@ export default function AdminMembersPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchMembers(offset + LIMIT, searchQuery);
+                          if (currentPage < totalPages) fetchMembers(offset + LIMIT, searchQuery, sort);
                         }}
                         className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />

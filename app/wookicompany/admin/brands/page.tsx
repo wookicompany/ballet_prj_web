@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -36,9 +36,12 @@ type BrandRow = {
   name_en: string | null;
   is_active: boolean;
   sort_order: number;
+  view_count: number;
   created_at: string;
   updated_at: string;
 };
+
+type SortKey = "name_ko" | "view_count_desc" | "view_count_asc";
 
 export default function AdminBrandsPage() {
   const [brands, setBrands] = useState<BrandRow[]>([]);
@@ -47,10 +50,11 @@ export default function AdminBrandsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("name_ko");
 
   const searchInit = useRef(true);
 
-  const fetchBrands = useCallback(async (pageOffset: number, q = "") => {
+  const fetchBrands = useCallback(async (pageOffset: number, q = "", s: SortKey = "name_ko") => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -62,7 +66,7 @@ export default function AdminBrandsPage() {
     try {
       const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
       const res = await fetch(
-        `/api/admin/brands?limit=${LIMIT}&offset=${pageOffset}${qParam}`,
+        `/api/admin/brands?limit=${LIMIT}&offset=${pageOffset}${qParam}&sort=${s}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -82,8 +86,8 @@ export default function AdminBrandsPage() {
   }, []);
 
   useEffect(() => {
-    fetchBrands(0);
-  }, [fetchBrands]);
+    fetchBrands(0, "", sort);
+  }, [fetchBrands, sort]);
 
   useEffect(() => {
     if (searchInit.current) {
@@ -91,10 +95,16 @@ export default function AdminBrandsPage() {
       return;
     }
     const timer = setTimeout(() => {
-      fetchBrands(0, searchQuery);
+      fetchBrands(0, searchQuery, sort);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchBrands]);
+  }, [searchQuery, fetchBrands, sort]);
+
+  const handleViewCountSort = () => {
+    const next: SortKey = sort === "view_count_desc" ? "view_count_asc" : "view_count_desc";
+    setSort(next);
+    setOffset(0);
+  };
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
@@ -108,7 +118,7 @@ export default function AdminBrandsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchBrands(offset, searchQuery)}
+              onClick={() => fetchBrands(offset, searchQuery, sort)}
               disabled={loading}
             >
               <RefreshCw className="mr-1.5 size-4" />
@@ -154,8 +164,8 @@ export default function AdminBrandsPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchBrands(offset, searchQuery)}
-              >
+                onClick={() => fetchBrands(offset, searchQuery, sort)}
+            >
                 다시 시도
               </Button>
             </div>
@@ -167,7 +177,22 @@ export default function AdminBrandsPage() {
                     <TableHead>브랜드명</TableHead>
                     <TableHead>영문명</TableHead>
                     <TableHead>노출</TableHead>
-                    <TableHead>순서</TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-foreground"
+                        onClick={handleViewCountSort}
+                      >
+                        조회수
+                        {sort === "view_count_desc" ? (
+                          <ArrowDown className="size-3.5" />
+                        ) : sort === "view_count_asc" ? (
+                          <ArrowUp className="size-3.5" />
+                        ) : (
+                          <ArrowUpDown className="size-3.5 opacity-40" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead>생성일</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -197,7 +222,7 @@ export default function AdminBrandsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {b.sort_order}
+                          {b.view_count.toLocaleString("ko-KR")}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatAdminDateTime(b.created_at)}
@@ -224,7 +249,7 @@ export default function AdminBrandsPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           if (currentPage > 1)
-                            fetchBrands(offset - LIMIT, searchQuery);
+                            fetchBrands(offset - LIMIT, searchQuery, sort);
                         }}
                         className={
                           currentPage <= 1 ? "pointer-events-none opacity-50" : ""
@@ -244,7 +269,7 @@ export default function AdminBrandsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              fetchBrands((p - 1) * LIMIT, searchQuery);
+                              fetchBrands((p - 1) * LIMIT, searchQuery, sort);
                             }}
                             isActive={currentPage === p}
                           >
@@ -258,7 +283,7 @@ export default function AdminBrandsPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           if (currentPage < totalPages)
-                            fetchBrands(offset + LIMIT, searchQuery);
+                            fetchBrands(offset + LIMIT, searchQuery, sort);
                         }}
                         className={
                           currentPage >= totalPages
