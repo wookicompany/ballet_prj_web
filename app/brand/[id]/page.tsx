@@ -22,6 +22,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { openUrlInApp, sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -144,7 +145,11 @@ export default function BrandDetailPage({
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) setLiked(prev);
+    if (!res.ok) {
+      setLiked(prev);
+    } else {
+      invalidateProfileCache(user.id);
+    }
   };
 
   useEffect(() => {
