@@ -34,14 +34,20 @@ export default function BrandSearchInputPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    supabase
-      .from("ballet_brands")
-      .select("id, name_ko, name_en, logo_url, sort_order")
-      .eq("is_active", true)
-      .order("name_ko", { ascending: true })
-      .then(({ data }) => setAllBrands((data ?? []) as Brand[]))
-      .finally(() => setLoading(false));
+    const fetchBrands = async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase
+          .from("ballet_brands")
+          .select("id, name_ko, name_en, logo_url, sort_order")
+          .eq("is_active", true)
+          .order("name_ko", { ascending: true });
+        setAllBrands((data ?? []) as Brand[]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBrands();
   }, []);
 
   useEffect(() => {
