@@ -8,6 +8,7 @@ import {
   Facebook,
   FilePenLine,
   Globe,
+  Heart,
   Instagram,
   Link,
   Music,
@@ -15,10 +16,14 @@ import {
   Youtube,
 } from "lucide-react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { openUrlInApp } from "@/lib/reactNativeWebView";
+import { getAccessToken } from "@/lib/authSession";
+import { openUrlInApp, sendHapticToApp } from "@/lib/reactNativeWebView";
+import { supabase } from "@/lib/supabaseClient";
 
 type Brand = {
   id: string;
@@ -103,8 +108,11 @@ export default function BrandDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
   const viewTrackedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -113,6 +121,31 @@ export default function BrandDetailPage({
     viewTrackedRef.current = id;
     fetch(`/api/brands/${id}/view`, { method: "POST" }).catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    if (!user || !id) return;
+    supabase
+      .from("brand_likes")
+      .select("deleted_at")
+      .eq("user_id", user.id)
+      .eq("brand_id", id)
+      .maybeSingle()
+      .then(({ data }) => setLiked(!!data && data.deleted_at === null));
+  }, [user, id]);
+
+  const handleLike = async () => {
+    if (!user) { openLoginSheet(); return; }
+    const prev = liked;
+    setLiked(!prev);
+    sendHapticToApp();
+    const token = await getAccessToken(openLoginSheet);
+    if (!token) { setLiked(prev); return; }
+    const res = await fetch(`/api/brands/${id}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) setLiked(prev);
+  };
 
   useEffect(() => {
     const fetchBrand = async () => {
@@ -157,7 +190,14 @@ export default function BrandDetailPage({
           >
             <ChevronLeft className="size-6" />
           </Button>
-          <div className="w-9" />
+          <Button type="button" variant="ghost" size="icon-lg" onClick={handleLike}>
+            <Heart
+              className="size-6"
+              style={{ color: "#FF154A" }}
+              fill={liked ? "#FF154A" : "none"}
+              strokeWidth={liked ? 0 : 1.5}
+            />
+          </Button>
         </header>
 
         <div className="mt-2 flex flex-col gap-3">

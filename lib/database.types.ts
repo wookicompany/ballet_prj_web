@@ -116,6 +116,52 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_likes: {
+        Row: {
+          brand_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_likes_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "ballet_brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_likes_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_engagement_summaries"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       brand_link_clicks: {
         Row: {
           brand_id: string

@@ -16,7 +16,7 @@ import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { Bell, Heart, MessageCircle, Settings, Star, User } from "lucide-react";
+import { Bell, ChevronRight, Heart, MessageCircle, Settings, Star, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -45,6 +45,13 @@ type RecordSummary = {
   createdAt: string;
 };
 
+type LikedBrand = {
+  brand_id: string;
+  name_ko: string;
+  name_en: string | null;
+  logo_url: string | null;
+};
+
 type ProfileCachePayload = {
   profile: Profile | null;
   recordCount: number;
@@ -62,7 +69,9 @@ type ProfileCachePayload = {
   hasMoreRecords: boolean;
   orderedReviewIds: string[];
   orderedRecordIds: string[];
-  activeTab: "records" | "reviews";
+  activeTab: "records" | "reviews" | "brands";
+  likedBrands: LikedBrand[];
+  likedBrandsLoaded: boolean;
 };
 
 const REVIEW_PAGE_SIZE_INITIAL = 5;
@@ -128,7 +137,10 @@ export default function ProfilePage() {
   const [orderedRecordIds, setOrderedRecordIds] = useState<string[]>(() => profileCached?.orderedRecordIds ?? []);
   const [recordOrderReady, setRecordOrderReady] = useState(() => !!profileCached);
   const [recordSectionLoading, setRecordSectionLoading] = useState(() => !profileCached);
-  const [activeTab, setActiveTab] = useState<"records" | "reviews">(() => profileCached?.activeTab ?? "records");
+  const [activeTab, setActiveTab] = useState<"records" | "reviews" | "brands">(() => profileCached?.activeTab ?? "records");
+  const [likedBrands, setLikedBrands] = useState<LikedBrand[]>(() => profileCached?.likedBrands ?? []);
+  const [likedBrandsLoaded, setLikedBrandsLoaded] = useState(() => profileCached?.likedBrandsLoaded ?? false);
+  const [likedBrandsLoading, setLikedBrandsLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(() => !profileCached);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
@@ -394,14 +406,42 @@ export default function ProfilePage() {
       orderedReviewIds,
       orderedRecordIds,
       activeTab,
+      likedBrands,
+      likedBrandsLoaded,
     });
   }, [
     user, profile, recordCount, totalMinutes, reviewCount, reviews, records,
     recordMediaById, reviewLikeCounts, reviewCommentCounts, reviewImages,
     reviewPage, hasMoreReviews, recordPage, hasMoreRecords,
     orderedReviewIds, orderedRecordIds, activeTab,
+    likedBrands, likedBrandsLoaded,
     profileLoading, reviewOrderReady, recordOrderReady,
   ]);
+
+  useEffect(() => {
+    if (!user || likedBrandsLoaded || activeTab !== "brands") return;
+    setLikedBrandsLoading(true);
+    supabase
+      .from("brand_likes")
+      .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setLikedBrands(
+          (data ?? [])
+            .filter((row) => row.ballet_brands !== null)
+            .map((row) => ({
+              brand_id: row.brand_id,
+              name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
+              name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
+              logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
+            }))
+        );
+        setLikedBrandsLoaded(true);
+      })
+      .finally(() => setLikedBrandsLoading(false));
+  }, [user, activeTab, likedBrandsLoaded]);
 
   useEffect(() => {
     if (!cardSentinelRef.current || (!hasMoreReviews && !hasMoreRecords)) return;
@@ -848,8 +888,12 @@ export default function ProfilePage() {
               <div
                 className="absolute bottom-1 top-1 rounded-md bg-[#17171c] transition-all duration-200 ease-out"
                 style={{
-                  left: activeTab === "records" ? "4px" : "calc(50% + 2px)",
-                  width: "calc(50% - 6px)",
+                  left: activeTab === "records"
+                    ? "4px"
+                    : activeTab === "reviews"
+                    ? "calc(33.333% + 2px)"
+                    : "calc(66.666% + 2px)",
+                  width: "calc(33.333% - 6px)",
                 }}
                 aria-hidden
               />
@@ -874,6 +918,17 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab("reviews")}
               >
                 공연 리뷰
+              </Button>
+              <Button
+                type="button"
+                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
+                  activeTab === "brands"
+                    ? "bg-transparent text-white hover:bg-transparent"
+                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
+                }`}
+                onClick={() => setActiveTab("brands")}
+              >
+                브랜드
               </Button>
             </div>
           </div>
@@ -993,7 +1048,8 @@ export default function ProfilePage() {
                 <div ref={cardSentinelRef} />
               </div>
             )
-          ) : shouldShowReviewCardSkeleton ? (
+          ) : activeTab === "reviews" ? (
+            shouldShowReviewCardSkeleton ? (
             <div className="space-y-3">
               {Array.from({ length: 1 }).map((_, index) => (
                 <div
@@ -1146,6 +1202,61 @@ export default function ProfilePage() {
               ) : null}
               <div ref={cardSentinelRef} />
             </div>
+          )
+          ) : (
+            likedBrandsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={`liked-brand-skeleton-${index}`}
+                    className="flex items-center gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
+                  >
+                    <Skeleton className="size-10 shrink-0 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : likedBrands.length === 0 ? (
+              <p className="text-xs text-[#17171c]/60">
+                좋아요한 브랜드가 없어요. 브랜드 탭에서 마음에 드는 브랜드를 찾아보세요.
+              </p>
+            ) : (
+              <div className="divide-y divide-[#17171c]/5">
+                {likedBrands.map((brand) => (
+                  <button
+                    key={brand.brand_id}
+                    type="button"
+                    className="flex w-full items-center gap-3 py-3 text-left"
+                    onClick={() => router.push(`/brand/${brand.brand_id}`)}
+                  >
+                    <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
+                      {brand.logo_url ? (
+                        <AnimatedImage
+                          src={brand.logo_url}
+                          alt={brand.name_ko}
+                          width={40}
+                          height={40}
+                          sizes="40px"
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="size-full" />
+                      )}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-medium text-[#17171c]">{brand.name_ko}</p>
+                      {brand.name_en && (
+                        <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
+                      )}
+                    </div>
+                    <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </section>
 

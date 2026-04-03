@@ -369,6 +369,7 @@
   - `ballet_brands` (id, name_ko, name_en, logo_url, SNS URL 8개, is_active, sort_order, created_at, updated_at)
   - `brand_link_clicks` (id, brand_id, link_type, created_at)
   - `brand_views` (id, brand_id, created_at) — 브랜드 상세 페이지 방문 시 INSERT
+  - `brand_likes` (id, user_id, brand_id, created_at, deleted_at) — 브랜드 좋아요. UNIQUE(user_id, brand_id), soft delete. RLS: SELECT USING(user_id = auth.uid())
 - DB VIEW: `brand_engagement_summaries` (brand_id, view_count, click_count) — `brand_views` + `brand_link_clicks` 집계
 
 ### 브랜드 홈 (`/brand`)
@@ -388,11 +389,17 @@
 - 카드 ①: 로고(96×96 rounded-2xl) + name_ko + name_en
 - 카드 ②: 있는 SNS 링크만 노출, lucide 아이콘(Globe/Instagram/Facebook/Youtube/Twitter/Link)
 - 링크 클릭 시: `openUrlInApp` 내부 웹뷰 + `POST /api/brands/[id]/link-click` 추적
+- 헤더 우측: 하트 버튼(Heart icon, #FF154A). 비활성 = 아웃라인, 활성 = fill. 클릭 시 `POST /api/brands/[id]/like` (토글). 로그인 미인증 시 로그인시트 오픈. 마운트 시 `brand_likes` 직접 조회로 초기 상태 세팅. 낙관적 업데이트 + 실패 시 롤백
+
+### 브랜드 좋아요 (`brand_likes`)
+- 토글 방식: 없으면 INSERT → liked:true, deleted_at IS NULL이면 soft delete → liked:false, deleted_at IS NOT NULL이면 restore → liked:true
+- 프로필 탭 "브랜드" 탭에서 좋아요 목록 조회 (created_at DESC, 브랜드 삭제된 경우 제외)
 
 ### API
 - `GET /api/brands` — is_active=true 목록, sort_order ASC
 - `GET /api/brands/[id]` — 단건 상세
 - `POST /api/brands/[id]/view` — 브랜드 조회수 기록 (인증 불필요)
 - `POST /api/brands/[id]/link-click` — 링크 클릭 추적 (인증 불필요)
+- `POST /api/brands/[id]/like` — 브랜드 좋아요 토글 (인증 필요, service role). 응답: `{ liked: boolean }`
 - `GET+POST /api/admin/brands` — 어드민 목록/생성
 - `GET+PATCH+DELETE /api/admin/brands/[id]` — 어드민 상세/수정/삭제
