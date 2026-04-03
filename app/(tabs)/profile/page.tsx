@@ -562,7 +562,7 @@ export default function ProfilePage() {
             </div>
           ) : recordsPreview.length === 0 ? (
             <p className="text-xs text-[#17171c]/60">
-              첫번째 발레 기록을 남겨보세요.
+              첫 번째 발레 기록을 남겨보세요.
             </p>
           ) : (
             <div className="space-y-3">
@@ -671,7 +671,7 @@ export default function ProfilePage() {
             </div>
           ) : reviewsPreview.length === 0 ? (
             <p className="text-xs text-[#17171c]/60">
-              첫번째 공연 리뷰를 남겨보세요.
+              첫 번째 공연 리뷰를 남겨보세요.
             </p>
           ) : (
             <div className="space-y-3">
@@ -808,7 +808,7 @@ export default function ProfilePage() {
             </div>
           ) : likedBrandsPreview.length === 0 ? (
             <p className="text-xs text-[#17171c]/60">
-              첫번째 찜한 브랜드를 추가해보세요.
+              첫 번째 찜한 브랜드를 추가해보세요.
             </p>
           ) : (
             <div className="divide-y divide-[#17171c]/5">

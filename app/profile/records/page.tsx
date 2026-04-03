@@ -189,7 +189,7 @@ export default function ProfileRecordsPage() {
           </div>
         ) : records.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <p className="text-sm text-[#17171c]/60">아직 기록이 없어요.</p>
+            <p className="text-sm text-[#17171c]/60">아직 기록이 없어요. 오늘의 발레를 기록해보세요.</p>
           </div>
         ) : (
           <div className="space-y-3">

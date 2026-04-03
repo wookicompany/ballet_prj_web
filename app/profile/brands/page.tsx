@@ -138,7 +138,7 @@ export default function ProfileBrandsPage() {
         ) : brands.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
             <p className="text-sm text-[#17171c]/60">
-              첫번째 찜한 브랜드를 추가해보세요.
+              좋아하는 브랜드를 찜하면 여기 모여요.
             </p>
           </div>
         ) : (
