@@ -23,6 +23,9 @@
   - `/record/[id]`: 기록 상세
   - `/record/[id]/edit`: 기록 수정
   - `/profile`: 프로필 탭
+  - `/profile/records`: 발레 기록 전체 목록 (무한스크롤)
+  - `/profile/reviews`: 공연 리뷰 전체 목록 (무한스크롤)
+  - `/profile/brands`: 좋아요한 브랜드 전체 목록
   - `/profile/edit`: 프로필 편집
   - `/profile/menu`: 프로필 설정 메뉴
   - `/profile/account`: 로그아웃/회원탈퇴

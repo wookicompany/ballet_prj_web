@@ -222,7 +222,7 @@ const requestedPagesRef = useRef(
 | `lib/noticeCache.ts` | `/notice` | (읽음 상태는 재조회로 자동 갱신) |
 | `lib/performanceSearchCache.ts` | `/performance/search` | — |
 | `lib/performanceSearchInputCache.ts` | `/performance/search-input` | — |
-| `lib/profileCache.ts` | `/profile` | 기록·리뷰 생성·수정·삭제. `brand_likes` 데이터(`likedBrands`, `likedBrandsLoaded`)도 포함 — 브랜드 좋아요 토글 후 `likedBrandsLoaded: false`로 초기화 시 재조회 |
+| `lib/profileCache.ts` | `/profile` | 기록·리뷰 생성·수정·삭제, 브랜드 좋아요 토글. payload에 미리보기 데이터(`recordsPreview` 3개, `reviewsPreview` 3개, `likedBrandsPreview` 3개) 포함. 서브페이지(`/profile/records`, `/profile/reviews`, `/profile/brands`)는 캐시 없이 매번 fresh fetch |
 | `lib/performanceDetailCache.ts` | `/performance/[id]` | 리뷰 생성·수정·삭제 |
 | `lib/locationsCache.ts` | `/calendar/settings/locations` | 항목 추가·수정·삭제 |
 | `lib/instructorLevelsCache.ts` | `/calendar/settings/instructor-levels` | 항목 추가·수정·삭제 |

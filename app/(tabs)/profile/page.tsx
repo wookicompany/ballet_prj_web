@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import AnimatedImage from "@/components/ui/animated-image";
 import { usePathname, useRouter } from "next/navigation";
@@ -57,27 +57,15 @@ type ProfileCachePayload = {
   recordCount: number;
   totalMinutes: number;
   reviewCount: number;
-  reviews: ReviewSummary[];
-  records: RecordSummary[];
+  recordsPreview: RecordSummary[];
   recordMediaById: Record<string, { urls: string[]; count: number }>;
+  reviewsPreview: ReviewSummary[];
   reviewLikeCounts: Record<string, number>;
   reviewCommentCounts: Record<string, number>;
   reviewImages: Record<string, string[]>;
-  reviewPage: number;
-  hasMoreReviews: boolean;
-  recordPage: number;
-  hasMoreRecords: boolean;
-  orderedReviewIds: string[];
-  orderedRecordIds: string[];
-  activeTab: "records" | "reviews" | "brands";
-  likedBrands: LikedBrand[];
-  likedBrandsLoaded: boolean;
+  likedBrandsPreview: LikedBrand[];
 };
 
-const REVIEW_PAGE_SIZE_INITIAL = 5;
-const REVIEW_PAGE_SIZE_MORE = 12;
-const RECORD_PAGE_SIZE_INITIAL = 5;
-const RECORD_PAGE_SIZE_MORE = 12;
 const PROFILE_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROFILE_HOME;
 
 function toMinutes(time: string) {
@@ -117,47 +105,17 @@ export default function ProfilePage() {
   const [totalMinutes, setTotalMinutes] = useState(() => profileCached?.totalMinutes ?? 0);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [reviewCount, setReviewCount] = useState(() => profileCached?.reviewCount ?? 0);
-  const [reviews, setReviews] = useState<ReviewSummary[]>(() => profileCached?.reviews ?? []);
-  const [records, setRecords] = useState<RecordSummary[]>(() => profileCached?.records ?? []);
+  const [recordsPreview, setRecordsPreview] = useState<RecordSummary[]>(() => profileCached?.recordsPreview ?? []);
   const [recordMediaById, setRecordMediaById] = useState<Record<string, { urls: string[]; count: number }>>(() => profileCached?.recordMediaById ?? {});
+  const [reviewsPreview, setReviewsPreview] = useState<ReviewSummary[]>(() => profileCached?.reviewsPreview ?? []);
   const [reviewLikeCounts, setReviewLikeCounts] = useState<Record<string, number>>(() => profileCached?.reviewLikeCounts ?? {});
   const [reviewCommentCounts, setReviewCommentCounts] = useState<Record<string, number>>(() => profileCached?.reviewCommentCounts ?? {});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>(() => profileCached?.reviewImages ?? {});
-  const [reviewPage, setReviewPage] = useState(() => profileCached?.reviewPage ?? 0);
-  const [hasMoreReviews, setHasMoreReviews] = useState(() => profileCached?.hasMoreReviews ?? true);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-  const [showMoreReviews, setShowMoreReviews] = useState(false);
-  const [orderedReviewIds, setOrderedReviewIds] = useState<string[]>(() => profileCached?.orderedReviewIds ?? []);
-  const [reviewOrderReady, setReviewOrderReady] = useState(() => !!profileCached);
-  const [reviewSectionLoading, setReviewSectionLoading] = useState(() => !profileCached);
-  const [recordPage, setRecordPage] = useState(() => profileCached?.recordPage ?? 0);
-  const [hasMoreRecords, setHasMoreRecords] = useState(() => profileCached?.hasMoreRecords ?? true);
-  const [loadingRecords, setLoadingRecords] = useState(false);
-  const [showMoreRecords, setShowMoreRecords] = useState(false);
-  const [orderedRecordIds, setOrderedRecordIds] = useState<string[]>(() => profileCached?.orderedRecordIds ?? []);
-  const [recordOrderReady, setRecordOrderReady] = useState(() => !!profileCached);
-  const [recordSectionLoading, setRecordSectionLoading] = useState(() => !profileCached);
-  const [activeTab, setActiveTab] = useState<"records" | "reviews" | "brands">(() => profileCached?.activeTab ?? "records");
-  const [likedBrands, setLikedBrands] = useState<LikedBrand[]>(() => profileCached?.likedBrands ?? []);
-  const [likedBrandsLoaded, setLikedBrandsLoaded] = useState(() => profileCached?.likedBrandsLoaded ?? false);
-  const [likedBrandsLoading, setLikedBrandsLoading] = useState(false);
+  const [likedBrandsPreview, setLikedBrandsPreview] = useState<LikedBrand[]>(() => profileCached?.likedBrandsPreview ?? []);
   const [profileLoading, setProfileLoading] = useState(() => !profileCached);
+  const [previewLoading, setPreviewLoading] = useState(() => !profileCached);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
-
-  const cardSentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef<Set<number>>(
-    profileCached
-      ? new Set(Array.from({ length: profileCached.reviewPage }, (_, i) => i + 1))
-      : new Set()
-  );
-  const requestedRecordPagesRef = useRef<Set<number>>(
-    profileCached
-      ? new Set(Array.from({ length: profileCached.recordPage }, (_, i) => i + 1))
-      : new Set()
-  );
-  const loadingReviewsRef = useRef(loadingReviews);
-  const loadingRecordsRef = useRef(loadingRecords);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -212,8 +170,6 @@ export default function ProfilePage() {
     };
   }, [user, pathname, loading, openLoginSheet]);
 
-  // fetchProfile + fetchReviewOrder + fetchRecordOrder를 1개 effect로 통합
-  // React 렌더 사이클 지연 2회 제거
   useEffect(() => {
     const fetchAll = async () => {
       if (loading || pathname !== "/profile") return;
@@ -225,10 +181,9 @@ export default function ProfilePage() {
       if (getProfileCache<ProfileCachePayload>(user.id)) return;
 
       setProfileLoading(true);
-      setReviewSectionLoading(true);
-      setRecordSectionLoading(true);
+      setPreviewLoading(true);
 
-      // Step 1: user_id만 필요한 쿼리 3개 병렬 실행
+      // Step 1: profile + stats (병렬)
       const [profileRes, recordStatsRes, reviewCountRes] = await Promise.all([
         supabase
           .from("profiles")
@@ -262,426 +217,47 @@ export default function ProfilePage() {
           0
         )
       );
-
-      const reviewCountLocal = reviewCountRes.count ?? 0;
-      setReviewCount(reviewCountLocal);
-
-      // 페이지네이션 상태 초기화
-      setReviews([]);
-      setReviewLikeCounts({});
-      setReviewCommentCounts({});
-      setReviewImages({});
-      setRecordMediaById({});
-      setRecords([]);
-      setOrderedReviewIds([]);
-      setOrderedRecordIds([]);
-      setReviewOrderReady(false);
-      setRecordOrderReady(false);
-      setShowMoreRecords(false);
-      setShowMoreReviews(false);
-      setRecordPage(recordStatsLocal.length === 0 ? 0 : 1);
-      setReviewPage(reviewCountLocal === 0 ? 0 : 1);
-      requestedPagesRef.current = new Set();
-      requestedRecordPagesRef.current = new Set();
-
-      if (recordStatsLocal.length === 0) {
-        setHasMoreRecords(false);
-        setRecordOrderReady(true);
-        setRecordSectionLoading(false);
-      } else {
-        setHasMoreRecords(true);
-      }
-      if (reviewCountLocal === 0) {
-        setHasMoreReviews(false);
-        setReviewOrderReady(true);
-        setReviewSectionLoading(false);
-      } else {
-        setHasMoreReviews(true);
-      }
-
+      setReviewCount(reviewCountRes.count ?? 0);
       setProfileLoading(false);
 
-      // Step 2: 리뷰 순서 + 기록 순서 병렬 조회 (React 사이클 없이 직접 실행)
-      const [reviewOrderRes, recordOrderRes] = await Promise.all([
-        reviewCountLocal > 0
-          ? supabase
-              .from("performance_reviews")
-              .select("id,created_at")
-              .eq("user_id", user.id)
-              .is("deleted_at", null)
-          : Promise.resolve({ data: [] as Array<{ id: string; created_at: string }>, error: null }),
-        recordStatsLocal.length > 0
-          ? supabase
-              .from("records")
-              .select("id,record_date,created_at")
-              .eq("user_id", user.id)
-              .is("deleted_at", null)
-              .order("record_date", { ascending: false })
-              .order("created_at", { ascending: false })
-          : Promise.resolve({ data: [] as Array<{ id: string }>, error: null }),
-      ]);
-
-      // 기록 순서 처리
-      const recordOrderRows = (recordOrderRes.data ?? []) as Array<{ id: string }>;
-      if (recordOrderRes.error || recordOrderRows.length === 0) {
-        setOrderedRecordIds([]);
-        setHasMoreRecords(false);
-        setRecordOrderReady(true);
-        setRecordSectionLoading(false);
-      } else {
-        setOrderedRecordIds(recordOrderRows.map((row) => row.id));
-        setHasMoreRecords(true);
-        setRecordOrderReady(true);
-      }
-
-      // 리뷰 순서 처리
-      const reviewOrderRows = (reviewOrderRes.data ?? []) as Array<{ id: string; created_at: string }>;
-      if (reviewOrderRes.error || reviewOrderRows.length === 0) {
-        setOrderedReviewIds([]);
-        setHasMoreReviews(false);
-        setReviewOrderReady(true);
-        setReviewSectionLoading(false);
-        return;
-      }
-
-      // Step 3: 리뷰 정렬용 좋아요+댓글 수 (reviewIds에 의존)
-      const reviewIds = reviewOrderRows.map((row) => row.id);
-      const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
+      // Step 2: 미리보기 데이터 3개씩 병렬 fetch
+      const [recordsRes, reviewsRes, brandsRes] = await Promise.all([
         supabase
-          .from("performance_review_likes")
-          .select("review_id")
-          .in("review_id", reviewIds)
-          .is("deleted_at", null),
+          .from("records")
+          .select("id,record_date,start_time,end_time,content,mood,created_at")
+          .eq("user_id", user.id)
+          .is("deleted_at", null)
+          .order("record_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(3),
         supabase
-          .from("performance_review_comments")
-          .select("review_id")
-          .in("review_id", reviewIds)
-          .is("deleted_at", null),
-      ]);
-
-      const likeCountByReviewId: Record<string, number> = {};
-      (likeRows ?? []).forEach((row) => {
-        likeCountByReviewId[row.review_id] = (likeCountByReviewId[row.review_id] ?? 0) + 1;
-      });
-      const commentCountByReviewId: Record<string, number> = {};
-      (commentRows ?? []).forEach((row) => {
-        commentCountByReviewId[row.review_id] = (commentCountByReviewId[row.review_id] ?? 0) + 1;
-      });
-
-      const sorted = [...reviewOrderRows].sort((a, b) => {
-        const scoreA = (likeCountByReviewId[a.id] ?? 0) + (commentCountByReviewId[a.id] ?? 0);
-        const scoreB = (likeCountByReviewId[b.id] ?? 0) + (commentCountByReviewId[b.id] ?? 0);
-        if (scoreA !== scoreB) return scoreB - scoreA;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-
-      setOrderedReviewIds(sorted.map((row) => row.id));
-      setHasMoreReviews(true);
-      setReviewOrderReady(true);
-    };
-
-    fetchAll();
-  }, [user, loading, pathname, openLoginSheet]);
-
-  useEffect(() => { loadingReviewsRef.current = loadingReviews; }, [loadingReviews]);
-  useEffect(() => { loadingRecordsRef.current = loadingRecords; }, [loadingRecords]);
-
-  useEffect(() => {
-    if (!user || profileLoading || !reviewOrderReady || !recordOrderReady) return;
-    setProfileCache<ProfileCachePayload>(user.id, {
-      profile,
-      recordCount,
-      totalMinutes,
-      reviewCount,
-      reviews,
-      records,
-      recordMediaById,
-      reviewLikeCounts,
-      reviewCommentCounts,
-      reviewImages,
-      reviewPage,
-      hasMoreReviews,
-      recordPage,
-      hasMoreRecords,
-      orderedReviewIds,
-      orderedRecordIds,
-      activeTab,
-      likedBrands,
-      likedBrandsLoaded,
-    });
-  }, [
-    user, profile, recordCount, totalMinutes, reviewCount, reviews, records,
-    recordMediaById, reviewLikeCounts, reviewCommentCounts, reviewImages,
-    reviewPage, hasMoreReviews, recordPage, hasMoreRecords,
-    orderedReviewIds, orderedRecordIds, activeTab,
-    likedBrands, likedBrandsLoaded,
-    profileLoading, reviewOrderReady, recordOrderReady,
-  ]);
-
-  useEffect(() => {
-    if (!user || likedBrandsLoaded || activeTab !== "brands") return;
-    setLikedBrandsLoading(true);
-    supabase
-      .from("brand_likes")
-      .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
-      .eq("user_id", user.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setLikedBrands(
-          (data ?? [])
-            .filter((row) => row.ballet_brands !== null)
-            .map((row) => ({
-              brand_id: row.brand_id,
-              name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
-              name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
-              logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
-            }))
-        );
-        setLikedBrandsLoaded(true);
-      })
-      .finally(() => setLikedBrandsLoading(false));
-  }, [user, activeTab, likedBrandsLoaded]);
-
-  useEffect(() => {
-    if (!cardSentinelRef.current || (!hasMoreReviews && !hasMoreRecords)) return;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      if (activeTab === "reviews" && showMoreReviews && !loadingReviewsRef.current) {
-        setReviewPage((prev) => prev + 1);
-      } else if (activeTab !== "reviews" && showMoreRecords && !loadingRecordsRef.current) {
-        setRecordPage((prev) => prev + 1);
-      }
-    });
-    observer.observe(cardSentinelRef.current);
-    return () => observer.disconnect();
-  }, [activeTab, showMoreReviews, hasMoreReviews, showMoreRecords, hasMoreRecords]);
-
-  useEffect(() => {
-    const fetchReviewsPage = async () => {
-      if (!user || !reviewOrderReady || reviewPage === 0 || !hasMoreReviews) return;
-      if (requestedPagesRef.current.has(reviewPage)) return;
-      requestedPagesRef.current.add(reviewPage);
-      setLoadingReviews(true);
-      try {
-        const pageSize = showMoreReviews
-          ? REVIEW_PAGE_SIZE_MORE
-          : REVIEW_PAGE_SIZE_INITIAL;
-        const from = (reviewPage - 1) * pageSize;
-        const to = from + pageSize - 1;
-        const pageReviewIds = orderedReviewIds.slice(from, to + 1);
-        if (pageReviewIds.length === 0) {
-          setHasMoreReviews(false);
-          return;
-        }
-        const userId = user?.id;
-        if (!userId) return;
-
-        const { data: reviewRows, error } = await supabase
           .from("performance_reviews")
           .select("id,performance_id,rating,content,created_at")
-          .in("id", pageReviewIds)
+          .eq("user_id", user.id)
           .is("deleted_at", null)
-          .eq("user_id", userId);
+          .order("created_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("brand_likes")
+          .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
+          .eq("user_id", user.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(3),
+      ]);
 
-        if (error) {
-          return;
-        }
-
-        const fetchedRows = (reviewRows ?? []) as Array<{
-          id: string;
-          performance_id: string;
-          rating: number;
-          content: string | null;
-          created_at: string;
-        }>;
-
-        const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
-        const nextRows = pageReviewIds
-          .map((reviewId) => rowMap.get(reviewId))
-          .filter(
-            (
-              row
-            ): row is {
-              id: string;
-              performance_id: string;
-              rating: number;
-              content: string | null;
-              created_at: string;
-            } => Boolean(row)
-          );
-
-        if (to >= orderedReviewIds.length - 1) {
-          setHasMoreReviews(false);
-        }
-
-        const reviewIds = nextRows.map((row) => row.id);
-        const performanceIds = Array.from(
-          new Set(nextRows.map((row) => row.performance_id))
-        );
-
-        // Step 2: kopis_performances + likes + comments + images 4개 병렬
-        const [performanceRes, likeRes, commentRes, imageRes] = await Promise.all([
-          supabase
-            .from("kopis_performances")
-            .select("mt20id,prfnm,poster")
-            .in("mt20id", performanceIds),
-          supabase
-            .from("performance_review_likes")
-            .select("review_id")
-            .in("review_id", reviewIds)
-            .is("deleted_at", null),
-          supabase
-            .from("performance_review_comments")
-            .select("review_id")
-            .in("review_id", reviewIds)
-            .is("deleted_at", null),
-          supabase
-            .from("performance_review_images")
-            .select("review_id,url")
-            .in("review_id", reviewIds)
-            .eq("user_id", userId)
-            .is("deleted_at", null),
-        ]);
-
-        const performanceMap = new Map<
-          string,
-          { name: string | null; poster: string | null }
-        >();
-        (performanceRes.data ?? []).forEach((row) => {
-          performanceMap.set(row.mt20id, { name: row.prfnm, poster: row.poster });
-        });
-
-        const mapped = nextRows.map((row) => ({
-          id: row.id,
-          performanceId: row.performance_id,
-          performanceName: performanceMap.get(row.performance_id)?.name ?? null,
-          performancePoster: performanceMap.get(row.performance_id)?.poster ?? null,
-          rating: row.rating,
-          content: row.content,
-          createdAt: row.created_at,
-        }));
-
-        setReviews((prev) => {
-          const existing = new Set(prev.map((row) => row.id));
-          return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
-        });
-
-        const nextLikeCounts: Record<string, number> = {};
-        (likeRes.data ?? []).forEach((row) => {
-          nextLikeCounts[row.review_id] =
-            (nextLikeCounts[row.review_id] ?? 0) + 1;
-        });
-        setReviewLikeCounts((prev) => ({ ...prev, ...nextLikeCounts }));
-
-        const nextCommentCounts: Record<string, number> = {};
-        (commentRes.data ?? []).forEach((row) => {
-          nextCommentCounts[row.review_id] =
-            (nextCommentCounts[row.review_id] ?? 0) + 1;
-        });
-        setReviewCommentCounts((prev) => ({ ...prev, ...nextCommentCounts }));
-
-        const nextImages: Record<string, string[]> = {};
-        (imageRes.data ?? []).forEach((row) => {
-          nextImages[row.review_id] = [
-            ...(nextImages[row.review_id] ?? []),
-            row.url,
-          ];
-        });
-        if (Object.keys(nextImages).length > 0) {
-          setReviewImages((prev) => ({ ...prev, ...nextImages }));
-        }
-      } finally {
-        setLoadingReviews(false);
-        if (reviewPage === 1) {
-          setReviewSectionLoading(false);
-        }
-      }
-    };
-
-    fetchReviewsPage();
-  }, [
-    reviewPage,
-    user,
-    hasMoreReviews,
-    showMoreReviews,
-    orderedReviewIds,
-    reviewOrderReady,
-  ]);
-
-  useEffect(() => {
-    const fetchRecordsPage = async () => {
-      if (!user || !recordOrderReady || recordPage === 0 || !hasMoreRecords) return;
-      if (requestedRecordPagesRef.current.has(recordPage)) return;
-      requestedRecordPagesRef.current.add(recordPage);
-      setLoadingRecords(true);
-      try {
-        const pageSize = showMoreRecords
-          ? RECORD_PAGE_SIZE_MORE
-          : RECORD_PAGE_SIZE_INITIAL;
-        const from = (recordPage - 1) * pageSize;
-        const to = from + pageSize - 1;
-        const pageRecordIds = orderedRecordIds.slice(from, to + 1);
-        if (pageRecordIds.length === 0) {
-          setHasMoreRecords(false);
-          return;
-        }
-        const userId = user?.id;
-        if (!userId) return;
-
-        // records + record_media 병렬 조회
-        const [{ data: recordRows, error }, { data: mediaRows }] = await Promise.all([
-          supabase
-            .from("records")
-            .select("id,record_date,start_time,end_time,content,mood,created_at")
-            .in("id", pageRecordIds)
-            .eq("user_id", userId)
-            .is("deleted_at", null),
-          supabase
-            .from("record_media")
-            .select("record_id,url,created_at")
-            .in("record_id", pageRecordIds)
-            .is("deleted_at", null)
-            .order("created_at", { ascending: true }),
-        ]);
-
-        if (error) {
-          return;
-        }
-
-        const fetchedRows = (recordRows ?? []) as Array<{
-          id: string;
-          record_date: string;
-          start_time: string;
-          end_time: string;
-          content: string;
-          mood: number | null;
-          created_at: string;
-        }>;
-
-        const rowMap = new Map(fetchedRows.map((row) => [row.id, row]));
-        const nextRows = pageRecordIds
-          .map((recordId) => rowMap.get(recordId))
-          .filter(
-            (
-              row
-            ): row is {
-              id: string;
-              record_date: string;
-              start_time: string;
-              end_time: string;
-              content: string;
-              mood: number | null;
-              created_at: string;
-            } => Boolean(row)
-          );
-
-        if (to >= orderedRecordIds.length - 1) {
-          setHasMoreRecords(false);
-        }
-
-        const mapped = nextRows.map((row) => ({
+      // 기록 처리
+      const recordRows = (recordsRes.data ?? []) as Array<{
+        id: string;
+        record_date: string;
+        start_time: string;
+        end_time: string;
+        content: string;
+        mood: number | null;
+        created_at: string;
+      }>;
+      setRecordsPreview(
+        recordRows.map((row) => ({
           id: row.id,
           recordDate: row.record_date,
           startTime: row.start_time,
@@ -689,42 +265,118 @@ export default function ProfilePage() {
           content: row.content,
           mood: row.mood,
           createdAt: row.created_at,
-        }));
+        }))
+      );
 
-        setRecords((prev) => {
-          const existing = new Set(prev.map((row) => row.id));
-          return [...prev, ...mapped.filter((row) => !existing.has(row.id))];
-        });
-        const nextMediaById: Record<string, { urls: string[]; count: number }> = {};
+      if (recordRows.length > 0) {
+        const recordIds = recordRows.map((r) => r.id);
+        const { data: mediaRows } = await supabase
+          .from("record_media")
+          .select("record_id,url,created_at")
+          .in("record_id", recordIds)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true });
+        const mediaById: Record<string, { urls: string[]; count: number }> = {};
         (mediaRows ?? []).forEach((row) => {
-          if (!nextMediaById[row.record_id]) {
-            nextMediaById[row.record_id] = { urls: [row.url], count: 1 };
+          if (!mediaById[row.record_id]) {
+            mediaById[row.record_id] = { urls: [row.url], count: 1 };
             return;
           }
-          nextMediaById[row.record_id].count += 1;
-          if (nextMediaById[row.record_id].urls.length < 3) {
-            nextMediaById[row.record_id].urls.push(row.url);
+          mediaById[row.record_id].count += 1;
+          if (mediaById[row.record_id].urls.length < 3) {
+            mediaById[row.record_id].urls.push(row.url);
           }
         });
-        if (Object.keys(nextMediaById).length > 0) {
-          setRecordMediaById((prev) => ({ ...prev, ...nextMediaById }));
-        }
-      } finally {
-        setLoadingRecords(false);
-        if (recordPage === 1) {
-          setRecordSectionLoading(false);
-        }
+        setRecordMediaById(mediaById);
       }
+
+      // 리뷰 처리
+      const reviewRows = (reviewsRes.data ?? []) as Array<{
+        id: string;
+        performance_id: string;
+        rating: number;
+        content: string | null;
+        created_at: string;
+      }>;
+      if (reviewRows.length > 0) {
+        const reviewIds = reviewRows.map((r) => r.id);
+        const performanceIds = Array.from(new Set(reviewRows.map((r) => r.performance_id)));
+        const [performanceRes, likeRes, commentRes, imageRes] = await Promise.all([
+          supabase.from("kopis_performances").select("mt20id,prfnm,poster").in("mt20id", performanceIds),
+          supabase.from("performance_review_likes").select("review_id").in("review_id", reviewIds).is("deleted_at", null),
+          supabase.from("performance_review_comments").select("review_id").in("review_id", reviewIds).is("deleted_at", null),
+          supabase.from("performance_review_images").select("review_id,url").in("review_id", reviewIds).eq("user_id", user.id).is("deleted_at", null),
+        ]);
+        const performanceMap = new Map<string, { name: string | null; poster: string | null }>();
+        (performanceRes.data ?? []).forEach((row) => {
+          performanceMap.set(row.mt20id, { name: row.prfnm, poster: row.poster });
+        });
+        setReviewsPreview(
+          reviewRows.map((row) => ({
+            id: row.id,
+            performanceId: row.performance_id,
+            performanceName: performanceMap.get(row.performance_id)?.name ?? null,
+            performancePoster: performanceMap.get(row.performance_id)?.poster ?? null,
+            rating: row.rating,
+            content: row.content,
+            createdAt: row.created_at,
+          }))
+        );
+        const likeCounts: Record<string, number> = {};
+        (likeRes.data ?? []).forEach((row) => {
+          likeCounts[row.review_id] = (likeCounts[row.review_id] ?? 0) + 1;
+        });
+        setReviewLikeCounts(likeCounts);
+        const commentCounts: Record<string, number> = {};
+        (commentRes.data ?? []).forEach((row) => {
+          commentCounts[row.review_id] = (commentCounts[row.review_id] ?? 0) + 1;
+        });
+        setReviewCommentCounts(commentCounts);
+        const images: Record<string, string[]> = {};
+        (imageRes.data ?? []).forEach((row) => {
+          images[row.review_id] = [...(images[row.review_id] ?? []), row.url];
+        });
+        setReviewImages(images);
+      }
+
+      // 브랜드 처리
+      setLikedBrandsPreview(
+        (brandsRes.data ?? [])
+          .filter((row) => row.ballet_brands !== null)
+          .map((row) => ({
+            brand_id: row.brand_id,
+            name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
+            name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
+            logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
+          }))
+      );
+
+      setPreviewLoading(false);
     };
 
-    fetchRecordsPage();
+    fetchAll();
+  }, [user, loading, pathname, openLoginSheet]);
+
+  useEffect(() => {
+    if (!user || profileLoading || previewLoading) return;
+    setProfileCache<ProfileCachePayload>(user.id, {
+      profile,
+      recordCount,
+      totalMinutes,
+      reviewCount,
+      recordsPreview,
+      recordMediaById,
+      reviewsPreview,
+      reviewLikeCounts,
+      reviewCommentCounts,
+      reviewImages,
+      likedBrandsPreview,
+    });
   }, [
-    recordPage,
-    user,
-    hasMoreRecords,
-    showMoreRecords,
-    orderedRecordIds,
-    recordOrderReady,
+    user, profile, recordCount, totalMinutes, reviewCount,
+    recordsPreview, recordMediaById, reviewsPreview,
+    reviewLikeCounts, reviewCommentCounts, reviewImages,
+    likedBrandsPreview, profileLoading, previewLoading,
   ]);
 
   if (loading) {
@@ -751,8 +403,6 @@ export default function ProfilePage() {
     ? profile.nickname
     : user.id.slice(0, 8);
   const shouldShowProfileSkeleton = profileLoading || !profile;
-  const shouldShowReviewCardSkeleton = profileLoading || reviewSectionLoading;
-  const shouldShowRecordCardSkeleton = profileLoading || recordSectionLoading;
   const careerDuration = profile?.ballet_started_at
     ? formatCareerDuration(profile.ballet_started_at)
     : null;
@@ -792,6 +442,7 @@ export default function ProfilePage() {
           </div>
         </header>
 
+        {/* 프로필 카드 */}
         <section className="rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           {shouldShowProfileSkeleton ? (
             <>
@@ -882,178 +533,130 @@ export default function ProfilePage() {
           )}
         </section>
 
-        <section className="mt-6 space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="relative inline-flex w-full rounded-lg bg-[#17171c]/5 p-1">
-              <div
-                className="absolute bottom-1 top-1 rounded-md bg-[#17171c] transition-all duration-200 ease-out"
-                style={{
-                  left: activeTab === "records"
-                    ? "4px"
-                    : activeTab === "reviews"
-                    ? "calc(33.333% + 2px)"
-                    : "calc(66.666% + 2px)",
-                  width: "calc(33.333% - 6px)",
-                }}
-                aria-hidden
-              />
-              <Button
-                type="button"
-                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
-                  activeTab === "records"
-                    ? "bg-transparent text-white hover:bg-transparent"
-                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
-                }`}
-                onClick={() => setActiveTab("records")}
-              >
-                발레 기록
-              </Button>
-              <Button
-                type="button"
-                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
-                  activeTab === "reviews"
-                    ? "bg-transparent text-white hover:bg-transparent"
-                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
-                }`}
-                onClick={() => setActiveTab("reviews")}
-              >
-                공연 리뷰
-              </Button>
-              <Button
-                type="button"
-                className={`relative z-10 h-8 flex-1 rounded-md px-3 text-xs transition-colors duration-200 ${
-                  activeTab === "brands"
-                    ? "bg-transparent text-white hover:bg-transparent"
-                    : "bg-transparent text-[#17171c]/70 hover:bg-transparent"
-                }`}
-                onClick={() => setActiveTab("brands")}
-              >
-                브랜드
-              </Button>
-            </div>
+        {/* 발레 기록 섹션 */}
+        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[#17171c]">발레 기록</h2>
+            <button
+              type="button"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              onClick={() => router.push("/profile/records")}
+            >
+              전체보기
+              <ChevronRight className="size-3.5" />
+            </button>
           </div>
-
-          {activeTab === "records" ? (
-            shouldShowRecordCardSkeleton ? (
-              <div className="space-y-3">
-                {Array.from({ length: 1 }).map((_, index) => (
-                  <div
-                    key={`profile-record-loading-skeleton-${index}`}
-                    className="flex items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
-                  >
-                    <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-2/3" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : records.length === 0 ? (
-              <p className="text-xs text-[#17171c]/60">
-                첫번째 발레 기록을 남겨보세요.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {records.map((record) => (
-                  <button
-                    key={record.id}
-                    type="button"
-                    className="flex w-full items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
-                    onClick={() => {
-                      sendHapticToApp();
-                      router.push(`/record/${record.id}`);
-                    }}
-                    aria-label="기록 상세 보기"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white">
-                      {record.mood ? (
-                        <AnimatedImage
-                          src={`/mood/mood_dark_face_${record.mood}.png`}
-                          alt={`기분 ${record.mood}단계`}
-                          width={1600}
-                          height={1600}
-                          unoptimized
-                          draggable={false}
-                          className="h-10 w-10 object-contain"
-                        />
-                      ) : (
-                        <User className="h-5 w-5 text-[#17171c]/45" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-1 flex-1 text-sm text-[#17171c]">
-                          {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
-                        </p>
-                        <p className="shrink-0 text-right text-xs text-[#17171c]/60">
-                          {formatRecordDate(record.recordDate)}
-                        </p>
-                      </div>
-                      <p className="mt-1 text-xs text-[#17171c]/60">
-                        {formatRecordTimeRange(record.startTime, record.endTime)}
-                      </p>
-                      {recordMediaById[record.id] ? (
-                        <div className="mt-2 flex gap-1.5">
-                          {recordMediaById[record.id].urls.map((url, idx) => {
-                            const isLast = idx === recordMediaById[record.id].urls.length - 1;
-                            const remaining = recordMediaById[record.id].count - recordMediaById[record.id].urls.length;
-                            return (
-                              <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-[#17171c]/5">
-                                <AnimatedImage
-                                  src={url}
-                                  alt="기록 미디어"
-                                  width={64}
-                                  height={64}
-                                  sizes="64px"
-                                  draggable={false}
-                                  className="h-full w-full object-cover"
-                                />
-                                {isLast && remaining > 0 ? (
-                                  <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
-                                    <span className="text-sm font-medium text-white">+{remaining}</span>
-                                  </div>
-                                ) : null}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </div>
-                  </button>
-                ))}
-                {!showMoreRecords && recordCount > RECORD_PAGE_SIZE_INITIAL ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 w-full text-xs"
-                    onClick={() => {
-                      setRecordSectionLoading(true);
-                      setShowMoreRecords(true);
-                      setRecords([]);
-                      setHasMoreRecords(true);
-                      setRecordPage(1);
-                      requestedRecordPagesRef.current = new Set();
-                    }}
-                  >
-                    더 보기
-                  </Button>
-                ) : null}
-                {loadingRecords ? (
-                  <div className="flex justify-center py-2">
-                    <Spinner size="sm" />
-                  </div>
-                ) : null}
-                <div ref={cardSentinelRef} />
-              </div>
-            )
-          ) : activeTab === "reviews" ? (
-            shouldShowReviewCardSkeleton ? (
+          {previewLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 1 }).map((_, index) => (
+              {Array.from({ length: 2 }).map((_, index) => (
                 <div
-                  key={`profile-review-loading-skeleton-${index}`}
+                  key={`record-skeleton-${index}`}
+                  className="flex items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
+                >
+                  <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recordsPreview.length === 0 ? (
+            <p className="text-xs text-[#17171c]/60">
+              첫번째 발레 기록을 남겨보세요.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recordsPreview.map((record) => (
+                <button
+                  key={record.id}
+                  type="button"
+                  className="flex w-full items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
+                  onClick={() => {
+                    sendHapticToApp();
+                    router.push(`/record/${record.id}`);
+                  }}
+                  aria-label="기록 상세 보기"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white">
+                    {record.mood ? (
+                      <AnimatedImage
+                        src={`/mood/mood_dark_face_${record.mood}.png`}
+                        alt={`기분 ${record.mood}단계`}
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        draggable={false}
+                        className="h-10 w-10 object-contain"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-[#17171c]/45" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-1 flex-1 text-sm text-[#17171c]">
+                        {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
+                      </p>
+                      <p className="shrink-0 text-right text-xs text-[#17171c]/60">
+                        {formatRecordDate(record.recordDate)}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs text-[#17171c]/60">
+                      {formatRecordTimeRange(record.startTime, record.endTime)}
+                    </p>
+                    {recordMediaById[record.id] ? (
+                      <div className="mt-2 flex gap-1.5">
+                        {recordMediaById[record.id].urls.map((url, idx) => {
+                          const isLast = idx === recordMediaById[record.id].urls.length - 1;
+                          const remaining = recordMediaById[record.id].count - recordMediaById[record.id].urls.length;
+                          return (
+                            <div key={url} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-[#17171c]/5">
+                              <AnimatedImage
+                                src={url}
+                                alt="기록 미디어"
+                                width={64}
+                                height={64}
+                                sizes="64px"
+                                draggable={false}
+                                className="h-full w-full object-cover"
+                              />
+                              {isLast && remaining > 0 ? (
+                                <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
+                                  <span className="text-sm font-medium text-white">+{remaining}</span>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 공연 리뷰 섹션 */}
+        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[#17171c]">공연 리뷰</h2>
+            <button
+              type="button"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              onClick={() => router.push("/profile/reviews")}
+            >
+              전체보기
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+          {previewLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={`review-skeleton-${index}`}
                   className="flex flex-col gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
                 >
                   <div className="flex items-start gap-3">
@@ -1068,22 +671,20 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
-          ) : reviews.length === 0 ? (
+          ) : reviewsPreview.length === 0 ? (
             <p className="text-xs text-[#17171c]/60">
               첫번째 공연 리뷰를 남겨보세요.
             </p>
           ) : (
             <div className="space-y-3">
-              {reviews.map((review) => (
+              {reviewsPreview.map((review) => (
                 <button
                   key={review.id}
                   type="button"
                   className="flex w-full flex-col rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
                   onClick={() => {
                     sendHapticToApp();
-                    router.push(
-                      `/performance/${review.performanceId}/reviews/${review.id}`
-                    );
+                    router.push(`/performance/${review.performanceId}/reviews/${review.id}`);
                   }}
                   aria-label="리뷰 상세 보기"
                 >
@@ -1119,10 +720,7 @@ export default function ProfilePage() {
                                 className="absolute inset-0 overflow-hidden"
                                 style={{ width: `${ratio * 100}%` }}
                               >
-                                <Star
-                                  className="h-4 w-4 text-brand"
-                                  fill="currentColor"
-                                />
+                                <Star className="h-4 w-4 text-brand" fill="currentColor" />
                               </div>
                             </div>
                           );
@@ -1178,89 +776,79 @@ export default function ProfilePage() {
                   ) : null}
                 </button>
               ))}
-              {!showMoreReviews && reviewCount > REVIEW_PAGE_SIZE_INITIAL ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 w-full text-xs"
-                  onClick={() => {
-                    setReviewSectionLoading(true);
-                    setShowMoreReviews(true);
-                    setReviews([]);
-                    setHasMoreReviews(true);
-                    setReviewPage(1);
-                    requestedPagesRef.current = new Set();
-                  }}
-                >
-                  더 보기
-                </Button>
-              ) : null}
-              {loadingReviews ? (
-                <div className="flex justify-center py-2">
-                  <Spinner size="sm" />
-                </div>
-              ) : null}
-              <div ref={cardSentinelRef} />
             </div>
-          )
-          ) : (
-            likedBrandsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={`liked-brand-skeleton-${index}`}
-                    className="flex items-center gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
-                  >
-                    <Skeleton className="size-10 shrink-0 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : likedBrands.length === 0 ? (
-              <p className="text-xs text-[#17171c]/60">
-                좋아요한 브랜드가 없어요. 브랜드 탭에서 마음에 드는 브랜드를 찾아보세요.
-              </p>
-            ) : (
-              <div className="divide-y divide-[#17171c]/5">
-                {likedBrands.map((brand) => (
-                  <button
-                    key={brand.brand_id}
-                    type="button"
-                    className="flex w-full items-center gap-3 py-3 text-left"
-                    onClick={() => router.push(`/brand/${brand.brand_id}`)}
-                  >
-                    <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
-                      {brand.logo_url ? (
-                        <AnimatedImage
-                          src={brand.logo_url}
-                          alt={brand.name_ko}
-                          width={40}
-                          height={40}
-                          sizes="40px"
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="size-full" />
-                      )}
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="truncate text-sm font-medium text-[#17171c]">{brand.name_ko}</p>
-                      {brand.name_en && (
-                        <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
-                      )}
-                    </div>
-                    <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
-                  </button>
-                ))}
-              </div>
-            )
           )}
         </section>
 
+        {/* 찜한 브랜드 섹션 */}
+        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[#17171c]">찜한 브랜드</h2>
+            <button
+              type="button"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              onClick={() => router.push("/profile/brands")}
+            >
+              전체보기
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+          {previewLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={`brand-skeleton-${index}`}
+                  className="flex items-center gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
+                >
+                  <Skeleton className="size-10 shrink-0 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : likedBrandsPreview.length === 0 ? (
+            <p className="text-xs text-[#17171c]/60">
+              첫번째 찜한 브랜드를 추가해보세요.
+            </p>
+          ) : (
+            <div className="divide-y divide-[#17171c]/5">
+              {likedBrandsPreview.map((brand) => (
+                <button
+                  key={brand.brand_id}
+                  type="button"
+                  className="flex w-full items-center gap-3 py-3 text-left"
+                  onClick={() => router.push(`/brand/${brand.brand_id}`)}
+                >
+                  <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
+                    {brand.logo_url ? (
+                      <AnimatedImage
+                        src={brand.logo_url}
+                        alt={brand.name_ko}
+                        width={40}
+                        height={40}
+                        sizes="40px"
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="size-full" />
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="truncate text-sm font-medium text-[#17171c]">{brand.name_ko}</p>
+                    {brand.name_en && (
+                      <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
+                    )}
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
+
       <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+16px)] left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 px-4">
         <AdsenseSlot placement="profile_home" slot={PROFILE_HOME_SLOT} />
       </div>
