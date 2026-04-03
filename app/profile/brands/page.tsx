@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -19,13 +20,26 @@ type LikedBrand = {
   logo_url: string | null;
 };
 
+const PAGE_SIZE = 12;
+
 export default function ProfileBrandsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
 
   const [brands, setBrands] = useState<LikedBrand[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestedPagesRef = useRef<Set<number>>(new Set());
+  const loadingMoreRef = useRef(false);
+
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
 
   useEffect(() => {
     if (loading) return;
@@ -33,34 +47,60 @@ export default function ProfileBrandsPage() {
       openLoginSheet();
       return;
     }
+    setPage(1);
+  }, [user, loading, openLoginSheet]);
 
-    const fetchBrands = async () => {
-      setInitialLoading(true);
+  useEffect(() => {
+    if (!user || page === 0 || !hasMore) return;
+    if (requestedPagesRef.current.has(page)) return;
+    requestedPagesRef.current.add(page);
+
+    const fetchPage = async () => {
+      if (page === 1) setInitialLoading(true);
+      else setLoadingMore(true);
+
       try {
+        const from = (page - 1) * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
         const { data } = await supabase
           .from("brand_likes")
           .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
           .eq("user_id", user.id)
           .is("deleted_at", null)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .range(from, to);
 
-        setBrands(
-          (data ?? [])
-            .filter((row) => row.ballet_brands !== null)
-            .map((row) => ({
-              brand_id: row.brand_id,
-              name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
-              name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
-              logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
-            }))
-        );
+        const rows = (data ?? [])
+          .filter((row) => row.ballet_brands !== null)
+          .map((row) => ({
+            brand_id: row.brand_id,
+            name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
+            name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
+            logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
+          }));
+
+        setBrands((prev) => (page === 1 ? rows : [...prev, ...rows]));
+        if (rows.length < PAGE_SIZE) setHasMore(false);
       } finally {
-        setInitialLoading(false);
+        if (page === 1) setInitialLoading(false);
+        else setLoadingMore(false);
       }
     };
 
-    fetchBrands();
-  }, [user, loading, openLoginSheet]);
+    fetchPage();
+  }, [page, user, hasMore]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !loadingMoreRef.current) {
+        setPage((prev) => prev + 1);
+      }
+    });
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, initialLoading]);
 
   return (
     <MobileContainer>
@@ -135,6 +175,14 @@ export default function ProfileBrandsPage() {
             ))}
           </div>
         )}
+
+        {loadingMore && (
+          <div className="flex justify-center py-6">
+            <Spinner className="size-5 text-[#17171c]/30" />
+          </div>
+        )}
+
+        <div ref={sentinelRef} />
       </main>
     </MobileContainer>
   );
