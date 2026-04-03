@@ -168,6 +168,7 @@ export default function BrandDetailPage({
   }, [id]);
 
   const handleLinkClick = (url: string, linkType: string) => {
+    sendHapticToApp();
     fetch(`/api/brands/${id}/link-click`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

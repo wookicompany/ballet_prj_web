@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 
 type Brand = {
@@ -141,7 +142,10 @@ export default function BrandSearchInputPage() {
                   <li key={brand.id}>
                     <button
                       type="button"
-                      onClick={() => router.push(`/brand/${brand.id}`)}
+                      onClick={() => {
+                        sendHapticToApp();
+                        router.push(`/brand/${brand.id}`);
+                      }}
                       className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                     >
                       <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">

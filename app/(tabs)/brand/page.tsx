@@ -221,7 +221,10 @@ export default function BrandPage() {
         <li key={brand.id}>
           <button
             type="button"
-            onClick={() => router.push(`/brand/${brand.id}`)}
+            onClick={() => {
+              sendHapticToApp();
+              router.push(`/brand/${brand.id}`);
+            }}
             className="flex w-full flex-col gap-2 transition-opacity duration-200 active:opacity-70"
           >
             <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
@@ -263,7 +266,10 @@ export default function BrandPage() {
             variant="ghost"
             size="icon-lg"
             className="text-[#17171c]/70"
-            onClick={() => router.push("/brand/search-input")}
+            onClick={() => {
+              sendHapticToApp();
+              router.push("/brand/search-input");
+            }}
             aria-label="검색"
           >
             <Search className="size-6" />
