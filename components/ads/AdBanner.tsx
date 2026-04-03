@@ -53,7 +53,8 @@ export default function AdBanner({ placement }: Props) {
     } catch {
       // 클릭 추적 실패는 무시
     }
-    openUrlInApp(ad.link_url);
+    const opened = openUrlInApp(ad.link_url);
+    if (!opened) window.open(ad.link_url, "_blank", "noopener,noreferrer");
   };
 
   return (
