@@ -218,7 +218,7 @@ const requestedPagesRef = useRef(
 |-----------|------------|----------------------|
 | `lib/calendarHomeCache.ts` | `/calendar` | 기록 생성·수정·삭제 |
 | `lib/performanceHomeCache.ts` | `/performance` | 리뷰 생성·수정·삭제 |
-| `lib/brandHomeCache.ts` | `/brand` | (어드민 브랜드 CUD 시 invalidate) |
+| `lib/brandHomeCache.ts` | `/brand` | 어드민 브랜드 CUD 시 invalidate. `brands` + `popularBrands` 모두 캐시에 포함 |
 | `lib/noticeCache.ts` | `/notice` | (읽음 상태는 재조회로 자동 갱신) |
 | `lib/performanceSearchCache.ts` | `/performance/search` | — |
 | `lib/performanceSearchInputCache.ts` | `/performance/search-input` | — |

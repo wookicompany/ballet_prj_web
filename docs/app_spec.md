@@ -365,13 +365,20 @@
 
 - 탭바: 캘린더 / 공연 / **브랜드** / 프로필 (4개, `grid-cols-4`, Tag 아이콘)
 - 로그인 불필요 (공연 탭과 동일)
-- DB 테이블: `ballet_brands` (id, name_ko, name_en, logo_url, SNS URL 8개, is_active, sort_order, created_at, updated_at), `brand_link_clicks` (id, brand_id, link_type, created_at)
+- DB 테이블:
+  - `ballet_brands` (id, name_ko, name_en, logo_url, SNS URL 8개, is_active, sort_order, created_at, updated_at)
+  - `brand_link_clicks` (id, brand_id, link_type, created_at)
+  - `brand_views` (id, brand_id, created_at) — 브랜드 상세 페이지 방문 시 INSERT
+- DB VIEW: `brand_engagement_summaries` (brand_id, view_count, click_count) — `brand_views` + `brand_link_clicks` 집계
 
 ### 브랜드 홈 (`/brand`)
 - 헤더: "브랜드" 타이틀 + 검색 아이콘 → `/brand/search-input`
-- 1열 리스트: 로고(64×64 rounded-xl) + name_ko / name_en + ChevronRight
 - `lib/brandHomeCache.ts`로 캐시 (뒤로가기 시 즉시 렌더)
 - 빈 상태: "아직 등록된 브랜드가 없어요."
+- 섹션 구성:
+  - **지금 주목받는 브랜드**: `brand_engagement_summaries`에서 `view_count > 0` 기준 내림차순 상위 10개, 가로 스크롤 카드 (64×64 로고 + name_ko). view_count 데이터 없으면 섹션 미노출
+  - **전체 브랜드**: `ballet_brands` `is_active=true` 전체, `sort_order ASC` 2열 그리드
+- supabase 클라이언트 직접 사용 (`Promise.all` 병렬 조회), in-flight 중복 방지 패턴 적용
 
 ### 브랜드 검색 (`/brand/search-input`)
 - 검색어 없음 → 전체 목록, 검색어 있음 → name_ko / name_en ilike 필터링
@@ -385,6 +392,7 @@
 ### API
 - `GET /api/brands` — is_active=true 목록, sort_order ASC
 - `GET /api/brands/[id]` — 단건 상세
+- `POST /api/brands/[id]/view` — 브랜드 조회수 기록 (인증 불필요)
 - `POST /api/brands/[id]/link-click` — 링크 클릭 추적 (인증 불필요)
 - `GET+POST /api/admin/brands` — 어드민 목록/생성
 - `GET+PATCH+DELETE /api/admin/brands/[id]` — 어드민 상세/수정/삭제

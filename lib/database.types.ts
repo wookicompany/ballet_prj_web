@@ -143,6 +143,46 @@ export type Database = {
             referencedRelation: "ballet_brands"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "brand_link_clicks_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_engagement_summaries"
+            referencedColumns: ["brand_id"]
+          },
+        ]
+      }
+      brand_views: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_views_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "ballet_brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_views_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_engagement_summaries"
+            referencedColumns: ["brand_id"]
+          },
         ]
       }
       cron_job_runs: {
@@ -1480,6 +1520,14 @@ export type Database = {
       }
     }
     Views: {
+      brand_engagement_summaries: {
+        Row: {
+          brand_id: string | null
+          click_count: number | null
+          view_count: number | null
+        }
+        Relationships: []
+      }
       performance_engagement_summaries: {
         Row: {
           comment_count: number | null

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -105,6 +105,14 @@ export default function BrandDetailPage({
   const router = useRouter();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
+  const viewTrackedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    if (viewTrackedRef.current === id) return;
+    viewTrackedRef.current = id;
+    fetch(`/api/brands/${id}/view`, { method: "POST" }).catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     const fetchBrand = async () => {
