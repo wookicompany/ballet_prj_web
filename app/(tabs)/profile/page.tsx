@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import AnimatedImage from "@/components/ui/animated-image";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -66,7 +65,6 @@ type ProfileCachePayload = {
   likedBrandsPreview: LikedBrand[];
 };
 
-const PROFILE_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROFILE_HOME;
 
 function toMinutes(time: string) {
   const [hh, mm, ss] = time.split(":").map((value) => Number(value));
@@ -848,9 +846,6 @@ export default function ProfilePage() {
         </section>
       </main>
 
-      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+16px)] left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 px-4">
-        <AdsenseSlot placement="profile_home" slot={PROFILE_HOME_SLOT} />
-      </div>
       <ImageViewer
         isOpen={avatarOpen}
         imageUrl={profile?.avatar_url ?? null}

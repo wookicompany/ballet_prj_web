@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdBanner from "@/components/ads/AdBanner";
 import { getBrandHomeCache, setBrandHomeCache } from "@/lib/brandHomeCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
@@ -255,7 +256,7 @@ export default function BrandPage() {
   return (
     <>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 -mx-4 mb-6 flex h-12 items-center justify-between bg-white px-4">
+        <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold">브랜드</h1>
           <Button
             type="button"
@@ -268,6 +269,10 @@ export default function BrandPage() {
             <Search className="size-6" />
           </Button>
         </header>
+
+        <section className="mb-4">
+          <AdBanner placement="brand_home" />
+        </section>
 
         {loading ? (
           <div className="space-y-8">

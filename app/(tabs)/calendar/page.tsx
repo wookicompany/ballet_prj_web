@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
-import AdsenseSlot from "@/components/ads/AdsenseSlot";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
@@ -52,7 +51,6 @@ type SelectedRecord = {
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_TRANSITION_LOCK_MS = 240;
-const CALENDAR_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_CALENDAR_HOME;
 
 export default function CalendarPage() {
   const router = useRouter();
@@ -694,9 +692,6 @@ export default function CalendarPage() {
         </div>
         </BottomSheet>
       </main>
-      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+16px)] left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 px-4">
-        <AdsenseSlot placement="calendar_home" slot={CALENDAR_HOME_SLOT} />
-      </div>
     </>
   );
 }

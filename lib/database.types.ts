@@ -20,9 +20,12 @@ export type Database = {
           created_at: string
           description: string | null
           end_at: string
+          height: number
           id: string
+          image_url: string | null
           is_active: boolean
           last_clicked_at: string | null
+          link_url: string | null
           placement: string
           provider: string
           start_at: string
@@ -34,9 +37,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_at: string
+          height?: number
           id?: string
+          image_url?: string | null
           is_active?: boolean
           last_clicked_at?: string | null
+          link_url?: string | null
           placement: string
           provider?: string
           start_at: string
@@ -48,9 +54,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_at?: string
+          height?: number
           id?: string
+          image_url?: string | null
           is_active?: boolean
           last_clicked_at?: string | null
+          link_url?: string | null
           placement?: string
           provider?: string
           start_at?: string

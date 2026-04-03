@@ -406,3 +406,38 @@
 - `POST /api/brands/[id]/like` — 브랜드 좋아요 토글 (인증 필요, service role). 응답: `{ liked: boolean }`
 - `GET+POST /api/admin/brands` — 어드민 목록/생성
 - `GET+PATCH+DELETE /api/admin/brands/[id]` — 어드민 상세/수정/삭제
+
+## 광고 (B2B 배너)
+
+### 노출 위치
+- **공연 탭 홈** (`performance_home`): 헤더와 첫 번째 섹션 사이
+- **브랜드 탭 홈** (`brand_home`): 헤더와 첫 번째 섹션 사이
+- 캘린더 탭 홈, 프로필 탭 홈에는 광고 없음
+
+### 광고 형식
+- 이미지 배너 (클릭 시 `openUrlInApp`으로 인앱 브라우저 실행)
+- 높이: 50px 또는 100px (어드민에서 광고별로 설정)
+- 광고 없음 또는 이미지 없음 시 영역 완전 숨김 (`null` 렌더)
+
+### DB 테이블 (`ads`)
+- `placement` (text): `performance_home` | `brand_home`
+- `title` (text): 광고명
+- `image_url` (text, nullable): 광고 이미지 URL (Supabase Storage `brands` 버킷 또는 외부 URL)
+- `link_url` (text, nullable): 클릭 시 이동할 랜딩 URL
+- `height` (integer, default 50): 50 또는 100
+- `is_active` (boolean): 활성화 여부
+- `start_at` / `end_at` (timestamptz): 노출 기간 (KST 입력 → UTC 저장)
+- `click_count` (integer): 클릭수 집계
+- 동일 placement에 기간이 겹치지 않는 여러 광고 예약 등록 가능
+
+### API
+- `GET /api/ads?placement=xxx` — 현재 활성화된 광고 1개 조회 (is_active + 기간 체크). 응답: `{ ad: { id, image_url, link_url, height } | null }`
+- `POST /api/ads/[id]/click` — 광고 클릭수 집계 (인증 불필요)
+- `GET /api/admin/ads` — 어드민 광고 목록 (`?placement=` 필터 지원)
+- `POST /api/admin/ads` — 광고 생성
+- `GET+PATCH+DELETE /api/admin/ads/[id]` — 광고 상세/수정/삭제
+
+### 어드민 UI (`/wookicompany/admin/ads`)
+- 목록 페이지: "공연 홈 / 브랜드 홈" 탭으로 placement별 필터링. 이미지 썸네일, 광고명, 상태, 노출 기간, 토글+상세 링크 표시
+- 새 광고 등록: 목록 탭의 placement가 쿼리 파라미터로 자동 설정. 광고명, 노출 위치, 시작/종료일시(KST), 이미지(파일 업로드 또는 URL), 랜딩 URL, 높이(50px/100px), 즉시 활성화 입력
+- 상세/수정: 이미지 미리보기, 수정 폼에 동일 필드 포함

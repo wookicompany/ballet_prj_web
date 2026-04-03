@@ -12,6 +12,9 @@ type UpdateAdBody = {
   is_active?: boolean;
   start_at?: string;
   end_at?: string;
+  image_url?: string | null;
+  link_url?: string | null;
+  height?: number;
 };
 
 const hasOverlappingActiveAd = async ({
@@ -54,7 +57,7 @@ export const GET = async (
   const { data: ad, error } = await result.supabaseAdmin
     .from("ads")
     .select(
-      "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
+      "id, placement, provider, title, description, is_active, start_at, end_at, image_url, link_url, height, click_count, last_clicked_at, created_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -94,7 +97,7 @@ export const PATCH = async (
     return NextResponse.json({ message: "Invalid JSON" }, { status: 400 });
   }
 
-  const updates: Record<string, string | boolean | null> = {
+  const updates: Record<string, string | boolean | number | null> = {
     updated_at: new Date().toISOString(),
   };
 
@@ -139,6 +142,15 @@ export const PATCH = async (
   if (typeof body.is_active === "boolean") {
     updates.is_active = body.is_active;
     nextIsActive = body.is_active;
+  }
+  if (typeof body.image_url === "string" || body.image_url === null) {
+    updates.image_url = body.image_url?.trim() || null;
+  }
+  if (typeof body.link_url === "string" || body.link_url === null) {
+    updates.link_url = body.link_url?.trim() || null;
+  }
+  if (typeof body.height === "number") {
+    updates.height = body.height === 100 ? 100 : 50;
   }
 
   if (nextStartAt >= nextEndAt) {

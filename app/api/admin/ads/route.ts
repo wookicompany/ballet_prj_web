@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminFromRequest } from "@/lib/apiAuth";
-import { AD_PLACEMENTS, AD_PROVIDER, isAdPlacement } from "@/lib/ads";
+import { isAdPlacement, parseKstDateTimeInputToIso } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +13,11 @@ type CreateAdBody = {
   title?: string;
   description?: string | null;
   is_active?: boolean;
-};
-
-const ADSENSE_DEFAULT_START_AT = "2000-01-01T00:00:00.000Z";
-const ADSENSE_DEFAULT_END_AT = "2099-12-31T23:59:59.999Z";
-
-const getDefaultTitle = (placement: string) => {
-  if (placement === "calendar_home") return "캘린더 탭 홈 AdSense";
-  if (placement === "profile_home") return "프로필 탭 홈 AdSense";
-  return "공연 탭 홈 AdSense";
+  image_url?: string | null;
+  link_url?: string | null;
+  height?: number;
+  start_at?: string;
+  end_at?: string;
 };
 
 const hasOverlappingActiveAd = async ({
@@ -60,15 +56,21 @@ export const GET = async (request: Request) => {
     MAX_LIMIT
   );
   const offset = Number(searchParams.get("offset")) || 0;
+  const placement = searchParams.get("placement") ?? undefined;
+
+  let query = result.supabaseAdmin
+    .from("ads")
+    .select(
+      "id, placement, provider, title, description, is_active, start_at, end_at, image_url, link_url, height, click_count, last_clicked_at, created_at, updated_at"
+    )
+    .order("created_at", { ascending: false });
+
+  if (placement) {
+    query = query.eq("placement", placement);
+  }
 
   const [{ data: rows, error }, { count }] = await Promise.all([
-    result.supabaseAdmin
-      .from("ads")
-      .select(
-        "id, placement, provider, title, description, is_active, start_at, end_at, click_count, last_clicked_at, created_at, updated_at"
-      )
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1),
+    query.range(offset, offset + limit - 1),
     result.supabaseAdmin
       .from("ads")
       .select("id", { count: "exact", head: true }),
@@ -87,44 +89,6 @@ export const GET = async (request: Request) => {
   });
 };
 
-export const PUT = async (request: Request) => {
-  const result = await getAdminFromRequest(request);
-  if (!result.admin) return result.errorResponse;
-
-  const { data: existingSlots, error: existingSlotsError } = await result.supabaseAdmin
-    .from("ads")
-    .select("placement");
-  if (existingSlotsError) {
-    console.error("admin ads seed placements check", existingSlotsError);
-    return NextResponse.json({ message: "Failed to check ad slots" }, { status: 500 });
-  }
-
-  const existingPlacementSet = new Set((existingSlots ?? []).map((row) => row.placement));
-  const missingPlacements = AD_PLACEMENTS.filter((placement) => !existingPlacementSet.has(placement));
-
-  if (missingPlacements.length === 0) {
-    return NextResponse.json({ seeded: 0 });
-  }
-
-  const { error: seedError } = await result.supabaseAdmin.from("ads").insert(
-    missingPlacements.map((placement) => ({
-      placement,
-      provider: AD_PROVIDER,
-      title: getDefaultTitle(placement),
-      description: null,
-      is_active: false,
-      start_at: ADSENSE_DEFAULT_START_AT,
-      end_at: ADSENSE_DEFAULT_END_AT,
-    }))
-  );
-  if (seedError) {
-    console.error("admin ads seed placements", seedError);
-    return NextResponse.json({ message: "Failed to seed ad slots" }, { status: 500 });
-  }
-
-  return NextResponse.json({ seeded: missingPlacements.length });
-};
-
 export const POST = async (request: Request) => {
   const result = await getAdminFromRequest(request);
   if (!result.admin) return result.errorResponse;
@@ -140,12 +104,41 @@ export const POST = async (request: Request) => {
   if (!placement || !isAdPlacement(placement)) {
     return NextResponse.json({ message: "invalid placement" }, { status: 400 });
   }
-  const title = body.title?.trim() || getDefaultTitle(placement);
-  const description = body.description?.trim() || null;
-  const startAtIso = ADSENSE_DEFAULT_START_AT;
-  const endAtIso = ADSENSE_DEFAULT_END_AT;
 
+  const title = body.title?.trim();
+  if (!title) {
+    return NextResponse.json({ message: "title is required" }, { status: 400 });
+  }
+
+  const startAtRaw = body.start_at;
+  const endAtRaw = body.end_at;
+  if (!startAtRaw || !endAtRaw) {
+    return NextResponse.json(
+      { message: "start_at and end_at are required" },
+      { status: 400 }
+    );
+  }
+  const startAtIso = parseKstDateTimeInputToIso(startAtRaw);
+  const endAtIso = parseKstDateTimeInputToIso(endAtRaw);
+  if (!startAtIso || !endAtIso) {
+    return NextResponse.json(
+      { message: "invalid start_at or end_at format" },
+      { status: 400 }
+    );
+  }
+  if (startAtIso >= endAtIso) {
+    return NextResponse.json(
+      { message: "end_at must be after start_at" },
+      { status: 400 }
+    );
+  }
+
+  const description = body.description?.trim() || null;
+  const imageUrl = body.image_url?.trim() || null;
+  const linkUrl = body.link_url?.trim() || null;
+  const height = body.height === 100 ? 100 : 50;
   const isActive = body.is_active === true;
+
   if (isActive) {
     const overlap = await hasOverlappingActiveAd({
       supabaseAdmin: result.supabaseAdmin,
@@ -172,12 +165,14 @@ export const POST = async (request: Request) => {
     .from("ads")
     .insert({
       placement,
-      provider: AD_PROVIDER,
       title,
       description,
       is_active: isActive,
       start_at: startAtIso,
       end_at: endAtIso,
+      image_url: imageUrl,
+      link_url: linkUrl,
+      height,
     })
     .select()
     .single();

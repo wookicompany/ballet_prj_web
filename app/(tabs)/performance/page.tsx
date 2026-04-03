@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import AdsenseSlot from "@/components/ads/AdsenseSlot";
+import AdBanner from "@/components/ads/AdBanner";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
@@ -65,7 +65,6 @@ const EMPTY_SECTIONS: SectionBuckets = {
 };
 
 let performanceHomeInFlight: Promise<PerformanceHomePayload> | null = null;
-const PERFORMANCE_HOME_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_PERFORMANCE_HOME;
 
 const formatDate = (value?: string | null) => {
   if (!value) return "날짜 미정";
@@ -449,7 +448,7 @@ export default function PerformanceListPage() {
             </Button>
           </header>
           <section className="mb-4">
-            <AdsenseSlot placement="performance_home" slot={PERFORMANCE_HOME_SLOT} />
+            <AdBanner placement="performance_home" />
           </section>
 
           <div className="space-y-7">
@@ -481,7 +480,7 @@ export default function PerformanceListPage() {
           </Button>
         </header>
         <section className="mb-4">
-          <AdsenseSlot placement="performance_home" slot={PERFORMANCE_HOME_SLOT} />
+          <AdBanner placement="performance_home" />
         </section>
 
         <div className="space-y-7">
