@@ -255,7 +255,7 @@ export default function BrandPage() {
   return (
     <>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 -mx-4 mb-4 flex h-12 items-center justify-between bg-white px-4">
+        <header className="sticky top-0 z-20 -mx-4 mb-6 flex h-12 items-center justify-between bg-white px-4">
           <h1 className="text-xl font-semibold">브랜드</h1>
           <Button
             type="button"
