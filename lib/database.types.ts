@@ -1632,6 +1632,8 @@ export type Database = {
       }
       get_calendar_users_count: { Args: never; Returns: number }
       get_performance_users_count: { Args: never; Returns: number }
+      increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
+      increment_ad_impression: { Args: { ad_id: string }; Returns: undefined }
       purge_soft_deleted_accounts: { Args: never; Returns: Json }
     }
     Enums: {
