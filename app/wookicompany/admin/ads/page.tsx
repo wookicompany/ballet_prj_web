@@ -191,7 +191,7 @@ export default function AdminAdsPage() {
               <TableBody>
                 {filteredAds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                       등록된 광고가 없습니다.
                     </TableCell>
                   </TableRow>
