@@ -16,6 +16,10 @@
 - 플레이스홀더는 `text-xs`를 사용하고, 텍스트 필드의 y축 중간점에 맞춘다.
 - 사용자 에러/안내 메시지는 인라인 텍스트 대신 `sonner` toast로 처리한다.
 - 확인/경고 알림은 `window.confirm` 대신 `shadcn/ui`의 `AlertDialog`를 사용한다.
+- 모든 클릭 가능한 버튼에는 햅틱 피드백을 적용한다.
+  - `shadcn/ui`의 `<Button>` 컴포넌트는 내부에 `sendHapticToApp()`이 내장되어 있어 자동 적용된다.
+  - 네이티브 `<button>` 요소를 직접 사용하는 경우 `onClick` 핸들러 첫 줄에 `sendHapticToApp()`을 반드시 명시적으로 추가한다.
+  - `sendHapticToApp`은 `@/lib/reactNativeWebView`에서 import한다.
 - 기본 폰트는 프리탠다드(Pretendard)를 사용한다.
 - 톤앤보이스는 다정한 어요체를 사용한다.
 - 색상 팔레트는 다음을 기본으로 사용한다.

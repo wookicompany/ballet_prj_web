@@ -463,6 +463,7 @@ export default function ProfilePage() {
                   className="h-20 w-20 overflow-hidden rounded-full border border-[#17171c]/10 bg-[#17171c]/5"
                   onClick={() => {
                     if (profile.avatar_url) {
+                      sendHapticToApp();
                       setAvatarOpen(true);
                     }
                   }}
@@ -538,7 +539,10 @@ export default function ProfilePage() {
             <button
               type="button"
               className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
-              onClick={() => router.push("/profile/records")}
+              onClick={() => {
+                sendHapticToApp();
+                router.push("/profile/records");
+              }}
             >
               전체보기
               <ChevronRight className="size-3.5" />
@@ -644,7 +648,10 @@ export default function ProfilePage() {
             <button
               type="button"
               className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
-              onClick={() => router.push("/profile/reviews")}
+              onClick={() => {
+                sendHapticToApp();
+                router.push("/profile/reviews");
+              }}
             >
               전체보기
               <ChevronRight className="size-3.5" />
@@ -785,7 +792,10 @@ export default function ProfilePage() {
             <button
               type="button"
               className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
-              onClick={() => router.push("/profile/brands")}
+              onClick={() => {
+                sendHapticToApp();
+                router.push("/profile/brands");
+              }}
             >
               전체보기
               <ChevronRight className="size-3.5" />
@@ -817,7 +827,10 @@ export default function ProfilePage() {
                   key={brand.brand_id}
                   type="button"
                   className="flex w-full items-center gap-3 py-3 text-left"
-                  onClick={() => router.push(`/brand/${brand.brand_id}`)}
+                  onClick={() => {
+                    sendHapticToApp();
+                    router.push(`/brand/${brand.brand_id}`);
+                  }}
                 >
                   <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
                     {brand.logo_url ? (
