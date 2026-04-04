@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import BottomSheet from "@/components/sheets/BottomSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import {
   getLocationsCache,
@@ -67,20 +63,7 @@ export default function SavedLocationsPage() {
   const cached = getLocationsCache<LocationsCachePayload>();
   const [items, setItems] = useState<SavedLocation[]>(() => cached?.items ?? []);
   const [listLoading, setListLoading] = useState(() => !cached);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    address_base: "",
-    address_detail: "",
-  });
   const [deleteTarget, setDeleteTarget] = useState<SavedLocation | null>(null);
-
-  const resetForm = () => {
-    setForm({ name: "", address_base: "", address_detail: "" });
-    setEditingId(null);
-  };
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
@@ -111,65 +94,6 @@ export default function SavedLocationsPage() {
     if (getLocationsCache<LocationsCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
-
-  const handleOpenCreate = () => {
-    resetForm();
-    setSheetOpen(true);
-  };
-
-  const handleOpenEdit = useCallback((item: SavedLocation) => {
-    setEditingId(item.id);
-    setForm({
-      name: item.name,
-      address_base: item.address_base ?? "",
-      address_detail: item.address_detail ?? "",
-    });
-    setSheetOpen(true);
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!user) return;
-    if (!form.name.trim()) {
-      toast("장소 이름을 입력해 주세요.");
-      return;
-    }
-    setSaving(true);
-    const accessToken = await getAccessToken(openLoginSheet);
-    if (!accessToken) {
-      setSaving(false);
-      return;
-    }
-    const response = await fetch(
-      editingId ? `/api/saved-locations/${editingId}` : "/api/saved-locations",
-      {
-        method: editingId ? "PATCH" : "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          address_base: form.address_base.trim(),
-          address_detail: form.address_detail.trim(),
-        }),
-      }
-    );
-    if (!response.ok) {
-      setSaving(false);
-      toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
-      return;
-    }
-    const { item } = (await response.json()) as { item: SavedLocation };
-    if (editingId) {
-      setItems((prev) => prev.map((i) => (i.id === editingId ? item : i)));
-    } else {
-      setItems((prev) => [item, ...prev]);
-    }
-    invalidateLocationsCache();
-    setSaving(false);
-    setSheetOpen(false);
-    resetForm();
-  };
 
   const handleDelete = async () => {
     if (!user || !deleteTarget) return;
@@ -217,7 +141,9 @@ export default function SavedLocationsPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-[#17171c]/70"
-                onClick={() => handleOpenEdit(item)}
+                onClick={() =>
+                  router.push(`/calendar/settings/locations/${item.id}/edit`)
+                }
                 aria-label="장소 수정"
               >
                 <Pencil className="h-4 w-4" />
@@ -236,7 +162,7 @@ export default function SavedLocationsPage() {
           </div>
         </div>
       )),
-    [items, handleOpenEdit]
+    [items, router]
   );
 
   if (!loading && !user) {
@@ -278,7 +204,7 @@ export default function SavedLocationsPage() {
             variant="ghost"
             size="icon-lg"
             className="text-[#17171c]/70"
-            onClick={handleOpenCreate}
+            onClick={() => router.push("/calendar/settings/locations/new")}
             disabled={loading}
             aria-label="장소 추가"
           >
@@ -300,80 +226,6 @@ export default function SavedLocationsPage() {
           )}
         </section>
       </main>
-
-      <BottomSheet
-        open={sheetOpen}
-        onOpenChange={(open) => {
-          setSheetOpen(open);
-          if (!open) resetForm();
-        }}
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">장소</Label>
-            <Input
-              className="h-12 text-base placeholder:text-sm"
-              placeholder="장소 이름을 입력해 주세요"
-              value={form.name}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, name: event.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">주소</Label>
-            <Input
-              className="h-12 text-base placeholder:text-sm"
-              placeholder="주소를 입력해 주세요"
-              value={form.address_base}
-              onChange={(event) =>
-                setForm((prev) => {
-                  const nextAddress = event.target.value;
-                  return {
-                    ...prev,
-                    address_base: nextAddress,
-                    address_detail:
-                      nextAddress !== prev.address_base ? "" : prev.address_detail,
-                  };
-                })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">상세 주소</Label>
-            <Input
-              className="h-12 text-base placeholder:text-sm"
-              placeholder="상세 주소를 입력해 주세요 (선택사항)"
-              value={form.address_detail}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  address_detail: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 flex-1"
-              onClick={() => setSheetOpen(false)}
-              disabled={saving}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
-              onClick={handleSubmit}
-              disabled={saving}
-            >
-              {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
 
       <AlertDialog
         open={!!deleteTarget}

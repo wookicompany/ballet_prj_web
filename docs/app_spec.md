@@ -39,10 +39,18 @@
   - `/policy/privacy`: 개인정보 처리방침
   - `/policy/terms`: 이용약관
   - `/calendar/settings`: 캘린더 설정
-  - `/calendar/settings/bar-orders`: 바 주문 목록 설정
-  - `/calendar/settings/center-orders`: 센터 주문 목록 설정
-  - `/calendar/settings/instructor-levels`: 강사 레벨 설정
-  - `/calendar/settings/locations`: 장소 설정
+  - `/calendar/settings/bar-orders`: 바 순서 목록
+  - `/calendar/settings/bar-orders/new`: 바 순서 추가
+  - `/calendar/settings/bar-orders/[id]/edit`: 바 순서 수정
+  - `/calendar/settings/center-orders`: 센터 순서 목록
+  - `/calendar/settings/center-orders/new`: 센터 순서 추가
+  - `/calendar/settings/center-orders/[id]/edit`: 센터 순서 수정
+  - `/calendar/settings/instructor-levels`: 강사님 & 레벨 목록
+  - `/calendar/settings/instructor-levels/new`: 강사님 & 레벨 추가
+  - `/calendar/settings/instructor-levels/[id]/edit`: 강사님 & 레벨 수정
+  - `/calendar/settings/locations`: 장소 목록
+  - `/calendar/settings/locations/new`: 장소 추가
+  - `/calendar/settings/locations/[id]/edit`: 장소 수정
   - `/performance`: 공연 목록
   - `/performance/search`: 공연 검색
   - `/performance/search-input`: 공연 검색 입력

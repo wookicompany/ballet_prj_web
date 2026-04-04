@@ -1,21 +1,12 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type KeyboardEvent,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import BottomSheet from "@/components/sheets/BottomSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,17 +18,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import {
   getCenterOrdersCache,
   setCenterOrdersCache,
   invalidateCenterOrdersCache,
 } from "@/lib/centerOrdersCache";
-import { CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { ChevronLeft, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -75,52 +62,8 @@ export default function SavedCenterOrdersPage() {
   const cached = getCenterOrdersCache<CenterOrdersCachePayload>();
   const [items, setItems] = useState<SavedCenterOrder[]>(() => cached?.items ?? []);
   const [listLoading, setListLoading] = useState(() => !cached);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "" });
-  const [orderTags, setOrderTags] = useState<string[]>([]);
-  const [orderInput, setOrderInput] = useState("");
   const [deleteTarget, setDeleteTarget] =
     useState<SavedCenterOrder | null>(null);
-
-  const addOrderTags = (
-    rawValue: string,
-    setTags: Dispatch<SetStateAction<string[]>>
-  ) => {
-    const nextTags = rawValue
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (nextTags.length === 0) return;
-    setTags((prev) => {
-      const merged = [...prev];
-      nextTags.forEach((tag) => {
-        if (!merged.includes(tag)) merged.push(tag);
-      });
-      return merged;
-    });
-  };
-
-  const handleOrderInputKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
-    value: string,
-    setValue: Dispatch<SetStateAction<string>>,
-    setTags: Dispatch<SetStateAction<string[]>>
-  ) => {
-    if (event.nativeEvent.isComposing) return;
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    addOrderTags(value, setTags);
-    setValue("");
-  };
-
-  const resetForm = () => {
-    setForm({ name: "" });
-    setOrderTags([]);
-    setOrderInput("");
-    setEditingId(null);
-  };
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
@@ -153,68 +96,6 @@ export default function SavedCenterOrdersPage() {
     if (getCenterOrdersCache<CenterOrdersCachePayload>()) return;
     void fetchItems();
   }, [fetchItems, user]);
-
-  const handleOpenCreate = () => {
-    resetForm();
-    setSheetOpen(true);
-  };
-
-  const handleOpenEdit = useCallback((item: SavedCenterOrder) => {
-    setEditingId(item.id);
-    setForm({ name: item.name });
-    setOrderTags(
-      item.order_text
-        ? item.order_text.split(",").map((s) => s.trim()).filter(Boolean)
-        : []
-    );
-    setOrderInput("");
-    setSheetOpen(true);
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!user) return;
-    if (!form.name.trim()) {
-      toast("이름을 입력해 주세요.");
-      return;
-    }
-    setSaving(true);
-    const accessToken = await getAccessToken(openLoginSheet);
-    if (!accessToken) {
-      setSaving(false);
-      return;
-    }
-    const response = await fetch(
-      editingId
-        ? `/api/saved-center-orders/${editingId}`
-        : "/api/saved-center-orders",
-      {
-        method: editingId ? "PATCH" : "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          order_text: orderTags.join(", "),
-        }),
-      }
-    );
-    if (!response.ok) {
-      setSaving(false);
-      toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
-      return;
-    }
-    const { item } = (await response.json()) as { item: SavedCenterOrder };
-    if (editingId) {
-      setItems((prev) => prev.map((i) => (i.id === editingId ? item : i)));
-    } else {
-      setItems((prev) => [item, ...prev]);
-    }
-    invalidateCenterOrdersCache();
-    setSaving(false);
-    setSheetOpen(false);
-    resetForm();
-  };
 
   const handleDelete = async () => {
     if (!user || !deleteTarget) return;
@@ -259,7 +140,11 @@ export default function SavedCenterOrdersPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-[#17171c]/70"
-                onClick={() => handleOpenEdit(item)}
+                onClick={() =>
+                  router.push(
+                    `/calendar/settings/center-orders/${item.id}/edit`
+                  )
+                }
                 aria-label="센터 순서 수정"
               >
                 <Pencil className="h-4 w-4" />
@@ -299,7 +184,7 @@ export default function SavedCenterOrdersPage() {
           ) : null}
         </div>
       )),
-    [items, handleOpenEdit]
+    [items, router]
   );
 
   if (!loading && !user) {
@@ -341,7 +226,7 @@ export default function SavedCenterOrdersPage() {
             variant="ghost"
             size="icon-lg"
             className="text-[#17171c]/70"
-            onClick={handleOpenCreate}
+            onClick={() => router.push("/calendar/settings/center-orders/new")}
             disabled={loading}
             aria-label="센터 순서 추가"
           >
@@ -363,128 +248,6 @@ export default function SavedCenterOrdersPage() {
           )}
         </section>
       </main>
-
-      <BottomSheet
-        open={sheetOpen}
-        onOpenChange={(open) => {
-          setSheetOpen(open);
-          if (!open) resetForm();
-        }}
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">이름</Label>
-            <Input
-              className="h-12 text-base placeholder:text-sm"
-              placeholder="예: 기본 순서"
-              value={form.name}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, name: event.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-3">
-            <Label className="text-sm text-[#17171c]/60">
-              센터(center) 순서
-            </Label>
-            <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
-              {orderTags.length === 0 ? (
-                <p className="text-sm text-[#17171c]/40">
-                  선택된 순서가 여기 표시돼요.
-                </p>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  {orderTags.map((tag, index) => (
-                    <div
-                      key={`center-selected-${tag}-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-9 rounded-full px-3 text-sm"
-                        onClick={() =>
-                          setOrderTags((prev) =>
-                            prev.filter((_, idx) => idx !== index)
-                          )
-                        }
-                      >
-                        {tag}
-                      </Button>
-                      {index < orderTags.length - 1 ? (
-                        <span className="text-sm text-[#17171c]/40">
-                          &gt;
-                        </span>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {CENTER_ORDER_TAGS.map((tag) => {
-                const selected = orderTags.includes(tag);
-                return (
-                  <Button
-                    key={`center-tag-${tag}`}
-                    type="button"
-                    variant={selected ? "default" : "outline"}
-                    size="sm"
-                    className="h-9 rounded-full px-3 text-sm"
-                    onClick={() =>
-                      setOrderTags((prev) =>
-                        selected
-                          ? prev.filter((value) => value !== tag)
-                          : [...prev, tag]
-                      )
-                    }
-                  >
-                    {tag}
-                  </Button>
-                );
-              })}
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-[#17171c]/60">직접 입력</Label>
-              <Input
-                type="text"
-                className="h-12 text-base placeholder:text-sm"
-                placeholder="직접 입력하고 Enter로 추가해 주세요"
-                value={orderInput}
-                onChange={(event) => setOrderInput(event.target.value)}
-                onKeyDown={(event) =>
-                  handleOrderInputKeyDown(
-                    event,
-                    orderInput,
-                    setOrderInput,
-                    setOrderTags
-                  )
-                }
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 flex-1"
-              onClick={() => setSheetOpen(false)}
-              disabled={saving}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
-              onClick={handleSubmit}
-              disabled={saving}
-            >
-              {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
 
       <AlertDialog
         open={!!deleteTarget}

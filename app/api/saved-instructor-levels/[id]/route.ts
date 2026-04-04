@@ -2,6 +2,35 @@ import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/apiAuth";
 
+export const GET = async (
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  const { id } = await params;
+  const auth = await getUserFromRequest(request);
+  if (auth.errorResponse || !auth.user || !auth.supabaseAdmin) {
+    return auth.errorResponse;
+  }
+
+  const { data, error } = await auth.supabaseAdmin
+    .from("saved_instructor_levels")
+    .select("id, instructor, level, created_at")
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load saved instructor level", error);
+    return NextResponse.json({ message: "Failed to load saved instructor level" }, { status: 500 });
+  }
+  if (!data) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ item: data });
+};
+
 export const PATCH = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
