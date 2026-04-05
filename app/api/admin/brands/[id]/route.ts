@@ -46,7 +46,7 @@ export const PATCH = async (
 
   const { data: existing, error: fetchError } = await result.supabaseAdmin
     .from("ballet_brands")
-    .select("id")
+    .select("id, logo_url")
     .eq("id", id)
     .maybeSingle();
 
@@ -113,6 +113,16 @@ export const PATCH = async (
     return NextResponse.json({ message: "Failed to update brand" }, { status: 500 });
   }
 
+  if (existing.logo_url && body.logo_url && existing.logo_url !== body.logo_url) {
+    const oldPath = existing.logo_url.split("/brands/")[1];
+    if (oldPath) {
+      const { error: storageError } = await result.supabaseAdmin.storage
+        .from("brands")
+        .remove([oldPath]);
+      if (storageError) console.error("brand logo storage delete on update", storageError);
+    }
+  }
+
   return NextResponse.json({ brand });
 };
 
@@ -127,6 +137,16 @@ export const DELETE = async (
 
   const { id } = await params;
 
+  const { data: existing } = await result.supabaseAdmin
+    .from("ballet_brands")
+    .select("id, logo_url")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+
   const { error } = await result.supabaseAdmin
     .from("ballet_brands")
     .delete()
@@ -135,6 +155,16 @@ export const DELETE = async (
   if (error) {
     console.error("admin brand delete", error);
     return NextResponse.json({ message: "Failed to delete brand" }, { status: 500 });
+  }
+
+  if (existing.logo_url) {
+    const path = existing.logo_url.split("/brands/")[1];
+    if (path) {
+      const { error: storageError } = await result.supabaseAdmin.storage
+        .from("brands")
+        .remove([path]);
+      if (storageError) console.error("brand logo storage delete", storageError);
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -23,6 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { getAdminToken } from "@/lib/adminUtils";
+import { invalidateBrandHomeCache } from "@/lib/brandHomeCache";
+import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
@@ -152,11 +154,12 @@ export default function AdminBrandDetailPage({
       let logo_url: string | undefined = undefined;
 
       if (logoFile) {
+        const compressed = await compressImage(logoFile);
         const ext = logoFile.name.split(".").pop() ?? "jpg";
         const path = `${id}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from(BUCKET)
-          .upload(path, logoFile, { upsert: true });
+          .upload(path, compressed, { upsert: true });
         if (uploadError) {
           toast("로고 업로드에 실패했어요.");
           setSaving(false);
@@ -205,6 +208,7 @@ export default function AdminBrandDetailPage({
       }
 
       toast("브랜드가 수정되었습니다.");
+      invalidateBrandHomeCache();
       router.push("/wookicompany/admin/brands");
     } catch {
       toast("브랜드 수정 중 오류가 발생했습니다.");
@@ -231,6 +235,7 @@ export default function AdminBrandDetailPage({
         return;
       }
       toast("브랜드가 삭제되었습니다.");
+      invalidateBrandHomeCache();
       router.push("/wookicompany/admin/brands");
     } catch {
       toast("브랜드 삭제 중 오류가 발생했습니다.");
@@ -295,6 +300,7 @@ export default function AdminBrandDetailPage({
                     alt="로고 미리보기"
                     width={96}
                     height={96}
+                    unoptimized
                     className="size-full object-cover"
                   />
                 ) : (

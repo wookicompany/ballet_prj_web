@@ -201,6 +201,7 @@ export default function BrandPage() {
                 alt={brand.name_ko}
                 width={64}
                 height={64}
+                sizes="64px"
                 className="size-full object-cover"
               />
             ) : (
@@ -229,13 +230,14 @@ export default function BrandPage() {
           >
             <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
               {brand.logo_url ? (
-                <AnimatedImage
-                  src={brand.logo_url}
-                  alt={brand.name_ko}
-                  width={200}
-                  height={200}
-                  className="size-full object-cover"
-                />
+              <AnimatedImage
+                src={brand.logo_url}
+                alt={brand.name_ko}
+                width={200}
+                height={200}
+                sizes="(max-width: 430px) calc(50vw - 28px), 180px"
+                className="size-full object-cover"
+              />
               ) : (
                 <div className="size-full" />
               )}
