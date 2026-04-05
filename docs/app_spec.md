@@ -72,6 +72,8 @@
 - 기본 터치 타깃: 최소 높이 44px
 - 하단 탭 높이: 56px 기준
 - 플로팅 버튼: 우측 하단 고정 (안전 여백 고려)
+- 터치 피드백: 클릭 시 배경이 바뀌는 `hover:bg-*` 대신 **`active:opacity-*`** 위주로 눌림을 표현한다. 공통 버튼은 `components/ui/button.tsx`를 기준으로 한다.
+- 촉각 피드백: React Native WebView에서는 `lib/reactNativeWebView`의 `sendHapticToApp()`으로 탭 피드백을 준다. 적용 범위·예외는 `docs/APP_AGENTS.md`의 UI/디자인 절을 따른다.
 
 ### 비기능/정책
 

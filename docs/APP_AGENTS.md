@@ -20,6 +20,13 @@
   - `shadcn/ui`의 `<Button>` 컴포넌트는 내부에 `sendHapticToApp()`이 내장되어 있어 자동 적용된다.
   - 네이티브 `<button>` 요소를 직접 사용하는 경우 `onClick` 핸들러 첫 줄에 `sendHapticToApp()`을 반드시 명시적으로 추가한다.
   - `sendHapticToApp`은 `@/lib/reactNativeWebView`에서 import한다.
+- 일반 사용자 앱 화면에서는 클릭·호버 시 **배경색이 바뀌는 `hover:bg-*`** 를 두지 않는다. 모바일·WebView에서 터치 시 배경이 깜빡이는 느낌을 줄이기 위함이다.
+- 눌림 피드백은 **`active:opacity-70`**(고스트·아웃라인 등)·**`active:opacity-90`**(진한 솔리드 버튼) 등으로 처리한다. 공통 `<Button>`은 `components/ui/button.tsx` variant에 반영한다. 네이티브 `<button>`에 직접 `className`을 줄 때도 동일 원칙을 따른다.
+- 아래는 **의도적 예외**로 `hover:bg-*` 또는 배경 관련 hover를 유지할 수 있다.
+  - 테이블 등에서 기본 행 hover를 막기 위한 **`hover:bg-transparent`**
+  - `components/ui/badge.tsx`의 **`[a&]:hover:bg-*`** (앵커 안 배지 링크 스타일)
+  - **`hover:underline`** 등 배경이 아닌 속성만 바꾸는 hover
+  - 어드민 **`/wookicompany/admin`** 등 웹 전용 화면
 - 기본 폰트는 프리탠다드(Pretendard)를 사용한다.
 - 톤앤보이스는 다정한 어요체를 사용한다.
 - 색상 팔레트는 다음을 기본으로 사용한다.
