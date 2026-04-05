@@ -390,8 +390,8 @@ export default function CalendarPage() {
     }
     const consentOk = await ensureConsent();
     if (!consentOk) return;
-    router.push(selectedDate ? `/record/new?date=${selectedDate}` : "/record/new");
-  }, [user, openLoginSheet, ensureConsent, router, selectedDate]);
+    router.push("/record/new");
+  }, [user, openLoginSheet, ensureConsent, router]);
 
   useEffect(() => {
     if (!monthSheetOpen) return;
