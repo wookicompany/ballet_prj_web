@@ -964,6 +964,7 @@ export default function PerformanceReviewDetailPage() {
                     type="button"
                     className="h-20 w-20 overflow-hidden rounded-lg bg-white"
                     onClick={() => {
+                      sendHapticToApp();
                       setViewerUrl(url);
                       setViewerOpen(true);
                     }}
@@ -1037,7 +1038,7 @@ export default function PerformanceReviewDetailPage() {
             />
             <Button
               type="button"
-              className="h-10 w-16 bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90 flex items-center justify-center"
+              className="h-10 w-16 bg-[#17171c] text-sm text-white flex items-center justify-center"
               onClick={handleSubmitComment}
               disabled={submittingComment}
             >
@@ -1279,7 +1280,7 @@ export default function PerformanceReviewDetailPage() {
                       ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
                       : "border-[#17171c]/10 text-[#17171c]/80"
                   }`}
-                  onClick={() => setReportReason(option.code)}
+                  onClick={() => { sendHapticToApp(); setReportReason(option.code); }}
                 >
                   <span>{option.label}</span>
                   {selected ? (
@@ -1310,7 +1311,7 @@ export default function PerformanceReviewDetailPage() {
             </Button>
             <Button
               type="button"
-              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 flex-1 bg-[#17171c] text-white"
               onClick={handleSubmitReport}
               disabled={reporting}
             >

@@ -56,7 +56,7 @@ export function LoginSheetProvider({
         <div className="space-y-3">
           {SHOW_KAKAO_LOGIN ? (
             <Button
-              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-[#FEE500] text-black hover:bg-[#FEE500]/90`}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-[#FEE500] text-black`}
               disabled={loading}
               onClick={() => void handleSocialLogin("kakao")}
             >
@@ -75,7 +75,7 @@ export function LoginSheetProvider({
           ) : null}
           {SHOW_APPLE_LOGIN ? (
             <Button
-              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-black text-white hover:bg-black/90`}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-black text-white`}
               disabled={loading}
               onClick={() => void handleSocialLogin("apple")}
             >
@@ -95,7 +95,7 @@ export function LoginSheetProvider({
           {SHOW_GOOGLE_LOGIN ? (
             <Button
               variant="outline"
-              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-white text-[#17171c] hover:bg-[#17171c]/5`}
+              className={`${SOCIAL_BUTTON_BASE_CLASS} bg-white text-[#17171c]`}
               disabled={loading}
               onClick={() => void handleSocialLogin("google")}
             >

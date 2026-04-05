@@ -27,7 +27,7 @@ export default function FloatingButton() {
       <Button
         type="button"
         size="icon-lg"
-        className="size-12 rounded-full bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+        className="size-12 rounded-full bg-[#17171c] text-white shadow-lg"
         aria-label="기록 생성"
         onClick={async () => {
           if (!user) {

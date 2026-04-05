@@ -474,7 +474,7 @@ export default function CalendarPage() {
           type="button"
           variant="default"
           size="icon-lg"
-          className="h-10 w-10 rounded-xl bg-[#17171c] text-white hover:bg-[#17171c]/90"
+          className="h-10 w-10 rounded-xl bg-[#17171c] text-white"
           aria-label="기록 생성"
           onClick={handleAddRecord}
         >
@@ -530,7 +530,7 @@ export default function CalendarPage() {
                 <button
                   type="button"
                   disabled={isEmpty}
-                  className="flex w-full items-start justify-center pt-1 hover:bg-[#17171c]/5"
+                  className="flex w-full items-start justify-center pt-1"
                   onClick={() => {
                     if (!cell.date) return;
                     sendHapticToApp();
@@ -552,7 +552,7 @@ export default function CalendarPage() {
                 <button
                   type="button"
                   disabled={isEmpty}
-                  className="flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1 hover:bg-[#17171c]/5"
+                  className="flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1"
                   onClick={() => {
                     if (!cell.date) return;
                     sendHapticToApp();
@@ -598,7 +598,7 @@ export default function CalendarPage() {
                 key={record.id}
                 type="button"
                 onClick={() => { sendHapticToApp(); router.push(`/record/${record.id}`); }}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#17171c]/5"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left"
               >
                 {record.mood ? (
                   <AnimatedImage
@@ -678,7 +678,7 @@ export default function CalendarPage() {
         </div>
         <div className="mt-4">
           <Button
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white"
             onClick={() => {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)

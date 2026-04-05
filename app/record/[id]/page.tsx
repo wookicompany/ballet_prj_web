@@ -10,6 +10,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { Button } from "@/components/ui/button";
 import ImageViewer from "@/components/ui/image-viewer";
 import {
@@ -325,6 +326,7 @@ export default function RecordDetailPage() {
                           type="button"
                           className="h-full w-full"
                           onClick={() => {
+                            sendHapticToApp();
                             setViewerUrl(item.url);
                             setViewerOpen(true);
                           }}

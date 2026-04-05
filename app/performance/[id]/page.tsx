@@ -1008,8 +1008,8 @@ export default function PerformanceDetailPage() {
             size="icon-lg"
             className={
               headerIsTransparent
-                ? "text-white hover:bg-white/10"
-                : "text-[#17171c]/70 hover:bg-[#17171c]/5"
+                ? "text-white"
+                : "text-[#17171c]/70"
             }
             onClick={() => router.back()}
             aria-label="뒤로"
@@ -1090,6 +1090,7 @@ export default function PerformanceDetailPage() {
                             type="button"
                             className="relative flex h-full w-full items-center justify-center overflow-hidden bg-transparent"
                             onClick={() => {
+                              sendHapticToApp();
                               setViewerUrl(slide.url);
                               setViewerOpen(true);
                             }}
@@ -1273,6 +1274,7 @@ export default function PerformanceDetailPage() {
                                           key={i}
                                           type="button"
                                           onClick={() => {
+                                            sendHapticToApp();
                                             fetch(`/api/performances/${performanceId}/booking-click`, {
                                               method: "POST",
                                               headers: { "Content-Type": "application/json" },
@@ -1431,8 +1433,9 @@ export default function PerformanceDetailPage() {
                                     </span>
                                     <button
                                       type="button"
-                                      className="shrink-0 rounded p-1 text-[#17171c]/50 hover:bg-[#17171c]/5 hover:text-[#17171c]"
+                                      className="shrink-0 rounded p-1 text-[#17171c]/50 active:opacity-70"
                                       onClick={() => {
+                                        sendHapticToApp();
                                         navigator.clipboard
                                           .writeText(item.value as string)
                                           .then(() =>
@@ -1467,7 +1470,7 @@ export default function PerformanceDetailPage() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-9 w-9 rounded-lg p-0 text-[#17171c]/70 hover:bg-[#17171c]/5"
+                    className="h-9 w-9 rounded-lg p-0 text-[#17171c]/70"
                     onClick={() => {
                       if (!user) {
                         openLoginSheet();
@@ -1657,6 +1660,7 @@ export default function PerformanceDetailPage() {
                                   className="h-16 w-16 overflow-hidden rounded-md bg-white"
                                   onClick={(event) => {
                                     event.stopPropagation();
+                                    sendHapticToApp();
                                     setViewerUrl(url);
                                     setViewerOpen(true);
                                   }}
@@ -1756,7 +1760,7 @@ export default function PerformanceDetailPage() {
                       ? "border-[#17171c]/40 bg-[#17171c]/5 text-[#17171c]"
                       : "border-[#17171c]/10 text-[#17171c]/80"
                   }`}
-                  onClick={() => setReportReason(option.code)}
+                  onClick={() => { sendHapticToApp(); setReportReason(option.code); }}
                 >
                   <span>{option.label}</span>
                   {selected ? (
@@ -1787,7 +1791,7 @@ export default function PerformanceDetailPage() {
             </Button>
             <Button
               type="button"
-              className="h-12 flex-1 bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 flex-1 bg-[#17171c] text-white"
               onClick={handleSubmitReviewReport}
               disabled={reporting}
             >

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 type LikedBrand = {
   brand_id: string;
@@ -148,7 +149,7 @@ export default function ProfileBrandsPage() {
                 key={brand.brand_id}
                 type="button"
                 className="flex w-full items-center gap-3 py-3 text-left"
-                onClick={() => router.push(`/brand/${brand.brand_id}`)}
+                onClick={() => { sendHapticToApp(); router.push(`/brand/${brand.brand_id}`); }}
               >
                 <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
                   {brand.logo_url ? (

@@ -160,7 +160,7 @@ export default function ProfileEditPage() {
           </p>
           <Button
             type="button"
-            className="bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="bg-[#17171c] text-white"
             onClick={openLoginSheet}
           >
             로그인하고 계속하기
@@ -293,7 +293,7 @@ export default function ProfileEditPage() {
 
           <Button
             type="button"
-            className="h-[52px] w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-[52px] w-full bg-[#17171c] text-white"
             onClick={handleSave}
             disabled={saving}
           >
@@ -344,7 +344,7 @@ export default function ProfileEditPage() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white"
               onClick={() => {
                 const paddedMonth = String(dateDraft.month).padStart(2, "0");
                 setBalletStartedAt(`${dateDraft.year}-${paddedMonth}-01`);

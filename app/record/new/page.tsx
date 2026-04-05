@@ -1017,7 +1017,7 @@ function RecordNewContent() {
               <button
                 type="button"
                 className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
                 aria-label="사진 추가"
               >
                 <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
@@ -1659,7 +1659,7 @@ function RecordNewContent() {
 
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white"
             disabled={saving}
             onClick={handleSubmit}
           >
@@ -1739,7 +1739,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white"
               onClick={() => {
                 const paddedMonth = String(dateDraft.month).padStart(2, "0");
                 const paddedDay = String(dateDraft.day).padStart(2, "0");
@@ -1817,7 +1817,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1893,7 +1893,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-white"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1970,7 +1970,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white"
               onClick={handleApplyLocation}
               disabled={!selectedLocationId}
             >
@@ -2040,7 +2040,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white"
               onClick={handleApplyInstructorLevel}
               disabled={!selectedInstructorId}
             >
@@ -2133,7 +2133,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white"
               onClick={handleApplyBarOrder}
               disabled={!selectedBarOrderId}
             >
@@ -2226,7 +2226,7 @@ function RecordNewContent() {
             )}
             <Button
               type="button"
-              className="h-12 w-full bg-[#17171c] text-sm text-white hover:bg-[#17171c]/90"
+              className="h-12 w-full bg-[#17171c] text-sm text-white"
               onClick={handleApplyCenterOrder}
               disabled={!selectedCenterOrderId}
             >

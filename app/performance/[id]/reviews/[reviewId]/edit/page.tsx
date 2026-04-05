@@ -246,7 +246,7 @@ export default function PerformanceReviewEditPage() {
           </p>
           <Button
             type="button"
-            className="h-11 w-full max-w-[240px] bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-11 w-full max-w-[240px] bg-[#17171c] text-white"
             onClick={openLoginSheet}
           >
             로그인하기
@@ -297,7 +297,7 @@ export default function PerformanceReviewEditPage() {
                       type="button"
                       className="absolute inset-0"
                       aria-label={`${starIndex * 2}점`}
-                      onClick={() => setRating(starIndex * 2)}
+                      onClick={() => { sendHapticToApp(); setRating(starIndex * 2); }}
                     />
                   </div>
                 );
@@ -331,7 +331,7 @@ export default function PerformanceReviewEditPage() {
               <button
                 type="button"
                 className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-[#fafafa]"
-                onClick={() => (canUploadMore ? fileInputRef.current?.click() : null)}
+                onClick={() => { sendHapticToApp(); if (canUploadMore) fileInputRef.current?.click(); }}
                 aria-label="사진 추가"
                 disabled={!canUploadMore}
               >
@@ -400,7 +400,7 @@ export default function PerformanceReviewEditPage() {
 
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white"
             onClick={handleSubmit}
             disabled={saving}
           >

@@ -198,7 +198,7 @@ export function ConsentSheetProvider({
 
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white"
             disabled={saving || !termsChecked || !privacyChecked}
             onClick={handleSubmit}
           >

@@ -121,7 +121,7 @@ export default function EditInstructorLevelPage() {
           </p>
           <Button
             type="button"
-            className="bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="bg-[#17171c] text-white"
             onClick={openLoginSheet}
           >
             로그인하고 계속하기
@@ -186,7 +186,7 @@ export default function EditInstructorLevelPage() {
         <div className="mt-6">
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white hover:bg-[#17171c]/90"
+            className="h-12 w-full bg-[#17171c] text-white"
             onClick={handleSubmit}
             disabled={saving || pageLoading}
           >

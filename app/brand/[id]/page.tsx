@@ -270,7 +270,7 @@ export default function BrandDetailPage({
                           <button
                             type="button"
                             onClick={() => handleLinkClick(url, item.linkType)}
-                            className="flex w-full items-center gap-3 px-4 py-4 hover:bg-[#17171c]/[0.02] active:bg-[#17171c]/5"
+                            className="flex w-full items-center gap-3 px-4 py-4 active:opacity-70"
                           >
                             {item.icon}
                             <span className="flex-1 text-left text-sm text-[#17171c]">

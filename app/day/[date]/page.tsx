@@ -218,8 +218,8 @@ export default function DayPage() {
                 variant="ghost"
                 className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 h-auto font-normal ${
                   isActive
-                    ? "bg-[#17171c]/5 text-[#17171c] shadow-sm hover:bg-[#17171c]/5 hover:text-[#17171c]"
-                    : "text-[#17171c]/60 hover:bg-transparent hover:text-[#17171c]/60"
+                    ? "bg-[#17171c]/5 text-[#17171c] shadow-sm"
+                    : "text-[#17171c]/60"
                 }`}
                 onClick={() => router.replace(`/day/${item.key}`)}
               >
@@ -268,7 +268,7 @@ export default function DayPage() {
               <Button
                 key={record.id}
                 type="button"
-                className="absolute left-12 right-2 h-auto rounded-2xl border border-[#17171c]/5 bg-white px-2.5 py-1.5 text-left text-sm text-[#17171c] shadow-sm hover:bg-white hover:text-[#17171c]"
+                className="absolute left-12 right-2 h-auto rounded-2xl border border-[#17171c]/5 bg-white px-2.5 py-1.5 text-left text-sm text-[#17171c] shadow-sm"
                 style={{ top: `${top}px`, height: `${clampedHeight}px` }}
                 onClick={() => router.push(`/record/${record.id}`)}
               >
@@ -319,7 +319,7 @@ export default function DayPage() {
         <Button
           type="button"
           size="icon-lg"
-          className="h-12 w-12 rounded-2xl bg-[#17171c] text-white shadow-lg hover:bg-[#17171c]/90"
+          className="h-12 w-12 rounded-2xl bg-[#17171c] text-white shadow-lg"
           aria-label="기록 등록"
           onClick={() => {
             if (!user) {
