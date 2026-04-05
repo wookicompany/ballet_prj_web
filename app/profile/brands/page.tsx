@@ -143,47 +143,47 @@ export default function ProfileBrandsPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white px-4 shadow-sm">
-            {brands.map((brand) => (
-              <button
-                key={brand.brand_id}
-                type="button"
-                className="flex w-full items-center gap-3 py-3 text-left"
-                onClick={() => { sendHapticToApp(); router.push(`/brand/${brand.brand_id}`); }}
-              >
-                <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
-                  {brand.logo_url ? (
-                    <AnimatedImage
-                      src={brand.logo_url}
-                      alt={brand.name_ko}
-                      width={40}
-                      height={40}
-                      sizes="40px"
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <div className="size-full" />
-                  )}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-sm font-medium text-[#17171c]">{brand.name_ko}</p>
-                  {brand.name_en && (
-                    <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
-                  )}
-                </div>
-                <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
-              </button>
-            ))}
+          <div className="space-y-3">
+            <div className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white px-4 shadow-sm">
+              {brands.map((brand) => (
+                <button
+                  key={brand.brand_id}
+                  type="button"
+                  className="flex w-full items-center gap-3 py-3 text-left"
+                  onClick={() => { sendHapticToApp(); router.push(`/brand/${brand.brand_id}`); }}
+                >
+                  <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">
+                    {brand.logo_url ? (
+                      <AnimatedImage
+                        src={brand.logo_url}
+                        alt={brand.name_ko}
+                        width={40}
+                        height={40}
+                        sizes="40px"
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="size-full" />
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="truncate text-sm font-medium text-[#17171c]">{brand.name_ko}</p>
+                    {brand.name_en && (
+                      <p className="truncate text-xs text-[#17171c]/50">{brand.name_en}</p>
+                    )}
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+                </button>
+              ))}
+            </div>
+            {loadingMore ? (
+              <div className="flex justify-center py-6">
+                <Spinner className="size-5 text-[#17171c]/30" />
+              </div>
+            ) : null}
+            <div ref={sentinelRef} />
           </div>
         )}
-
-        {loadingMore && (
-          <div className="flex justify-center py-6">
-            <Spinner className="size-5 text-[#17171c]/30" />
-          </div>
-        )}
-
-        <div ref={sentinelRef} />
       </main>
     </MobileContainer>
   );
