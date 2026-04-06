@@ -17,15 +17,19 @@ export const GET = async (request: Request) => {
     { count: totalRecords },
     { count: totalReviews },
     { count: totalComments },
+    { count: totalBrandLikes },
     { data: calendarUsersData },
     { data: performanceUsersData },
+    { data: brandUsersData },
   ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabaseAdmin.from("brand_likes").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.rpc("get_calendar_users_count"),
     supabaseAdmin.rpc("get_performance_users_count"),
+    supabaseAdmin.rpc("get_brand_users_count"),
   ]);
 
   return NextResponse.json({
@@ -35,5 +39,7 @@ export const GET = async (request: Request) => {
     total_reviews: totalReviews ?? 0,
     total_comments: totalComments ?? 0,
     performance_users: Number(performanceUsersData ?? 0),
+    total_brand_likes: totalBrandLikes ?? 0,
+    brand_users: Number(brandUsersData ?? 0),
   });
 };
