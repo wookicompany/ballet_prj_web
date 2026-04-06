@@ -1631,6 +1631,7 @@ export type Database = {
         }[]
       }
       get_calendar_users_count: { Args: never; Returns: number }
+      get_brand_users_count: { Args: never; Returns: number }
       get_performance_users_count: { Args: never; Returns: number }
       increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
       increment_ad_impression: { Args: { ad_id: string }; Returns: undefined }
