@@ -227,21 +227,21 @@ export default function ProfilePage() {
           .is("deleted_at", null)
           .order("record_date", { ascending: false })
           .order("created_at", { ascending: false })
-          .limit(3),
+          .limit(5),
         supabase
           .from("performance_reviews")
           .select("id,performance_id,rating,content,created_at")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(3),
+          .limit(5),
         supabase
           .from("brand_likes")
           .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(3),
+          .limit(5),
       ]);
 
       // 기록 처리
@@ -533,6 +533,7 @@ export default function ProfilePage() {
         </section>
 
         {/* 발레 기록 섹션 */}
+        {(previewLoading || recordsPreview.length > 0) && (
         <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">발레 기록</h2>
@@ -550,7 +551,7 @@ export default function ProfilePage() {
           </div>
           {previewLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, index) => (
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={`record-skeleton-${index}`}
                   className="flex items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
@@ -640,8 +641,10 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
 
         {/* 공연 리뷰 섹션 */}
+        {(previewLoading || reviewsPreview.length > 0) && (
         <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">공연 리뷰</h2>
@@ -659,7 +662,7 @@ export default function ProfilePage() {
           </div>
           {previewLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, index) => (
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={`review-skeleton-${index}`}
                   className="flex flex-col gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
@@ -784,8 +787,10 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
 
         {/* 찜한 브랜드 섹션 */}
+        {(previewLoading || likedBrandsPreview.length > 0) && (
         <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">찜한 브랜드</h2>
@@ -803,7 +808,7 @@ export default function ProfilePage() {
           </div>
           {previewLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, index) => (
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={`brand-skeleton-${index}`}
                   className="flex items-center gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3"
@@ -857,6 +862,7 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
       </main>
 
       <ImageViewer
