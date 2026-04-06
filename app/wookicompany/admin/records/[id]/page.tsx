@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -353,23 +354,41 @@ export default function AdminRecordDetailPage() {
             {media.length === 0 ? (
               <p className="text-sm text-muted-foreground">등록된 미디어가 없습니다.</p>
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {media.map((m) => (
-                  <li key={m.id} className="rounded-md border p-3 text-sm">
-                    <p className="mb-1 text-xs text-muted-foreground">
-                      {m.media_type === "image" ? "이미지" : "미디어"} ·{" "}
-                      {formatAdminDateTime(m.created_at)}
-                    </p>
-                    <a
-                      href={m.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-primary underline"
-                    >
-                      {m.media_type === "image" ? "이미지 보기" : "미디어 링크"}
-                    </a>
-                  </li>
-                ))}
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {media.map((m) =>
+                  m.media_type === "image" ? (
+                    <li key={m.id} className="overflow-hidden rounded-md border text-sm">
+                      <a href={m.url} target="_blank" rel="noopener noreferrer">
+                        <div className="relative aspect-square w-full bg-muted">
+                          <Image
+                            src={m.url}
+                            alt="기록 이미지"
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover transition-opacity hover:opacity-80"
+                          />
+                        </div>
+                      </a>
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        이미지 · {formatAdminDateTime(m.created_at)}
+                      </p>
+                    </li>
+                  ) : (
+                    <li key={m.id} className="rounded-md border p-3 text-sm">
+                      <p className="mb-1 text-xs text-muted-foreground">
+                        미디어 · {formatAdminDateTime(m.created_at)}
+                      </p>
+                      <a
+                        href={m.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-primary underline"
+                      >
+                        미디어 링크
+                      </a>
+                    </li>
+                  )
+                )}
               </ul>
             )}
           </div>
