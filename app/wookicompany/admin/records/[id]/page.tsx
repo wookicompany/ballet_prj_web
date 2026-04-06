@@ -39,6 +39,7 @@ type RecordDetail = {
   center_order: string | null;
   did_well: string | null;
   improve_next: string | null;
+  memo: string | null;
   workout_activity_label: string | null;
   workout_source_name: string | null;
   workout_device_name: string | null;
@@ -47,6 +48,7 @@ type RecordDetail = {
   workout_avg_bpm: number | null;
   workout_max_bpm: number | null;
   created_at: string;
+  updated_at: string;
   nickname: string | null;
   avatar_url: string | null;
   [key: string]: unknown;
@@ -260,7 +262,7 @@ export default function AdminRecordDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">기록일</p>
               <p className="mt-1 font-medium">{formatDateLabel(record.record_date)}</p>
@@ -280,6 +282,14 @@ export default function AdminRecordDetailPage() {
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">작성일</p>
               <p className="mt-1 font-medium">{formatAdminDateTime(record.created_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">수정일</p>
+              <p className="mt-1 font-medium">{formatAdminDateTime(record.updated_at)}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">기록 ID</p>
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{record.id}</p>
             </div>
           </div>
 
@@ -302,6 +312,8 @@ export default function AdminRecordDetailPage() {
             <dd className="whitespace-pre-wrap">{record.did_well || "미입력"}</dd>
             <dt className="text-muted-foreground">다음 개선점</dt>
             <dd className="whitespace-pre-wrap">{record.improve_next || "미입력"}</dd>
+            <dt className="text-muted-foreground">메모</dt>
+            <dd className="whitespace-pre-wrap">{record.memo || "미입력"}</dd>
           </dl>
 
           <div className="space-y-3 rounded-md border p-4">
