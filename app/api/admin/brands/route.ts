@@ -20,11 +20,12 @@ export const GET = async (request: Request) => {
   );
   const offset = Number(searchParams.get("offset")) || 0;
   const q = searchParams.get("q")?.trim() || "";
-  const sort = searchParams.get("sort") || "name_ko"; // "name_ko" | "view_count_desc" | "view_count_asc"
+  const sort = searchParams.get("sort") || "name_ko"; // "name_ko" | "view_count_desc" | "view_count_asc" | "like_count_desc" | "like_count_asc"
 
   const isSortByView = sort === "view_count_desc" || sort === "view_count_asc";
+  const isSortByLike = sort === "like_count_desc" || sort === "like_count_asc";
 
-  if (isSortByView) {
+  if (isSortByView || isSortByLike) {
     // 1. 검색 조건에 맞는 모든 브랜드 ID 조회
     let allIdsQuery = result.supabaseAdmin
       .from("ballet_brands")
@@ -38,21 +39,38 @@ export const GET = async (request: Request) => {
     const allIds = (allIdRows ?? []).map((r) => r.id);
     const total = allIds.length;
 
-    // 2. 해당 브랜드들의 조회수 조회
-    const { data: viewRows } = allIds.length
-      ? await result.supabaseAdmin
-          .from("brand_engagement_summaries")
-          .select("brand_id, view_count")
-          .in("brand_id", allIds)
-      : { data: [] };
+    // 2. 조회수 + 찜수 병렬 조회
+    const [{ data: viewRows }, { data: likeRows }] = await Promise.all([
+      allIds.length
+        ? result.supabaseAdmin
+            .from("brand_engagement_summaries")
+            .select("brand_id, view_count")
+            .in("brand_id", allIds)
+        : Promise.resolve({ data: [] }),
+      allIds.length
+        ? result.supabaseAdmin
+            .from("brand_likes")
+            .select("brand_id")
+            .in("brand_id", allIds)
+            .is("deleted_at", null)
+        : Promise.resolve({ data: [] }),
+    ]);
 
     const viewCountMap: Record<string, number> = {};
     for (const row of viewRows ?? []) {
       if (row.brand_id) viewCountMap[row.brand_id] = row.view_count ?? 0;
     }
+    const likeCountMap: Record<string, number> = {};
+    for (const row of likeRows ?? []) {
+      if (row.brand_id) likeCountMap[row.brand_id] = (likeCountMap[row.brand_id] ?? 0) + 1;
+    }
 
-    // 3. 조회수 기준 정렬 후 페이지네이션
+    // 3. 기준 컬럼으로 정렬 후 페이지네이션
     const sortedIds = [...allIds].sort((a, b) => {
+      if (isSortByLike) {
+        const diff = (likeCountMap[a] ?? 0) - (likeCountMap[b] ?? 0);
+        return sort === "like_count_desc" ? -diff : diff;
+      }
       const diff = (viewCountMap[a] ?? 0) - (viewCountMap[b] ?? 0);
       return sort === "view_count_desc" ? -diff : diff;
     });
@@ -73,12 +91,16 @@ export const GET = async (request: Request) => {
       return NextResponse.json({ message: "Failed to list brands" }, { status: 500 });
     }
 
-    // 5. 정렬 순서 복원 후 view_count 병합
+    // 5. 정렬 순서 복원 후 view_count·like_count 병합
     const rowMap = Object.fromEntries((rows ?? []).map((r) => [r.id, r]));
     const brands = pageIds
       .map((id) => rowMap[id])
       .filter(Boolean)
-      .map((row) => ({ ...row, view_count: viewCountMap[row.id] ?? 0 }));
+      .map((row) => ({
+        ...row,
+        view_count: viewCountMap[row.id] ?? 0,
+        like_count: likeCountMap[row.id] ?? 0,
+      }));
 
     return NextResponse.json({ brands, total, limit, offset });
   }
@@ -110,21 +132,35 @@ export const GET = async (request: Request) => {
   }
 
   const brandIds = (rows ?? []).map((r) => r.id);
-  const { data: viewRows } = brandIds.length
-    ? await result.supabaseAdmin
-        .from("brand_engagement_summaries")
-        .select("brand_id, view_count")
-        .in("brand_id", brandIds)
-    : { data: [] };
+  const [{ data: viewRows }, { data: likeRows }] = await Promise.all([
+    brandIds.length
+      ? result.supabaseAdmin
+          .from("brand_engagement_summaries")
+          .select("brand_id, view_count")
+          .in("brand_id", brandIds)
+      : Promise.resolve({ data: [] }),
+    brandIds.length
+      ? result.supabaseAdmin
+          .from("brand_likes")
+          .select("brand_id")
+          .in("brand_id", brandIds)
+          .is("deleted_at", null)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const viewCountMap: Record<string, number> = {};
   for (const row of viewRows ?? []) {
     if (row.brand_id) viewCountMap[row.brand_id] = row.view_count ?? 0;
   }
+  const likeCountMap: Record<string, number> = {};
+  for (const row of likeRows ?? []) {
+    if (row.brand_id) likeCountMap[row.brand_id] = (likeCountMap[row.brand_id] ?? 0) + 1;
+  }
 
   const brands = (rows ?? []).map((row) => ({
     ...row,
     view_count: viewCountMap[row.id] ?? 0,
+    like_count: likeCountMap[row.id] ?? 0,
   }));
 
   return NextResponse.json({

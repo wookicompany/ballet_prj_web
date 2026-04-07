@@ -37,11 +37,12 @@ type BrandRow = {
   is_active: boolean;
   sort_order: number;
   view_count: number;
+  like_count: number;
   created_at: string;
   updated_at: string;
 };
 
-type SortKey = "name_ko" | "view_count_desc" | "view_count_asc";
+type SortKey = "name_ko" | "view_count_desc" | "view_count_asc" | "like_count_desc" | "like_count_asc";
 
 export default function AdminBrandsPage() {
   const [brands, setBrands] = useState<BrandRow[]>([]);
@@ -102,6 +103,12 @@ export default function AdminBrandsPage() {
 
   const handleViewCountSort = () => {
     const next: SortKey = sort === "view_count_desc" ? "view_count_asc" : "view_count_desc";
+    setSort(next);
+    setOffset(0);
+  };
+
+  const handleLikeCountSort = () => {
+    const next: SortKey = sort === "like_count_desc" ? "like_count_asc" : "like_count_desc";
     setSort(next);
     setOffset(0);
   };
@@ -193,6 +200,22 @@ export default function AdminBrandsPage() {
                         )}
                       </button>
                     </TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-foreground"
+                        onClick={handleLikeCountSort}
+                      >
+                        찜수
+                        {sort === "like_count_desc" ? (
+                          <ArrowDown className="size-3.5" />
+                        ) : sort === "like_count_asc" ? (
+                          <ArrowUp className="size-3.5" />
+                        ) : (
+                          <ArrowUpDown className="size-3.5 opacity-40" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead>생성일</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -201,7 +224,7 @@ export default function AdminBrandsPage() {
                   {brands.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="py-8 text-center text-muted-foreground"
                       >
                         {searchQuery.trim()
@@ -223,6 +246,9 @@ export default function AdminBrandsPage() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {b.view_count.toLocaleString("ko-KR")}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {b.like_count.toLocaleString("ko-KR")}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatAdminDateTime(b.created_at)}
