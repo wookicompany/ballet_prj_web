@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,19 +17,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { getAdminToken } from "@/lib/adminUtils";
+import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { invalidateBrandHomeCache } from "@/lib/brandHomeCache";
 import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
+import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 const BUCKET = "brands";
+
+type LikedUser = {
+  like_id: string;
+  user_id: string;
+  created_at: string;
+  nickname: string | null;
+  avatar_url: string | null;
+};
 
 type Brand = {
   id: string;
@@ -73,6 +84,8 @@ export default function AdminBrandDetailPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likedUsers, setLikedUsers] = useState<LikedUser[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
@@ -107,8 +120,10 @@ export default function AdminBrandDetailPage({
           router.push("/wookicompany/admin/brands");
           return;
         }
-        const data: { brand: Brand } = await res.json();
+        const data: { brand: Brand; like_count: number; liked_users: LikedUser[] } = await res.json();
         const b = data.brand;
+        setLikeCount(data.like_count ?? 0);
+        setLikedUsers(data.liked_users ?? []);
         setForm({
           name_ko: b.name_ko,
           name_en: b.name_en ?? "",
@@ -404,6 +419,40 @@ export default function AdminBrandDetailPage({
           </CardContent>
         </Card>
       </form>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>찜한 사용자 (총 {likeCount.toLocaleString("ko-KR")}명)</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {likedUsers.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">찜한 사용자가 없습니다.</p>
+          ) : (
+            <ul className="divide-y">
+              {likedUsers.map((u) => (
+                <li key={u.like_id}>
+                  <Link
+                    href={`/wookicompany/admin/members/${u.user_id}`}
+                    className="flex items-center gap-3 px-6 py-3 hover:bg-muted/40"
+                  >
+                    <Avatar className="size-7 shrink-0">
+                      <AvatarImage src={u.avatar_url ?? undefined} />
+                      <AvatarFallback className="text-xs">
+                        {(u.nickname ?? u.user_id).slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">{u.nickname ?? "-"}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(u.created_at)}</p>
+                    </div>
+                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

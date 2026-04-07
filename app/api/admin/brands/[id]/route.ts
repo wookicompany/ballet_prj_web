@@ -15,11 +15,19 @@ export const GET = async (
 
   const { id } = await params;
 
-  const { data: brand, error } = await result.supabaseAdmin
-    .from("ballet_brands")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const [
+    { data: brand, error },
+    { data: likeRows, count: likeCount },
+  ] = await Promise.all([
+    result.supabaseAdmin.from("ballet_brands").select("*").eq("id", id).maybeSingle(),
+    result.supabaseAdmin
+      .from("brand_likes")
+      .select("id, user_id, created_at", { count: "exact" })
+      .eq("brand_id", id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
 
   if (error) {
     console.error("admin brand get", error);
@@ -30,7 +38,24 @@ export const GET = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ brand });
+  const userIds = (likeRows ?? []).map((r) => r.user_id);
+  const { data: profileRows } = userIds.length
+    ? await result.supabaseAdmin
+        .from("profiles")
+        .select("id, nickname, avatar_url")
+        .in("id", userIds)
+    : { data: [] };
+
+  const profileMap = Object.fromEntries((profileRows ?? []).map((p) => [p.id, p]));
+  const liked_users = (likeRows ?? []).map((r) => ({
+    like_id: r.id,
+    user_id: r.user_id,
+    created_at: r.created_at,
+    nickname: profileMap[r.user_id]?.nickname ?? null,
+    avatar_url: profileMap[r.user_id]?.avatar_url ?? null,
+  }));
+
+  return NextResponse.json({ brand, like_count: likeCount ?? 0, liked_users });
 };
 
 export const PATCH = async (
