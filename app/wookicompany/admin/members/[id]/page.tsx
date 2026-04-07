@@ -14,6 +14,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 type RecentRecord = { id: string; record_date: string; content: string; created_at: string };
 type RecentReview = { id: string; content: string; created_at: string };
 type RecentComment = { id: string; content: string; created_at: string };
+type RecentLikedBrand = { id: string; brand_id: string; created_at: string; ballet_brands: { id: string; name_ko: string } | null };
 
 export default function AdminMemberDetailPage() {
   const params = useParams();
@@ -23,9 +24,11 @@ export default function AdminMemberDetailPage() {
   const [recordCount, setRecordCount] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
+  const [likeBrandCount, setLikeBrandCount] = useState(0);
   const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([]);
   const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
   const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
+  const [recentLikedBrands, setRecentLikedBrands] = useState<RecentLikedBrand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,9 +57,11 @@ export default function AdminMemberDetailPage() {
       setRecordCount(data.record_count ?? 0);
       setReviewCount(data.review_count ?? 0);
       setCommentCount(data.comment_count ?? 0);
+      setLikeBrandCount(data.like_brand_count ?? 0);
       setRecentRecords(data.recent_records ?? []);
       setRecentReviews(data.recent_reviews ?? []);
       setRecentComments(data.recent_comments ?? []);
+      setRecentLikedBrands(data.recent_liked_brands ?? []);
     } catch {
       setError("회원 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -182,7 +187,7 @@ export default function AdminMemberDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* 캘린더 기록 */}
             <div className="rounded-md border">
               <div className="flex items-center justify-between border-b px-4 py-2.5">
@@ -257,6 +262,34 @@ export default function AdminMemberDetailPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">{item.content || "(내용 없음)"}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(item.created_at)}</p>
+                        </div>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 찜한 브랜드 */}
+            <div className="rounded-md border">
+              <div className="flex items-center justify-between border-b px-4 py-2.5">
+                <p className="text-sm font-medium">찜한 브랜드</p>
+                <span className="text-xs text-muted-foreground tabular-nums">총 {likeBrandCount}건</span>
+              </div>
+              {recentLikedBrands.length === 0 ? (
+                <p className="px-4 py-6 text-center text-xs text-muted-foreground">찜한 브랜드가 없습니다.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentLikedBrands.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/wookicompany/admin/brands/${item.brand_id}`}
+                        className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-muted/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{item.ballet_brands?.name_ko ?? "-"}</p>
                           <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(item.created_at)}</p>
                         </div>
                         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />

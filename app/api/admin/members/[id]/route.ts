@@ -34,18 +34,22 @@ export const GET = async (
     { count: recordsCount },
     { count: reviewsCount },
     { count: commentsCount },
+    { count: likeBrandsCount },
     { data: authUser },
     { data: recentRecords },
     { data: recentReviews },
     { data: recentComments },
+    { data: recentLikedBrands },
   ] = await Promise.all([
     result.supabaseAdmin.from("records").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
+    result.supabaseAdmin.from("brand_likes").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.auth.admin.getUserById(id),
     result.supabaseAdmin.from("records").select("id, record_date, content, created_at").eq("user_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(12),
     result.supabaseAdmin.from("performance_reviews").select("id, content, created_at").eq("user_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(12),
     result.supabaseAdmin.from("performance_review_comments").select("id, content, created_at").eq("user_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(12),
+    result.supabaseAdmin.from("brand_likes").select("id, brand_id, created_at, ballet_brands(id, name_ko)").eq("user_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(12),
   ]);
 
   return NextResponse.json({
@@ -54,8 +58,10 @@ export const GET = async (
     record_count: recordsCount ?? 0,
     review_count: reviewsCount ?? 0,
     comment_count: commentsCount ?? 0,
+    like_brand_count: likeBrandsCount ?? 0,
     recent_records: recentRecords ?? [],
     recent_reviews: recentReviews ?? [],
     recent_comments: recentComments ?? [],
+    recent_liked_brands: recentLikedBrands ?? [],
   });
 };
