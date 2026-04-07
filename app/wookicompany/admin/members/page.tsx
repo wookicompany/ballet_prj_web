@@ -57,7 +57,7 @@ export default function AdminMembersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_at_desc");
   const [activityFilter, setActivityFilter] = useState<
-    "all" | "has_record" | "has_review" | "has_comment"
+    "all" | "has_record" | "has_review" | "has_comment" | "has_like_brand"
   >("all");
 
   const searchInit = useRef(true);
@@ -123,6 +123,7 @@ export default function AdminMembersPage() {
       if (activityFilter === "has_record" && member.record_count <= 0) return false;
       if (activityFilter === "has_review" && member.review_count <= 0) return false;
       if (activityFilter === "has_comment" && member.comment_count <= 0) return false;
+      if (activityFilter === "has_like_brand" && member.like_brand_count <= 0) return false;
       return true;
     });
   }, [members, activityFilter]);
@@ -188,6 +189,13 @@ export default function AdminMembersPage() {
               onClick={() => setActivityFilter("has_comment")}
             >
               댓글 있음
+            </Button>
+            <Button
+              variant={activityFilter === "has_like_brand" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActivityFilter("has_like_brand")}
+            >
+              브랜드 찜 있음
             </Button>
           </div>
         </CardHeader>
