@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ type RecordRow = {
 };
 
 export default function AdminRecordsPage() {
+  const router = useRouter();
   const [records, setRecords] = useState<RecordRow[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -179,7 +180,7 @@ export default function AdminRecordsPage() {
                     </TableRow>
                   ) : (
                     records.map((r) => (
-                      <TableRow key={r.id} className="hover:bg-muted/40">
+                      <TableRow key={r.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/records/${r.id}`)}>
                         <TableCell className="font-medium">
                           {formatDateLabel(r.record_date)}
                         </TableCell>
@@ -212,11 +213,7 @@ export default function AdminRecordsPage() {
                           {formatAdminDateTime(r.created_at)}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/wookicompany/admin/records/${r.id}`}>
-                              <ChevronRight className="size-4" />
-                            </Link>
-                          </Button>
+                          <ChevronRight className="size-4 text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ))

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
@@ -44,6 +45,7 @@ const TAB_OPTIONS: Array<{ value: TabPlacement; label: string }> = [
 ];
 
 export default function AdminAdsPage() {
+  const router = useRouter();
   const [allAds, setAllAds] = useState<AdRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -201,7 +203,7 @@ export default function AdminAdsPage() {
                   </TableRow>
                 ) : (
                   filteredAds.map((ad) => (
-                    <TableRow key={ad.id} className="hover:bg-muted/40">
+                    <TableRow key={ad.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/ads/${ad.id}`)}>
                       <TableCell>
                         {ad.image_url ? (
                           <div className="relative h-10 w-40 overflow-hidden rounded">
@@ -242,11 +244,7 @@ export default function AdminAdsPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/wookicompany/admin/ads/${ad.id}`}>
-                            <ChevronRight className="size-4" />
-                          </Link>
-                        </Button>
+                        <ChevronRight className="size-4 text-muted-foreground" />
                       </TableCell>
                     </TableRow>
                   ))

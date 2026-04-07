@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -45,6 +46,7 @@ type BrandRow = {
 type SortKey = "name_ko" | "view_count_desc" | "view_count_asc" | "like_count_desc" | "like_count_asc";
 
 export default function AdminBrandsPage() {
+  const router = useRouter();
   const [brands, setBrands] = useState<BrandRow[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -234,7 +236,7 @@ export default function AdminBrandsPage() {
                     </TableRow>
                   ) : (
                     brands.map((b) => (
-                      <TableRow key={b.id} className="hover:bg-muted/40">
+                      <TableRow key={b.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/brands/${b.id}`)}>
                         <TableCell className="font-medium">{b.name_ko}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {b.name_en ?? "-"}
@@ -254,11 +256,7 @@ export default function AdminBrandsPage() {
                           {formatAdminDateTime(b.created_at)}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/wookicompany/admin/brands/${b.id}`}>
-                              <ChevronRight className="size-4" />
-                            </Link>
-                          </Button>
+                          <ChevronRight className="size-4 text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ))

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,6 +54,7 @@ type CommentRow = {
 };
 
 export default function AdminReviewsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"reviews" | "comments">("reviews");
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "reported">("all");
@@ -272,7 +273,7 @@ export default function AdminReviewsPage() {
                         </TableRow>
                       ) : (
                         filteredReviews.map((r) => (
-                          <TableRow key={r.id} className="hover:bg-muted/40">
+                          <TableRow key={r.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/reviews/${r.id}`)}>
                             <TableCell className="font-medium">{r.prfnm}</TableCell>
                             <TableCell>{r.nickname ?? "-"}</TableCell>
                             <TableCell>{r.rating}</TableCell>
@@ -293,11 +294,7 @@ export default function AdminReviewsPage() {
                               {formatAdminDateTime(r.created_at)}
                             </TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link href={`/wookicompany/admin/reviews/${r.id}`}>
-                                  <ChevronRight className="size-4" />
-                                </Link>
-                              </Button>
+                              <ChevronRight className="size-4 text-muted-foreground" />
                             </TableCell>
                           </TableRow>
                         ))
@@ -398,7 +395,7 @@ export default function AdminReviewsPage() {
                         </TableRow>
                       ) : (
                         filteredComments.map((c) => (
-                          <TableRow key={c.id} className="hover:bg-muted/40">
+                          <TableRow key={c.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/reviews/comments/${c.id}`)}>
                             <TableCell className="font-medium">{c.prfnm ?? "-"}</TableCell>
                             <TableCell>{c.nickname ?? "-"}</TableCell>
                             <TableCell
@@ -418,11 +415,7 @@ export default function AdminReviewsPage() {
                               {formatAdminDateTime(c.created_at)}
                             </TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link href={`/wookicompany/admin/reviews/comments/${c.id}`}>
-                                  <ChevronRight className="size-4" />
-                                </Link>
-                              </Button>
+                              <ChevronRight className="size-4 text-muted-foreground" />
                             </TableCell>
                           </TableRow>
                         ))

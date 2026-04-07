@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ type SupportInquiryRow = {
 };
 
 export default function AdminSupportInquiriesPage() {
+  const router = useRouter();
   const [inquiries, setInquiries] = useState<SupportInquiryRow[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -167,7 +168,7 @@ export default function AdminSupportInquiriesPage() {
                     </TableRow>
                   ) : (
                     inquiries.map((inquiry) => (
-                      <TableRow key={inquiry.id} className="hover:bg-muted/40">
+                      <TableRow key={inquiry.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/support-inquiries/${inquiry.id}`)}>
                         <TableCell
                           className="font-medium max-w-[300px] truncate"
                           title={inquiry.title}
@@ -184,13 +185,7 @@ export default function AdminSupportInquiriesPage() {
                           {formatAdminDateTime(inquiry.created_at)}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link
-                              href={`/wookicompany/admin/support-inquiries/${inquiry.id}`}
-                            >
-                              <ChevronRight className="size-4" />
-                            </Link>
-                          </Button>
+                          <ChevronRight className="size-4 text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ))

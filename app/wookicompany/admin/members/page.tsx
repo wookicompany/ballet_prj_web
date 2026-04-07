@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ type SortKey =
   | "like_brand_count_desc" | "like_brand_count_asc";
 
 export default function AdminMembersPage() {
+  const router = useRouter();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -251,7 +252,7 @@ export default function AdminMembersPage() {
                     </TableRow>
                   ) : (
                     filteredMembers.map((m) => (
-                      <TableRow key={m.id} className="hover:bg-muted/40">
+                      <TableRow key={m.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/members/${m.id}`)}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="size-6">
@@ -274,11 +275,7 @@ export default function AdminMembersPage() {
                         <TableCell className="tabular-nums">{m.comment_count}</TableCell>
                         <TableCell className="tabular-nums">{m.like_brand_count}</TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/wookicompany/admin/members/${m.id}`}>
-                              <ChevronRight className="size-4" />
-                            </Link>
-                          </Button>
+                          <ChevronRight className="size-4 text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ))
