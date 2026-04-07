@@ -294,7 +294,6 @@ export default function RecordEditPage() {
   const [syncedWorkoutDraft, setSyncedWorkoutDraft] = useState<SyncedWorkout | null>(
     null
   );
-  const lastSavedPlatformRef = useRef<AppPlatform | null>(null);
   const hours = useMemo(
     () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
     []
@@ -709,33 +708,6 @@ export default function RecordEditPage() {
     setSelectedCenterOrderId(null);
     void fetchSavedCenterOrders();
   }, [centerOrderSheetOpen, fetchSavedCenterOrders, user?.id]);
-
-  const saveDetectedPlatform = useCallback(
-    async (platform: AppPlatform) => {
-      if (!user) return;
-      if (lastSavedPlatformRef.current === platform) return;
-      const accessToken = await getAccessToken(openLoginSheet);
-      if (!accessToken) return;
-
-      const response = await fetch("/api/profile/platform", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ app_platform: platform }),
-      });
-      if (response.ok) {
-        lastSavedPlatformRef.current = platform;
-      }
-    },
-    [openLoginSheet, user]
-  );
-
-  useEffect(() => {
-    if (!detectedPlatform || !user) return;
-    void saveDetectedPlatform(detectedPlatform);
-  }, [detectedPlatform, saveDetectedPlatform, user]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !isInReactNativeWebView()) return;
