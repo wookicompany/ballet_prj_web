@@ -254,7 +254,7 @@ export default function AdminMembersPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="space-y-0.5">
-                              <p className="text-sm leading-none">{m.nickname ?? "미입력"}</p>
+                              <p className="text-sm leading-none">{m.nickname ?? "-"}</p>
                               <p className="text-xs text-muted-foreground">{m.id.slice(0, 8)}</p>
                             </div>
                           </div>
