@@ -104,7 +104,7 @@ export default function AdminRecordDetailPage() {
     const parts = [parsed.name, parsed.base, parsed.detail].filter(
       (part) => part.length > 0
     );
-    return parts.length > 0 ? parts.join(" | ") : "미입력";
+    return parts.length > 0 ? parts.join(" | ") : "—";
   };
   const moodText =
     typeof record?.mood === "number" && record.mood >= 1 && record.mood <= 8
@@ -297,54 +297,54 @@ export default function AdminRecordDetailPage() {
           <dl className="grid gap-3 text-sm md:grid-cols-[140px_1fr]">
             <dt className="text-muted-foreground">한 줄 기록</dt>
             <dd className="whitespace-pre-wrap rounded-md border bg-muted/20 p-3">
-              {record.content || "미입력"}
+              {record.content || "—"}
             </dd>
             <dt className="text-muted-foreground">장소</dt>
             <dd>{formatLocation(record.location)}</dd>
             <dt className="text-muted-foreground">강사</dt>
-            <dd>{record.instructor || "미입력"}</dd>
+            <dd>{record.instructor || "—"}</dd>
             <dt className="text-muted-foreground">레벨</dt>
-            <dd>{record.level || "미입력"}</dd>
+            <dd>{record.level || "—"}</dd>
             <dt className="text-muted-foreground">바 순서</dt>
-            <dd>{record.bar_order || "미입력"}</dd>
+            <dd>{record.bar_order || "—"}</dd>
             <dt className="text-muted-foreground">센터 순서</dt>
-            <dd>{record.center_order || "미입력"}</dd>
+            <dd>{record.center_order || "—"}</dd>
             <dt className="text-muted-foreground">잘한 점</dt>
-            <dd className="whitespace-pre-wrap">{record.did_well || "미입력"}</dd>
+            <dd className="whitespace-pre-wrap">{record.did_well || "—"}</dd>
             <dt className="text-muted-foreground">다음 개선점</dt>
-            <dd className="whitespace-pre-wrap">{record.improve_next || "미입력"}</dd>
+            <dd className="whitespace-pre-wrap">{record.improve_next || "—"}</dd>
             <dt className="text-muted-foreground">메모</dt>
-            <dd className="whitespace-pre-wrap">{record.memo || "미입력"}</dd>
+            <dd className="whitespace-pre-wrap">{record.memo || "—"}</dd>
           </dl>
 
           <div className="space-y-3 rounded-md border p-4">
             <p className="text-sm font-medium">Apple Watch 운동 정보</p>
             <dl className="grid gap-3 text-sm md:grid-cols-[180px_1fr]">
               <dt className="text-muted-foreground">운동 라벨</dt>
-              <dd>{record.workout_activity_label || "미입력"}</dd>
+              <dd>{record.workout_activity_label || "—"}</dd>
               <dt className="text-muted-foreground">소스</dt>
-              <dd>{record.workout_source_name || "미입력"}</dd>
+              <dd>{record.workout_source_name || "—"}</dd>
               <dt className="text-muted-foreground">기기</dt>
-              <dd>{record.workout_device_name || "미입력"}</dd>
+              <dd>{record.workout_device_name || "—"}</dd>
               <dt className="text-muted-foreground">활동 칼로리</dt>
               <dd>
                 {record.workout_active_energy_kcal == null
-                  ? "미입력"
+                  ? "—"
                   : `${record.workout_active_energy_kcal} kcal`}
               </dd>
               <dt className="text-muted-foreground">총 칼로리</dt>
               <dd>
                 {record.workout_total_energy_kcal == null
-                  ? "미입력"
+                  ? "—"
                   : `${record.workout_total_energy_kcal} kcal`}
               </dd>
               <dt className="text-muted-foreground">평균 심박수</dt>
               <dd>
-                {record.workout_avg_bpm == null ? "미입력" : `${record.workout_avg_bpm} BPM`}
+                {record.workout_avg_bpm == null ? "—" : `${record.workout_avg_bpm} BPM`}
               </dd>
               <dt className="text-muted-foreground">최대 심박수</dt>
               <dd>
-                {record.workout_max_bpm == null ? "미입력" : `${record.workout_max_bpm} BPM`}
+                {record.workout_max_bpm == null ? "—" : `${record.workout_max_bpm} BPM`}
               </dd>
             </dl>
           </div>
