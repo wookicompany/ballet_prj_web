@@ -149,7 +149,7 @@ export default function AdminMemberDetailPage() {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 space-y-1">
-              <p className="font-medium">{profile.nickname ?? "미입력"}</p>
+              <p className="font-medium">{profile.nickname ?? "-"}</p>
               <p className="break-all text-sm text-muted-foreground">ID: {profile.id}</p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function AdminMemberDetailPage() {
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">닉네임</p>
-              <p className="mt-1 font-medium">{profile.nickname ?? "미입력"}</p>
+              <p className="mt-1 font-medium">{profile.nickname ?? "-"}</p>
             </div>
           </div>
 
