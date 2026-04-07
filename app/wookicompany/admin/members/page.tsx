@@ -37,13 +37,15 @@ type MemberRow = {
   record_count: number;
   review_count: number;
   comment_count: number;
+  like_brand_count: number;
 };
 
 type SortKey =
   | "created_at_desc"
   | "record_count_desc" | "record_count_asc"
   | "review_count_desc" | "review_count_asc"
-  | "comment_count_desc" | "comment_count_asc";
+  | "comment_count_desc" | "comment_count_asc"
+  | "like_brand_count_desc" | "like_brand_count_asc";
 
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -99,7 +101,7 @@ export default function AdminMembersPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, fetchMembers, sort]);
 
-  const handleSort = (field: "record_count" | "review_count" | "comment_count") => {
+  const handleSort = (field: "record_count" | "review_count" | "comment_count" | "like_brand_count") => {
     const descKey = `${field}_desc` as SortKey;
     const ascKey = `${field}_asc` as SortKey;
     const next: SortKey = sort === descKey ? ascKey : descKey;
@@ -107,7 +109,7 @@ export default function AdminMembersPage() {
     setOffset(0);
   };
 
-  const SortIcon = ({ field }: { field: "record_count" | "review_count" | "comment_count" }) => {
+  const SortIcon = ({ field }: { field: "record_count" | "review_count" | "comment_count" | "like_brand_count" }) => {
     if (sort === `${field}_desc`) return <ArrowDown className="size-3.5" />;
     if (sort === `${field}_asc`) return <ArrowUp className="size-3.5" />;
     return <ArrowUpDown className="size-3.5 opacity-40" />;
@@ -230,13 +232,18 @@ export default function AdminMembersPage() {
                         댓글 수 <SortIcon field="comment_count" />
                       </button>
                     </TableHead>
+                    <TableHead>
+                      <button type="button" className="flex items-center gap-1 hover:text-foreground" onClick={() => handleSort("like_brand_count")}>
+                        찜한 브랜드 <SortIcon field="like_brand_count" />
+                      </button>
+                    </TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredMembers.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         {searchQuery.trim() || activityFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "회원이 없습니다."}
@@ -265,6 +272,7 @@ export default function AdminMembersPage() {
                         <TableCell className="tabular-nums">{m.record_count}</TableCell>
                         <TableCell className="tabular-nums">{m.review_count}</TableCell>
                         <TableCell className="tabular-nums">{m.comment_count}</TableCell>
+                        <TableCell className="tabular-nums">{m.like_brand_count}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" asChild>
                             <Link href={`/wookicompany/admin/members/${m.id}`}>

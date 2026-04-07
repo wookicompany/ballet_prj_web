@@ -21,12 +21,32 @@ export const GET = async (request: Request) => {
   // sort: "created_at_desc" | "record_count_desc" | "record_count_asc"
   //       | "review_count_desc" | "review_count_asc"
   //       | "comment_count_desc" | "comment_count_asc"
+  //       | "like_brand_count_desc" | "like_brand_count_asc"
 
   type ActivityCountRow = { user_id: string; record_count: number; review_count: number; comment_count: number };
 
-  const isSortByCount = sort !== "created_at_desc";
+  const isSortByActivity = [
+    "record_count_desc", "record_count_asc",
+    "review_count_desc", "review_count_asc",
+    "comment_count_desc", "comment_count_asc",
+  ].includes(sort);
+  const isSortByLikeBrand = sort === "like_brand_count_desc" || sort === "like_brand_count_asc";
 
-  if (isSortByCount) {
+  const fetchLikeBrandCounts = async (ids: string[]): Promise<Record<string, number>> => {
+    if (!ids.length) return {};
+    const { data } = await result.supabaseAdmin
+      .from("brand_likes")
+      .select("user_id")
+      .in("user_id", ids)
+      .is("deleted_at", null);
+    const map: Record<string, number> = {};
+    for (const row of data ?? []) {
+      if (row.user_id) map[row.user_id] = (map[row.user_id] ?? 0) + 1;
+    }
+    return map;
+  };
+
+  if (isSortByActivity || isSortByLikeBrand) {
     // 1. 검색 조건에 맞는 모든 유저 ID 조회
     let allIdsQuery = result.supabaseAdmin
       .from("profiles")
@@ -41,10 +61,13 @@ export const GET = async (request: Request) => {
     const allIds = (allIdRows ?? []).map((r) => r.id);
     const total = allIds.length;
 
-    // 2. 전체 유저의 카운트 조회
-    const activityCounts: ActivityCountRow[] = allIds.length > 0
-      ? ((await result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: allIds })).data ?? []) as ActivityCountRow[]
-      : [];
+    // 2. 정렬 기준 카운트 전체 조회
+    const [activityCounts, likeBrandMap] = await Promise.all([
+      isSortByActivity && allIds.length > 0
+        ? (result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: allIds }).then((r) => (r.data ?? []) as ActivityCountRow[]))
+        : Promise.resolve([] as ActivityCountRow[]),
+      isSortByLikeBrand ? fetchLikeBrandCounts(allIds) : Promise.resolve({} as Record<string, number>),
+    ]);
 
     const activityMap: Record<string, ActivityCountRow> = {};
     for (const row of activityCounts) {
@@ -52,10 +75,15 @@ export const GET = async (request: Request) => {
     }
 
     // 3. 카운트 기준 정렬 후 페이지네이션
-    const countField = sort.replace(/_desc$|_asc$/, "") as "record_count" | "review_count" | "comment_count";
     const ascending = sort.endsWith("_asc");
     const sortedIds = [...allIds].sort((a, b) => {
-      const diff = (activityMap[a]?.[countField] ?? 0) - (activityMap[b]?.[countField] ?? 0);
+      let diff: number;
+      if (isSortByLikeBrand) {
+        diff = (likeBrandMap[a] ?? 0) - (likeBrandMap[b] ?? 0);
+      } else {
+        const countField = sort.replace(/_desc$|_asc$/, "") as "record_count" | "review_count" | "comment_count";
+        diff = (activityMap[a]?.[countField] ?? 0) - (activityMap[b]?.[countField] ?? 0);
+      }
       return ascending ? diff : -diff;
     });
     const pageIds = sortedIds.slice(offset, offset + limit);
@@ -64,15 +92,28 @@ export const GET = async (request: Request) => {
       return NextResponse.json({ members: [], total, limit, offset });
     }
 
-    // 4. 페이지 유저 프로필 조회
-    const { data: rows, error } = await result.supabaseAdmin
-      .from("profiles")
-      .select("id, nickname, avatar_url, created_at")
-      .in("id", pageIds);
+    // 4. 페이지 유저 프로필 조회 + 누락된 카운트 보완
+    const [{ data: rows, error }, pageActivityCounts, pageLikeBrandMap] = await Promise.all([
+      result.supabaseAdmin
+        .from("profiles")
+        .select("id, nickname, avatar_url, created_at")
+        .in("id", pageIds),
+      isSortByLikeBrand && pageIds.length > 0
+        ? result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: pageIds }).then((r) => (r.data ?? []) as ActivityCountRow[])
+        : Promise.resolve(activityCounts.filter((r) => pageIds.includes(r.user_id))),
+      isSortByActivity ? fetchLikeBrandCounts(pageIds) : Promise.resolve(
+        Object.fromEntries(pageIds.map((id) => [id, likeBrandMap[id] ?? 0]))
+      ),
+    ]);
 
     if (error) {
       console.error("admin members list", error);
       return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
+    }
+
+    const pageActivityMap: Record<string, ActivityCountRow> = {};
+    for (const row of pageActivityCounts) {
+      pageActivityMap[row.user_id] = row;
     }
 
     const rowMap = Object.fromEntries((rows ?? []).map((r) => [r.id, r]));
@@ -81,9 +122,10 @@ export const GET = async (request: Request) => {
       .filter(Boolean)
       .map((r) => ({
         ...r,
-        record_count: activityMap[r.id]?.record_count ?? 0,
-        review_count: activityMap[r.id]?.review_count ?? 0,
-        comment_count: activityMap[r.id]?.comment_count ?? 0,
+        record_count: pageActivityMap[r.id]?.record_count ?? 0,
+        review_count: pageActivityMap[r.id]?.review_count ?? 0,
+        comment_count: pageActivityMap[r.id]?.comment_count ?? 0,
+        like_brand_count: pageLikeBrandMap[r.id] ?? 0,
       }));
 
     return NextResponse.json({ members, total, limit, offset });
@@ -114,9 +156,12 @@ export const GET = async (request: Request) => {
   }
 
   const userIds = (rows ?? []).map((r) => r.id);
-  const activityCounts: ActivityCountRow[] = userIds.length > 0
-    ? ((await result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: userIds })).data ?? []) as ActivityCountRow[]
-    : [];
+  const [activityCounts, likeBrandMap] = await Promise.all([
+    userIds.length > 0
+      ? result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: userIds }).then((r) => (r.data ?? []) as ActivityCountRow[])
+      : Promise.resolve([] as ActivityCountRow[]),
+    fetchLikeBrandCounts(userIds),
+  ]);
 
   const activityMap: Record<string, ActivityCountRow> = {};
   for (const row of activityCounts) {
@@ -128,6 +173,7 @@ export const GET = async (request: Request) => {
     record_count: activityMap[r.id]?.record_count ?? 0,
     review_count: activityMap[r.id]?.review_count ?? 0,
     comment_count: activityMap[r.id]?.comment_count ?? 0,
+    like_brand_count: likeBrandMap[r.id] ?? 0,
   }));
 
   return NextResponse.json({
