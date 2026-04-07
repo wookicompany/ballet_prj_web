@@ -206,7 +206,7 @@ export default function AdminBrandsPage() {
                         className="flex items-center gap-1 hover:text-foreground"
                         onClick={handleLikeCountSort}
                       >
-                        찜수
+                        찜 수
                         {sort === "like_count_desc" ? (
                           <ArrowDown className="size-3.5" />
                         ) : sort === "like_count_asc" ? (

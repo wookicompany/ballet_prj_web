@@ -234,7 +234,7 @@ export default function AdminMembersPage() {
                     </TableHead>
                     <TableHead>
                       <button type="button" className="flex items-center gap-1 hover:text-foreground" onClick={() => handleSort("like_brand_count")}>
-                        찜한 브랜드 <SortIcon field="like_brand_count" />
+                        찜 수 <SortIcon field="like_brand_count" />
                       </button>
                     </TableHead>
                     <TableHead className="w-10" />
