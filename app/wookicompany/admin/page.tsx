@@ -19,43 +19,51 @@ type Stats = {
   brand_users: number;
 };
 
-const CALENDAR_ITEMS = [
-  { key: "calendar_users" as const, label: "캘린더 사용자 수" },
-  { key: "total_records" as const, label: "캘린더 기록 등록 건 수" },
-];
-const PERFORMANCE_ITEMS = [
-  { key: "performance_users" as const, label: "공연 사용자 수" },
-  { key: "total_reviews" as const, label: "공연 리뷰 등록 건 수" },
-  { key: "total_comments" as const, label: "공연 댓글 등록 건 수" },
-];
-const BRAND_ITEMS = [
-  { key: "brand_users" as const, label: "브랜드 사용자 수" },
-  { key: "total_brand_likes" as const, label: "브랜드 찜 건 수" },
-];
-
-function StatCard({
-  label,
-  value,
-  "aria-label": ariaLabel,
+function SectionCard({
+  title,
+  items,
 }: {
-  label: string;
-  value: number;
-  "aria-label"?: string;
+  title: string;
+  items: { label: string; value: number }[];
 }) {
   return (
-    <Card
-      className="flex min-h-[110px] w-full min-w-0 flex-col justify-between overflow-visible transition-colors hover:bg-muted/50"
-      aria-label={ariaLabel ?? `${label}: ${value.toLocaleString()}`}
-    >
-      <CardHeader className="shrink-0 pb-1 pt-3">
-        <CardTitle className="text-sm font-medium leading-snug text-muted-foreground break-words">
-          {label}
+    <Card className="w-full">
+      <CardHeader className="pb-2 pt-4">
+        <CardTitle className="text-sm font-semibold text-foreground">
+          {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="shrink-0 pb-3 pt-0">
-        <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
-          {value.toLocaleString("ko-KR")}
-        </p>
+      <CardContent className="pb-4 pt-0">
+        <div className="divide-y">
+          {items.map((item) => (
+            <div key={item.label} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <span className="text-sm text-muted-foreground">{item.label}</span>
+              <span className="text-xl font-bold tabular-nums tracking-tight text-foreground">
+                {item.value.toLocaleString("ko-KR")}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SectionCardSkeleton({ rows }: { rows: number }) {
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-2 pt-4">
+        <Skeleton className="h-3 w-16" />
+      </CardHeader>
+      <CardContent className="pb-4 pt-0">
+        <div className="divide-y">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -100,39 +108,11 @@ export default function AdminDashboardPage() {
     return (
       <div className="space-y-6">
         <AdminPageHeader title="대시보드" />
-        <div className="space-y-8">
-          {/* 사용자 스켈레톤 */}
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-14" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-            </div>
-          </div>
-          {/* 캘린더 스켈레톤 */}
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-14" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-            </div>
-          </div>
-          {/* 공연 스켈레톤 */}
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-14" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-            </div>
-          </div>
-          {/* 브랜드 스켈레톤 */}
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-14" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-              <Skeleton className="min-h-[110px] w-full rounded-lg" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <SectionCardSkeleton rows={1} />
+          <SectionCardSkeleton rows={2} />
+          <SectionCardSkeleton rows={3} />
+          <SectionCardSkeleton rows={2} />
         </div>
       </div>
     );
@@ -141,9 +121,7 @@ export default function AdminDashboardPage() {
   if (error || !stats) {
     return (
       <div className="space-y-4">
-        <AdminPageHeader
-          title="대시보드"
-        />
+        <AdminPageHeader title="대시보드" />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">
           <p className="text-sm font-medium">{error ?? "데이터가 없습니다."}</p>
           <Button
@@ -182,60 +160,35 @@ export default function AdminDashboardPage() {
         }
       />
 
-      <div className="space-y-8" role="region" aria-label="대시보드 지표">
-        {/* 사용자 */}
-        <section className="space-y-3" aria-labelledby="section-users">
-          <h2 id="section-users" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            사용자
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="min-w-0">
-              <StatCard label="총 가입자 수" value={stats.total_users} />
-            </div>
-          </div>
-        </section>
-
-        {/* 캘린더 */}
-        <section className="space-y-3" aria-labelledby="section-calendar">
-          <h2 id="section-calendar" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            캘린더
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CALENDAR_ITEMS.map((item) => (
-              <div key={item.key} className="min-w-0">
-                <StatCard label={item.label} value={stats[item.key]} />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 공연 */}
-        <section className="space-y-3" aria-labelledby="section-performance">
-          <h2 id="section-performance" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            공연
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PERFORMANCE_ITEMS.map((item) => (
-              <div key={item.key} className="min-w-0">
-                <StatCard label={item.label} value={stats[item.key]} />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 브랜드 */}
-        <section className="space-y-3" aria-labelledby="section-brand">
-          <h2 id="section-brand" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            브랜드
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {BRAND_ITEMS.map((item) => (
-              <div key={item.key} className="min-w-0">
-                <StatCard label={item.label} value={stats[item.key]} />
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2" role="region" aria-label="대시보드 지표">
+        <SectionCard
+          title="사용자"
+          items={[
+            { label: "총 가입자 수", value: stats.total_users },
+          ]}
+        />
+        <SectionCard
+          title="캘린더"
+          items={[
+            { label: "캘린더 사용자 수", value: stats.calendar_users },
+            { label: "기록 등록 건 수", value: stats.total_records },
+          ]}
+        />
+        <SectionCard
+          title="공연"
+          items={[
+            { label: "공연 사용자 수", value: stats.performance_users },
+            { label: "리뷰 등록 건 수", value: stats.total_reviews },
+            { label: "댓글 등록 건 수", value: stats.total_comments },
+          ]}
+        />
+        <SectionCard
+          title="브랜드"
+          items={[
+            { label: "브랜드 사용자 수", value: stats.brand_users },
+            { label: "찜 건 수", value: stats.total_brand_likes },
+          ]}
+        />
       </div>
     </div>
   );
