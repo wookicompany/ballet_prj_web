@@ -1,13 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 type SupportInquiryDetail = {
@@ -22,9 +34,11 @@ type SupportInquiryDetail = {
 
 export default function AdminSupportInquiryDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const [inquiry, setInquiry] = useState<SupportInquiryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDetail = useCallback(async () => {
@@ -58,6 +72,27 @@ export default function AdminSupportInquiryDetailPage() {
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
+
+  const handleDelete = useCallback(async () => {
+    const token = await getAdminToken();
+    if (!token) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/support-inquiries/${id}/delete`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        router.replace("/wookicompany/admin/support-inquiries");
+      } else {
+        toast.error("문의 삭제에 실패했습니다.");
+      }
+    } catch {
+      toast.error("문의 삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeleting(false);
+    }
+  }, [id, router]);
 
   if (loading) {
     return (
@@ -123,8 +158,33 @@ export default function AdminSupportInquiryDetailPage() {
       ) : null}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
           <CardTitle>문의 전체 정보</CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={deleting}>
+                <Trash2 className="mr-1 size-4" />
+                삭제
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>문의 삭제</AlertDialogTitle>
+                <AlertDialogDescription>
+                  이 문의를 삭제합니다. 계속할까요?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  삭제
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
