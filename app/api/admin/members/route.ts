@@ -48,17 +48,24 @@ export const GET = async (request: Request) => {
 
   if (isSortByActivity || isSortByLikeBrand) {
     // 1. 검색 조건에 맞는 모든 유저 ID 조회
-    let allIdsQuery = result.supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .is("deleted_at", null);
-    if (q) allIdsQuery = allIdsQuery.or(`nickname.ilike.%${q}%,id.ilike.%${q}%`);
-    const { data: allIdRows, error: idError } = await allIdsQuery;
-    if (idError) {
-      console.error("admin members list", idError);
-      return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
+    let allIds: string[];
+    if (q) {
+      const { data: matched, error: matchError } = await result.supabaseAdmin
+        .rpc("search_profiles_by_keyword", { keyword: q });
+      if (matchError) {
+        console.error("admin members list", matchError);
+        return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
+      }
+      allIds = (matched ?? []).map((r) => r.id);
+    } else {
+      const { data: allIdRows, error: idError } = await result.supabaseAdmin
+        .from("profiles").select("id").is("deleted_at", null);
+      if (idError) {
+        console.error("admin members list", idError);
+        return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
+      }
+      allIds = (allIdRows ?? []).map((r) => r.id);
     }
-    const allIds = (allIdRows ?? []).map((r) => r.id);
     const total = allIds.length;
 
     // 2. 정렬 기준 카운트 전체 조회
@@ -132,23 +139,44 @@ export const GET = async (request: Request) => {
   }
 
   // 기본 정렬: 가입일 최신순
-  let profileQuery = result.supabaseAdmin
-    .from("profiles")
-    .select("id, nickname, avatar_url, created_at")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
-  if (q) profileQuery = profileQuery.or(`nickname.ilike.%${q}%,id.ilike.%${q}%`);
+  let rows: { id: string; nickname: string | null; avatar_url: string | null; created_at: string }[] | null = null;
+  let error: { message: string } | null = null;
+  let count: number | null = null;
 
-  let countQuery = result.supabaseAdmin
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  if (q) countQuery = countQuery.or(`nickname.ilike.%${q}%,id.ilike.%${q}%`);
-
-  const [{ data: rows, error }, { count }] = await Promise.all([
-    profileQuery.range(offset, offset + limit - 1),
-    countQuery,
-  ]);
+  if (q) {
+    const { data: matched } = await result.supabaseAdmin
+      .rpc("search_profiles_by_keyword", { keyword: q });
+    const matchingIds = (matched ?? []).map((r) => r.id);
+    count = matchingIds.length;
+    if (matchingIds.length > 0) {
+      const res = await result.supabaseAdmin
+        .from("profiles")
+        .select("id, nickname, avatar_url, created_at")
+        .in("id", matchingIds)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      rows = res.data;
+      error = res.error;
+    } else {
+      rows = [];
+    }
+  } else {
+    const [rowsRes, countRes] = await Promise.all([
+      result.supabaseAdmin
+        .from("profiles")
+        .select("id, nickname, avatar_url, created_at")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1),
+      result.supabaseAdmin
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null),
+    ]);
+    rows = rowsRes.data;
+    error = rowsRes.error;
+    count = countRes.count;
+  }
 
   if (error) {
     console.error("admin members list", error);

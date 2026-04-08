@@ -20,18 +20,14 @@ export const GET = async (request: Request) => {
 
   let matchingUserIds: string[] = [];
   if (q) {
-    const { data: matchingProfiles } = await result.supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .or(`nickname.ilike.%${q}%,id.ilike.%${q}%`)
-      .is("deleted_at", null)
-      .limit(500);
-    matchingUserIds = (matchingProfiles ?? []).map((p) => p.id);
+    const { data: matched } = await result.supabaseAdmin
+      .rpc("search_profiles_by_keyword", { keyword: q });
+    matchingUserIds = (matched ?? []).map((p) => p.id);
   }
 
   const buildOrStr = () => {
     const parts = [`content.ilike.%${q}%`];
-    if (matchingUserIds.length > 0) parts.push(`user_id.in.(${matchingUserIds.join(",")})`);
+    for (const uid of matchingUserIds) parts.push(`user_id.eq.${uid}`);
     return parts.join(",");
   };
 

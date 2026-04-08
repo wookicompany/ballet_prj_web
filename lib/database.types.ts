@@ -1621,6 +1621,10 @@ export type Database = {
       }
     }
     Functions: {
+      search_profiles_by_keyword: {
+        Args: { keyword: string }
+        Returns: { id: string }[]
+      }
       get_activity_counts_by_user_ids: {
         Args: { user_ids: string[] }
         Returns: {
