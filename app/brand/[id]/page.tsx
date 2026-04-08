@@ -244,7 +244,7 @@ export default function BrandDetailPage({
                 </div>
               </section>
               <section className="rounded-2xl border border-[#17171c]/5 bg-white shadow-sm">
-                {Array.from({ length: 3 }).map((_, i) => (
+                {Array.from({ length: 2 }).map((_, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-3 px-4 py-4 border-b border-[#17171c]/5 last:border-0"
