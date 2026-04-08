@@ -162,16 +162,20 @@ export default function BrandDetailPage({
     const prev = liked;
     setLiked(!prev);
     sendHapticToApp();
-    const token = await getAccessToken(openLoginSheet);
-    if (!token) { setLiked(prev); return; }
-    const res = await fetch(`/api/brands/${id}/like`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) {
+    try {
+      const token = await getAccessToken(openLoginSheet);
+      if (!token) { setLiked(prev); return; }
+      const res = await fetch(`/api/brands/${id}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setLiked(prev);
+      } else {
+        invalidateProfileCache(user.id);
+      }
+    } catch {
       setLiked(prev);
-    } else {
-      invalidateProfileCache(user.id);
     }
   };
 
