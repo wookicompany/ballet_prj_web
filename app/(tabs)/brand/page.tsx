@@ -75,9 +75,9 @@ export default function BrandPage() {
             .range(rangeStart, rangeEnd),
           supabase
             .from("brand_engagement_summaries")
-            .select("brand_id, view_count")
-            .gt("view_count", 0)
-            .order("view_count", { ascending: false })
+            .select("brand_id, score")
+            .gt("score", 0)
+            .order("score", { ascending: false })
             .limit(8),
         ]);
 
