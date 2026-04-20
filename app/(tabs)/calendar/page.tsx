@@ -275,19 +275,23 @@ export default function CalendarPage() {
     const persistSettings = async () => {
       const token = await getAccessToken(openLoginSheet);
       if (!token) return;
-      const res = await fetch("/api/profile/calendar-settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          calendar_week_start_monday: weekStartMonday,
-          calendar_highlight_weekend: highlightWeekend,
-        }),
-      });
-      if (!res.ok) {
-        toast("캘린더 설정 저장에 실패했어요.");
+      try {
+        const res = await fetch("/api/profile/calendar-settings", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            calendar_week_start_monday: weekStartMonday,
+            calendar_highlight_weekend: highlightWeekend,
+          }),
+        });
+        if (!res.ok) {
+          toast("캘린더 설정 저장에 실패했어요.");
+        }
+      } catch {
+        // 네트워크 오류 무시 (다음 접속 시 재저장됨)
       }
     };
     void persistSettings();
