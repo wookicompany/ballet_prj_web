@@ -144,22 +144,24 @@ export default async function PublicProfilePage({ params }: Params) {
             <br />
             한곳에서 만나보세요.
           </p>
-          <a
-            href="https://apps.apple.com/tr/app/%EB%A7%88%EC%9D%B4%EB%B0%9C%EB%A0%88-%EB%82%98%EC%9D%98-%EB%B0%9C%EB%A0%88-%EA%B8%B0%EB%A1%9D/id6759250484"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg bg-[#17171c] py-3 text-sm font-semibold text-white active:opacity-80"
-          >
-            App Store에서 다운받기
-          </a>
-          <a
-            href="https://play.google.com/store/apps/details?id=kr.co.myballet.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg border border-[#17171c]/20 py-3 text-sm font-semibold text-[#17171c] active:opacity-80"
-          >
-            Google Play에서 다운받기
-          </a>
+          <div className="flex gap-2">
+            <a
+              href="https://apps.apple.com/tr/app/%EB%A7%88%EC%9D%B4%EB%B0%9C%EB%A0%88-%EB%82%98%EC%9D%98-%EB%B0%9C%EB%A0%88-%EA%B8%B0%EB%A1%9D/id6759250484"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center rounded-lg bg-[#17171c] py-3 text-xs font-semibold text-white active:opacity-80"
+            >
+              App Store
+            </a>
+            <a
+              href="https://play.google.com/store/apps/details?id=kr.co.myballet.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center rounded-lg bg-[#17171c] py-3 text-xs font-semibold text-white active:opacity-80"
+            >
+              Google Play
+            </a>
+          </div>
         </div>
       </div>
     </main>
