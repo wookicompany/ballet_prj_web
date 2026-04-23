@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const hours = Math.floor(profile.total_record_minutes / 60);
   const minutes = profile.total_record_minutes % 60;
   const timeText = hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
-  const description = `총 ${profile.record_day_count}일 · ${profile.record_count}회 · ${timeText} 발레 기록`;
+  const description = `지금까지 ${profile.record_day_count}일 동안 ${profile.record_count}회, ${timeText}을 기록했어요.`;
 
   return {
     title: `${nickname}님의 발레 기록 | 마이발레`,
