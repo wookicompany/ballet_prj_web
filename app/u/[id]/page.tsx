@@ -142,7 +142,7 @@ export default async function PublicProfilePage({ params }: Params) {
           <p className="text-xs text-[#17171c]/60 leading-relaxed">
             마이발레에서 발레 기록, 무용 공연 리뷰, 발레 브랜드를{" "}
             <br />
-            한곳에서 만나보세요.
+            함께 만나보세요.
           </p>
           <div className="flex gap-2">
             <a
