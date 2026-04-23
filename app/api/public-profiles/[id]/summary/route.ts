@@ -44,7 +44,7 @@ export const GET = async (_request: Request, { params }: Params) => {
       await Promise.all([
         supabaseAdmin
           .from("records")
-          .select("start_time,end_time")
+          .select("start_time,end_time,record_date")
           .eq("user_id", id)
           .is("deleted_at", null),
         supabaseAdmin
@@ -72,6 +72,7 @@ export const GET = async (_request: Request, { params }: Params) => {
       if (diff <= 0) return sum;
       return sum + diff;
     }, 0);
+    const recordDayCount = new Set(rows.map((r) => r.record_date).filter(Boolean)).size;
 
     return NextResponse.json({
       item: {
@@ -80,6 +81,7 @@ export const GET = async (_request: Request, { params }: Params) => {
         avatar_url: profile.avatar_url,
         ballet_started_at: profile.ballet_started_at,
         record_count: rows.length,
+        record_day_count: recordDayCount,
         total_record_minutes: totalRecordMinutes,
         review_count: reviewCountResult.count ?? 0,
       },

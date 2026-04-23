@@ -15,7 +15,8 @@ import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { Bell, ChevronRight, Heart, MessageCircle, Settings, Star, User } from "lucide-react";
+import { toast } from "sonner";
+import { Bell, ChevronRight, Heart, MessageCircle, Settings, Share2, Star, User } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -54,6 +55,7 @@ type LikedBrand = {
 type ProfileCachePayload = {
   profile: Profile | null;
   recordCount: number;
+  recordDayCount: number;
   totalMinutes: number;
   reviewCount: number;
   recordsPreview: RecordSummary[];
@@ -100,6 +102,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(() => profileCached?.profile ?? null);
   const [recordCount, setRecordCount] = useState(() => profileCached?.recordCount ?? 0);
+  const [recordDayCount, setRecordDayCount] = useState(() => profileCached?.recordDayCount ?? 0);
   const [totalMinutes, setTotalMinutes] = useState(() => profileCached?.totalMinutes ?? 0);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [reviewCount, setReviewCount] = useState(() => profileCached?.reviewCount ?? 0);
@@ -190,7 +193,7 @@ export default function ProfilePage() {
           .single(),
         supabase
           .from("records")
-          .select("start_time,end_time")
+          .select("start_time,end_time,record_date")
           .eq("user_id", user.id)
           .is("deleted_at", null),
         supabase
@@ -209,6 +212,7 @@ export default function ProfilePage() {
 
       const recordStatsLocal = recordStatsRes.data ?? [];
       setRecordCount(recordStatsLocal.length);
+      setRecordDayCount(new Set(recordStatsLocal.map((r) => r.record_date).filter(Boolean)).size);
       setTotalMinutes(
         recordStatsLocal.reduce(
           (sum, record) => sum + (toMinutes(record.end_time) - toMinutes(record.start_time)),
@@ -360,6 +364,7 @@ export default function ProfilePage() {
     setProfileCache<ProfileCachePayload>(user.id, {
       profile,
       recordCount,
+      recordDayCount,
       totalMinutes,
       reviewCount,
       recordsPreview,
@@ -371,7 +376,7 @@ export default function ProfilePage() {
       likedBrandsPreview,
     });
   }, [
-    user, profile, recordCount, totalMinutes, reviewCount,
+    user, profile, recordCount, recordDayCount, totalMinutes, reviewCount,
     recordsPreview, recordMediaById, reviewsPreview,
     reviewLikeCounts, reviewCommentCounts, reviewImages,
     likedBrandsPreview, profileLoading, previewLoading,
@@ -404,6 +409,20 @@ export default function ProfilePage() {
   const careerDuration = profile?.ballet_started_at
     ? formatCareerDuration(profile.ballet_started_at)
     : null;
+
+  const handleShare = () => {
+    sendHapticToApp();
+    const url = `${window.location.origin}/u/${user.id}`;
+    if (navigator.share) {
+      navigator.share({ title: `${displayName}님의 발레 기록`, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        toast("링크가 복사됐어요.");
+      }).catch(() => {
+        toast("링크 복사에 실패했어요.");
+      });
+    }
+  };
 
   return (
     <>
@@ -497,26 +516,34 @@ export default function ProfilePage() {
                     </p>
                   ) : null}
                 </div>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="self-start p-1 text-[#17171c]/50 active:opacity-70"
+                  aria-label="프로필 공유"
+                >
+                  <Share2 className="size-5" />
+                </button>
               </div>
 
               <div className="mt-4 grid grid-cols-3 divide-x divide-[#17171c]/10 rounded-xl border border-[#17171c]/5 bg-white py-3">
                 <div className="flex flex-col items-center justify-center px-2">
                   <p className="text-sm font-semibold leading-none text-[#17171c]">
-                    {recordCount}
+                    {recordDayCount}일
                   </p>
-                  <p className="mt-2 text-xs text-[#17171c]/60">발레 기록 수</p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">기록 일 수</p>
+                </div>
+                <div className="flex flex-col items-center justify-center px-2">
+                  <p className="text-sm font-semibold leading-none text-[#17171c]">
+                    {recordCount}회
+                  </p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">기록 횟수</p>
                 </div>
                 <div className="flex flex-col items-center justify-center px-2">
                   <p className="text-sm font-semibold leading-none text-[#17171c]">
                     {hours}시간 {minutes}분
                   </p>
-                  <p className="mt-2 text-xs text-[#17171c]/60">발레 기록 시간</p>
-                </div>
-                <div className="flex flex-col items-center justify-center px-2">
-                  <p className="text-sm font-semibold leading-none text-[#17171c]">
-                    {reviewCount}
-                  </p>
-                  <p className="mt-2 text-xs text-[#17171c]/60">리뷰 작성 수</p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">기록 시간</p>
                 </div>
               </div>
 
