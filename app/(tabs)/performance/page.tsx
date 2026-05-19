@@ -377,6 +377,8 @@ export default function PerformanceListPage() {
     [router]
   );
 
+  const SHOW_POPULAR_SECTION = false;
+
   const popularCards = useMemo(
     () => sections.popular.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
     [sections.popular, ratingMap, renderCard]
@@ -484,7 +486,7 @@ export default function PerformanceListPage() {
         </section>
 
         <div className="space-y-7">
-            {popularCards.length > 0 && (
+            {SHOW_POPULAR_SECTION && popularCards.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
