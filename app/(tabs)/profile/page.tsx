@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
+import BottomSheet from "@/components/sheets/BottomSheet";
 import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,7 +17,13 @@ import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
-import { Bell, ChevronRight, Heart, MessageCircle, Settings, Share2, Star, User } from "lucide-react";
+import { Bell, ChevronDown, ChevronRight, Heart, MessageCircle, Settings, Share2, Star, User } from "lucide-react";
+
+type RecordStat = {
+  record_date: string;
+  start_time: string;
+  end_time: string;
+};
 
 type Profile = {
   id: string;
@@ -58,6 +65,7 @@ type ProfileCachePayload = {
   recordDayCount: number;
   totalMinutes: number;
   reviewCount: number;
+  allRecordStats: RecordStat[];
   recordsPreview: RecordSummary[];
   recordMediaById: Record<string, { urls: string[]; count: number }>;
   reviewsPreview: ReviewSummary[];
@@ -113,6 +121,11 @@ export default function ProfilePage() {
   const [reviewCommentCounts, setReviewCommentCounts] = useState<Record<string, number>>(() => profileCached?.reviewCommentCounts ?? {});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>(() => profileCached?.reviewImages ?? {});
   const [likedBrandsPreview, setLikedBrandsPreview] = useState<LikedBrand[]>(() => profileCached?.likedBrandsPreview ?? []);
+  const [allRecordStats, setAllRecordStats] = useState<RecordStat[]>(() => profileCached?.allRecordStats ?? []);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [yearSheetOpen, setYearSheetOpen] = useState(false);
+  const [metricSheetOpen, setMetricSheetOpen] = useState(false);
+  const [chartMetric, setChartMetric] = useState<"days" | "count" | "time">("days");
   const [profileLoading, setProfileLoading] = useState(() => !profileCached);
   const [previewLoading, setPreviewLoading] = useState(() => !profileCached);
   const [hasUnreadNotices, setHasUnreadNotices] = useState(false);
@@ -219,6 +232,7 @@ export default function ProfilePage() {
           0
         )
       );
+      setAllRecordStats(recordStatsLocal as RecordStat[]);
       setReviewCount(reviewCountRes.count ?? 0);
       setProfileLoading(false);
 
@@ -367,6 +381,7 @@ export default function ProfilePage() {
       recordDayCount,
       totalMinutes,
       reviewCount,
+      allRecordStats,
       recordsPreview,
       recordMediaById,
       reviewsPreview,
@@ -377,10 +392,36 @@ export default function ProfilePage() {
     });
   }, [
     user, profile, recordCount, recordDayCount, totalMinutes, reviewCount,
-    recordsPreview, recordMediaById, reviewsPreview,
+    allRecordStats, recordsPreview, recordMediaById, reviewsPreview,
     reviewLikeCounts, reviewCommentCounts, reviewImages,
     likedBrandsPreview, profileLoading, previewLoading,
   ]);
+
+  const availableYears = useMemo(() => {
+    if (allRecordStats.length === 0) return [new Date().getFullYear()];
+    const years = [...new Set(allRecordStats.map((r) => Number(r.record_date.slice(0, 4))))].sort((a, b) => b - a);
+    return years;
+  }, [allRecordStats]);
+
+  const monthlyStats = useMemo(() => {
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    return months.map((month) => {
+      const monthStr = `${selectedYear}-${String(month).padStart(2, "0")}`;
+      const filtered = allRecordStats.filter((r) => r.record_date.startsWith(monthStr));
+      const days = new Set(filtered.map((r) => r.record_date)).size;
+      const count = filtered.length;
+      const mins = filtered.reduce(
+        (sum, r) => sum + (toMinutes(r.end_time) - toMinutes(r.start_time)),
+        0
+      );
+      return { month, days, count, mins };
+    });
+  }, [allRecordStats, selectedYear]);
+
+  const currentMonthStat = useMemo(() => {
+    const now = new Date();
+    return monthlyStats[now.getMonth()];
+  }, [monthlyStats]);
 
   if (loading) {
     return (
@@ -558,6 +599,115 @@ export default function ProfilePage() {
             </>
           )}
         </section>
+
+        {/* 나의 기록 인사이트 */}
+        {(profileLoading || allRecordStats.length > 0) && (
+          <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+            {profileLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-16 w-full rounded-xl" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-14" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-7 w-20 rounded-full" />
+                  <Skeleton className="h-7 w-20 rounded-full" />
+                  <Skeleton className="h-7 w-20 rounded-full" />
+                </div>
+                <div className="flex items-end gap-[6px] h-28 pt-2">
+                  {[30, 55, 70, 45, 80, 60, 40, 75, 50, 35, 65, 20].map((h, i) => (
+                    <Skeleton
+                      key={`bar-skeleton-${i}`}
+                      className="flex-1 rounded-t-sm"
+                      style={{ height: `${h}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+            {/* 이번 달 요약 */}
+            {currentMonthStat && currentMonthStat.count > 0 && (
+              <div className="mb-4 rounded-xl bg-[#f7f7f9] px-4 py-3">
+                <p className="text-xs text-[#17171c]/50 mb-1">
+                  {new Date().getMonth() + 1}월 나의 발레
+                </p>
+                <p className="text-sm font-semibold text-[#17171c]">
+                  {currentMonthStat.count}번 &nbsp;
+                  {currentMonthStat.mins >= 60
+                    ? `${Math.floor(currentMonthStat.mins / 60)}시간${currentMonthStat.mins % 60 > 0 ? ` ${currentMonthStat.mins % 60}분` : ""}`
+                    : `${currentMonthStat.mins}분`}
+                </p>
+              </div>
+            )}
+
+            {/* 헤더: 월별 기록 + 메트릭 선택 + 연도 선택 */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-[#17171c]">월별 기록</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMetricSheetOpen(true)}
+                  className="flex items-center gap-0.5 text-xs text-[#17171c]/60 active:opacity-70"
+                >
+                  {chartMetric === "count" ? "기록 횟수" : chartMetric === "days" ? "기록 일수" : "기록 시간"}
+                  <ChevronDown className="size-3.5" />
+                </button>
+                <span className="text-[#17171c]/20 text-xs">|</span>
+                <button
+                  type="button"
+                  onClick={() => setYearSheetOpen(true)}
+                  className="flex items-center gap-0.5 text-xs text-[#17171c]/60 active:opacity-70"
+                >
+                  {selectedYear}년
+                  <ChevronDown className="size-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 바 차트 */}
+            {(() => {
+              const values = monthlyStats.map((s) =>
+                chartMetric === "count" ? s.count : chartMetric === "days" ? s.days : s.mins
+              );
+              const maxVal = Math.max(...values, 1);
+              const BAR_HEIGHT = 96;
+              return (
+                <div className="flex items-end gap-[6px]">
+                  {monthlyStats.map((s) => {
+                    const val = chartMetric === "count" ? s.count : chartMetric === "days" ? s.days : s.mins;
+                    const heightPct = val === 0 ? 0 : Math.max((val / maxVal) * 100, 6);
+                    const label =
+                      chartMetric === "time"
+                        ? val >= 60
+                          ? `${Math.floor(val / 60)}h`
+                          : val > 0
+                          ? `${val}m`
+                          : ""
+                        : val > 0
+                        ? String(val)
+                        : "";
+                    return (
+                      <div key={s.month} className="flex flex-1 flex-col items-center gap-1">
+                        <span className="text-[9px] text-[#17171c]/50 h-3 leading-3">{label}</span>
+                        <div className="w-full flex items-end" style={{ height: `${BAR_HEIGHT}px` }}>
+                          <div
+                            className="w-full rounded-t-sm bg-[#17171c]/80 transition-all duration-300"
+                            style={{ height: val === 0 ? "0px" : `${(heightPct / 100) * BAR_HEIGHT}px` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-[#17171c]/40">{s.month}월</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+              </>
+            )}
+          </section>
+        )}
 
         {/* 발레 기록 섹션 */}
         {(previewLoading || recordsPreview.length > 0) && (
@@ -898,6 +1048,61 @@ export default function ProfilePage() {
         alt="프로필 이미지 크게 보기"
         onClose={() => setAvatarOpen(false)}
       />
+
+      <BottomSheet
+        open={yearSheetOpen}
+        onOpenChange={setYearSheetOpen}
+        title="연도 선택"
+      >
+        <div className="pb-8 flex flex-col gap-1">
+          {availableYears.map((year) => (
+            <button
+              key={year}
+              type="button"
+              onClick={() => {
+                setSelectedYear(year);
+                setYearSheetOpen(false);
+              }}
+              className={`w-full rounded-xl py-3 text-sm font-medium transition-colors ${
+                year === selectedYear
+                  ? "bg-[#17171c] text-white"
+                  : "bg-[#f7f7f9] text-[#17171c]"
+              }`}
+            >
+              {year}년
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={metricSheetOpen}
+        onOpenChange={setMetricSheetOpen}
+        title="보기 방식"
+      >
+        <div className="pb-8 flex flex-col gap-1">
+          {(["days", "count", "time"] as const).map((m) => {
+            const label = m === "count" ? "기록 횟수" : m === "days" ? "기록 일수" : "기록 시간";
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setChartMetric(m);
+                  setMetricSheetOpen(false);
+                }}
+                className={`w-full rounded-xl py-3 text-sm font-medium transition-colors ${
+                  m === chartMetric
+                    ? "bg-[#17171c] text-white"
+                    : "bg-[#f7f7f9] text-[#17171c]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </BottomSheet>
     </>
   );
 }
