@@ -511,8 +511,7 @@ export default function CalendarPage() {
       >
         {monthSummary && (
           <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-gradient-to-r from-[#fdf2f8] to-[#fdf2f8]/30 rounded-xl">
-            <span className="font-semibold text-[#17171c]">{monthSummary.days}일</span>{" "}
-            동안{" "}
+            이번 달에는{" "}
             <span className="font-semibold text-[#17171c]">{monthSummary.count}번</span>{" "}
             기록하고{" "}
             <span className="font-semibold text-[#17171c]">
