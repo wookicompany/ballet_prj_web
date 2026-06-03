@@ -84,7 +84,7 @@ export default function CalendarPage() {
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
     () => cachedMonthData?.moodAverages ?? {}
   );
-  const [monthSummary, setMonthSummary] = useState<{ count: number; mins: number } | null>(
+  const [monthSummary, setMonthSummary] = useState<{ count: number; mins: number; days: number } | null>(
     () => cachedMonthData?.monthSummary ?? null
   );
   const [todayStr, setTodayStr] = useState<string>("");
