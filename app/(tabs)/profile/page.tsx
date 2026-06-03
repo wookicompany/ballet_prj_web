@@ -572,7 +572,7 @@ export default function ProfilePage() {
                   <p className="text-sm font-semibold leading-none text-[#17171c]">
                     {recordDayCount}일
                   </p>
-                  <p className="mt-2 text-xs text-[#17171c]/60">기록 일 수</p>
+                  <p className="mt-2 text-xs text-[#17171c]/60">기록 일수</p>
                 </div>
                 <div className="flex flex-col items-center justify-center px-2">
                   <p className="text-sm font-semibold leading-none text-[#17171c]">
