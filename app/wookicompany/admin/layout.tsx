@@ -74,15 +74,16 @@ export default function AdminLayout({
       setIsAdmin(false);
       return;
     }
-    const res = await fetch("/api/admin/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      setIsAdmin(true);
-    } else {
+    try {
+      const res = await fetch("/api/admin/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsAdmin(res.ok);
+    } catch {
       setIsAdmin(false);
+    } finally {
+      setAdminChecked(true);
     }
-    setAdminChecked(true);
   }, []);
 
   useEffect(() => {
