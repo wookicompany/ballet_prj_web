@@ -672,7 +672,7 @@ export default function ProfilePage() {
                 chartMetric === "count" ? s.count : chartMetric === "days" ? s.days : s.mins
               );
               const maxVal = Math.max(...values, 1);
-              const BAR_HEIGHT = 96;
+              const BAR_HEIGHT = 120;
               return (
                 <div className="flex items-end gap-[6px]">
                   {monthlyStats.map((s) => {
