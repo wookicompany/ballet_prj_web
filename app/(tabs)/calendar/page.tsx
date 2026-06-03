@@ -176,7 +176,8 @@ export default function CalendarPage() {
       averages[date] = Math.min(8, Math.max(1, rounded));
     });
 
-    const summary = data.length > 0 ? { count: data.length, mins: totalMins } : null;
+    const days = Object.keys(counts).length;
+    const summary = data.length > 0 ? { count: data.length, mins: totalMins, days } : null;
     setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages, monthSummary: summary });
     setRecordCounts(counts);
     setMoodAverages(averages);
@@ -510,7 +511,8 @@ export default function CalendarPage() {
       >
         {monthSummary && (
           <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-gradient-to-r from-[#fdf2f8] to-[#fdf2f8]/30 rounded-xl">
-            이번달은{" "}
+            <span className="font-semibold text-[#17171c]">{monthSummary.days}일</span>{" "}
+            동안{" "}
             <span className="font-semibold text-[#17171c]">{monthSummary.count}번</span>{" "}
             기록하고{" "}
             <span className="font-semibold text-[#17171c]">
