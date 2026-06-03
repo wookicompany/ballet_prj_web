@@ -27,6 +27,11 @@ import {
   setCalendarNavState,
 } from "@/lib/calendarHomeCache";
 
+function toMinutes(time: string) {
+  const [hh, mm, ss] = time.split(":").map(Number);
+  return hh * 60 + mm + (ss ? Math.round(ss / 60) : 0);
+}
+
 function getWeekendClass(isSaturday: boolean, isSunday: boolean, highlight: boolean): string {
   if (!highlight) return "";
   if (isSaturday) return "text-blue-600";
@@ -79,6 +84,9 @@ export default function CalendarPage() {
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
     () => cachedMonthData?.moodAverages ?? {}
   );
+  const [monthSummary, setMonthSummary] = useState<{ count: number; mins: number } | null>(
+    () => cachedMonthData?.monthSummary ?? null
+  );
   const [todayStr, setTodayStr] = useState<string>("");
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState(() => {
@@ -124,12 +132,13 @@ export default function CalendarPage() {
     if (!force && cachedMonthData) {
       setRecordCounts(cachedMonthData.recordCounts);
       setMoodAverages(cachedMonthData.moodAverages);
+      setMonthSummary(cachedMonthData.monthSummary ?? null);
       return;
     }
 
     const { data, error } = await supabase
       .from("records")
-      .select("record_date,mood")
+      .select("record_date,mood,start_time,end_time")
       .eq("user_id", user.id)
       .is("deleted_at", null)
       .gte("record_date", formatSeoulDateKey(start))
@@ -140,12 +149,16 @@ export default function CalendarPage() {
     }
 
     if (!force && data.length === 0) {
+      setRecordCounts({});
+      setMoodAverages({});
+      setMonthSummary(null);
       return;
     }
 
     const counts: Record<string, number> = {};
     const moodTotals: Record<string, number> = {};
     const moodCounts: Record<string, number> = {};
+    let totalMins = 0;
     data.forEach((record) => {
       counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
       if (record.mood) {
@@ -154,6 +167,7 @@ export default function CalendarPage() {
         moodCounts[record.record_date] =
           (moodCounts[record.record_date] ?? 0) + 1;
       }
+      totalMins += toMinutes(record.end_time) - toMinutes(record.start_time);
     });
     const averages: Record<string, number> = {};
     Object.keys(moodTotals).forEach((date) => {
@@ -162,9 +176,11 @@ export default function CalendarPage() {
       averages[date] = Math.min(8, Math.max(1, rounded));
     });
 
-    setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages });
+    const summary = data.length > 0 ? { count: data.length, mins: totalMins } : null;
+    setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages, monthSummary: summary });
     setRecordCounts(counts);
     setMoodAverages(averages);
+    setMonthSummary(summary);
   }, [user, start, end]);
 
   const fetchSettings = useCallback(async () => {
@@ -455,7 +471,7 @@ export default function CalendarPage() {
   return (
     <>
       <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-[140px]">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between px-4">
+        <header className="sticky top-0 z-20 bg-white h-12 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
           <p className="text-xl font-semibold">{monthLabel}</p>
           <Button
@@ -492,7 +508,19 @@ export default function CalendarPage() {
         onTouchEnd={handleCalendarTouchEnd}
         onTouchCancel={handleCalendarTouchCancel}
       >
-        <section className="grid grid-cols-7 gap-0 pb-2 px-1 text-center text-sm text-[#17171c]/60">
+        {monthSummary && (
+          <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-gradient-to-r from-[#fdf2f8] to-[#fdf2f8]/30 rounded-xl">
+            이번달은{" "}
+            <span className="font-semibold text-[#17171c]">{monthSummary.count}번</span>{" "}
+            기록하고{" "}
+            <span className="font-semibold text-[#17171c]">
+              {monthSummary.mins >= 60
+                ? `${Math.floor(monthSummary.mins / 60)}시간${monthSummary.mins % 60 > 0 ? ` ${monthSummary.mins % 60}분` : ""}`
+                : `${monthSummary.mins}분`}
+            </span>을 쌓았어요🩰
+          </p>
+        )}
+        <section className={`grid grid-cols-7 gap-0 pb-2 px-1 text-center text-sm text-[#17171c]/60 ${!monthSummary ? "pt-4" : ""}`}>
           {weekLabels.map((day) => {
             const isSaturday = day === "토";
             const isSunday = day === "일";

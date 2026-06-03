@@ -1,6 +1,7 @@
 type CalendarMonthData = {
   recordCounts: Record<string, number>;
   moodAverages: Record<string, number>;
+  monthSummary: { count: number; mins: number } | null;
 };
 
 type CalendarNavState = {
