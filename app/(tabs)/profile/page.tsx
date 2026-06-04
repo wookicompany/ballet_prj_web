@@ -628,20 +628,6 @@ export default function ProfilePage() {
             ) : (
               <>
             {/* 이번 달 요약 */}
-            {currentMonthStat && currentMonthStat.count > 0 && (
-              <div className="mb-4 rounded-xl bg-[#f7f7f9] px-4 py-3">
-                <p className="text-xs text-[#17171c]/50 mb-1">
-                  {new Date().getMonth() + 1}월 나의 발레
-                </p>
-                <p className="text-sm font-semibold text-[#17171c]">
-                  {currentMonthStat.count}번 &nbsp;
-                  {currentMonthStat.mins >= 60
-                    ? `${Math.floor(currentMonthStat.mins / 60)}시간${currentMonthStat.mins % 60 > 0 ? ` ${currentMonthStat.mins % 60}분` : ""}`
-                    : `${currentMonthStat.mins}분`}
-                </p>
-              </div>
-            )}
-
             {/* 헤더: 월별 기록 + 메트릭 선택 + 연도 선택 */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-[#17171c]">월별 기록</h2>
