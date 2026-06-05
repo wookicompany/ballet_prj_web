@@ -6,14 +6,7 @@ import { formatAdminDateTime, getAdminToken } from "@/lib/adminUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Pagination,
@@ -40,6 +33,9 @@ type RecordRow = {
   created_at: string;
   nickname: string | null;
   avatar_url: string | null;
+  did_well: string | null;
+  improve_next: string | null;
+  memo: string | null;
 };
 
 export default function AdminRecordsPage() {
@@ -55,6 +51,18 @@ export default function AdminRecordsPage() {
 
   const formatDateLabel = useCallback((dateText: string) => {
     return dateText.replaceAll("-", ".");
+  }, []);
+
+  const formatCreatedDate = useCallback((value: string) => {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
+  }, []);
+
+  const formatCreatedTime = useCallback((value: string) => {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
   }, []);
 
   const fetchRecords = useCallback(async (pageOffset: number, q = "") => {
@@ -137,12 +145,40 @@ export default function AdminRecordsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+            <div>
+              <div className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-2 gap-4">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-8" />
+                <span />
+              </div>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-3 gap-4 items-center">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="size-6 rounded-full" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-4/5" />
+                    <Skeleton className="h-3 w-3/4" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                  <span />
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
@@ -158,68 +194,70 @@ export default function AdminRecordsPage() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>날짜</TableHead>
-                    <TableHead>사용자</TableHead>
-                    <TableHead>시간</TableHead>
-                    <TableHead className="max-w-[200px]">내용</TableHead>
-                    <TableHead>작성일</TableHead>
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {records.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        {searchQuery.trim()
-                          ? "검색 결과가 없습니다."
-                          : "등록된 기록이 없습니다."}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    records.map((r) => (
-                      <TableRow key={r.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/records/${r.id}`)}>
-                        <TableCell className="font-medium">
-                          {formatDateLabel(r.record_date)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="size-6">
-                              <AvatarImage src={r.avatar_url ?? undefined} />
-                              <AvatarFallback className="text-xs">
-                                {(r.nickname ?? r.user_id.slice(0, 2)).slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="space-y-0.5">
-                              <p className="text-sm leading-none">{r.nickname ?? "-"}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {r.user_id.slice(0, 8)}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {r.start_time} ~ {r.end_time}
-                        </TableCell>
-                        <TableCell
-                          className="max-w-[200px] truncate text-sm text-muted-foreground"
-                          title={r.content || "-"}
-                        >
-                          {r.content || "-"}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatAdminDateTime(r.created_at)}
-                        </TableCell>
-                        <TableCell>
-                          <ChevronRight className="size-4 text-muted-foreground" />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+              <div className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-2 text-sm font-medium text-muted-foreground">
+                <span>작성 날짜</span>
+                <span>사용자</span>
+                <span>기록 날짜</span>
+                <span>내용</span>
+                <span />
+              </div>
+              {records.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  {searchQuery.trim() ? "검색 결과가 없습니다." : "등록된 기록이 없습니다."}
+                </div>
+              ) : (
+                records.map((r) => (
+                  <div
+                    key={r.id}
+                    className="grid grid-cols-[110px_130px_120px_1fr_40px] cursor-pointer items-start border-b px-4 py-3 hover:bg-muted/40"
+                    onClick={() => router.push(`/wookicompany/admin/records/${r.id}`)}
+                  >
+                    <div className="self-center space-y-0.5">
+                      <p className="text-xs text-muted-foreground">{formatCreatedDate(r.created_at)}</p>
+                      <p className="text-xs text-muted-foreground">{formatCreatedTime(r.created_at)}</p>
+                    </div>
+                    <div className="self-center flex items-center gap-2">
+                      <Avatar className="size-6">
+                        <AvatarImage src={r.avatar_url ?? undefined} />
+                        <AvatarFallback className="text-xs">
+                          {(r.nickname ?? r.user_id.slice(0, 2)).slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-0.5">
+                        <p className="text-sm leading-none">{r.nickname ?? "-"}</p>
+                        <p className="text-xs text-muted-foreground">{r.user_id.slice(0, 8)}</p>
+                      </div>
+                    </div>
+                    <div className="self-center space-y-0.5">
+                      <p className="text-xs">{formatDateLabel(r.record_date)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {r.start_time.slice(0, 5)} ~ {r.end_time.slice(0, 5)}
+                      </p>
+                    </div>
+                    <div className="min-w-0 space-y-1 text-sm">
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">한 줄: </span>
+                        <span className="text-muted-foreground">{r.content || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">잘한 점: </span>
+                        <span className="text-muted-foreground">{r.did_well || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">다음 개선점: </span>
+                        <span className="text-muted-foreground">{r.improve_next || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">메모: </span>
+                        <span className="text-muted-foreground">{r.memo || "-"}</span>
+                      </p>
+                    </div>
+                    <div className="self-center flex justify-end">
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                ))
+              )}
               {totalPages > 1 && (
                 <Pagination className="mt-4">
                   <PaginationContent>
