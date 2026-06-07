@@ -220,7 +220,7 @@ export default function PerformanceListPage() {
 
         const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
           await Promise.all([
-            popularQuery ?? Promise.resolve({ data: [] }),
+            popularQuery ?? Promise.resolve({ data: [], error: null }),
             scheduledQuery,
             completedQuery,
             awardsQuery ?? Promise.resolve({ data: [] }),
