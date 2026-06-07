@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, User } from "lucide-react";
+import { ChevronLeft, Quote, Star, StickyNote, TrendingUp, User } from "lucide-react";
 
 type RecordSummary = {
   id: string;
@@ -27,6 +27,10 @@ type RecordSummary = {
   content: string;
   mood: number | null;
   createdAt: string;
+  didWell: string | null;
+  improveNext: string | null;
+  memo: string | null;
+  workoutTotalEnergyKcal: number | null;
 };
 
 type CachePayload = {
@@ -100,7 +104,7 @@ export default function ProfileRecordsPage() {
 
         const { data: recordRows, error } = await supabase
           .from("records")
-          .select("id,record_date,start_time,end_time,content,mood,created_at")
+          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,memo,workout_total_energy_kcal")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("record_date", { ascending: false })
@@ -120,6 +124,10 @@ export default function ProfileRecordsPage() {
           content: row.content,
           mood: row.mood,
           createdAt: row.created_at,
+          didWell: row.did_well,
+          improveNext: row.improve_next,
+          memo: row.memo,
+          workoutTotalEnergyKcal: row.workout_total_energy_kcal,
         }));
 
         setRecords((prev) => {
@@ -211,7 +219,8 @@ export default function ProfileRecordsPage() {
               >
                 <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
                 <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
                   <Skeleton className="h-3 w-2/3" />
                   <Skeleton className="h-3 w-1/2" />
                 </div>
@@ -228,7 +237,7 @@ export default function ProfileRecordsPage() {
               <button
                 key={record.id}
                 type="button"
-                className="flex w-full items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-3 text-left text-sm"
+                className="flex w-full items-start gap-3 rounded-lg border border-[#17171c]/5 bg-white p-4 text-left text-sm"
                 onClick={() => {
                   sendHapticToApp();
                   router.push(`/record/${record.id}`);
@@ -251,17 +260,46 @@ export default function ProfileRecordsPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-1 flex-1 text-sm text-[#17171c]">
-                      {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
-                    </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs text-[#17171c]/60">
+                      <span>{formatRecordTimeRange(record.startTime, record.endTime)}</span>
+                      {record.workoutTotalEnergyKcal != null && (
+                        <>
+                          <span className="text-[#17171c]/30">·</span>
+                          <span>{record.workoutTotalEnergyKcal} kcal</span>
+                        </>
+                      )}
+                    </div>
                     <p className="shrink-0 text-right text-xs text-[#17171c]/60">
                       {formatRecordDate(record.recordDate)}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs text-[#17171c]/60">
-                    {formatRecordTimeRange(record.startTime, record.endTime)}
-                  </p>
+                  <div className="mt-3 space-y-2">
+                    {record.content?.trim() && (
+                      <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                        <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
+                        {record.content}
+                      </p>
+                    )}
+                    {record.didWell && (
+                      <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                        <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        {record.didWell}
+                      </p>
+                    )}
+                    {record.improveNext && (
+                      <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                        <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        {record.improveNext}
+                      </p>
+                    )}
+                    {record.memo && (
+                      <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                        <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-400" />
+                        {record.memo}
+                      </p>
+                    )}
+                  </div>
                   {recordMediaById[record.id] ? (
                     <div className="mt-2 flex gap-1.5">
                       {recordMediaById[record.id].urls.map((url, idx) => {
