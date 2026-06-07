@@ -146,7 +146,8 @@ const formatOrFallback = (value: string | null | undefined, fallback: string) =>
 const formatDateRange = (from?: string | null, to?: string | null) => {
   if (!from && !to) return "공연 기간 정보 없음";
   const start = from ? from.replace(/-/g, ".") : "미정";
-  const end = to ? to.replace(/-/g, ".") : "미정";
+  if (!to || to === from) return start;
+  const end = to.replace(/-/g, ".");
   return `${start} ~ ${end}`;
 };
 
