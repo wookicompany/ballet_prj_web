@@ -36,6 +36,7 @@ type RecordRow = {
   did_well: string | null;
   improve_next: string | null;
   memo: string | null;
+  media: { id: string; url: string; media_type: string }[];
 };
 
 export default function AdminRecordsPage() {
@@ -146,15 +147,16 @@ export default function AdminRecordsPage() {
         <CardContent>
           {loading ? (
             <div>
-              <div className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-2 gap-4">
+              <div className="grid grid-cols-[110px_130px_120px_80px_1fr_40px] border-b px-4 py-2 gap-4">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-12" />
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-8" />
+                <Skeleton className="h-4 w-8" />
                 <span />
               </div>
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-3 gap-4 items-center">
+                <div key={i} className="grid grid-cols-[110px_130px_120px_80px_1fr_40px] border-b px-4 py-3 gap-4 items-center">
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-20" />
                     <Skeleton className="h-3 w-12" />
@@ -170,6 +172,7 @@ export default function AdminRecordsPage() {
                     <Skeleton className="h-3 w-20" />
                     <Skeleton className="h-3 w-16" />
                   </div>
+                  <Skeleton className="h-14 w-14 rounded" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-full" />
                     <Skeleton className="h-3 w-4/5" />
@@ -194,10 +197,11 @@ export default function AdminRecordsPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[110px_130px_120px_1fr_40px] border-b px-4 py-2 text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-[110px_130px_120px_80px_1fr_40px] border-b px-4 py-2 text-sm font-medium text-muted-foreground">
                 <span>작성 날짜</span>
                 <span>사용자</span>
                 <span>기록 날짜</span>
+                <span>미디어</span>
                 <span>내용</span>
                 <span />
               </div>
@@ -209,7 +213,7 @@ export default function AdminRecordsPage() {
                 records.map((r) => (
                   <div
                     key={r.id}
-                    className="grid grid-cols-[110px_130px_120px_1fr_40px] cursor-pointer items-start border-b px-4 py-3 hover:bg-muted/40"
+                    className="grid grid-cols-[110px_130px_120px_80px_1fr_40px] cursor-pointer items-start border-b px-4 py-3 hover:bg-muted/40"
                     onClick={() => router.push(`/wookicompany/admin/records/${r.id}`)}
                   >
                     <div className="self-center space-y-0.5">
@@ -233,6 +237,24 @@ export default function AdminRecordsPage() {
                       <p className="text-xs text-muted-foreground">
                         {r.start_time.slice(0, 5)} ~ {r.end_time.slice(0, 5)}
                       </p>
+                    </div>
+                    <div className="self-center">
+                      {r.media.length > 0 ? (
+                        <div className="relative h-14 w-14">
+                          <img
+                            src={r.media[0].url}
+                            alt="미디어"
+                            className="h-14 w-14 rounded object-cover"
+                          />
+                          {r.media.length > 1 && (
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#17171c] text-[10px] text-white">
+                              +{r.media.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </div>
                     <div className="min-w-0 space-y-1 text-sm">
                       <p className="break-words">
