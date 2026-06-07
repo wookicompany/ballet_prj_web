@@ -264,10 +264,9 @@ export default function ProfileRecordsPage() {
                     <div className="flex items-center gap-2 text-xs text-[#17171c]/60">
                       <span>{formatRecordTimeRange(record.startTime, record.endTime)}</span>
                       {record.workoutTotalEnergyKcal != null && (
-                        <>
-                          <span className="text-[#17171c]/30">·</span>
-                          <span>{record.workoutTotalEnergyKcal} kcal</span>
-                        </>
+                        <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-orange-400">
+                          {record.workoutTotalEnergyKcal} kcal
+                        </span>
                       )}
                     </div>
                     <p className="shrink-0 text-right text-xs text-[#17171c]/60">
