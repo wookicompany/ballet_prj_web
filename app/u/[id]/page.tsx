@@ -117,7 +117,7 @@ export default async function PublicProfilePage({ params }: Params) {
               <p className="text-sm font-semibold leading-none text-[#17171c]">
                 {profile.record_day_count}일
               </p>
-              <p className="mt-2 text-xs text-[#17171c]/60">기록 일 수</p>
+              <p className="mt-2 text-xs text-[#17171c]/60">기록 일수</p>
             </div>
             <div className="flex flex-col items-center justify-center px-2">
               <p className="text-sm font-semibold leading-none text-[#17171c]">
@@ -140,7 +140,7 @@ export default async function PublicProfilePage({ params }: Params) {
             나의 발레를 기록해보세요
           </p>
           <p className="text-xs text-[#17171c]/60 leading-relaxed">
-            마이발레에서 발레 기록, 무용 공연 리뷰, 발레 브랜드를{" "}
+            마이발레에서 발레 기록, 공연 정보, 발레 브랜드를{" "}
             <br />
             함께 만나보세요.
           </p>
