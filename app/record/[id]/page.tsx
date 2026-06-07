@@ -31,6 +31,7 @@ import { parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
 import { Activity, CalendarDays, ChevronLeft, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -234,6 +235,7 @@ export default function RecordDetailPage() {
     }
 
     invalidateProfileCache(user.id);
+    invalidateProfileRecordsCache(user.id);
     sessionStorage.setItem(`record-changed:${record.record_date}`, "1");
     router.back();
   };

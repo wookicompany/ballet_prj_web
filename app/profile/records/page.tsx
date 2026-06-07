@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
+import {
+  getProfileRecordsCacheUnsafe,
+  setProfileRecordsCache,
+} from "@/lib/profileRecordsCache";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -25,6 +29,13 @@ type RecordSummary = {
   createdAt: string;
 };
 
+type CachePayload = {
+  records: RecordSummary[];
+  recordMediaById: Record<string, { urls: string[]; count: number }>;
+  page: number;
+  hasMore: boolean;
+};
+
 const PAGE_SIZE = 12;
 
 const formatRecordDate = (value: string) => formatIsoToSeoulDate(value, "ko-KR");
@@ -37,16 +48,24 @@ export default function ProfileRecordsPage() {
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
 
-  const [records, setRecords] = useState<RecordSummary[]>([]);
-  const [recordMediaById, setRecordMediaById] = useState<Record<string, { urls: string[]; count: number }>>({});
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(true);
+  // 첫 렌더 시 동기적으로 캐시 읽기 → 캐시 있으면 즉시 컨텐츠 표시 (스크롤 복원 가능)
+  const initialCached = getProfileRecordsCacheUnsafe<CachePayload>();
+
+  const [records, setRecords] = useState<RecordSummary[]>(initialCached?.records ?? []);
+  const [recordMediaById, setRecordMediaById] = useState<Record<string, { urls: string[]; count: number }>>(initialCached?.recordMediaById ?? {});
+  const [page, setPage] = useState(initialCached?.page ?? 0);
+  const [hasMore, setHasMore] = useState(initialCached?.hasMore ?? true);
+  const [initialLoading, setInitialLoading] = useState(!initialCached);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestedPagesRef = useRef<Set<number>>(new Set());
+  const requestedPagesRef = useRef<Set<number>>(
+    initialCached
+      ? new Set(Array.from({ length: initialCached.page + 1 }, (_, i) => i))
+      : new Set(),
+  );
   const loadingMoreRef = useRef(false);
+  const cacheRestoredRef = useRef(!!initialCached);
 
   useEffect(() => {
     loadingMoreRef.current = loadingMore;
@@ -58,6 +77,8 @@ export default function ProfileRecordsPage() {
       openLoginSheet();
       return;
     }
+    if (cacheRestoredRef.current) return;
+    cacheRestoredRef.current = true;
     setPage(1);
   }, [user, loading, openLoginSheet]);
 
@@ -142,6 +163,16 @@ export default function ProfileRecordsPage() {
 
     fetchPage();
   }, [page, user, hasMore]);
+
+  useEffect(() => {
+    if (!user || initialLoading) return;
+    setProfileRecordsCache<CachePayload>(user.id, {
+      records,
+      recordMediaById,
+      page,
+      hasMore,
+    });
+  }, [user, records, recordMediaById, page, hasMore, initialLoading]);
 
   useEffect(() => {
     if (!sentinelRef.current || !hasMore) return;

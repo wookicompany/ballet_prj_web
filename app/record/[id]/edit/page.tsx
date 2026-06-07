@@ -47,6 +47,7 @@ import {
 import type { AppPlatform, HealthSyncErrorCode } from "@/lib/reactNativeWebView";
 import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
 import { getLocationsCache, setLocationsCache } from "@/lib/locationsCache";
 import { getInstructorLevelsCache, setInstructorLevelsCache } from "@/lib/instructorLevelsCache";
 import { getBarOrdersCache, setBarOrdersCache } from "@/lib/barOrdersCache";
@@ -967,6 +968,7 @@ export default function RecordEditPage() {
     }
 
     if (user) invalidateProfileCache(user.id);
+    if (user) invalidateProfileRecordsCache(user.id);
     sessionStorage.setItem(`record-changed:${form.record_date}`, "1");
     router.back();
   };
