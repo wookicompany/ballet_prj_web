@@ -557,9 +557,9 @@ export default function CalendarPage() {
                 key={`${index}-${dateStr}`}
                 className={`relative flex h-full min-h-20 flex-col overflow-visible ${
                   isEmpty ? "opacity-40" : ""
-                } ${isSelected ? "ring-1 ring-inset ring-[#17171c]/20 rounded-md" : ""}`}
+                } ${isSelected ? "bg-[#17171c]/5 rounded-md" : ""}`}
               >
-                {/* 상단: 날짜 숫자 → 일별 타임라인 이동 */}
+                {/* 상단: 날짜 숫자 → 기록 리스트 인라인 표시 */}
                 <button
                   type="button"
                   disabled={isEmpty}
@@ -567,7 +567,8 @@ export default function CalendarPage() {
                   onClick={() => {
                     if (!cell.date) return;
                     sendHapticToApp();
-                    router.push(`/day/${dateStr}`);
+                    const next = dateStr === selectedDate ? "" : dateStr;
+                    setSelectedDate(next);
                   }}
                 >
                   <span
