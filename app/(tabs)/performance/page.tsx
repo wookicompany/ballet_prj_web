@@ -136,17 +136,12 @@ export default function PerformanceListPage() {
           id: item.performance_id,
           score: item.view_count * 1 + item.review_count * 10 + item.comment_count * 5,
         }));
-        const activeEngagement = engagementScores.filter((item) => item.score > 0);
-        const nextPopularIds = activeEngagement.length
-          ? activeEngagement
-              .sort((a, b) => b.score - a.score)
-              .map((item) => item.id)
-              .filter(Boolean)
-          : Object.entries(ratingSummary)
-              .filter(([, value]) => value.count > 0)
-              .sort((a, b) => b[1].count - a[1].count || b[1].avg - a[1].avg)
-              .map(([id]) => id);
-        const popularIds = nextPopularIds.slice(0, 12);
+        const popularIds = engagementScores
+          .filter((item) => item.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map((item) => item.id)
+          .filter(Boolean)
+          .slice(0, 12);
 
         const popularQuery = popularIds.length
           ? supabase
@@ -155,13 +150,7 @@ export default function PerformanceListPage() {
               .is("deleted_at", null)
               .eq("is_active", true)
               .in("mt20id", popularIds)
-          : supabase
-              .from("kopis_performances")
-              .select(baseSelect)
-              .is("deleted_at", null)
-              .eq("is_active", true)
-              .order("updated_at", { ascending: false })
-              .limit(12);
+          : null;
 
         const todayDateKey = formatSeoulDateKey();
 
@@ -231,7 +220,7 @@ export default function PerformanceListPage() {
 
         const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
           await Promise.all([
-            popularQuery,
+            popularQuery ?? Promise.resolve({ data: [] }),
             scheduledQuery,
             completedQuery,
             awardsQuery ?? Promise.resolve({ data: [] }),
@@ -356,7 +345,9 @@ export default function PerformanceListPage() {
             <p className="line-clamp-1 text-xs text-[#17171c]/70">
               {item.fcltynm || "공연장 정보 없음"}
             </p>
-            <p className="text-xs text-[#17171c]/60">{formatDate(item.prfpdfrom)}</p>
+            <p className="line-clamp-1 text-xs text-[#17171c]/60">
+              {formatDate(item.prfpdfrom)}{item.prfpdto ? ` ~ ${formatDate(item.prfpdto)}` : ""}
+            </p>
             <div className="h-4">
               {options?.rating ? (
                 <span className="inline-flex items-center gap-1 text-xs text-brand">
@@ -376,8 +367,6 @@ export default function PerformanceListPage() {
     },
     [router]
   );
-
-  const SHOW_POPULAR_SECTION = false;
 
   const popularCards = useMemo(
     () => sections.popular.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
@@ -486,7 +475,7 @@ export default function PerformanceListPage() {
         </section>
 
         <div className="space-y-7">
-            {SHOW_POPULAR_SECTION && popularCards.length > 0 && (
+            {popularCards.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
