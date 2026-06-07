@@ -346,7 +346,7 @@ export default function PerformanceListPage() {
               {item.fcltynm || "공연장 정보 없음"}
             </p>
             <p className="line-clamp-1 text-xs text-[#17171c]/60">
-              {formatDate(item.prfpdfrom)}{item.prfpdto ? ` ~ ${formatDate(item.prfpdto)}` : ""}
+              {formatDate(item.prfpdfrom)}{item.prfpdto && item.prfpdto !== item.prfpdfrom ? ` ~ ${formatDate(item.prfpdto)}` : ""}
             </p>
             <div className="h-4">
               {options?.rating ? (
