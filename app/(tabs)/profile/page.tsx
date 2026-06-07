@@ -688,7 +688,7 @@ export default function ProfilePage() {
                         : "";
                     return (
                       <div key={s.month} className="flex flex-1 flex-col items-center gap-1">
-                        <span className="text-[9px] text-[#17171c]/50 h-3 leading-3">{label}</span>
+                        <span className="text-[10px] text-[#17171c]/50 h-3 leading-3">{label}</span>
                         <div className="w-full flex items-end" style={{ height: `${BAR_HEIGHT}px` }}>
                           <div
                             className="w-full rounded-t-sm bg-[#17171c]/80 transition-all duration-300"
