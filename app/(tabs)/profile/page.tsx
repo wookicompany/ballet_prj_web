@@ -614,7 +614,7 @@ export default function ProfilePage() {
 
         {/* 나의 기록 인사이트 */}
         {(profileLoading || allRecordStats.length > 0) && (
-          <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+          <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
             {profileLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-16 w-full rounded-xl" />
@@ -709,12 +709,12 @@ export default function ProfilePage() {
 
         {/* 발레 기록 섹션 */}
         {(previewLoading || recordsPreview.length > 0) && (
-        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+        <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">발레 기록</h2>
             <button
               type="button"
-              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
               onClick={() => {
                 sendHapticToApp();
                 router.push("/profile/records");
@@ -849,12 +849,12 @@ export default function ProfilePage() {
 
         {/* 공연 리뷰 섹션 */}
         {(previewLoading || reviewsPreview.length > 0) && (
-        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+        <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">공연 리뷰</h2>
             <button
               type="button"
-              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
               onClick={() => {
                 sendHapticToApp();
                 router.push("/profile/reviews");
@@ -995,12 +995,12 @@ export default function ProfilePage() {
 
         {/* 찜한 브랜드 섹션 */}
         {(previewLoading || likedBrandsPreview.length > 0) && (
-        <section className="mt-4 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+        <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#17171c]">찜한 브랜드</h2>
             <button
               type="button"
-              className="flex items-center gap-0.5 text-xs text-[#17171c]/50"
+              className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
               onClick={() => {
                 sendHapticToApp();
                 router.push("/profile/brands");
