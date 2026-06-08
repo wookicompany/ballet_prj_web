@@ -883,22 +883,29 @@ export default function RecordEditPage() {
       setSaving(false);
       return;
     }
-    const response = await fetch(`/api/records/${params.id}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...form,
-        ...resolvedHealthWorkout,
-        location: resolvedLocation,
-        level: showLevelInstructor ? form.level : "",
-        instructor: showLevelInstructor ? form.instructor : "",
-        bar_order: showBarOrder ? barOrderTags.join(", ") : "",
-        center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`/api/records/${params.id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...form,
+          ...resolvedHealthWorkout,
+          location: resolvedLocation,
+          level: showLevelInstructor ? form.level : "",
+          instructor: showLevelInstructor ? form.instructor : "",
+          bar_order: showBarOrder ? barOrderTags.join(", ") : "",
+          center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
+        }),
+      });
+    } catch {
+      setSaving(false);
+      toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+      return;
+    }
 
     if (!response.ok) {
       setSaving(false);
