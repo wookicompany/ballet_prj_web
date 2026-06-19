@@ -40,6 +40,7 @@ type RecordDetail = {
   center_order: string | null;
   did_well: string | null;
   improve_next: string | null;
+  outfit: string | null;
   memo: string | null;
   workout_activity_label: string | null;
   workout_source_name: string | null;
@@ -313,6 +314,8 @@ export default function AdminRecordDetailPage() {
             <dd className="whitespace-pre-wrap">{record.did_well || "—"}</dd>
             <dt className="text-muted-foreground">다음 개선점</dt>
             <dd className="whitespace-pre-wrap">{record.improve_next || "—"}</dd>
+            <dt className="text-muted-foreground">코디</dt>
+            <dd className="whitespace-pre-wrap">{record.outfit || "—"}</dd>
             <dt className="text-muted-foreground">메모</dt>
             <dd className="whitespace-pre-wrap">{record.memo || "—"}</dd>
           </dl>

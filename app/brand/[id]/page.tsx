@@ -180,18 +180,22 @@ export default function BrandDetailPage({
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchBrand = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/brands/${id}`);
+        const res = await fetch(`/api/brands/${id}`, { signal: controller.signal });
         if (!res.ok) return;
         const data = await res.json();
         setBrand(data.brand ?? null);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
       } finally {
         setLoading(false);
       }
     };
     fetchBrand();
+    return () => controller.abort();
   }, [id]);
 
   const handleLinkClick = (url: string, linkType: string) => {

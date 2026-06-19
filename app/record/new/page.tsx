@@ -131,6 +131,7 @@ type FormState = {
   center_order: string;
   did_well: string;
   improve_next: string;
+  outfit: string;
   memo: string;
   workout_activity_label: string | null;
   workout_source_name: string | null;
@@ -296,6 +297,7 @@ function RecordNewContent() {
     center_order: "",
     did_well: "",
     improve_next: "",
+    outfit: "",
     memo: "",
     workout_activity_label: null,
     workout_source_name: null,
@@ -1137,12 +1139,12 @@ function RecordNewContent() {
                   한 줄로 가볍게 남겨주세요.
                 </Label>
                 <span className="text-xs text-[#17171c]/50">
-                  {form.content.length}/16
+                  {form.content.length}/24
                 </span>
               </div>
               <Input
                 className="mt-2 h-12 text-base"
-                maxLength={16}
+                maxLength={24}
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
@@ -1156,7 +1158,7 @@ function RecordNewContent() {
           <section className="space-y-6">
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                오늘 잘했던 점을 남겨보세요.
+                오늘 스스로 칭찬해 주고 싶은 점이 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1169,7 +1171,7 @@ function RecordNewContent() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                다음에는 무엇을 더 신경 쓰면 좋을까요?
+                다음에 더 신경 써보고 싶은 부분이 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1185,7 +1187,20 @@ function RecordNewContent() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                더 남기고 싶은 이야기가 있다면 적어보세요.
+                오늘은 어떻게 발레복 코디를 했나요?
+              </Label>
+              <Textarea
+                className="mt-2 min-h-[120px] text-base"
+                rows={3}
+                value={form.outfit}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, outfit: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-[#17171c]/60">
+                오늘 더 기억해 두고 싶은 이야기가 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"

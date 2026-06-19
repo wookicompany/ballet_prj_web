@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, MapPin, Plus, Quote, UserRound } from "lucide-react";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -52,7 +52,18 @@ type SelectedRecord = {
   content: string;
   mood: number | null;
   created_at: string;
+  location: string | null;
+  instructor: string | null;
+  level: string | null;
 };
+
+const parseLocationName = (value: string | null) => {
+  if (!value) return "";
+  return value.includes(" | ") ? value.split(" | ")[0].trim() : value.trim();
+};
+
+const formatInstructorLevel = (record: SelectedRecord) =>
+  [record.instructor, record.level].filter(Boolean).join(" · ");
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_TRANSITION_LOCK_MS = 240;
@@ -222,7 +233,7 @@ export default function CalendarPage() {
     }
     const { data } = await supabase
       .from("records")
-      .select("id, start_time, end_time, content, mood, created_at")
+      .select("id, start_time, end_time, content, mood, created_at, location, instructor, level")
       .eq("user_id", user.id)
       .eq("record_date", date)
       .is("deleted_at", null)
@@ -632,7 +643,7 @@ export default function CalendarPage() {
                 key={record.id}
                 type="button"
                 onClick={() => { sendHapticToApp(); router.push(`/record/${record.id}`); }}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                className="flex w-full items-center gap-3 px-4 py-4 text-left"
               >
                 {record.mood ? (
                   <AnimatedImage
@@ -642,18 +653,38 @@ export default function CalendarPage() {
                     height={1600}
                     unoptimized
                     draggable={false}
-                    className="h-11 w-11 shrink-0 object-contain"
+                    className="h-12 w-12 shrink-0 object-contain"
                   />
                 ) : (
-                  <div className="h-11 w-11 shrink-0 rounded-full bg-[#17171c]/5" />
+                  <div className="h-12 w-12 shrink-0 rounded-full bg-[#17171c]/5" />
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-[#17171c]/45">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="flex items-center gap-1 text-xs text-[#17171c]">
+                    <Clock className="h-3 w-3 shrink-0" />
                     {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
                   </p>
-                  <p className="truncate text-sm font-medium text-[#17171c]">
-                    {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
-                  </p>
+                  {record.content && (
+                    <p className="flex items-start gap-1 truncate text-xs text-[#17171c]">
+                      <Quote className="mt-0.5 h-3 w-3 shrink-0" />
+                      {record.content}
+                    </p>
+                  )}
+                  {(parseLocationName(record.location) || formatInstructorLevel(record)) && (
+                    <p className="flex items-center gap-1.5 text-xs text-[#17171c]">
+                      {parseLocationName(record.location) && (
+                        <>
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{parseLocationName(record.location)}</span>
+                        </>
+                      )}
+                      {formatInstructorLevel(record) && (
+                        <>
+                          <UserRound className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{formatInstructorLevel(record)}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <ChevronRight className="size-5 shrink-0 text-[#17171c]/30" />
               </button>

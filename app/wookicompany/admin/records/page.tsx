@@ -35,6 +35,7 @@ type RecordRow = {
   avatar_url: string | null;
   did_well: string | null;
   improve_next: string | null;
+  outfit: string | null;
   memo: string | null;
   media: { id: string; url: string; media_type: string }[];
 };
@@ -268,6 +269,10 @@ export default function AdminRecordsPage() {
                       <p className="break-words">
                         <span className="font-medium text-foreground/70">다음 개선점: </span>
                         <span className="text-muted-foreground">{r.improve_next || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">코디: </span>
+                        <span className="text-muted-foreground">{r.outfit || "-"}</span>
                       </p>
                       <p className="break-words">
                         <span className="font-medium text-foreground/70">메모: </span>
