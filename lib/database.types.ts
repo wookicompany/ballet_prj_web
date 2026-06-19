@@ -1222,6 +1222,7 @@ export type Database = {
           location: string | null
           memo: string | null
           mood: number | null
+          outfit: string | null
           record_date: string
           start_time: string
           updated_at: string
@@ -1249,6 +1250,7 @@ export type Database = {
           location?: string | null
           memo?: string | null
           mood?: number | null
+          outfit?: string | null
           record_date: string
           start_time: string
           updated_at?: string
@@ -1276,6 +1278,7 @@ export type Database = {
           location?: string | null
           memo?: string | null
           mood?: number | null
+          outfit?: string | null
           record_date?: string
           start_time?: string
           updated_at?: string
