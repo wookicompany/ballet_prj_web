@@ -664,8 +664,8 @@ export default function CalendarPage() {
                     {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
                   </p>
                   {record.content && (
-                    <p className="flex items-start gap-1 truncate text-xs text-[#17171c]">
-                      <Quote className="mt-0.5 h-3 w-3 shrink-0" />
+                    <p className="flex items-start gap-1 truncate text-sm text-[#17171c]">
+                      <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       {record.content}
                     </p>
                   )}
