@@ -1273,12 +1273,12 @@ export default function RecordEditPage() {
                   한 줄로 가볍게 남겨주세요.
                 </Label>
                 <span className="text-xs text-[#17171c]/50">
-                  {form.content.length}/16
+                  {form.content.length}/24
                 </span>
               </div>
               <Input
                 className="mt-2 h-12 text-base"
-                maxLength={16}
+                maxLength={24}
                 value={form.content}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, content: event.target.value }))
