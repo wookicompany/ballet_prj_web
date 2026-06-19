@@ -33,12 +33,23 @@ type RecordRow = {
   created_at: string;
   nickname: string | null;
   avatar_url: string | null;
+  location: string | null;
+  instructor: string | null;
+  level: string | null;
   did_well: string | null;
   improve_next: string | null;
   outfit: string | null;
   memo: string | null;
   media: { id: string; url: string; media_type: string }[];
 };
+
+const parseLocationName = (value: string | null) => {
+  if (!value) return null;
+  return value.includes(" | ") ? value.split(" | ")[0].trim() : value.trim();
+};
+
+const formatInstructorLevel = (instructor: string | null, level: string | null) =>
+  [instructor, level].filter(Boolean).join(" · ") || null;
 
 export default function AdminRecordsPage() {
   const router = useRouter();
@@ -277,6 +288,14 @@ export default function AdminRecordsPage() {
                       <p className="break-words">
                         <span className="font-medium text-foreground/70">메모: </span>
                         <span className="text-muted-foreground">{r.memo || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">장소: </span>
+                        <span className="text-muted-foreground">{parseLocationName(r.location) || "-"}</span>
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium text-foreground/70">강사 & 레벨: </span>
+                        <span className="text-muted-foreground">{formatInstructorLevel(r.instructor, r.level) || "-"}</span>
                       </p>
                     </div>
                     <div className="self-center flex justify-end">

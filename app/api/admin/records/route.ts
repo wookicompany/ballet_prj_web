@@ -33,7 +33,7 @@ export const GET = async (request: Request) => {
 
   let query = result.supabaseAdmin
     .from("records")
-    .select("id, user_id, record_date, start_time, end_time, content, mood, created_at, did_well, improve_next, outfit, memo, record_media(id, url, media_type, deleted_at)")
+    .select("id, user_id, record_date, start_time, end_time, content, mood, created_at, location, instructor, level, did_well, improve_next, outfit, memo, record_media(id, url, media_type, deleted_at)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (q) query = query.or(buildOrStr());
