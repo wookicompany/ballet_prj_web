@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Quote, Star, StickyNote, TrendingUp, User } from "lucide-react";
+import { ChevronLeft, Quote, Shirt, Star, StickyNote, TrendingUp, User } from "lucide-react";
 
 type RecordSummary = {
   id: string;
@@ -29,6 +29,7 @@ type RecordSummary = {
   createdAt: string;
   didWell: string | null;
   improveNext: string | null;
+  outfit: string | null;
   memo: string | null;
   workoutTotalEnergyKcal: number | null;
 };
@@ -104,7 +105,7 @@ export default function ProfileRecordsPage() {
 
         const { data: recordRows, error } = await supabase
           .from("records")
-          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,memo,workout_total_energy_kcal")
+          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("record_date", { ascending: false })
@@ -126,6 +127,7 @@ export default function ProfileRecordsPage() {
           createdAt: row.created_at,
           didWell: row.did_well,
           improveNext: row.improve_next,
+          outfit: row.outfit,
           memo: row.memo,
           workoutTotalEnergyKcal: row.workout_total_energy_kcal,
         }));
@@ -290,6 +292,12 @@ export default function ProfileRecordsPage() {
                       <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
                         <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                         {record.improveNext}
+                      </p>
+                    )}
+                    {record.outfit && (
+                      <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                        <Shirt className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pink-400" />
+                        {record.outfit}
                       </p>
                     )}
                     {record.memo && (

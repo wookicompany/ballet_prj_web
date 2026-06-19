@@ -49,6 +49,7 @@ type RecordDetail = {
   center_order: string | null;
   did_well: string | null;
   improve_next: string | null;
+  outfit: string | null;
   memo: string | null;
   workout_activity_label: string | null;
   workout_source_name: string | null;
@@ -166,7 +167,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -440,7 +441,7 @@ export default function RecordDetailPage() {
               {record.did_well ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    오늘 잘했던 점을 남겨보세요.
+                    오늘 스스로 칭찬해 주고 싶은 점이 있나요?
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.did_well}
@@ -450,17 +451,27 @@ export default function RecordDetailPage() {
               {record.improve_next ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    다음에는 무엇을 더 신경 쓰면 좋을까요?
+                    다음에 더 신경 써보고 싶은 부분이 있나요?
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.improve_next}
                   </div>
                 </div>
               ) : null}
+              {record.outfit ? (
+                <div>
+                  <Label className="text-sm text-[#17171c]/60">
+                    오늘은 어떻게 발레복 코디를 했나요?
+                  </Label>
+                  <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
+                    {record.outfit}
+                  </div>
+                </div>
+              ) : null}
               {record.memo ? (
                 <div>
                   <Label className="text-sm text-[#17171c]/60">
-                    더 남기고 싶은 이야기가 있다면 적어보세요.
+                    오늘 더 기억해 두고 싶은 이야기가 있나요?
                   </Label>
                   <div className="mt-2 whitespace-pre-line text-base text-[#17171c]">
                     {record.memo}

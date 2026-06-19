@@ -156,6 +156,7 @@ type FormState = {
   center_order: string;
   did_well: string;
   improve_next: string;
+  outfit: string;
   memo: string;
   workout_activity_label: string | null;
   workout_source_name: string | null;
@@ -371,6 +372,7 @@ export default function RecordEditPage() {
     center_order: "",
     did_well: "",
     improve_next: "",
+    outfit: "",
     memo: "",
     workout_activity_label: null,
     workout_source_name: null,
@@ -611,7 +613,7 @@ export default function RecordEditPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -641,6 +643,7 @@ export default function RecordEditPage() {
           center_order: data.center_order ?? "",
           did_well: data.did_well ?? "",
           improve_next: data.improve_next ?? "",
+          outfit: data.outfit ?? "",
           memo: data.memo ?? "",
           workout_activity_label: data.workout_activity_label ?? null,
           workout_source_name: data.workout_source_name ?? null,
@@ -1289,7 +1292,7 @@ export default function RecordEditPage() {
           <section className="space-y-6">
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                오늘 잘했던 점을 남겨보세요.
+                오늘 스스로 칭찬해 주고 싶은 점이 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1302,7 +1305,7 @@ export default function RecordEditPage() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                다음에는 무엇을 더 신경 쓰면 좋을까요?
+                다음에 더 신경 써보고 싶은 부분이 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
@@ -1318,7 +1321,20 @@ export default function RecordEditPage() {
             </div>
             <div>
               <Label className="text-sm text-[#17171c]/60">
-                더 남기고 싶은 이야기가 있다면 적어보세요.
+                오늘은 어떻게 발레복 코디를 했나요?
+              </Label>
+              <Textarea
+                className="mt-2 min-h-[120px] text-base"
+                rows={3}
+                value={form.outfit}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, outfit: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-[#17171c]/60">
+                오늘 더 기억해 두고 싶은 이야기가 있나요?
               </Label>
               <Textarea
                 className="mt-2 min-h-[120px] text-base"
