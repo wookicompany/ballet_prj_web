@@ -17,7 +17,7 @@ import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
-import { Bell, ChevronDown, ChevronRight, Heart, MessageCircle, Quote, Settings, Share2, Star, StickyNote, TrendingUp, User } from "lucide-react";
+import { Bell, ChevronDown, ChevronRight, Heart, MessageCircle, Quote, Settings, Share2, Shirt, Star, StickyNote, TrendingUp, User } from "lucide-react";
 
 type RecordStat = {
   record_date: string;
@@ -52,6 +52,7 @@ type RecordSummary = {
   createdAt: string;
   didWell: string | null;
   improveNext: string | null;
+  outfit: string | null;
   memo: string | null;
   workoutTotalEnergyKcal: number | null;
 };
@@ -244,7 +245,7 @@ export default function ProfilePage() {
       const [recordsRes, reviewsRes, brandsRes] = await Promise.all([
         supabase
           .from("records")
-          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,memo,workout_total_energy_kcal")
+          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("record_date", { ascending: false })
@@ -277,6 +278,7 @@ export default function ProfilePage() {
         created_at: string;
         did_well: string | null;
         improve_next: string | null;
+        outfit: string | null;
         memo: string | null;
         workout_total_energy_kcal: number | null;
       }>;
@@ -291,6 +293,7 @@ export default function ProfilePage() {
           createdAt: row.created_at,
           didWell: row.did_well,
           improveNext: row.improve_next,
+          outfit: row.outfit,
           memo: row.memo,
           workoutTotalEnergyKcal: row.workout_total_energy_kcal,
         }))
@@ -804,6 +807,12 @@ export default function ProfilePage() {
                         <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
                           <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                           {record.improveNext}
+                        </p>
+                      )}
+                      {record.outfit && (
+                        <p className="line-clamp-2 flex items-start gap-1.5 text-sm text-[#17171c]">
+                          <Shirt className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pink-400" />
+                          {record.outfit}
                         </p>
                       )}
                       {record.memo && (
