@@ -64,6 +64,10 @@ type LikedBrand = {
   logo_url: string | null;
 };
 
+type LocationStat = { name: string; count: number };
+type InstructorStat = { name: string; count: number };
+type AllLocationInstructorRow = { location: string | null; instructor: string | null; record_date: string };
+
 type ProfileCachePayload = {
   profile: Profile | null;
   recordCount: number;
@@ -71,6 +75,7 @@ type ProfileCachePayload = {
   totalMinutes: number;
   reviewCount: number;
   allRecordStats: RecordStat[];
+  allLocationInstructorRows: AllLocationInstructorRow[];
   recordsPreview: RecordSummary[];
   recordMediaById: Record<string, { urls: string[]; count: number }>;
   reviewsPreview: ReviewSummary[];
@@ -126,6 +131,7 @@ export default function ProfilePage() {
   const [reviewCommentCounts, setReviewCommentCounts] = useState<Record<string, number>>(() => profileCached?.reviewCommentCounts ?? {});
   const [reviewImages, setReviewImages] = useState<Record<string, string[]>>(() => profileCached?.reviewImages ?? {});
   const [likedBrandsPreview, setLikedBrandsPreview] = useState<LikedBrand[]>(() => profileCached?.likedBrandsPreview ?? []);
+  const [allLocationInstructorRows, setAllLocationInstructorRows] = useState<AllLocationInstructorRow[]>(() => profileCached?.allLocationInstructorRows ?? []);
   const [allRecordStats, setAllRecordStats] = useState<RecordStat[]>(() => profileCached?.allRecordStats ?? []);
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [yearSheetOpen, setYearSheetOpen] = useState(false);
@@ -203,7 +209,7 @@ export default function ProfilePage() {
       setPreviewLoading(true);
 
       // Step 1: profile + stats (병렬)
-      const [profileRes, recordStatsRes, reviewCountRes] = await Promise.all([
+      const [profileRes, recordStatsRes, reviewCountRes, locationInstructorRes] = await Promise.all([
         supabase
           .from("profiles")
           .select("id,nickname,avatar_url,ballet_started_at")
@@ -217,6 +223,11 @@ export default function ProfilePage() {
         supabase
           .from("performance_reviews")
           .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .is("deleted_at", null),
+        supabase
+          .from("records")
+          .select("location,instructor,record_date")
           .eq("user_id", user.id)
           .is("deleted_at", null),
       ]);
@@ -239,6 +250,9 @@ export default function ProfilePage() {
       );
       setAllRecordStats(recordStatsLocal as RecordStat[]);
       setReviewCount(reviewCountRes.count ?? 0);
+
+      setAllLocationInstructorRows((locationInstructorRes.data ?? []) as AllLocationInstructorRow[]);
+
       setProfileLoading(false);
 
       // Step 2: 미리보기 데이터 3개씩 병렬 fetch
@@ -404,10 +418,11 @@ export default function ProfilePage() {
       reviewCommentCounts,
       reviewImages,
       likedBrandsPreview,
+      allLocationInstructorRows,
     });
   }, [
     user, profile, recordCount, recordDayCount, totalMinutes, reviewCount,
-    allRecordStats, recordsPreview, recordMediaById, reviewsPreview,
+    allRecordStats, allLocationInstructorRows, recordsPreview, recordMediaById, reviewsPreview,
     reviewLikeCounts, reviewCommentCounts, reviewImages,
     likedBrandsPreview, profileLoading, previewLoading,
   ]);
@@ -437,6 +452,38 @@ export default function ProfilePage() {
     const now = new Date();
     return monthlyStats[now.getMonth()];
   }, [monthlyStats]);
+
+  const topLocations = useMemo((): LocationStat[] => {
+    const counts: Record<string, number> = {};
+    allLocationInstructorRows
+      .filter((r) => r.record_date.startsWith(String(selectedYear)))
+      .forEach((r) => {
+        if (!r.location) return;
+        const name = r.location.includes(" | ") ? r.location.split(" | ")[0].trim() : r.location.trim();
+        if (!name) return;
+        counts[name] = (counts[name] ?? 0) + 1;
+      });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count }));
+  }, [allLocationInstructorRows, selectedYear]);
+
+  const topInstructors = useMemo((): InstructorStat[] => {
+    const counts: Record<string, number> = {};
+    allLocationInstructorRows
+      .filter((r) => r.record_date.startsWith(String(selectedYear)))
+      .forEach((r) => {
+        if (!r.instructor) return;
+        const name = r.instructor.trim().replace(/선생님$/, "").trim();
+        if (!name) return;
+        counts[name] = (counts[name] ?? 0) + 1;
+      });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count }));
+  }, [allLocationInstructorRows, selectedYear]);
 
   if (loading) {
     return (
@@ -645,7 +692,7 @@ export default function ProfilePage() {
             {/* 이번 달 요약 */}
             {/* 헤더: 월별 기록 + 메트릭 선택 + 연도 선택 */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-[#17171c]">월별 기록</h2>
+              <h2 className="text-sm font-semibold text-[#17171c]">기록 요약</h2>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -705,6 +752,39 @@ export default function ProfilePage() {
                 </div>
               );
             })()}
+
+            {(topLocations.length > 0 || topInstructors.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-[#17171c]/5 space-y-4">
+                {topLocations.length > 0 && (
+                  <div>
+                    <p className="text-xs text-[#17171c]/50 mb-2">자주 간 장소</p>
+                    <div className="space-y-2">
+                      {topLocations.map((loc, i) => (
+                        <div key={loc.name} className="flex items-center gap-2">
+                          <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
+                          <span className="flex-1 text-sm text-[#17171c] truncate">{loc.name}</span>
+                          <span className="text-xs text-[#17171c]/50">{loc.count}회</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {topInstructors.length > 0 && (
+                  <div>
+                    <p className="text-xs text-[#17171c]/50 mb-2">자주 만난 강사님</p>
+                    <div className="space-y-2">
+                      {topInstructors.map((ins, i) => (
+                        <div key={ins.name} className="flex items-center gap-2">
+                          <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
+                          <span className="flex-1 text-sm text-[#17171c] truncate">{ins.name}</span>
+                          <span className="text-xs text-[#17171c]/50">{ins.count}회</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
               </>
             )}
           </section>
