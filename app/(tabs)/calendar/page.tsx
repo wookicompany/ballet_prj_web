@@ -659,12 +659,12 @@ export default function CalendarPage() {
                   <div className="h-12 w-12 shrink-0 rounded-full bg-[#17171c]/5" />
                 )}
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="flex items-center gap-1 text-xs text-[#17171c]">
+                  <p className="flex items-center gap-1 text-sm text-[#17171c]">
                     <Clock className="h-3 w-3 shrink-0" />
                     {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
                   </p>
                   {record.content && (
-                    <p className="flex items-start gap-1 truncate text-sm text-[#17171c]">
+                    <p className="flex items-start gap-1 truncate text-xs text-[#17171c]">
                       <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       {record.content}
                     </p>
