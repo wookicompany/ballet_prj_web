@@ -12,7 +12,7 @@
 | 토큰 | 값 | 용도 |
 |---|---|---|
 | `--brand` | `#E8517C` | 브랜드 강조. 최소한으로 사용 |
-| `--background` | `#FAFAF8` (`oklch(0.98 0.006 60)`) | 앱 전체 배경 |
+| `--background` | `#ffffff` (`oklch(1 0 0)`) | 앱 전체 배경 |
 | `--primary` | `#17171C` (`oklch(0.205 0 0)`) | 기본 텍스트, default 버튼 |
 | `--secondary` | `#F7F7F7` (`oklch(0.97 0 0)`) | 보조 배경, secondary 버튼 |
 | `--border` | `#EBEBEB` (`oklch(0.922 0 0)`) | 구분선, 테두리 |
@@ -30,7 +30,7 @@
 
 ### 배경 관련
 
-- `bg-white` 대신 반드시 `bg-background` 사용 (토큰값 `#FAFAF8`)
+- `bg-white` 대신 반드시 `bg-background` 사용 (토큰값 `#ffffff`)
 - 카드 배경은 `bg-card` (`#fff`, 흰색 그대로 유지). 앱 배경이 `#FAFAF8`로 바뀌어도 카드는 흰색을 유지해 배경 위에 떠 보이는 대비 효과를 준다.
 - 어드민 등 웹 전용 화면은 예외
 
@@ -122,7 +122,7 @@
 
 ### MobileContainer (`components/layout/MobileContainer.tsx`)
 
-- 배경: `bg-background` (CSS 변수, `#FAFAF8`)
+- 배경: `bg-background` (CSS 변수, `#ffffff`)
 - 너비: `max-w-[430px] mx-auto`
 - 하단 패딩: `pb-[calc(5rem+env(safe-area-inset-bottom))]`
 - 그림자: `shadow-sm`
