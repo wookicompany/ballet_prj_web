@@ -521,7 +521,7 @@ export default function CalendarPage() {
         onTouchCancel={handleCalendarTouchCancel}
       >
         {monthSummary && (
-          <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-[--brand]/20 rounded-xl">
+          <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-brand/8 rounded-xl">
             이번 달에는{" "}
             <span className="font-semibold text-[#17171c]">{monthSummary.count}번</span>{" "}
             기록하고{" "}
