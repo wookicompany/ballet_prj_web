@@ -426,7 +426,7 @@ export default function PerformanceListPage() {
       <>
         <main className="px-4 pb-16">
           <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold">공연</h1>
+            <h1 className="text-lg font-bold">공연</h1>
             <Button
               type="button"
               variant="ghost"
@@ -458,7 +458,7 @@ export default function PerformanceListPage() {
     <>
       <main className="px-4 pb-16">
         <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">공연</h1>
+          <h1 className="text-lg font-bold">공연</h1>
           <Button
             type="button"
             variant="ghost"
