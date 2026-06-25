@@ -21,8 +21,7 @@
 
 ### 브랜드 컬러 사용 규칙
 
-`--brand` (`#E8517C`)는 아래 **3가지 용도**에만 사용한다:
-- 캘린더 오늘 날짜 배경
+`--brand` (`#E8517C`)는 아래 **2가지 용도**에만 사용한다:
 - 탭바 활성 탭 아이콘·레이블
 - Switch ON 상태 배경
 
@@ -114,7 +113,7 @@
 
 ### TabBar (`components/navigation/TabBar.tsx`)
 
-- 배경: `bg-background` (`#FAFAF8`)
+- 배경: `bg-background` (`#ffffff`)
 - **활성 탭**: `font-bold text-[#E8517C]` (brand color)
 - 비활성 탭: `text-[#17171c]/60`
 - 높이: `h-14` (56px)
@@ -139,7 +138,7 @@
 | 상태 | 스타일 |
 |---|---|
 | 일반 | 기본 텍스트 |
-| **오늘** | `bg-[--brand] text-white rounded-md` (brand pink) |
+| **오늘** | `bg-[#17171c] text-white rounded-full` (검정 원형) |
 | 선택됨 | `bg-primary text-primary-foreground` (검정) |
 | 비활성 | `text-muted-foreground opacity-50` |
 | 외부 날짜 | `text-muted-foreground` |
