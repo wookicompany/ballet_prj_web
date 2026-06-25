@@ -583,10 +583,10 @@ export default function CalendarPage() {
                   }}
                 >
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-md text-sm ${
+                    className={`flex h-7 w-7 items-center justify-center text-sm ${
                       isToday
-                        ? "bg-[--brand] text-white"
-                        : weekendClass || "text-[#17171c]"
+                        ? "bg-brand text-white rounded-full"
+                        : `rounded-md ${weekendClass || "text-[#17171c]"}`
                     }`}
                   >
                     {cell.day ?? ""}
