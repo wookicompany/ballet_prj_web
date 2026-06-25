@@ -241,6 +241,8 @@ const requestedPagesRef = useRef(
 | `lib/instructorLevelsCache.ts` | `/calendar/settings/instructor-levels` | 항목 추가·수정·삭제 |
 | `lib/barOrdersCache.ts` | `/calendar/settings/bar-orders` | 항목 추가·수정·삭제 |
 | `lib/centerOrdersCache.ts` | `/calendar/settings/center-orders` | 항목 추가·수정·삭제 |
+| `lib/notificationsCache.ts` | `/notifications` | — (진입 시 read-all 자동 처리) |
+| `lib/profileRecordsCache.ts` | `/profile/records` | 기록 생성·수정·삭제 (userId 키 기반) |
 
 ### DB 인덱스
 
