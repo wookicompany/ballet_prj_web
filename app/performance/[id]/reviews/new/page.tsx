@@ -5,6 +5,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,7 @@ import { invalidateProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { compressImage } from "@/lib/compressImage";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Plus, Star, X } from "lucide-react";
+import { Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_IMAGES = 3;
@@ -201,20 +202,7 @@ export default function PerformanceReviewNewPage() {
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-5 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">리뷰 작성</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="리뷰 작성" className="mb-5" />
 
         <div className="space-y-5">
           <section className="space-y-3">

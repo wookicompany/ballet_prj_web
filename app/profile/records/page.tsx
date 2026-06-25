@@ -9,15 +9,15 @@ import {
 } from "@/lib/profileRecordsCache";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Quote, Shirt, Star, StickyNote, TrendingUp, User } from "lucide-react";
+import { Quote, Shirt, Star, StickyNote, TrendingUp, User } from "lucide-react";
 
 type RecordSummary = {
   id: string;
@@ -197,20 +197,7 @@ export default function ProfileRecordsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]"
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">발레 기록</h1>
-          <div className="w-10" />
-        </header>
+        <PageHeader title="발레 기록" className="mb-6" />
 
         {initialLoading ? (
           <div className="space-y-3">

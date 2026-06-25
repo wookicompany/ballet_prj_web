@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
+import PageHeader from "@/components/layout/PageHeader";
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -32,7 +33,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
-import { Activity, CalendarDays, ChevronLeft, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
+import { Activity, CalendarDays, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 type RecordDetail = {
@@ -269,29 +270,22 @@ export default function RecordDetailPage() {
     <MobileContainer>
       {deleting ? <LoadingOverlay /> : null}
       <main className="px-4 pb-10">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">기록 상세</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => setMenuOpen(true)}
-            aria-label="기록 메뉴"
-          >
-            <Menu className="size-6" />
-          </Button>
-        </header>
+        <PageHeader
+          title="기록 상세"
+          className="mb-6"
+          right={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => setMenuOpen(true)}
+              aria-label="기록 메뉴"
+            >
+              <Menu className="size-6" />
+            </Button>
+          }
+        />
 
         <div className="space-y-3">
           {/* 사진/영상 */}

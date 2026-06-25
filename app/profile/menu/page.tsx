@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import { getAccessToken } from "@/lib/authSession";
 import {
   Bell,
   Calendar,
-  ChevronLeft,
   ChevronRight,
   Database,
   MessageCircle,
@@ -80,20 +80,7 @@ export default function ProfileMenuPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">설정</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="설정" className="mb-6" />
 
         <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
           <Button

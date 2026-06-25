@@ -6,7 +6,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
-import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/layout/PageHeader";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -17,7 +17,7 @@ import {
 import { getSearchCache, setSearchCache } from "@/lib/performanceSearchCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, MessageCircle, Star } from "lucide-react";
+import { MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -521,24 +521,10 @@ function PerformanceSearchContent() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-semibold">
-              {sectionConfig?.title ?? "공연 리스트"}
-            </h1>
-          </div>
-          <div className="w-9" />
-        </header>
+        <PageHeader
+          title={sectionConfig?.title ?? "공연 리스트"}
+          className="mb-6"
+        />
 
         <section className="mt-6 space-y-1">
           {loading ? (

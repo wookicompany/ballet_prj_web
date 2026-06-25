@@ -1000,7 +1000,7 @@ export default function PerformanceDetailPage() {
       <main className="pb-12">
         <header
           className={`sticky top-0 z-20 h-12 flex items-center justify-between px-4 transition-colors duration-200 ${
-            headerIsTransparent ? "bg-transparent" : "bg-white"
+            headerIsTransparent ? "bg-transparent" : "bg-background"
           }`}
         >
           <Button

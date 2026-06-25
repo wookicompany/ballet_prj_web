@@ -1,10 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import MobileContainer from "@/components/layout/MobileContainer";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 
 const COMMUNITY_RULES = [
   {
@@ -40,25 +37,10 @@ const COMMUNITY_RULES = [
 ];
 
 export default function CommunityRulesPage() {
-  const router = useRouter();
-
   return (
     <MobileContainer>
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">공연 커뮤니티 이용규칙</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="공연 커뮤니티 이용규칙" className="mb-6" />
 
         <div className="space-y-6 rounded-xl border border-[#17171c]/5 bg-white p-4 text-sm text-[#17171c]">
           <p className="text-xs text-[#17171c]/60">시행일: 2026.03.15</p>

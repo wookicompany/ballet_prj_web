@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import {
@@ -25,7 +26,7 @@ import {
   setInstructorLevelsCache,
   invalidateInstructorLevelsCache,
 } from "@/lib/instructorLevelsCache";
-import { ChevronLeft, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 type SavedInstructorLevel = {
@@ -192,32 +193,25 @@ export default function SavedInstructorLevelsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">강사님 & 레벨 관리</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() =>
-              router.push("/calendar/settings/instructor-levels/new")
-            }
-            disabled={loading}
-            aria-label="강사님 & 레벨 추가"
-          >
-            <Plus className="size-5" />
-          </Button>
-        </header>
+        <PageHeader
+          title="강사님 & 레벨 관리"
+          className="mb-6"
+          right={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() =>
+                router.push("/calendar/settings/instructor-levels/new")
+              }
+              disabled={loading}
+              aria-label="강사님 & 레벨 추가"
+            >
+              <Plus className="size-5" />
+            </Button>
+          }
+        />
 
         <section className="space-y-3">
           {loading || listLoading ? (

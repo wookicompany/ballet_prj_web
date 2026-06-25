@@ -14,6 +14,7 @@ import {
 } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter, useSearchParams } from "next/navigation";
+import PageHeader from "@/components/layout/PageHeader";
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -61,7 +62,6 @@ import {
   Activity,
   CalendarDays,
   Check,
-  ChevronLeft,
   Flame,
   Heart,
   HeartPulse,
@@ -977,20 +977,7 @@ function RecordNewContent() {
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">기록 작성</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="기록 작성" className="mb-6" />
 
         <div className="space-y-8">
           <section className="space-y-3">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { invalidateInstructorLevelsCache } from "@/lib/instructorLevelsCache";
-import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function NewInstructorLevelPage() {
@@ -76,20 +76,7 @@ export default function NewInstructorLevelPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-4 pb-8">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">강사님 & 레벨 추가</h1>
-          <div className="w-10" />
-        </header>
+        <PageHeader title="강사님 & 레벨 추가" className="mb-6" />
 
         <div className="flex-1 space-y-4">
           <div className="space-y-2">
