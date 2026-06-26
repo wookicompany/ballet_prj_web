@@ -1842,7 +1842,7 @@ export default function RecordEditPage() {
                     className="w-full justify-start"
                     onClick={() => setDateDraft((prev) => ({ ...prev, day }))}
                   >
-                    {value}일
+                    {value}일({format(new Date(dateDraft.year, dateDraft.month - 1, day), "EEE", { locale: ko })})
                   </Button>
                 );
               })}

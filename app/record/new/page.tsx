@@ -271,7 +271,7 @@ function RecordNewContent() {
     null
   );
   const hours = useMemo(
-    () => Array.from({ length: 18 }, (_, idx) => String(idx + 6).padStart(2, "0")),
+    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
     []
   );
   const minutes = useMemo(
