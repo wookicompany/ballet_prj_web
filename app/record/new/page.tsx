@@ -765,7 +765,7 @@ function RecordNewContent() {
   const formatHour12 = (hour: string) => {
     const value = Number(hour);
     const normalized = value % 12 === 0 ? 12 : value % 12;
-    return String(normalized).padStart(2, "0");
+    return String(normalized);
   };
   const formatTimeDisplay = (hour: string, minute: string) =>
     `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
