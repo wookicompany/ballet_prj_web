@@ -626,64 +626,62 @@ export default function RecordEditPage() {
         return;
       }
 
-    if (data) {
-        const barTags = data.bar_order
-          ? data.bar_order.split(",").map((value) => value.trim()).filter(Boolean)
-          : [];
-        const centerTags = data.center_order
-          ? data.center_order
-              .split(",")
-              .map((value) => value.trim())
-              .filter(Boolean)
-          : [];
-        setForm({
-          record_date: data.record_date,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          content: data.content,
-          mood: data.mood,
-          location: data.location ?? "",
-          level: data.level ?? "",
-          instructor: data.instructor ?? "",
-          bar_order: data.bar_order ?? "",
-          center_order: data.center_order ?? "",
-          did_well: data.did_well ?? "",
-          improve_next: data.improve_next ?? "",
-          outfit: data.outfit ?? "",
-          memo: data.memo ?? "",
-          workout_activity_label: data.workout_activity_label ?? null,
-          workout_source_name: data.workout_source_name ?? null,
-          workout_device_name: data.workout_device_name ?? null,
-          workout_active_energy_kcal: data.workout_active_energy_kcal ?? null,
-          workout_total_energy_kcal: data.workout_total_energy_kcal ?? null,
-          workout_avg_bpm: data.workout_avg_bpm ?? null,
-          workout_max_bpm: data.workout_max_bpm ?? null,
-        });
-        setBarOrderTags(barTags);
-        setCenterOrderTags(centerTags);
-        const hasHealthSyncValue = Boolean(
-          data.workout_activity_label ||
-            data.workout_source_name ||
-            data.workout_device_name ||
-            data.workout_active_energy_kcal !== null ||
-            data.workout_total_energy_kcal !== null ||
-            data.workout_avg_bpm !== null ||
-            data.workout_max_bpm !== null
-        );
-        setShowBarOrder(barTags.length > 0);
-        setShowCenterOrder(centerTags.length > 0);
-        setShowLocation(Boolean(data.location));
-        setShowLevelInstructor(Boolean(data.level || data.instructor));
-        setShowHealthSync(hasHealthSyncValue);
-        const parsedLocation = parseLocationValue(data.location ?? "");
-        setLocationName(parsedLocation.name);
-        setLocationBase(parsedLocation.base);
-        setLocationDetail(parsedLocation.detail);
-      }
+      const barTags = data.bar_order
+        ? data.bar_order.split(",").map((value) => value.trim()).filter(Boolean)
+        : [];
+      const centerTags = data.center_order
+        ? data.center_order
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [];
+      setForm({
+        record_date: data.record_date,
+        start_time: data.start_time,
+        end_time: data.end_time,
+        content: data.content,
+        mood: data.mood,
+        location: data.location ?? "",
+        level: data.level ?? "",
+        instructor: data.instructor ?? "",
+        bar_order: data.bar_order ?? "",
+        center_order: data.center_order ?? "",
+        did_well: data.did_well ?? "",
+        improve_next: data.improve_next ?? "",
+        outfit: data.outfit ?? "",
+        memo: data.memo ?? "",
+        workout_activity_label: data.workout_activity_label ?? null,
+        workout_source_name: data.workout_source_name ?? null,
+        workout_device_name: data.workout_device_name ?? null,
+        workout_active_energy_kcal: data.workout_active_energy_kcal ?? null,
+        workout_total_energy_kcal: data.workout_total_energy_kcal ?? null,
+        workout_avg_bpm: data.workout_avg_bpm ?? null,
+        workout_max_bpm: data.workout_max_bpm ?? null,
+      });
+      setBarOrderTags(barTags);
+      setCenterOrderTags(centerTags);
+      const hasHealthSyncValue = Boolean(
+        data.workout_activity_label ||
+          data.workout_source_name ||
+          data.workout_device_name ||
+          data.workout_active_energy_kcal !== null ||
+          data.workout_total_energy_kcal !== null ||
+          data.workout_avg_bpm !== null ||
+          data.workout_max_bpm !== null
+      );
+      setShowBarOrder(barTags.length > 0);
+      setShowCenterOrder(centerTags.length > 0);
+      setShowLocation(Boolean(data.location));
+      setShowLevelInstructor(Boolean(data.level || data.instructor));
+      setShowHealthSync(hasHealthSyncValue);
+      const parsedLocation = parseLocationValue(data.location ?? "");
+      setLocationName(parsedLocation.name);
+      setLocationBase(parsedLocation.base);
+      setLocationDetail(parsedLocation.detail);
 
       // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 클라이언트 후처리
       setExistingMedia(
-        (data?.record_media ?? [])
+        (data.record_media ?? [])
           .filter((m) => !m.deleted_at)
           .sort((a, b) => a.created_at.localeCompare(b.created_at))
           .map(({ id, url }) => ({ id, url }))
