@@ -58,8 +58,12 @@
   - `/performance/[id]/reviews/new`: 공연 리뷰 작성
   - `/performance/[id]/reviews/[reviewId]`: 리뷰 상세
   - `/performance/[id]/reviews/[reviewId]/edit`: 리뷰 수정
+  - `/brand`: 브랜드 탐색 탭
+  - `/brand/search-input`: 브랜드 검색 입력
+  - `/notifications`: 알림 목록
+  - `/u/[id]`: 공개 유저 프로필 (SNS 공유용, OG 태그 포함)
 - 네비게이션
-  - 하단 탭: `캘린더` / `공연` / `프로필`
+  - 하단 탭: `캘린더` / `공연` / `브랜드` / `프로필`
   - 플로팅 버튼: 기록 생성(`/record/new`)
   - 상세 화면은 탭 없이 단일 페이지로 진입
 

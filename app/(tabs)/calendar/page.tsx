@@ -483,9 +483,9 @@ export default function CalendarPage() {
   return (
     <>
       <main className="flex min-h-[calc(100vh-56px)] flex-col px-0 pb-[140px]">
-        <header className="sticky top-0 z-20 bg-white h-12 flex items-center justify-between px-4">
+        <header className="sticky top-0 z-20 bg-background h-12 flex items-center justify-between px-4">
         <div className="flex items-center gap-0">
-          <p className="text-xl font-semibold">{monthLabel}</p>
+          <p className="text-lg font-bold">{monthLabel}</p>
           <Button
             variant="ghost"
             size="icon-lg"
@@ -506,7 +506,7 @@ export default function CalendarPage() {
           type="button"
           variant="default"
           size="icon-lg"
-          className="h-10 w-10 rounded-xl bg-[#17171c] text-white"
+          className="h-10 w-10 rounded-xl bg-primary text-primary-foreground"
           aria-label="기록 생성"
           onClick={handleAddRecord}
         >
@@ -521,7 +521,7 @@ export default function CalendarPage() {
         onTouchCancel={handleCalendarTouchCancel}
       >
         {monthSummary && (
-          <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-gradient-to-r from-[#fdf2f8] to-[#fdf2f8]/30 rounded-xl">
+          <p className="mx-2 mt-3 mb-2 px-3 py-2 text-sm text-[#17171c]/60 bg-brand/8 rounded-xl">
             이번 달에는{" "}
             <span className="font-semibold text-[#17171c]">{monthSummary.count}번</span>{" "}
             기록하고{" "}
@@ -618,7 +618,7 @@ export default function CalendarPage() {
                         loading="eager"
                       />
                       {count >= 2 ? (
-                        <Badge className="absolute right-0.5 -top-1 min-w-6 justify-center rounded-full bg-[#17171c] px-1.5 text-xs text-white">
+                        <Badge className="absolute right-0.5 -top-1 min-w-6 justify-center rounded-full bg-primary px-1.5 text-xs text-white">
                           {count}
                         </Badge>
                       ) : null}
@@ -627,7 +627,7 @@ export default function CalendarPage() {
                 </button>
 
                 {!moodValue && count >= 2 ? (
-                  <Badge className="absolute right-2 top-1 min-w-5 justify-center rounded-full bg-[#17171c] px-1 text-xs text-white pointer-events-none">
+                  <Badge className="absolute right-2 top-1 min-w-5 justify-center rounded-full bg-primary px-1 text-xs text-white pointer-events-none">
                     {count}
                   </Badge>
                 ) : null}
@@ -743,7 +743,7 @@ export default function CalendarPage() {
         </div>
         <div className="mt-4">
           <Button
-            className="h-12 w-full bg-[#17171c] text-white"
+            className="h-12 w-full"
             onClick={() => {
               setCurrentDate(
                 new Date(monthDraft.year, monthDraft.month - 1, 1)

@@ -5,6 +5,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Heart, MessageCircle, Star } from "lucide-react";
+import { Heart, MessageCircle, Star } from "lucide-react";
 
 type ReviewSummary = {
   id: string;
@@ -171,20 +172,7 @@ export default function ProfileReviewsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]"
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">공연 리뷰</h1>
-          <div className="w-10" />
-        </header>
+        <PageHeader title="공연 리뷰" className="mb-6" />
 
         {initialLoading ? (
           <div className="space-y-3">

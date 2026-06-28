@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SupportPage() {
@@ -67,20 +67,7 @@ export default function SupportPage() {
     <MobileContainer>
       {sending ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">문의하기</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="문의하기" className="mb-6" />
 
         <div className="space-y-6">
           <section className="space-y-2">

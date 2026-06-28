@@ -530,8 +530,8 @@ export default function ProfilePage() {
   return (
     <>
       <main className="px-4 pb-[140px]">
-        <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">프로필</h1>
+        <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold">프로필</h1>
           <div className="flex items-center gap-1">
             <Button
               type="button"

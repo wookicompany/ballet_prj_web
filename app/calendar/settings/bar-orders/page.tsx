@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import {
@@ -25,7 +26,7 @@ import {
   setBarOrdersCache,
   invalidateBarOrdersCache,
 } from "@/lib/barOrdersCache";
-import { ChevronLeft, Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type SavedBarOrder = {
@@ -201,30 +202,23 @@ export default function SavedBarOrdersPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">바 순서 관리</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.push("/calendar/settings/bar-orders/new")}
-            disabled={loading}
-            aria-label="바 순서 추가"
-          >
-            <Plus className="size-5" />
-          </Button>
-        </header>
+        <PageHeader
+          title="바 순서 관리"
+          className="mb-6"
+          right={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => router.push("/calendar/settings/bar-orders/new")}
+              disabled={loading}
+              aria-label="바 순서 추가"
+            >
+              <Plus className="size-5" />
+            </Button>
+          }
+        />
 
         <section className="space-y-3">
           {loading || listLoading ? (

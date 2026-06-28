@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { use, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import {
   ChevronLeft,
   Globe,
@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
@@ -131,7 +132,6 @@ export default function BrandDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [brand, setBrand] = useState<Brand | null>(null);
@@ -216,26 +216,19 @@ export default function BrandDetailPage({
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon-lg" onClick={handleLike}>
-            <Heart
-              className="size-6"
-              style={{ color: "#FF154A" }}
-              fill={liked ? "#FF154A" : "none"}
-              strokeWidth={liked ? 0 : 1.5}
-            />
-          </Button>
-        </header>
+        <PageHeader
+          className="mb-6"
+          right={
+            <Button type="button" variant="ghost" size="icon-lg" onClick={handleLike}>
+              <Heart
+                className="size-6"
+                style={{ color: "#FF154A" }}
+                fill={liked ? "#FF154A" : "none"}
+                strokeWidth={liked ? 0 : 1.5}
+              />
+            </Button>
+          }
+        />
 
         <div className="mt-2 flex flex-col gap-3">
           {loading ? (

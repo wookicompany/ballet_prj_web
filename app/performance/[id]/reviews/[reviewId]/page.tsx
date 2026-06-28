@@ -6,6 +6,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import UserProfileSummarySheet from "@/components/performance/UserProfileSummarySheet";
@@ -39,7 +40,6 @@ import {
   type ReportReasonCode,
 } from "@/lib/reports";
 import {
-  ChevronLeft,
   Flag,
   Heart,
   MessageCircle,
@@ -845,35 +845,28 @@ export default function PerformanceReviewDetailPage() {
     <MobileContainer>
       {deletingReview ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">리뷰 상세</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => {
-              if (!user) {
-                openLoginSheet();
-                return;
-              }
-              setActionSheetOpen(true);
-            }}
-            aria-label="리뷰 메뉴"
-          >
-            <MoreHorizontal className="size-5" />
-          </Button>
-        </header>
+        <PageHeader
+          title="리뷰 상세"
+          className="mb-6"
+          right={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => {
+                if (!user) {
+                  openLoginSheet();
+                  return;
+                }
+                setActionSheetOpen(true);
+              }}
+              aria-label="리뷰 메뉴"
+            >
+              <MoreHorizontal className="size-5" />
+            </Button>
+          }
+        />
 
         <section className="space-y-4 rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm">
           {performance ? (

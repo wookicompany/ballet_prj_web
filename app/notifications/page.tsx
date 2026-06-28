@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
 import { getNotificationsCache, setNotificationsCache } from "@/lib/notificationsCache";
-import { ChevronLeft } from "lucide-react";
 
 type NotificationItem = {
   id: string;
@@ -123,20 +123,7 @@ export default function NotificationsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">알림</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="알림" className="mb-6" />
 
         {loading ? renderSkeleton() : null}
 

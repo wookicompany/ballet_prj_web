@@ -2,20 +2,18 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CalendarSettingsPage() {
-  const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [weekStartMonday, setWeekStartMonday] = useState(false);
@@ -114,20 +112,7 @@ export default function CalendarSettingsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">캘린더 설정</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="캘린더 설정" className="mb-6" />
 
         <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
           <div className="flex items-center justify-between px-4 py-4">

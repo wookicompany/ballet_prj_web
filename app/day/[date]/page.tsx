@@ -189,7 +189,7 @@ export default function DayPage() {
 
   return (
     <MobileContainer>
-      <main className="flex min-h-screen flex-col bg-white text-[#17171c]">
+      <main className="flex min-h-screen flex-col bg-background text-[#17171c]">
       <header className="h-12 flex items-center justify-between px-4">
         <Button
           type="button"

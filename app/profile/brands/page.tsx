@@ -5,13 +5,14 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 
 type LikedBrand = {
@@ -106,20 +107,7 @@ export default function ProfileBrandsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]"
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">찜한 브랜드</h1>
-          <div className="w-10" />
-        </header>
+        <PageHeader title="찜한 브랜드" className="mb-6" />
 
         {initialLoading ? (
           <div className="space-y-3">

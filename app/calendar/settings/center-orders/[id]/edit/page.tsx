@@ -5,6 +5,7 @@ import { useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAc
 import { useParams, useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,6 @@ import {
   invalidateCenterOrdersCache,
 } from "@/lib/centerOrdersCache";
 import { CENTER_ORDER_TAGS } from "@/lib/orderTags";
-import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 type SavedCenterOrder = {
@@ -183,20 +183,7 @@ export default function EditCenterOrderPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-4 pb-8">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">센터 순서 수정</h1>
-          <div className="w-10" />
-        </header>
+        <PageHeader title="센터 순서 수정" className="mb-6" />
 
         <div className="flex-1">
           {loading || pageLoading ? (

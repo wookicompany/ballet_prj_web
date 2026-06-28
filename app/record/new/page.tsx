@@ -14,6 +14,7 @@ import {
 } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter, useSearchParams } from "next/navigation";
+import PageHeader from "@/components/layout/PageHeader";
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -61,7 +62,6 @@ import {
   Activity,
   CalendarDays,
   Check,
-  ChevronLeft,
   Flame,
   Heart,
   HeartPulse,
@@ -271,7 +271,7 @@ function RecordNewContent() {
     null
   );
   const hours = useMemo(
-    () => Array.from({ length: 18 }, (_, idx) => String(idx + 6).padStart(2, "0")),
+    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
     []
   );
   const minutes = useMemo(
@@ -977,20 +977,7 @@ function RecordNewContent() {
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">기록 작성</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="기록 작성" className="mb-6" />
 
         <div className="space-y-8">
           <section className="space-y-3">
@@ -1381,7 +1368,7 @@ function RecordNewContent() {
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-card p-3 min-h-[48px] flex items-center">
                   {barOrderTags.length === 0 ? (
                     <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -1493,7 +1480,7 @@ function RecordNewContent() {
                     불러오기
                   </Button>
                 </div>
-                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-white p-3 min-h-[48px] flex items-center">
+                <div className="space-y-2 rounded-lg border border-[#17171c]/10 bg-card p-3 min-h-[48px] flex items-center">
                   {centerOrderTags.length === 0 ? (
                     <p className="text-sm text-[#17171c]/40">
                       선택된 순서가 여기 표시돼요.
@@ -1654,7 +1641,7 @@ function RecordNewContent() {
 
           <Button
             type="button"
-            className="h-12 w-full bg-[#17171c] text-white"
+            className="h-12 w-full"
             disabled={saving}
             onClick={handleSubmit}
           >
@@ -1734,7 +1721,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white"
+              className="h-12 w-full"
               onClick={() => {
                 const paddedMonth = String(dateDraft.month).padStart(2, "0");
                 const paddedDay = String(dateDraft.day).padStart(2, "0");
@@ -1812,7 +1799,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white"
+              className="h-12 w-full"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1888,7 +1875,7 @@ function RecordNewContent() {
           </div>
           <div className="mt-4">
             <Button
-              className="h-12 w-full bg-[#17171c] text-white"
+              className="h-12 w-full"
               onClick={() => {
                 setForm((prev) => ({
                   ...prev,
@@ -1912,7 +1899,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedLocations.length === 0 ? (
-              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-card px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 장소가 아직 없어요.
                 </p>
@@ -1984,7 +1971,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedInstructorLevels.length === 0 ? (
-              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-card px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 강사님 & 레벨이 아직 없어요.
                 </p>
@@ -2054,7 +2041,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedBarOrders.length === 0 ? (
-              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-card px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 바 순서가 아직 없어요.
                 </p>
@@ -2147,7 +2134,7 @@ function RecordNewContent() {
                 <Spinner size="lg" />
               </div>
             ) : savedCenterOrders.length === 0 ? (
-              <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
+              <div className="rounded-lg border border-[#17171c]/5 bg-card px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
                   저장된 센터 순서가 아직 없어요.
                 </p>

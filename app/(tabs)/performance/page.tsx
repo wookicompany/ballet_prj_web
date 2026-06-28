@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
   getPerformanceHomeCache,
@@ -56,6 +57,8 @@ type PerformanceHomePayload = {
   shouldWarn: boolean;
 };
 
+type DancerSection = { name: string; items: PerformanceItem[] };
+
 const EMPTY_SECTIONS: SectionBuckets = {
   popular: [],
   scheduled: [],
@@ -78,6 +81,7 @@ const getDaysUntil = (value?: string | null) => {
 
 export default function PerformanceListPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(
     () => !getPerformanceHomeCache<PerformanceHomePayload>()
   );
@@ -87,6 +91,8 @@ export default function PerformanceListPage() {
   const [sections, setSections] = useState<SectionBuckets>(
     () => getPerformanceHomeCache<PerformanceHomePayload>()?.sections ?? EMPTY_SECTIONS
   );
+  const [dancerSections, setDancerSections] = useState<DancerSection[]>([]);
+  const [dancerLoading, setDancerLoading] = useState(true);
 
   const fetchSections = useCallback(async () => {
     const cached = getPerformanceHomeCache<PerformanceHomePayload>();
@@ -298,6 +304,63 @@ export default function PerformanceListPage() {
     fetchSections();
   }, [fetchSections]);
 
+  const fetchDancerSections = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data: dancerRows } = await supabase
+        .from("favorite_dancers")
+        .select("name")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      const names = (dancerRows ?? []).map((r) => r.name).filter(Boolean);
+      if (names.length === 0) {
+        setDancerSections([]);
+        return;
+      }
+
+      const baseSelect =
+        "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
+
+      const results = await Promise.all(
+        names.map(async (name) => {
+          const { data: detailRows } = await supabase
+            .from("kopis_performance_details")
+            .select("mt20id")
+            .is("deleted_at", null)
+            .eq("is_active", true)
+            .ilike("prfcast", `%${name}%`)
+            .limit(200);
+
+          const ids = (detailRows ?? []).map((r) => r.mt20id).filter(Boolean);
+          if (ids.length === 0) return { name, items: [] as PerformanceItem[] };
+
+          const { data: perfRows } = await supabase
+            .from("kopis_performances")
+            .select(baseSelect)
+            .is("deleted_at", null)
+            .eq("is_active", true)
+            .in("mt20id", ids)
+            .order("prfpdfrom", { ascending: false })
+            .limit(12);
+
+          return { name, items: (perfRows ?? []) as PerformanceItem[] };
+        })
+      );
+
+      setDancerSections(results);
+    } finally {
+      setDancerLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (!user) { setDancerLoading(false); return; }
+    void fetchDancerSections();
+  }, [authLoading, loading, user, fetchDancerSections]);
+
   const renderCard = useCallback(
     (
       item: PerformanceItem,
@@ -421,12 +484,12 @@ export default function PerformanceListPage() {
   );
 
 
-  if (loading) {
+  if (loading || dancerLoading) {
     return (
       <>
         <main className="px-4 pb-16">
-          <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold">공연</h1>
+          <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
+            <h1 className="text-lg font-bold">공연</h1>
             <Button
               type="button"
               variant="ghost"
@@ -457,8 +520,8 @@ export default function PerformanceListPage() {
   return (
     <>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">공연</h1>
+        <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold">공연</h1>
           <Button
             type="button"
             variant="ghost"
@@ -498,6 +561,39 @@ export default function PerformanceListPage() {
                   {popularCards}
                 </div>
               </section>
+            )}
+
+            {dancerSections.map(({ name, items }) =>
+              items.length > 0 ? (
+                <section key={name} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-semibold">
+                        {name}님의 공연을 모아봤어요
+                      </h2>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-[#17171c]/50"
+                      onClick={() =>
+                        router.push(
+                          `/performance/search?section=${encodeURIComponent(name)}`
+                        )
+                      }
+                      aria-label={`${name} 공연 더보기`}
+                    >
+                      <ChevronRight className="size-5" />
+                    </Button>
+                  </div>
+                  <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                    {items.map((item) =>
+                      renderCard(item, { rating: ratingMap[item.mt20id] })
+                    )}
+                  </div>
+                </section>
+              ) : null
             )}
 
             {scheduledCards.length > 0 && (

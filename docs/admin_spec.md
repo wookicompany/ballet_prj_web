@@ -21,6 +21,7 @@
 | 공지사항 관리     | `/wookicompany/admin/notices`     |
 | 문의 관리        | `/wookicompany/admin/support-inquiries` |
 | 광고 관리        | `/wookicompany/admin/ads`         |
+| 브랜드 관리      | `/wookicompany/admin/brands`      |
 | 회원 관리        | `/wookicompany/admin/members`     |
 
 - **UI**: shadcn/ui Sidebar, Tabs, Table, Card, Button, AlertDialog, Avatar, Pagination 등 사용. 웹(데스크톱) 최적화.

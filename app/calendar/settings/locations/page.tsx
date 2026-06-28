@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import {
@@ -25,7 +26,7 @@ import {
   setLocationsCache,
   invalidateLocationsCache,
 } from "@/lib/locationsCache";
-import { ChevronLeft, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type SavedLocation = {
@@ -187,30 +188,23 @@ export default function SavedLocationsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">장소 관리</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.push("/calendar/settings/locations/new")}
-            disabled={loading}
-            aria-label="장소 추가"
-          >
-            <Plus className="size-5" />
-          </Button>
-        </header>
+        <PageHeader
+          title="장소 관리"
+          className="mb-6"
+          right={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => router.push("/calendar/settings/locations/new")}
+              disabled={loading}
+              aria-label="장소 추가"
+            >
+              <Plus className="size-5" />
+            </Button>
+          }
+        />
 
         <section className="space-y-3">
           {loading || listLoading ? (

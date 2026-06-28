@@ -5,6 +5,7 @@ import AnimatedImage from "@/components/ui/animated-image";
 import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { compressImage } from "@/lib/compressImage";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { supabase } from "@/lib/supabaseClient";
 import BottomSheet from "@/components/sheets/BottomSheet";
-import { CalendarDays, Camera, ChevronLeft, User } from "lucide-react";
+import { CalendarDays, Camera, User } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -184,20 +185,7 @@ export default function ProfileEditPage() {
     <MobileContainer>
       {saving ? <LoadingOverlay /> : null}
       <main className="px-4 pb-16">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">프로필 설정</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="프로필 설정" className="mb-6" />
 
         <div className="space-y-6">
           <section className="flex flex-col items-center gap-4">

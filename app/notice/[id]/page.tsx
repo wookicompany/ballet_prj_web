@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
-import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
-import { ChevronLeft } from "lucide-react";
 
 type NoticeDetail = {
   id: string;
@@ -36,7 +34,6 @@ const formatPublishedDate = (value: string | null) => {
 
 
 export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
-  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [noticeId, setNoticeId] = useState<string>("");
@@ -120,20 +117,7 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
   return (
     <MobileContainer>
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">공지사항</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="공지사항" className="mb-6" />
 
         {loading ? (
           <div className="space-y-4 rounded-xl border border-[#17171c]/5 bg-white p-4">

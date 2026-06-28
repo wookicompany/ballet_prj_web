@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AnimatedImage from "@/components/ui/animated-image";
 import { getAccessToken } from "@/lib/authSession";
-import { ChevronLeft, User } from "lucide-react";
+import { User } from "lucide-react";
 import { toast } from "sonner";
 
 type AccountPayload = {
@@ -46,7 +45,6 @@ const formatCreatedAt = (iso: string | null) => {
 };
 
 export default function ProfileAccountInfoPage() {
-  const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const [account, setAccount] = useState<AccountPayload | null>(null);
@@ -97,20 +95,7 @@ export default function ProfileAccountInfoPage() {
     return (
       <MobileContainer>
         <main className="px-4 pb-12">
-          <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-lg"
-              className="text-[#17171c]/70"
-              onClick={() => router.back()}
-              aria-label="뒤로"
-            >
-              <ChevronLeft className="size-6" />
-            </Button>
-            <h1 className="text-base font-semibold">계정 정보</h1>
-            <div className="w-9" />
-          </header>
+          <PageHeader title="계정 정보" className="mb-6" />
 
           <section className="rounded-xl border border-[#17171c]/5 bg-white p-4">
             <div className="flex items-center gap-3">
@@ -158,20 +143,7 @@ export default function ProfileAccountInfoPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-12">
-        <header className="sticky top-0 z-20 bg-white h-12 mb-6 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <h1 className="text-base font-semibold">계정 정보</h1>
-          <div className="w-9" />
-        </header>
+        <PageHeader title="계정 정보" className="mb-6" />
 
         <section className="rounded-xl border border-[#17171c]/5 bg-white p-4">
           <div className="flex items-center gap-3">
