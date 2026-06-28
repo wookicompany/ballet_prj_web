@@ -279,6 +279,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_dancers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_dancers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       kopis_facilities: {
         Row: {
           created_at: string | null
@@ -1116,8 +1145,6 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           expo_push_token: string | null
-          favorite_dancer_1: string | null
-          favorite_dancer_2: string | null
           id: string
           is_admin: boolean
           nickname: string | null
@@ -1133,8 +1160,6 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
-          favorite_dancer_1?: string | null
-          favorite_dancer_2?: string | null
           id: string
           is_admin?: boolean
           nickname?: string | null
@@ -1150,8 +1175,6 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
-          favorite_dancer_1?: string | null
-          favorite_dancer_2?: string | null
           id?: string
           is_admin?: boolean
           nickname?: string | null

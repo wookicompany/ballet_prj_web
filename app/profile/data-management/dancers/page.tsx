@@ -10,42 +10,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
-import { getProfileCache, invalidateProfileCache } from "@/lib/profileCache";
 import { supabase } from "@/lib/supabaseClient";
 import { Check, Heart, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-type Slot = "1" | "2";
-type ProfileCachePayload = {
-  profile: { favorite_dancer_1: string | null; favorite_dancer_2: string | null } | null;
-};
+type Dancer = { id: string; name: string };
 
 export default function DancersPage() {
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [dancer1, setDancer1] = useState<string | null>(null);
-  const [dancer2, setDancer2] = useState<string | null>(null);
+  const [dancers, setDancers] = useState<Dancer[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
-  const [editingSlot, setEditingSlot] = useState<Slot | "new" | null>(null);
+  const [editingId, setEditingId] = useState<string | "new" | null>(null);
   const [editValue, setEditValue] = useState("");
   const [mutating, setMutating] = useState(false);
 
   const loadDancers = useCallback(async () => {
     if (!user) return;
-    const cached = getProfileCache<ProfileCachePayload>(user.id);
-    if (cached?.profile !== undefined) {
-      setDancer1(cached.profile?.favorite_dancer_1 ?? null);
-      setDancer2(cached.profile?.favorite_dancer_2 ?? null);
-      setPageLoading(false);
-      return;
-    }
     const { data } = await supabase
-      .from("profiles")
-      .select("favorite_dancer_1,favorite_dancer_2")
-      .eq("id", user.id)
-      .single();
-    setDancer1(data?.favorite_dancer_1 ?? null);
-    setDancer2(data?.favorite_dancer_2 ?? null);
+      .from("favorite_dancers")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    setDancers(data ?? []);
     setPageLoading(false);
   }, [user]);
 
@@ -55,82 +42,92 @@ export default function DancersPage() {
     void loadDancers();
   }, [loading, loadDancers, user]);
 
-  const callPatch = useCallback(
-    async (payload: { favorite_dancer_1?: string | null; favorite_dancer_2?: string | null }) => {
-      if (!user) return false;
-      const accessToken = await getAccessToken(openLoginSheet);
-      if (!accessToken) return false;
-      let response: Response;
-      try {
-        response = await fetch("/api/profile/dancers", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
-        return false;
-      }
-      if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as { message?: string };
-        toast(data.message ?? "저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
-        return false;
-      }
-      invalidateProfileCache(user.id);
-      return true;
-    },
-    [openLoginSheet, user]
-  );
-
-  const handleDelete = async (slot: Slot) => {
+  const handleAdd = async () => {
     if (!user || mutating) return;
+    const trimmed = editValue.trim();
+    if (!trimmed) { toast("무용수 이름을 입력해 주세요."); return; }
     setMutating(true);
-    const ok = await callPatch(slot === "1" ? { favorite_dancer_1: null } : { favorite_dancer_2: null });
-    if (ok) {
-      if (slot === "1") setDancer1(null);
-      else setDancer2(null);
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) { setMutating(false); return; }
+    try {
+      const res = await fetch("/api/profile/dancers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { message?: string };
+        toast(d.message ?? "저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      } else {
+        const d = (await res.json()) as { item: Dancer };
+        setDancers((prev) => [...prev, d.item]);
+        setEditingId(null);
+        setEditValue("");
+      }
+    } catch {
+      toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
     }
     setMutating(false);
   };
 
-  const handleEditSave = async () => {
-    if (!user || mutating || !editingSlot) return;
+  const handleEditSave = async (id: string) => {
+    if (!user || mutating) return;
     const trimmed = editValue.trim();
-    if (!trimmed) {
-      toast("무용수 이름을 입력해 주세요.");
-      return;
-    }
+    if (!trimmed) { toast("무용수 이름을 입력해 주세요."); return; }
     setMutating(true);
-    if (editingSlot === "new") {
-      if (!dancer1) {
-        const ok = await callPatch({ favorite_dancer_1: trimmed });
-        if (ok) { setDancer1(trimmed); setEditingSlot(null); }
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) { setMutating(false); return; }
+    try {
+      const res = await fetch(`/api/profile/dancers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { message?: string };
+        toast(d.message ?? "저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
       } else {
-        const ok = await callPatch({ favorite_dancer_2: trimmed });
-        if (ok) { setDancer2(trimmed); setEditingSlot(null); }
+        setDancers((prev) => prev.map((d) => d.id === id ? { ...d, name: trimmed } : d));
+        setEditingId(null);
+        setEditValue("");
       }
-    } else if (editingSlot === "1") {
-      const ok = await callPatch({ favorite_dancer_1: trimmed });
-      if (ok) { setDancer1(trimmed); setEditingSlot(null); }
-    } else {
-      const ok = await callPatch({ favorite_dancer_2: trimmed });
-      if (ok) { setDancer2(trimmed); setEditingSlot(null); }
+    } catch {
+      toast("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    setMutating(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!user || mutating) return;
+    setMutating(true);
+    const accessToken = await getAccessToken(openLoginSheet);
+    if (!accessToken) { setMutating(false); return; }
+    try {
+      const res = await fetch(`/api/profile/dancers/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { message?: string };
+        toast(d.message ?? "삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      } else {
+        setDancers((prev) => prev.filter((d) => d.id !== id));
+      }
+    } catch {
+      toast("삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
     }
     setMutating(false);
   };
 
   const handleEditCancel = () => {
-    setEditingSlot(null);
+    setEditingId(null);
     setEditValue("");
   };
 
-  const filledCount = [dancer1, dancer2].filter(Boolean).length;
-  const canAdd = filledCount < 2;
-
-  const renderCard = (name: string, slot: Slot) => {
-    if (editingSlot === slot) {
+  const renderCard = (dancer: Dancer) => {
+    if (editingId === dancer.id) {
       return (
-        <div key={slot} className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4">
+        <div key={dancer.id} className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4">
           <div className="flex items-center gap-2">
             <Input
               autoFocus
@@ -139,7 +136,7 @@ export default function DancersPage() {
               maxLength={20}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void handleEditSave();
+                if (e.key === "Enter") void handleEditSave(dancer.id);
                 if (e.key === "Escape") handleEditCancel();
               }}
             />
@@ -147,7 +144,7 @@ export default function DancersPage() {
               type="button" variant="ghost" size="icon"
               className="h-8 w-8 text-[#17171c]/70"
               disabled={mutating}
-              onClick={handleEditSave}
+              onClick={() => handleEditSave(dancer.id)}
               aria-label="저장"
             >
               <Check className="h-4 w-4" />
@@ -165,18 +162,18 @@ export default function DancersPage() {
       );
     }
     return (
-      <div key={slot} className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4">
+      <div key={dancer.id} className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm font-medium text-[#17171c]">
             <Heart className="h-4 w-4 text-[#17171c]/50" />
-            {name}
+            {dancer.name}
           </div>
           <div className="flex items-center gap-2">
             <Button
               type="button" variant="ghost" size="icon"
               className="h-8 w-8 text-[#17171c]/70"
               disabled={mutating}
-              onClick={() => { setEditValue(name); setEditingSlot(slot); }}
+              onClick={() => { setEditValue(dancer.name); setEditingId(dancer.id); }}
               aria-label="수정"
             >
               <Pencil className="h-4 w-4" />
@@ -185,7 +182,7 @@ export default function DancersPage() {
               type="button" variant="ghost" size="icon"
               className="h-8 w-8 text-[#17171c]/70"
               disabled={mutating}
-              onClick={() => handleDelete(slot)}
+              onClick={() => handleDelete(dancer.id)}
               aria-label="삭제"
             >
               <Trash2 className="h-4 w-4" />
@@ -207,7 +204,7 @@ export default function DancersPage() {
           maxLength={20}
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") void handleEditSave();
+            if (e.key === "Enter") void handleAdd();
             if (e.key === "Escape") handleEditCancel();
           }}
         />
@@ -215,7 +212,7 @@ export default function DancersPage() {
           type="button" variant="ghost" size="icon"
           className="h-8 w-8 text-[#17171c]/70"
           disabled={mutating}
-          onClick={handleEditSave}
+          onClick={handleAdd}
           aria-label="저장"
         >
           <Check className="h-4 w-4" />
@@ -252,12 +249,12 @@ export default function DancersPage() {
           title="무용수 관리"
           className="mb-6"
           right={
-            canAdd && editingSlot !== "new" && !pageLoading ? (
+            editingId !== "new" && !pageLoading ? (
               <Button
                 type="button" variant="ghost" size="icon-lg"
                 className="text-[#17171c]/70"
                 disabled={mutating}
-                onClick={() => { setEditValue(""); setEditingSlot("new"); }}
+                onClick={() => { setEditValue(""); setEditingId("new"); }}
                 aria-label="무용수 추가"
               >
                 <Plus className="size-5" />
@@ -274,10 +271,9 @@ export default function DancersPage() {
             </>
           ) : (
             <>
-              {dancer1 && renderCard(dancer1, "1")}
-              {dancer2 && renderCard(dancer2, "2")}
-              {editingSlot === "new" && renderNewCard()}
-              {!dancer1 && !dancer2 && editingSlot !== "new" && (
+              {dancers.map((dancer) => renderCard(dancer))}
+              {editingId === "new" && renderNewCard()}
+              {dancers.length === 0 && editingId !== "new" && (
                 <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                   <p className="text-sm text-[#17171c]/70">저장된 무용수가 아직 없어요.</p>
                 </div>
