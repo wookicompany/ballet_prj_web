@@ -30,6 +30,8 @@ type Profile = {
   nickname: string | null;
   avatar_url: string | null;
   ballet_started_at: string | null;
+  favorite_dancer_1: string | null;
+  favorite_dancer_2: string | null;
 };
 
 type ReviewSummary = {
@@ -212,7 +214,7 @@ export default function ProfilePage() {
       const [profileRes, recordStatsRes, reviewCountRes, locationInstructorRes] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id,nickname,avatar_url,ballet_started_at")
+          .select("id,nickname,avatar_url,ballet_started_at,favorite_dancer_1,favorite_dancer_2")
           .eq("id", user.id)
           .single(),
         supabase
@@ -234,7 +236,7 @@ export default function ProfilePage() {
 
       if (!profileRes.data) {
         await supabase.from("profiles").insert({ id: user.id });
-        setProfile({ id: user.id, nickname: null, avatar_url: null, ballet_started_at: null });
+        setProfile({ id: user.id, nickname: null, avatar_url: null, ballet_started_at: null, favorite_dancer_1: null, favorite_dancer_2: null });
       } else {
         setProfile(profileRes.data as Profile);
       }

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ListOrdered,
   MapPin,
+  PersonStanding,
   UserRound,
 } from "lucide-react";
 
@@ -100,6 +101,18 @@ export default function DataManagementPage() {
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <ListOrdered className="h-5 w-5 text-[#17171c]/70" />
               센터 순서 관리
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/profile/data-management/dancers")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <PersonStanding className="h-5 w-5 text-[#17171c]/70" />
+              무용수 관리
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>

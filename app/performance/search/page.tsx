@@ -102,6 +102,7 @@ function PerformanceSearchContent() {
   const searchParams = useSearchParams();
   const sectionKey = searchParams.get("section") ?? "";
   const sectionConfig = SECTION_CONFIG[sectionKey] ?? null;
+  const isDancerSection = !SECTION_CONFIG[sectionKey] && !!sectionKey;
   const defaultStart = useMemo(() => formatSeoulDateKey(), []);
   const defaultEnd = useMemo(() => {
     const next = parseDateKey(defaultStart) ?? getSeoulTodayDate();
@@ -114,7 +115,7 @@ function PerformanceSearchContent() {
   const [filters, setFilters] = useState(() =>
     searchCached?.sectionKey === sectionKey
       ? searchCached.filters
-      : { startDate: sectionConfig ? "" : defaultStart, endDate: sectionConfig ? "" : defaultEnd }
+      : { startDate: (sectionConfig || isDancerSection) ? "" : defaultStart, endDate: (sectionConfig || isDancerSection) ? "" : defaultEnd }
   );
   const [loading, setLoading] = useState(() => searchCached?.sectionKey === sectionKey ? false : true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -150,11 +151,11 @@ function PerformanceSearchContent() {
 
   useEffect(() => {
     const nextFilters = {
-      startDate: sectionConfig ? "" : defaultStart,
-      endDate: sectionConfig ? "" : defaultEnd,
+      startDate: (sectionConfig || isDancerSection) ? "" : defaultStart,
+      endDate: (sectionConfig || isDancerSection) ? "" : defaultEnd,
     };
     setFilters(nextFilters);
-  }, [defaultEnd, defaultStart, sectionConfig]);
+  }, [defaultEnd, defaultStart, isDancerSection, sectionConfig]);
 
   const fetchOrderedIds = useCallback(async () => {
     setOrderedReady(false);
@@ -281,9 +282,31 @@ function PerformanceSearchContent() {
       return;
     }
 
+    if (isDancerSection) {
+      const { data: detailRows, error: detailError } = await supabase
+        .from("kopis_performance_details")
+        .select("mt20id")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .ilike("prfcast", `%${sectionKey}%`)
+        .limit(1000);
+
+      if (detailError) {
+        toast("공연 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setOrderedIds([]);
+        setOrderedReady(true);
+        return;
+      }
+
+      const ids = (detailRows ?? []).map((r) => r.mt20id).filter((id): id is string => Boolean(id));
+      setOrderedIds(ids);
+      setOrderedReady(true);
+      return;
+    }
+
     setOrderedIds(null);
     setOrderedReady(true);
-  }, [sectionConfig, sectionKey]);
+  }, [isDancerSection, sectionConfig, sectionKey]);
 
   const fetchPage = useCallback(
     async (pageToFetch: number) => {
@@ -334,6 +357,15 @@ function PerformanceSearchContent() {
         query = query
           .eq("prfstate", "공연완료")
           .order("prfpdto", { ascending: false });
+      } else if (isDancerSection) {
+        if (!orderedIds || orderedIds.length === 0) {
+          setItems([]);
+          setHasMore(false);
+          setLoading(false);
+          setLoadingMore(false);
+          return;
+        }
+        query = query.in("mt20id", orderedIds).order("prfpdfrom", { ascending: false });
       } else if (sectionConfig?.prfstate) {
         query = query.eq("prfstate", sectionConfig.prfstate);
       } else {
@@ -448,7 +480,7 @@ function PerformanceSearchContent() {
       setLoading(false);
       setLoadingMore(false);
     },
-    [filters, orderedIds, orderedReady, sectionConfig, sectionKey]
+    [filters, isDancerSection, orderedIds, orderedReady, sectionConfig, sectionKey]
   );
 
   useEffect(() => {
@@ -522,7 +554,7 @@ function PerformanceSearchContent() {
     <MobileContainer>
       <main className="px-4 pb-16">
         <PageHeader
-          title={sectionConfig?.title ?? "공연 리스트"}
+          title={sectionConfig?.title ?? (sectionKey ? `${sectionKey}님의 공연을 모아봤어요` : "공연 리스트")}
           className="mb-6"
         />
 

@@ -8,11 +8,13 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
   getPerformanceHomeCache,
   setPerformanceHomeCache,
 } from "@/lib/performanceHomeCache";
+import { getProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Search, Star } from "lucide-react";
@@ -56,6 +58,11 @@ type PerformanceHomePayload = {
   shouldWarn: boolean;
 };
 
+type DancerSection = { name: string; items: PerformanceItem[] };
+type DancerProfileCache = {
+  profile: { favorite_dancer_1: string | null; favorite_dancer_2: string | null } | null;
+};
+
 const EMPTY_SECTIONS: SectionBuckets = {
   popular: [],
   scheduled: [],
@@ -78,6 +85,7 @@ const getDaysUntil = (value?: string | null) => {
 
 export default function PerformanceListPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(
     () => !getPerformanceHomeCache<PerformanceHomePayload>()
   );
@@ -87,6 +95,7 @@ export default function PerformanceListPage() {
   const [sections, setSections] = useState<SectionBuckets>(
     () => getPerformanceHomeCache<PerformanceHomePayload>()?.sections ?? EMPTY_SECTIONS
   );
+  const [dancerSections, setDancerSections] = useState<DancerSection[]>([]);
 
   const fetchSections = useCallback(async () => {
     const cached = getPerformanceHomeCache<PerformanceHomePayload>();
@@ -297,6 +306,70 @@ export default function PerformanceListPage() {
   useEffect(() => {
     fetchSections();
   }, [fetchSections]);
+
+  const fetchDancerSections = useCallback(async () => {
+    if (!user) return;
+
+    const cached = getProfileCache<DancerProfileCache>(user.id);
+    let dancer1: string | null = null;
+    let dancer2: string | null = null;
+
+    if (cached !== null) {
+      dancer1 = cached.profile?.favorite_dancer_1 ?? null;
+      dancer2 = cached.profile?.favorite_dancer_2 ?? null;
+    } else {
+      const { data } = await supabase
+        .from("profiles")
+        .select("favorite_dancer_1,favorite_dancer_2")
+        .eq("id", user.id)
+        .single();
+      dancer1 = data?.favorite_dancer_1 ?? null;
+      dancer2 = data?.favorite_dancer_2 ?? null;
+    }
+
+    const names = [dancer1, dancer2].filter((n): n is string => !!n);
+    if (names.length === 0) {
+      setDancerSections([]);
+      return;
+    }
+
+    const baseSelect =
+      "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
+
+    const results = await Promise.all(
+      names.map(async (name) => {
+        const { data: detailRows } = await supabase
+          .from("kopis_performance_details")
+          .select("mt20id")
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .ilike("prfcast", `%${name}%`)
+          .limit(200);
+
+        const ids = (detailRows ?? []).map((r) => r.mt20id).filter(Boolean);
+        if (ids.length === 0) return { name, items: [] as PerformanceItem[] };
+
+        const { data: perfRows } = await supabase
+          .from("kopis_performances")
+          .select(baseSelect)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .in("mt20id", ids)
+          .order("prfpdfrom", { ascending: false })
+          .limit(12);
+
+        return { name, items: (perfRows ?? []) as PerformanceItem[] };
+      })
+    );
+
+    setDancerSections(results);
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (!user) return;
+    void fetchDancerSections();
+  }, [authLoading, loading, user, fetchDancerSections]);
 
   const renderCard = useCallback(
     (
@@ -602,6 +675,39 @@ export default function PerformanceListPage() {
                   {awardCards}
                 </div>
               </section>
+            )}
+
+            {dancerSections.map(({ name, items }) =>
+              items.length > 0 ? (
+                <section key={name} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-semibold">
+                        {name}님의 공연을 모아봤어요
+                      </h2>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-[#17171c]/50"
+                      onClick={() =>
+                        router.push(
+                          `/performance/search?section=${encodeURIComponent(name)}`
+                        )
+                      }
+                      aria-label={`${name} 공연 더보기`}
+                    >
+                      <ChevronRight className="size-5" />
+                    </Button>
+                  </div>
+                  <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                    {items.map((item) =>
+                      renderCard(item, { rating: ratingMap[item.mt20id] })
+                    )}
+                  </div>
+                </section>
+              ) : null
             )}
 
         </div>

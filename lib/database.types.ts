@@ -1116,6 +1116,8 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           expo_push_token: string | null
+          favorite_dancer_1: string | null
+          favorite_dancer_2: string | null
           id: string
           is_admin: boolean
           nickname: string | null
@@ -1131,6 +1133,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
+          favorite_dancer_1?: string | null
+          favorite_dancer_2?: string | null
           id: string
           is_admin?: boolean
           nickname?: string | null
@@ -1146,6 +1150,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
+          favorite_dancer_1?: string | null
+          favorite_dancer_2?: string | null
           id?: string
           is_admin?: boolean
           nickname?: string | null
