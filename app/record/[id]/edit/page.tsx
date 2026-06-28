@@ -610,7 +610,7 @@ export default function RecordEditPage() {
         return;
       }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("records")
         .select(
           "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
@@ -619,6 +619,12 @@ export default function RecordEditPage() {
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .single();
+
+      if (error || !data) {
+        toast("기록을 불러오지 못했어요.");
+        router.back();
+        return;
+      }
 
     if (data) {
         const barTags = data.bar_order
@@ -842,7 +848,7 @@ export default function RecordEditPage() {
       toast("날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요.");
       return;
     }
-    if (form.end_time < form.start_time) {
+    if (form.end_time <= form.start_time) {
       toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
       return;
     }
@@ -967,7 +973,7 @@ export default function RecordEditPage() {
     }
 
     if (successItems.length > 0) {
-      await fetch(`/api/records/${params.id}/media`, {
+      const mediaRes = await fetch(`/api/records/${params.id}/media`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -975,6 +981,9 @@ export default function RecordEditPage() {
         },
         body: JSON.stringify({ items: successItems }),
       });
+      if (!mediaRes.ok) {
+        toast("이미지를 저장하지 못했어요.");
+      }
     }
 
     if (user) invalidateProfileCache(user.id);
@@ -1022,10 +1031,12 @@ export default function RecordEditPage() {
       const visibleExisting = existingMedia.filter(
         (item) => !removedMediaIds.includes(item.id)
       );
-      if (
-        file.size > MAX_IMAGE_SIZE ||
-        visibleExisting.length + images.length >= 3
-      ) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast("파일 크기가 너무 커요. 20MB 이하 이미지만 업로드할 수 있어요.");
+        return;
+      }
+      if (visibleExisting.length + images.length >= 3) {
+        toast("사진은 최대 3장까지 업로드할 수 있어요.");
         return;
       }
       setImages((prev) => [...prev, file].slice(0, 3));

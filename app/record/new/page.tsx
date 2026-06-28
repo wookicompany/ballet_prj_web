@@ -620,7 +620,12 @@ function RecordNewContent() {
     if (!file) return;
 
     if (file.type.startsWith("image/")) {
-      if (file.size > MAX_IMAGE_SIZE || images.length >= 3) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast("파일 크기가 너무 커요. 20MB 이하 이미지만 업로드할 수 있어요.");
+        return;
+      }
+      if (images.length >= 3) {
+        toast("사진은 최대 3장까지 업로드할 수 있어요.");
         return;
       }
       setImages((prev) => [...prev, file].slice(0, 3));
@@ -814,7 +819,7 @@ function RecordNewContent() {
       toast("필수 항목을 입력해 주세요.");
       return;
     }
-    if (form.end_time < form.start_time) {
+    if (form.end_time <= form.start_time) {
       toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
       return;
     }
@@ -933,7 +938,7 @@ function RecordNewContent() {
     }
 
     if (successItems.length > 0) {
-      await fetch(`/api/records/${recordId}/media`, {
+      const mediaRes = await fetch(`/api/records/${recordId}/media`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -941,6 +946,9 @@ function RecordNewContent() {
         },
         body: JSON.stringify({ items: successItems }),
       });
+      if (!mediaRes.ok) {
+        toast("이미지를 저장하지 못했어요.");
+      }
     }
 
     invalidateProfileCache(user.id);
