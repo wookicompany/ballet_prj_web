@@ -21,8 +21,7 @@
 
 ### 브랜드 컬러 사용 규칙
 
-`--brand` (`#E8517C`)는 아래 **2가지 용도**에만 사용한다:
-- 탭바 활성 탭 아이콘·레이블
+`--brand` (`#E8517C`)는 아래 **1가지 용도**에만 사용한다:
 - Switch ON 상태 배경
 
 일반 버튼, 헤더, 섹션 타이틀 등에는 사용하지 않는다.
@@ -114,7 +113,7 @@
 ### TabBar (`components/navigation/TabBar.tsx`)
 
 - 배경: `bg-background` (`#ffffff`)
-- **활성 탭**: `font-bold text-[#E8517C]` (brand color)
+- **활성 탭**: `font-bold text-[#17171c]`
 - 비활성 탭: `text-[#17171c]/60`
 - 높이: `h-14` (56px)
 - 상단 구분선: `border-t border-[#17171c]/5`

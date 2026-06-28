@@ -26,7 +26,7 @@ export default function TabBar() {
         <Button
           variant="ghost"
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
-            isCalendar ? "font-bold text-[#E8517C]" : "text-[#17171c]/60"
+            isCalendar ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/calendar")}
           type="button"
@@ -37,7 +37,7 @@ export default function TabBar() {
         <Button
           variant="ghost"
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
-            isPerformance ? "font-bold text-[#E8517C]" : "text-[#17171c]/60"
+            isPerformance ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/performance")}
           type="button"
@@ -48,7 +48,7 @@ export default function TabBar() {
         <Button
           variant="ghost"
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
-            isBrand ? "font-bold text-[#E8517C]" : "text-[#17171c]/60"
+            isBrand ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={() => router.push("/brand")}
           type="button"
@@ -59,7 +59,7 @@ export default function TabBar() {
         <Button
           variant="ghost"
           className={`h-full flex-col gap-1 rounded-none text-[10px] hover:bg-transparent active:bg-transparent ${
-            isProfile ? "font-bold text-[#E8517C]" : "text-[#17171c]/60"
+            isProfile ? "font-bold text-[#17171c]" : "text-[#17171c]/60"
           }`}
           onClick={async () => {
             if (!user) {
