@@ -610,7 +610,7 @@ export default function RecordEditPage() {
         return;
       }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("records")
         .select(
           "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
@@ -620,64 +620,68 @@ export default function RecordEditPage() {
         .is("deleted_at", null)
         .single();
 
-    if (data) {
-        const barTags = data.bar_order
-          ? data.bar_order.split(",").map((value) => value.trim()).filter(Boolean)
-          : [];
-        const centerTags = data.center_order
-          ? data.center_order
-              .split(",")
-              .map((value) => value.trim())
-              .filter(Boolean)
-          : [];
-        setForm({
-          record_date: data.record_date,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          content: data.content,
-          mood: data.mood,
-          location: data.location ?? "",
-          level: data.level ?? "",
-          instructor: data.instructor ?? "",
-          bar_order: data.bar_order ?? "",
-          center_order: data.center_order ?? "",
-          did_well: data.did_well ?? "",
-          improve_next: data.improve_next ?? "",
-          outfit: data.outfit ?? "",
-          memo: data.memo ?? "",
-          workout_activity_label: data.workout_activity_label ?? null,
-          workout_source_name: data.workout_source_name ?? null,
-          workout_device_name: data.workout_device_name ?? null,
-          workout_active_energy_kcal: data.workout_active_energy_kcal ?? null,
-          workout_total_energy_kcal: data.workout_total_energy_kcal ?? null,
-          workout_avg_bpm: data.workout_avg_bpm ?? null,
-          workout_max_bpm: data.workout_max_bpm ?? null,
-        });
-        setBarOrderTags(barTags);
-        setCenterOrderTags(centerTags);
-        const hasHealthSyncValue = Boolean(
-          data.workout_activity_label ||
-            data.workout_source_name ||
-            data.workout_device_name ||
-            data.workout_active_energy_kcal !== null ||
-            data.workout_total_energy_kcal !== null ||
-            data.workout_avg_bpm !== null ||
-            data.workout_max_bpm !== null
-        );
-        setShowBarOrder(barTags.length > 0);
-        setShowCenterOrder(centerTags.length > 0);
-        setShowLocation(Boolean(data.location));
-        setShowLevelInstructor(Boolean(data.level || data.instructor));
-        setShowHealthSync(hasHealthSyncValue);
-        const parsedLocation = parseLocationValue(data.location ?? "");
-        setLocationName(parsedLocation.name);
-        setLocationBase(parsedLocation.base);
-        setLocationDetail(parsedLocation.detail);
+      if (error || !data) {
+        toast("기록을 불러오지 못했어요.");
+        router.back();
+        return;
       }
+
+      const barTags = data.bar_order
+        ? data.bar_order.split(",").map((value) => value.trim()).filter(Boolean)
+        : [];
+      const centerTags = data.center_order
+        ? data.center_order
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [];
+      setForm({
+        record_date: data.record_date,
+        start_time: data.start_time,
+        end_time: data.end_time,
+        content: data.content,
+        mood: data.mood,
+        location: data.location ?? "",
+        level: data.level ?? "",
+        instructor: data.instructor ?? "",
+        bar_order: data.bar_order ?? "",
+        center_order: data.center_order ?? "",
+        did_well: data.did_well ?? "",
+        improve_next: data.improve_next ?? "",
+        outfit: data.outfit ?? "",
+        memo: data.memo ?? "",
+        workout_activity_label: data.workout_activity_label ?? null,
+        workout_source_name: data.workout_source_name ?? null,
+        workout_device_name: data.workout_device_name ?? null,
+        workout_active_energy_kcal: data.workout_active_energy_kcal ?? null,
+        workout_total_energy_kcal: data.workout_total_energy_kcal ?? null,
+        workout_avg_bpm: data.workout_avg_bpm ?? null,
+        workout_max_bpm: data.workout_max_bpm ?? null,
+      });
+      setBarOrderTags(barTags);
+      setCenterOrderTags(centerTags);
+      const hasHealthSyncValue = Boolean(
+        data.workout_activity_label ||
+          data.workout_source_name ||
+          data.workout_device_name ||
+          data.workout_active_energy_kcal !== null ||
+          data.workout_total_energy_kcal !== null ||
+          data.workout_avg_bpm !== null ||
+          data.workout_max_bpm !== null
+      );
+      setShowBarOrder(barTags.length > 0);
+      setShowCenterOrder(centerTags.length > 0);
+      setShowLocation(Boolean(data.location));
+      setShowLevelInstructor(Boolean(data.level || data.instructor));
+      setShowHealthSync(hasHealthSyncValue);
+      const parsedLocation = parseLocationValue(data.location ?? "");
+      setLocationName(parsedLocation.name);
+      setLocationBase(parsedLocation.base);
+      setLocationDetail(parsedLocation.detail);
 
       // APP_AGENTS.md: deleted_at 소프트 삭제 규칙 — 클라이언트 후처리
       setExistingMedia(
-        (data?.record_media ?? [])
+        (data.record_media ?? [])
           .filter((m) => !m.deleted_at)
           .sort((a, b) => a.created_at.localeCompare(b.created_at))
           .map(({ id, url }) => ({ id, url }))
@@ -842,7 +846,7 @@ export default function RecordEditPage() {
       toast("날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요.");
       return;
     }
-    if (form.end_time < form.start_time) {
+    if (form.end_time <= form.start_time) {
       toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
       return;
     }
@@ -967,7 +971,7 @@ export default function RecordEditPage() {
     }
 
     if (successItems.length > 0) {
-      await fetch(`/api/records/${params.id}/media`, {
+      const mediaRes = await fetch(`/api/records/${params.id}/media`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -975,6 +979,9 @@ export default function RecordEditPage() {
         },
         body: JSON.stringify({ items: successItems }),
       });
+      if (!mediaRes.ok) {
+        toast("이미지를 저장하지 못했어요.");
+      }
     }
 
     if (user) invalidateProfileCache(user.id);
@@ -1022,10 +1029,12 @@ export default function RecordEditPage() {
       const visibleExisting = existingMedia.filter(
         (item) => !removedMediaIds.includes(item.id)
       );
-      if (
-        file.size > MAX_IMAGE_SIZE ||
-        visibleExisting.length + images.length >= 3
-      ) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast("파일 크기가 너무 커요. 20MB 이하 이미지만 업로드할 수 있어요.");
+        return;
+      }
+      if (visibleExisting.length + images.length >= 3) {
+        toast("사진은 최대 3장까지 업로드할 수 있어요.");
         return;
       }
       setImages((prev) => [...prev, file].slice(0, 3));
