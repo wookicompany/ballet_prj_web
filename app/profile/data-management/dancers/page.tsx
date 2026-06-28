@@ -118,29 +118,29 @@ export default function DancersPage() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-16">
+      <main className="flex min-h-screen flex-col px-4 pb-8">
         <PageHeader title="무용수 관리" className="mb-6" />
 
         {pageLoading ? (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4">
             <div className="space-y-2">
               <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
             <div className="space-y-2">
               <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="dancer1" className="text-sm text-[#17171c]">
+              <Label htmlFor="dancer1" className="text-sm text-[#17171c]/60">
                 무용수 1
               </Label>
               <Input
                 id="dancer1"
-                className="h-9"
+                className="h-12 text-base placeholder:text-sm"
                 placeholder="무용수 이름을 입력해 주세요"
                 value={dancer1}
                 maxLength={20}
@@ -148,12 +148,12 @@ export default function DancersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dancer2" className="text-sm text-[#17171c]">
+              <Label htmlFor="dancer2" className="text-sm text-[#17171c]/60">
                 무용수 2
               </Label>
               <Input
                 id="dancer2"
-                className="h-9"
+                className="h-12 text-base placeholder:text-sm"
                 placeholder="무용수 이름을 입력해 주세요"
                 value={dancer2}
                 maxLength={20}
@@ -166,14 +166,16 @@ export default function DancersPage() {
           </div>
         )}
 
-        <Button
-          type="button"
-          className="mt-8 w-full bg-[#17171c] text-white"
-          disabled={saving || pageLoading}
-          onClick={handleSave}
-        >
-          {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
-        </Button>
+        <div className="mt-6">
+          <Button
+            type="button"
+            className="h-12 w-full bg-[#17171c] text-white"
+            disabled={saving || pageLoading}
+            onClick={handleSave}
+          >
+            {saving ? <Spinner size="sm" className="text-white" /> : "저장하기"}
+          </Button>
+        </div>
       </main>
     </MobileContainer>
   );
