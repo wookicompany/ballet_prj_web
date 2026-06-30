@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import CalendarTrendChart from "@/components/admin/CalendarTrendChart";
+import SignupTrendChart from "@/components/admin/SignupTrendChart";
 import { RefreshCw } from "lucide-react";
 
 type Stats = {
@@ -189,6 +191,12 @@ export default function AdminDashboardPage() {
             { label: "찜 건 수", value: stats.total_brand_likes },
           ]}
         />
+        <div className="md:col-span-2">
+          <SignupTrendChart />
+        </div>
+        <div className="md:col-span-2">
+          <CalendarTrendChart />
+        </div>
       </div>
     </div>
   );

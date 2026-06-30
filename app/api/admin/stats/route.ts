@@ -13,7 +13,7 @@ export const GET = async (request: Request) => {
   const { supabaseAdmin } = result;
 
   const [
-    { count: totalUsers },
+    { data: totalUsers },
     { count: totalRecords },
     { count: totalReviews },
     { count: totalComments },
@@ -22,7 +22,7 @@ export const GET = async (request: Request) => {
     { data: performanceUsersData },
     { data: brandUsersData },
   ] = await Promise.all([
-    supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabaseAdmin.rpc("get_total_auth_users_count"),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).is("deleted_at", null),
@@ -33,7 +33,7 @@ export const GET = async (request: Request) => {
   ]);
 
   return NextResponse.json({
-    total_users: totalUsers ?? 0,
+    total_users: Number(totalUsers ?? 0),
     total_records: totalRecords ?? 0,
     calendar_users: Number(calendarUsersData ?? 0),
     total_reviews: totalReviews ?? 0,
