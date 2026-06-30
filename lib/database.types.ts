@@ -1671,6 +1671,15 @@ export type Database = {
       get_calendar_users_count: { Args: never; Returns: number }
       get_brand_users_count: { Args: never; Returns: number }
       get_performance_users_count: { Args: never; Returns: number }
+      get_total_auth_users_count: { Args: never; Returns: number }
+      get_calendar_daily_stats: {
+        Args: { days?: number }
+        Returns: { stat_date: string; record_count: number; unique_users: number }[]
+      }
+      get_daily_signup_stats: {
+        Args: { days?: number }
+        Returns: { stat_date: string; signup_count: number }[]
+      }
       increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
       increment_ad_impression: { Args: { ad_id: string }; Returns: undefined }
       purge_soft_deleted_accounts: { Args: never; Returns: Json }
