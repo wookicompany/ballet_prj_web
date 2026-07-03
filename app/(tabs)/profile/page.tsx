@@ -12,6 +12,7 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
@@ -209,27 +210,34 @@ export default function ProfilePage() {
       setPreviewLoading(true);
 
       // Step 1: profile + stats (병렬)
-      const [profileRes, recordStatsRes, reviewCountRes, locationInstructorRes] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id,nickname,avatar_url,ballet_started_at")
-          .eq("id", user.id)
-          .single(),
-        supabase
-          .from("records")
-          .select("start_time,end_time,record_date")
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
-        supabase
-          .from("performance_reviews")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
-        supabase
-          .from("records")
-          .select("location,instructor,record_date")
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
+      const [[profileRes, recordStatsRes, reviewCountRes], allLocationInstructorRowsData] = await Promise.all([
+        Promise.all([
+          supabase
+            .from("profiles")
+            .select("id,nickname,avatar_url,ballet_started_at")
+            .eq("id", user.id)
+            .single(),
+          supabase
+            .from("records")
+            .select("start_time,end_time,record_date")
+            .eq("user_id", user.id)
+            .is("deleted_at", null),
+          supabase
+            .from("performance_reviews")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .is("deleted_at", null),
+        ]),
+        // .range() 없이 select하면 PostgREST 기본 row cap(보통 1000행)에 걸려
+        // 그 이후 기록이 강사님/장소 집계에서 누락될 수 있어 fetchAllRows로 전부 가져온다.
+        fetchAllRows<AllLocationInstructorRow>((from, to) =>
+          supabase
+            .from("records")
+            .select("location,instructor,record_date")
+            .eq("user_id", user.id)
+            .is("deleted_at", null)
+            .range(from, to)
+        ),
       ]);
 
       if (!profileRes.data) {
@@ -251,7 +259,7 @@ export default function ProfilePage() {
       setAllRecordStats(recordStatsLocal as RecordStat[]);
       setReviewCount(reviewCountRes.count ?? 0);
 
-      setAllLocationInstructorRows((locationInstructorRes.data ?? []) as AllLocationInstructorRow[]);
+      setAllLocationInstructorRows(allLocationInstructorRowsData);
 
       setProfileLoading(false);
 
@@ -455,35 +463,31 @@ export default function ProfilePage() {
 
   const topLocations = useMemo((): LocationStat[] => {
     const counts: Record<string, number> = {};
-    allLocationInstructorRows
-      .filter((r) => r.record_date.startsWith(String(selectedYear)))
-      .forEach((r) => {
-        if (!r.location) return;
-        const name = r.location.includes(" | ") ? r.location.split(" | ")[0].trim() : r.location.trim();
-        if (!name) return;
-        counts[name] = (counts[name] ?? 0) + 1;
-      });
+    allLocationInstructorRows.forEach((r) => {
+      if (!r.location) return;
+      const name = r.location.includes(" | ") ? r.location.split(" | ")[0].trim() : r.location.trim();
+      if (!name) return;
+      counts[name] = (counts[name] ?? 0) + 1;
+    });
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
-  }, [allLocationInstructorRows, selectedYear]);
+  }, [allLocationInstructorRows]);
 
   const topInstructors = useMemo((): InstructorStat[] => {
     const counts: Record<string, number> = {};
-    allLocationInstructorRows
-      .filter((r) => r.record_date.startsWith(String(selectedYear)))
-      .forEach((r) => {
-        if (!r.instructor) return;
-        const name = r.instructor.trim().replace(/선생님$/, "").trim();
-        if (!name) return;
-        counts[name] = (counts[name] ?? 0) + 1;
-      });
+    allLocationInstructorRows.forEach((r) => {
+      if (!r.instructor) return;
+      const name = r.instructor.trim();
+      if (!name) return;
+      counts[name] = (counts[name] ?? 0) + 1;
+    });
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
-  }, [allLocationInstructorRows, selectedYear]);
+  }, [allLocationInstructorRows]);
 
   if (loading) {
     return (
@@ -753,39 +757,87 @@ export default function ProfilePage() {
               );
             })()}
 
-            {(topLocations.length > 0 || topInstructors.length > 0) && (
-              <div className="mt-4 pt-4 border-t border-[#17171c]/5 space-y-4">
-                {topLocations.length > 0 && (
+              </>
+            )}
+          </section>
+        )}
+
+        {/* 자주 간 장소 · 자주 만난 강사님 */}
+        {(profileLoading || topLocations.length > 0 || topInstructors.length > 0) && (
+          <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
+            {profileLoading ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topInstructors.length > 0 && (
                   <div>
-                    <p className="text-xs text-[#17171c]/50 mb-2">자주 간 장소</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-sm font-semibold text-[#17171c]">자주 만난 강사님</h2>
+                      <button
+                        type="button"
+                        className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
+                        onClick={() => {
+                          sendHapticToApp();
+                          router.push("/profile/instructors");
+                        }}
+                      >
+                        전체보기
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
                     <div className="space-y-2">
-                      {topLocations.map((loc, i) => (
-                        <div key={loc.name} className="flex items-center gap-2">
+                      {topInstructors.map((ins, i) => (
+                        <div key={ins.name} className="flex items-baseline gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
-                          <span className="flex-1 text-sm text-[#17171c] truncate">{loc.name}</span>
-                          <span className="text-xs text-[#17171c]/50">{loc.count}회</span>
+                          <span className="flex-1 text-sm text-[#17171c]">{ins.name}</span>
+                          <span className="shrink-0 text-xs text-[#17171c]/50">{ins.count}회</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                {topInstructors.length > 0 && (
+                {topLocations.length > 0 && topInstructors.length > 0 && (
+                  <div className="border-t border-[#17171c]/5" />
+                )}
+                {topLocations.length > 0 && (
                   <div>
-                    <p className="text-xs text-[#17171c]/50 mb-2">자주 만난 강사님</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-sm font-semibold text-[#17171c]">자주 간 장소</h2>
+                      <button
+                        type="button"
+                        className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
+                        onClick={() => {
+                          sendHapticToApp();
+                          router.push("/profile/locations");
+                        }}
+                      >
+                        전체보기
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
                     <div className="space-y-2">
-                      {topInstructors.map((ins, i) => (
-                        <div key={ins.name} className="flex items-center gap-2">
+                      {topLocations.map((loc, i) => (
+                        <div key={loc.name} className="flex items-baseline gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
-                          <span className="flex-1 text-sm text-[#17171c] truncate">{ins.name}</span>
-                          <span className="text-xs text-[#17171c]/50">{ins.count}회</span>
+                          <span className="flex-1 text-sm text-[#17171c]">{loc.name}</span>
+                          <span className="shrink-0 text-xs text-[#17171c]/50">{loc.count}회</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
-            )}
-              </>
             )}
           </section>
         )}
