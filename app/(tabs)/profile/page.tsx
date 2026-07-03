@@ -773,7 +773,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="space-y-2">
                       {topLocations.map((loc, i) => (
-                        <div key={loc.name} className="flex items-center gap-2">
+                        <div key={loc.name} className="flex items-start gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
                           <span className="flex-1 text-sm text-[#17171c]">{loc.name}</span>
                           <span className="shrink-0 text-xs text-[#17171c]/50">{loc.count}회</span>
@@ -800,7 +800,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="space-y-2">
                       {topInstructors.map((ins, i) => (
-                        <div key={ins.name} className="flex items-center gap-2">
+                        <div key={ins.name} className="flex items-start gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
                           <span className="flex-1 text-sm text-[#17171c]">{ins.name}</span>
                           <span className="shrink-0 text-xs text-[#17171c]/50">{ins.count}회</span>
