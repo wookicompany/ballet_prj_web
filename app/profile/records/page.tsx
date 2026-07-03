@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import AnimatedImage from "@/components/ui/animated-image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getProfileRecordsCacheUnsafe,
   setProfileRecordsCache,
@@ -47,14 +47,20 @@ const formatRecordDate = (value: string) => formatIsoToSeoulDate(value, "ko-KR")
 const formatRecordTimeRange = (startTime: string, endTime: string) => {
   return `${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}`;
 };
+const escapeIlikePattern = (value: string) => value.replace(/[%_,]/g, (c) => `\\${c}`);
 
-export default function ProfileRecordsPage() {
+function ProfileRecordsContent() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
+  const searchParams = useSearchParams();
+  const instructorParam = searchParams.get("instructor")?.trim() || null;
+  const locationParam = searchParams.get("location")?.trim() || null;
+  const isFiltered = !!(instructorParam || locationParam);
 
   // 첫 렌더 시 동기적으로 캐시 읽기 → 캐시 있으면 즉시 컨텐츠 표시 (스크롤 복원 가능)
-  const initialCached = getProfileRecordsCacheUnsafe<CachePayload>();
+  // 필터된 뷰(강사/장소)는 전용 캐시 슬롯이 없으므로 항상 새로 불러온다.
+  const initialCached = isFiltered ? null : getProfileRecordsCacheUnsafe<CachePayload>();
 
   const [records, setRecords] = useState<RecordSummary[]>(initialCached?.records ?? []);
   const [recordMediaById, setRecordMediaById] = useState<Record<string, { urls: string[]; count: number }>>(initialCached?.recordMediaById ?? {});
@@ -103,11 +109,20 @@ export default function ProfileRecordsPage() {
         const from = (page - 1) * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
-        const { data: recordRows, error } = await supabase
+        let listQuery = supabase
           .from("records")
           .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal")
           .eq("user_id", user.id)
-          .is("deleted_at", null)
+          .is("deleted_at", null);
+
+        if (instructorParam) {
+          listQuery = listQuery.ilike("instructor", `%${escapeIlikePattern(instructorParam)}%`);
+        }
+        if (locationParam) {
+          listQuery = listQuery.ilike("location", `%${escapeIlikePattern(locationParam)}%`);
+        }
+
+        const { data: recordRows, error } = await listQuery
           .order("record_date", { ascending: false })
           .order("created_at", { ascending: false })
           .range(from, to);
@@ -172,17 +187,17 @@ export default function ProfileRecordsPage() {
     };
 
     fetchPage();
-  }, [page, user, hasMore]);
+  }, [page, user, hasMore, instructorParam, locationParam]);
 
   useEffect(() => {
-    if (!user || initialLoading) return;
+    if (!user || initialLoading || isFiltered) return;
     setProfileRecordsCache<CachePayload>(user.id, {
       records,
       recordMediaById,
       page,
       hasMore,
     });
-  }, [user, records, recordMediaById, page, hasMore, initialLoading]);
+  }, [user, records, recordMediaById, page, hasMore, initialLoading, isFiltered]);
 
   useEffect(() => {
     if (!sentinelRef.current || !hasMore) return;
@@ -197,7 +212,16 @@ export default function ProfileRecordsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <PageHeader title="발레 기록" className="mb-6" />
+        <PageHeader
+          title={
+            instructorParam
+              ? `${instructorParam} 기록`
+              : locationParam
+              ? `${locationParam} 기록`
+              : "발레 기록"
+          }
+          className="mb-6"
+        />
 
         {initialLoading ? (
           <div className="space-y-3">
@@ -218,7 +242,11 @@ export default function ProfileRecordsPage() {
           </div>
         ) : records.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <p className="text-sm text-[#17171c]/60">아직 기록이 없어요. 오늘의 발레를 기록해보세요.</p>
+            <p className="text-sm text-[#17171c]/60">
+              {isFiltered
+                ? "해당하는 기록이 없어요."
+                : "아직 기록이 없어요. 오늘의 발레를 기록해보세요."}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -336,5 +364,33 @@ export default function ProfileRecordsPage() {
         )}
       </main>
     </MobileContainer>
+  );
+}
+
+// 필터(instructor/location)가 바뀌면 ProfileRecordsContent를 완전히 재마운트시켜
+// page/records 등 내부 상태가 이전 필터 값으로 남아있지 않도록 한다.
+function ProfileRecordsRoute() {
+  const searchParams = useSearchParams();
+  const filterKey = searchParams.get("instructor")
+    ? `instructor:${searchParams.get("instructor")}`
+    : searchParams.get("location")
+    ? `location:${searchParams.get("location")}`
+    : "all";
+  return <ProfileRecordsContent key={filterKey} />;
+}
+
+export default function ProfileRecordsPage() {
+  return (
+    <Suspense
+      fallback={
+        <MobileContainer>
+          <main className="flex min-h-screen items-center justify-center">
+            <Spinner size="lg" />
+          </main>
+        </MobileContainer>
+      }
+    >
+      <ProfileRecordsRoute />
+    </Suspense>
   );
 }

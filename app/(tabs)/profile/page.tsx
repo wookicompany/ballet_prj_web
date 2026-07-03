@@ -465,7 +465,7 @@ export default function ProfilePage() {
       });
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
   }, [allLocationInstructorRows, selectedYear]);
 
@@ -475,13 +475,13 @@ export default function ProfilePage() {
       .filter((r) => r.record_date.startsWith(String(selectedYear)))
       .forEach((r) => {
         if (!r.instructor) return;
-        const name = r.instructor.trim().replace(/선생님$/, "").trim();
+        const name = r.instructor.trim();
         if (!name) return;
         counts[name] = (counts[name] ?? 0) + 1;
       });
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
   }, [allLocationInstructorRows, selectedYear]);
 
@@ -757,13 +757,26 @@ export default function ProfilePage() {
               <div className="mt-4 pt-4 border-t border-[#17171c]/5 space-y-4">
                 {topLocations.length > 0 && (
                   <div>
-                    <p className="text-xs text-[#17171c]/50 mb-2">자주 간 장소</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-[#17171c]/50">자주 간 장소</p>
+                      <button
+                        type="button"
+                        className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
+                        onClick={() => {
+                          sendHapticToApp();
+                          router.push("/profile/locations");
+                        }}
+                      >
+                        전체보기
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
                     <div className="space-y-2">
                       {topLocations.map((loc, i) => (
                         <div key={loc.name} className="flex items-center gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
-                          <span className="flex-1 text-sm text-[#17171c] truncate">{loc.name}</span>
-                          <span className="text-xs text-[#17171c]/50">{loc.count}회</span>
+                          <span className="flex-1 text-sm text-[#17171c]">{loc.name}</span>
+                          <span className="shrink-0 text-xs text-[#17171c]/50">{loc.count}회</span>
                         </div>
                       ))}
                     </div>
@@ -771,13 +784,26 @@ export default function ProfilePage() {
                 )}
                 {topInstructors.length > 0 && (
                   <div>
-                    <p className="text-xs text-[#17171c]/50 mb-2">자주 만난 강사님</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-[#17171c]/50">자주 만난 강사님</p>
+                      <button
+                        type="button"
+                        className="flex items-center gap-0.5 text-xs text-[#17171c]/70"
+                        onClick={() => {
+                          sendHapticToApp();
+                          router.push("/profile/instructors");
+                        }}
+                      >
+                        전체보기
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
                     <div className="space-y-2">
                       {topInstructors.map((ins, i) => (
                         <div key={ins.name} className="flex items-center gap-2">
                           <span className="text-xs text-[#17171c]/30 w-3">{i + 1}</span>
-                          <span className="flex-1 text-sm text-[#17171c] truncate">{ins.name}</span>
-                          <span className="text-xs text-[#17171c]/50">{ins.count}회</span>
+                          <span className="flex-1 text-sm text-[#17171c]">{ins.name}</span>
+                          <span className="shrink-0 text-xs text-[#17171c]/50">{ins.count}회</span>
                         </div>
                       ))}
                     </div>
