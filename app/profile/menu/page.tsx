@@ -48,6 +48,7 @@ export default function ProfileMenuPage() {
             Authorization: `Bearer ${accessToken}`,
           },
           signal: controller.signal,
+          cache: "no-store",
         });
         if (!response.ok) {
           setHasUnreadNotices(false);
