@@ -166,7 +166,7 @@ export default function ProfilePage() {
 
       try {
         const [noticesRes, notificationsRes] = await Promise.all([
-          fetch("/api/notices/read-status", { headers, signal: controller.signal }),
+          fetch("/api/notices/read-status", { headers, signal: controller.signal, cache: "no-store" }),
           fetch("/api/notifications/unread-status", { headers, signal: controller.signal }),
         ]);
 

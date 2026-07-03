@@ -35,7 +35,7 @@ export default function NoticePopup() {
     const checkUnreadNotice = async () => {
       try {
         const [listRes, accessToken] = await Promise.all([
-          fetch("/api/notices"),
+          fetch("/api/notices", { cache: "no-store" }),
           getAccessToken(openLoginSheet),
         ]);
         if (!isActive || !listRes.ok || !accessToken) return;
@@ -46,6 +46,7 @@ export default function NoticePopup() {
 
         const statusRes = await fetch("/api/notices/read-status", {
           headers: { Authorization: `Bearer ${accessToken}` },
+          cache: "no-store",
         });
         if (!isActive || !statusRes.ok) return;
         const { read_notice_ids } = (await statusRes.json()) as {

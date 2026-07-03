@@ -121,6 +121,7 @@ export default function NoticePage() {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        cache: "no-store",
       });
       if (!response.ok) {
         setReadNoticeIds([]);
