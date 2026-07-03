@@ -12,6 +12,7 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
@@ -209,27 +210,34 @@ export default function ProfilePage() {
       setPreviewLoading(true);
 
       // Step 1: profile + stats (병렬)
-      const [profileRes, recordStatsRes, reviewCountRes, locationInstructorRes] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id,nickname,avatar_url,ballet_started_at")
-          .eq("id", user.id)
-          .single(),
-        supabase
-          .from("records")
-          .select("start_time,end_time,record_date")
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
-        supabase
-          .from("performance_reviews")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
-        supabase
-          .from("records")
-          .select("location,instructor,record_date")
-          .eq("user_id", user.id)
-          .is("deleted_at", null),
+      const [[profileRes, recordStatsRes, reviewCountRes], allLocationInstructorRowsData] = await Promise.all([
+        Promise.all([
+          supabase
+            .from("profiles")
+            .select("id,nickname,avatar_url,ballet_started_at")
+            .eq("id", user.id)
+            .single(),
+          supabase
+            .from("records")
+            .select("start_time,end_time,record_date")
+            .eq("user_id", user.id)
+            .is("deleted_at", null),
+          supabase
+            .from("performance_reviews")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .is("deleted_at", null),
+        ]),
+        // .range() 없이 select하면 PostgREST 기본 row cap(보통 1000행)에 걸려
+        // 그 이후 기록이 강사님/장소 집계에서 누락될 수 있어 fetchAllRows로 전부 가져온다.
+        fetchAllRows<AllLocationInstructorRow>((from, to) =>
+          supabase
+            .from("records")
+            .select("location,instructor,record_date")
+            .eq("user_id", user.id)
+            .is("deleted_at", null)
+            .range(from, to)
+        ),
       ]);
 
       if (!profileRes.data) {
@@ -251,7 +259,7 @@ export default function ProfilePage() {
       setAllRecordStats(recordStatsLocal as RecordStat[]);
       setReviewCount(reviewCountRes.count ?? 0);
 
-      setAllLocationInstructorRows((locationInstructorRes.data ?? []) as AllLocationInstructorRow[]);
+      setAllLocationInstructorRows(allLocationInstructorRowsData);
 
       setProfileLoading(false);
 

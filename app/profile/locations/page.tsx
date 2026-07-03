@@ -8,6 +8,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, MapPin } from "lucide-react";
@@ -46,16 +47,14 @@ export default function ProfileLocationsPage() {
 
     const fetchLocations = async () => {
       setListLoading(true);
-      const { data, error } = await supabase
-        .from("records")
-        .select("location")
-        .eq("user_id", user.id)
-        .is("deleted_at", null);
-
-      if (error || !data) {
-        setListLoading(false);
-        return;
-      }
+      const data = await fetchAllRows<{ location: string | null }>((from, to) =>
+        supabase
+          .from("records")
+          .select("location")
+          .eq("user_id", user.id)
+          .is("deleted_at", null)
+          .range(from, to)
+      );
 
       const counts: Record<string, number> = {};
       data.forEach((row) => {
