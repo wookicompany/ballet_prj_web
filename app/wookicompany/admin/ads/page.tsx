@@ -37,9 +37,10 @@ type AdRow = {
   click_count: number;
 };
 
-type TabPlacement = "performance_home" | "brand_home";
+type TabPlacement = "calendar_home" | "performance_home" | "brand_home";
 
 const TAB_OPTIONS: Array<{ value: TabPlacement; label: string }> = [
+  { value: "calendar_home", label: "캘린더 팝업" },
   { value: "performance_home", label: "공연 홈" },
   { value: "brand_home", label: "브랜드 홈" },
 ];
@@ -50,7 +51,7 @@ export default function AdminAdsPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabPlacement>("performance_home");
+  const [activeTab, setActiveTab] = useState<TabPlacement>("calendar_home");
 
   const fetchAds = useCallback(async () => {
     const token = await getAdminToken();

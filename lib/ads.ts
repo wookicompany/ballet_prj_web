@@ -1,6 +1,7 @@
 import { KST_TIME_ZONE } from "@/lib/kstDateTime";
 
 export const AD_PLACEMENTS = [
+  "calendar_home",
   "performance_home",
   "brand_home",
 ] as const;
