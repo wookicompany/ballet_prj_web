@@ -248,7 +248,7 @@ export default function ProfilePage() {
             .is("deleted_at", null),
         ]),
         // .range() 없이 select하면 PostgREST 기본 row cap(보통 1000행)에 걸려
-        // 그 이후 기록이 강사님/장소 집계에서 누락될 수 있어 fetchAllRows로 전부 가져온다.
+        // 그 이후 기록이 선생님/장소 집계에서 누락될 수 있어 fetchAllRows로 전부 가져온다.
         fetchAllRows<AllLocationInstructorRow>((from, to) =>
           supabase
             .from("records")
@@ -781,7 +781,7 @@ export default function ProfilePage() {
           </section>
         )}
 
-        {/* 자주 간 장소 · 자주 만난 강사님 */}
+        {/* 자주 간 장소 · 자주 만난 선생님 */}
         {(profileLoading || topLocations.length > 0 || topInstructors.length > 0) && (
           <section className="mt-5 rounded-xl border border-[#17171c]/5 bg-white p-4 shadow-sm">
             {profileLoading ? (
@@ -802,7 +802,7 @@ export default function ProfilePage() {
                 {topInstructors.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h2 className="text-sm font-semibold text-[#17171c]">자주 만난 강사님</h2>
+                      <h2 className="text-sm font-semibold text-[#17171c]">자주 만난 선생님</h2>
                       <button
                         type="button"
                         className="flex items-center gap-0.5 text-xs text-[#17171c]/70"

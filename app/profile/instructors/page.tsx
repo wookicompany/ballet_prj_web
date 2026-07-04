@@ -78,13 +78,13 @@ export default function ProfileInstructorsPage() {
   return (
     <MobileContainer>
       <main className="px-4 pb-10">
-        <PageHeader title="강사님별 기록" className="mb-6" />
+        <PageHeader title="선생님별 기록" className="mb-6" />
 
         {loading || listLoading ? (
           <InstructorListSkeleton />
         ) : instructors.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <p className="text-sm text-[#17171c]/60">아직 기록된 강사님이 없어요.</p>
+            <p className="text-sm text-[#17171c]/60">아직 기록된 선생님이 없어요.</p>
           </div>
         ) : (
           <div className="space-y-3">

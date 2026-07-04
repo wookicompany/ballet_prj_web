@@ -296,7 +296,7 @@ export default function AdminRecordsPage() {
                         <span className="text-muted-foreground">{parseLocationName(r.location) || "-"}</span>
                       </p>
                       <p className="break-words">
-                        <span className="font-medium text-foreground/70">강사 & 레벨: </span>
+                        <span className="font-medium text-foreground/70">선생님 & 레벨: </span>
                         <span className="text-muted-foreground">{formatInstructorLevel(r.instructor, r.level) || "-"}</span>
                       </p>
                     </div>
