@@ -47,7 +47,7 @@ export default function CalendarPopupAd() {
         if (!isActive || !adRes.ok || !accessToken) return;
 
         const { ad: fetched } = (await adRes.json()) as { ad: AdPayload | null };
-        if (!fetched || !fetched.image_url) return;
+        if (!fetched) return;
 
         const dismissedRes = await fetch(`/api/ads/${fetched.id}/dismissed`, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -118,21 +118,23 @@ export default function CalendarPopupAd() {
             </p>
           </div>
         )}
-        <button
-          type="button"
-          className="block w-full overflow-hidden rounded-lg"
-          onClick={() => void handleImageClick()}
-          aria-label={ad.title}
-        >
-          <AnimatedImage
-            src={ad.image_url!}
-            alt={ad.title}
-            width={800}
-            height={800}
-            unoptimized
-            className="h-auto max-h-[60vh] w-full object-contain"
-          />
-        </button>
+        {ad.image_url && (
+          <button
+            type="button"
+            className="block w-full overflow-hidden rounded-lg"
+            onClick={() => void handleImageClick()}
+            aria-label={ad.title}
+          >
+            <AnimatedImage
+              src={ad.image_url}
+              alt={ad.title}
+              width={800}
+              height={800}
+              unoptimized
+              className="h-auto max-h-[60vh] w-full object-contain"
+            />
+          </button>
+        )}
         <AlertDialogFooter className="flex flex-row gap-2">
           <AlertDialogCancel className="flex-1">닫기</AlertDialogCancel>
           <AlertDialogAction
