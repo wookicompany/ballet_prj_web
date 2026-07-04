@@ -14,6 +14,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
+import {
+  getNoticeReadStatusCache,
+  setNoticeReadStatusCache,
+} from "@/lib/noticeReadStatusCache";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
@@ -155,6 +159,12 @@ export default function ProfilePage() {
         return;
       }
 
+      // 세션 내 캐시가 있으면 즉시 표시하고, 아래 fetch로 백그라운드 재검증
+      const cachedStatus = getNoticeReadStatusCache(user.id);
+      if (cachedStatus) {
+        setHasUnreadNotices(cachedStatus.unreadNoticeIds.length > 0);
+      }
+
       const accessToken = await getAccessToken(openLoginSheet);
       if (!accessToken) {
         setHasUnreadNotices(false);
@@ -171,8 +181,17 @@ export default function ProfilePage() {
         ]);
 
         if (noticesRes.ok) {
-          const payload = (await noticesRes.json()) as { has_unread?: boolean };
+          const payload = (await noticesRes.json()) as {
+            has_unread?: boolean;
+            read_notice_ids?: string[];
+            unread_notice_ids?: string[];
+          };
           setHasUnreadNotices(payload.has_unread === true);
+          setNoticeReadStatusCache({
+            userId: user.id,
+            readNoticeIds: Array.isArray(payload.read_notice_ids) ? payload.read_notice_ids : [],
+            unreadNoticeIds: Array.isArray(payload.unread_notice_ids) ? payload.unread_notice_ids : [],
+          });
         } else {
           setHasUnreadNotices(false);
         }
