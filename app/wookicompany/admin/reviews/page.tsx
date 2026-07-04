@@ -71,7 +71,7 @@ export default function AdminReviewsPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const fetchReviews = useCallback(async (offset: number, q = "") => {
     const token = await getAdminToken();
@@ -132,14 +132,14 @@ export default function AdminReviewsPage() {
   }, []);
 
   useEffect(() => {
-    fetchReviews(0);
-  }, [fetchReviews]);
-  useEffect(() => {
-    fetchComments(0);
-  }, [fetchComments]);
-
-  useEffect(() => {
-    if (searchInit.current) { searchInit.current = false; return; }
+    // 검색어 변경만 디바운스, 마운트 시엔 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchReviews(0, searchQuery);
+      fetchComments(0, searchQuery);
+      return;
+    }
     const timer = setTimeout(() => {
       fetchReviews(0, searchQuery);
       fetchComments(0, searchQuery);

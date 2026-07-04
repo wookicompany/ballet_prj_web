@@ -1694,6 +1694,10 @@ export type Database = {
       }
     }
     Functions: {
+      search_auth_users: {
+        Args: { keyword?: string | null; p_limit?: number | null; p_offset?: number }
+        Returns: { id: string; email: string | null; created_at: string; total_count: number }[]
+      }
       search_profiles_by_keyword: {
         Args: { keyword: string }
         Returns: { id: string }[]

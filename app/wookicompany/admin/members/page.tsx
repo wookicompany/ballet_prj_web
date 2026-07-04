@@ -60,7 +60,7 @@ export default function AdminMembersPage() {
     "all" | "has_record" | "has_review" | "has_comment" | "has_like_brand"
   >("all");
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const fetchMembers = useCallback(async (pageOffset: number, q = "", s: SortKey = "created_at_desc") => {
     const token = await getAdminToken();
@@ -93,11 +93,13 @@ export default function AdminMembersPage() {
   }, []);
 
   useEffect(() => {
-    fetchMembers(0, "", sort);
-  }, [fetchMembers, sort]);
-
-  useEffect(() => {
-    if (searchInit.current) { searchInit.current = false; return; }
+    // 검색어 변경만 디바운스, 마운트·정렬 변경은 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchMembers(0, searchQuery, sort);
+      return;
+    }
     const timer = setTimeout(() => { fetchMembers(0, searchQuery, sort); }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, fetchMembers, sort]);

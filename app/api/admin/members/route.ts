@@ -24,6 +24,8 @@ export const GET = async (request: Request) => {
   //       | "like_brand_count_desc" | "like_brand_count_asc"
 
   type ActivityCountRow = { user_id: string; record_count: number; review_count: number; comment_count: number };
+  type AuthUserRow = { id: string; email: string | null; created_at: string; total_count: number };
+  type ProfileMap = Record<string, { nickname: string | null; avatar_url: string | null }>;
 
   const isSortByActivity = [
     "record_count_desc", "record_count_asc",
@@ -46,168 +48,113 @@ export const GET = async (request: Request) => {
     return map;
   };
 
-  if (isSortByActivity || isSortByLikeBrand) {
-    // 1. 검색 조건에 맞는 모든 유저 ID 조회
-    let allIds: string[];
-    if (q) {
-      const { data: matched, error: matchError } = await result.supabaseAdmin
-        .rpc("search_profiles_by_keyword", { keyword: q });
-      if (matchError) {
-        console.error("admin members list", matchError);
-        return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
-      }
-      allIds = (matched ?? []).map((r) => r.id);
-    } else {
-      const { data: allIdRows, error: idError } = await result.supabaseAdmin
-        .from("profiles").select("id").is("deleted_at", null);
-      if (idError) {
-        console.error("admin members list", idError);
-        return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
-      }
-      allIds = (allIdRows ?? []).map((r) => r.id);
+  const fetchActivityCounts = async (ids: string[]): Promise<Record<string, ActivityCountRow>> => {
+    if (!ids.length) return {};
+    const { data } = await result.supabaseAdmin
+      .rpc("get_activity_counts_by_user_ids", { user_ids: ids });
+    const map: Record<string, ActivityCountRow> = {};
+    for (const row of (data ?? []) as ActivityCountRow[]) {
+      map[row.user_id] = row;
     }
-    const total = allIds.length;
+    return map;
+  };
+
+  // profiles가 없는 계정(탈퇴·프로필 미생성)도 목록에 포함되므로 있으면 채우고 없으면 null
+  const fetchProfileMap = async (ids: string[]) => {
+    if (!ids.length) return { map: {} as ProfileMap, error: null };
+    const { data, error } = await result.supabaseAdmin
+      .from("profiles")
+      .select("id, nickname, avatar_url")
+      .in("id", ids);
+    const map: ProfileMap = {};
+    for (const row of data ?? []) {
+      map[row.id] = { nickname: row.nickname, avatar_url: row.avatar_url };
+    }
+    return { map, error };
+  };
+
+  const buildMember = (
+    u: AuthUserRow,
+    profileMap: ProfileMap,
+    activityMap: Record<string, ActivityCountRow>,
+    likeBrandMap: Record<string, number>
+  ) => ({
+    id: u.id,
+    nickname: profileMap[u.id]?.nickname ?? null,
+    avatar_url: profileMap[u.id]?.avatar_url ?? null,
+    created_at: u.created_at,
+    email: u.email,
+    record_count: activityMap[u.id]?.record_count ?? 0,
+    review_count: activityMap[u.id]?.review_count ?? 0,
+    comment_count: activityMap[u.id]?.comment_count ?? 0,
+    like_brand_count: likeBrandMap[u.id] ?? 0,
+  });
+
+  if (isSortByActivity || isSortByLikeBrand) {
+    // 1. 검색 조건에 맞는 auth 유저 전체 조회 (카운트 정렬은 전체를 알아야 가능)
+    const { data: allRows, error: allError } = await result.supabaseAdmin
+      .rpc("search_auth_users", { keyword: q || null });
+    if (allError) {
+      console.error("admin members list", allError);
+      return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
+    }
+    const allUsers = (allRows ?? []) as AuthUserRow[];
+    const total = allUsers.length;
+    const allIds = allUsers.map((u) => u.id);
 
     // 2. 정렬 기준 카운트 전체 조회
-    const [activityCounts, likeBrandMap] = await Promise.all([
-      isSortByActivity && allIds.length > 0
-        ? (result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: allIds }).then((r) => (r.data ?? []) as ActivityCountRow[]))
-        : Promise.resolve([] as ActivityCountRow[]),
-      isSortByLikeBrand ? fetchLikeBrandCounts(allIds) : Promise.resolve({} as Record<string, number>),
+    const [activityMap, likeBrandMap] = await Promise.all([
+      fetchActivityCounts(allIds),
+      fetchLikeBrandCounts(allIds),
     ]);
 
-    const activityMap: Record<string, ActivityCountRow> = {};
-    for (const row of activityCounts) {
-      activityMap[row.user_id] = row;
-    }
-
-    // 3. 카운트 기준 정렬 후 페이지네이션
+    // 3. 카운트 기준 정렬 후 페이지네이션 — RPC가 가입일 최신순으로 반환하므로
+    //    JS 안정 정렬 특성상 카운트 동률은 가입일 최신순 유지
     const ascending = sort.endsWith("_asc");
-    const sortedIds = [...allIds].sort((a, b) => {
-      let diff: number;
-      if (isSortByLikeBrand) {
-        diff = (likeBrandMap[a] ?? 0) - (likeBrandMap[b] ?? 0);
-      } else {
-        const countField = sort.replace(/_desc$|_asc$/, "") as "record_count" | "review_count" | "comment_count";
-        diff = (activityMap[a]?.[countField] ?? 0) - (activityMap[b]?.[countField] ?? 0);
-      }
-      return ascending ? diff : -diff;
+    const countField = sort.replace(/_desc$|_asc$/, "") as "record_count" | "review_count" | "comment_count";
+    const sorted = [...allUsers].sort((a, b) => {
+      const av = isSortByLikeBrand ? (likeBrandMap[a.id] ?? 0) : (activityMap[a.id]?.[countField] ?? 0);
+      const bv = isSortByLikeBrand ? (likeBrandMap[b.id] ?? 0) : (activityMap[b.id]?.[countField] ?? 0);
+      return ascending ? av - bv : bv - av;
     });
-    const pageIds = sortedIds.slice(offset, offset + limit);
+    const pageUsers = sorted.slice(offset, offset + limit);
 
-    if (pageIds.length === 0) {
+    if (pageUsers.length === 0) {
       return NextResponse.json({ members: [], total, limit, offset });
     }
 
-    // 4. 페이지 유저 프로필 조회 + 누락된 카운트 보완
-    const [{ data: rows, error }, pageActivityCounts, pageLikeBrandMap] = await Promise.all([
-      result.supabaseAdmin
-        .from("profiles")
-        .select("id, nickname, avatar_url, created_at")
-        .in("id", pageIds),
-      isSortByLikeBrand && pageIds.length > 0
-        ? result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: pageIds }).then((r) => (r.data ?? []) as ActivityCountRow[])
-        : Promise.resolve(activityCounts.filter((r) => pageIds.includes(r.user_id))),
-      isSortByActivity ? fetchLikeBrandCounts(pageIds) : Promise.resolve(
-        Object.fromEntries(pageIds.map((id) => [id, likeBrandMap[id] ?? 0]))
-      ),
-    ]);
-
-    if (error) {
-      console.error("admin members list", error);
+    // 4. 페이지 유저 프로필 조회
+    const { map: profileMap, error: profileError } = await fetchProfileMap(pageUsers.map((u) => u.id));
+    if (profileError) {
+      console.error("admin members list", profileError);
       return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
     }
 
-    const pageActivityMap: Record<string, ActivityCountRow> = {};
-    for (const row of pageActivityCounts) {
-      pageActivityMap[row.user_id] = row;
-    }
-
-    const rowMap = Object.fromEntries((rows ?? []).map((r) => [r.id, r]));
-    const members = pageIds
-      .map((id) => rowMap[id])
-      .filter(Boolean)
-      .map((r) => ({
-        ...r,
-        record_count: pageActivityMap[r.id]?.record_count ?? 0,
-        review_count: pageActivityMap[r.id]?.review_count ?? 0,
-        comment_count: pageActivityMap[r.id]?.comment_count ?? 0,
-        like_brand_count: pageLikeBrandMap[r.id] ?? 0,
-      }));
-
+    const members = pageUsers.map((u) => buildMember(u, profileMap, activityMap, likeBrandMap));
     return NextResponse.json({ members, total, limit, offset });
   }
 
-  // 기본 정렬: 가입일 최신순
-  let rows: { id: string; nickname: string | null; avatar_url: string | null; created_at: string }[] | null = null;
-  let error: { message: string } | null = null;
-  let count: number | null = null;
-
-  if (q) {
-    const { data: matched } = await result.supabaseAdmin
-      .rpc("search_profiles_by_keyword", { keyword: q });
-    const matchingIds = (matched ?? []).map((r) => r.id);
-    count = matchingIds.length;
-    if (matchingIds.length > 0) {
-      const res = await result.supabaseAdmin
-        .from("profiles")
-        .select("id, nickname, avatar_url, created_at")
-        .in("id", matchingIds)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-      rows = res.data;
-      error = res.error;
-    } else {
-      rows = [];
-    }
-  } else {
-    const [rowsRes, countRes] = await Promise.all([
-      result.supabaseAdmin
-        .from("profiles")
-        .select("id, nickname, avatar_url, created_at")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1),
-      result.supabaseAdmin
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .is("deleted_at", null),
-    ]);
-    rows = rowsRes.data;
-    error = rowsRes.error;
-    count = countRes.count;
+  // 기본 정렬: 가입일 최신순 — SQL(search_auth_users)에서 정렬·검색·페이지네이션 처리
+  const { data: pageRows, error: pageError } = await result.supabaseAdmin
+    .rpc("search_auth_users", { keyword: q || null, p_limit: limit, p_offset: offset });
+  if (pageError) {
+    console.error("admin members list", pageError);
+    return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
   }
+  const pageUsers = (pageRows ?? []) as AuthUserRow[];
+  const total = Number(pageUsers[0]?.total_count ?? 0);
+  const userIds = pageUsers.map((u) => u.id);
 
-  if (error) {
-    console.error("admin members list", error);
+  const [{ map: profileMap, error: profileError }, activityMap, likeBrandMap] = await Promise.all([
+    fetchProfileMap(userIds),
+    fetchActivityCounts(userIds),
+    fetchLikeBrandCounts(userIds),
+  ]);
+  if (profileError) {
+    console.error("admin members list", profileError);
     return NextResponse.json({ message: "Failed to list members" }, { status: 500 });
   }
 
-  const userIds = (rows ?? []).map((r) => r.id);
-  const [activityCounts, likeBrandMap] = await Promise.all([
-    userIds.length > 0
-      ? result.supabaseAdmin.rpc("get_activity_counts_by_user_ids", { user_ids: userIds }).then((r) => (r.data ?? []) as ActivityCountRow[])
-      : Promise.resolve([] as ActivityCountRow[]),
-    fetchLikeBrandCounts(userIds),
-  ]);
-
-  const activityMap: Record<string, ActivityCountRow> = {};
-  for (const row of activityCounts) {
-    activityMap[row.user_id] = row;
-  }
-
-  const members = (rows ?? []).map((r) => ({
-    ...r,
-    record_count: activityMap[r.id]?.record_count ?? 0,
-    review_count: activityMap[r.id]?.review_count ?? 0,
-    comment_count: activityMap[r.id]?.comment_count ?? 0,
-    like_brand_count: likeBrandMap[r.id] ?? 0,
-  }));
-
-  return NextResponse.json({
-    members,
-    total: count ?? 0,
-    limit,
-    offset,
-  });
+  const members = pageUsers.map((u) => buildMember(u, profileMap, activityMap, likeBrandMap));
+  return NextResponse.json({ members, total, limit, offset });
 };
