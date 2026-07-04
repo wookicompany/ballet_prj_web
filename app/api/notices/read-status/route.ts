@@ -20,7 +20,7 @@ export const GET = async (request: Request) => {
 
   const noticeIds = (publishedNotices ?? []).map((notice) => notice.id);
   if (noticeIds.length === 0) {
-    return NextResponse.json({ has_unread: false, read_notice_ids: [] });
+    return NextResponse.json({ has_unread: false, read_notice_ids: [], unread_notice_ids: [] });
   }
 
   const { data: readRows, error: readsError } = await supabaseAdmin
@@ -37,9 +37,12 @@ export const GET = async (request: Request) => {
   const readNoticeIds = Array.from(
     new Set((readRows ?? []).map((row) => row.notice_id).filter(Boolean))
   );
+  const readSet = new Set(readNoticeIds);
+  const unreadNoticeIds = noticeIds.filter((id) => !readSet.has(id));
 
   return NextResponse.json({
-    has_unread: readNoticeIds.length < noticeIds.length,
+    has_unread: unreadNoticeIds.length > 0,
     read_notice_ids: readNoticeIds,
+    unread_notice_ids: unreadNoticeIds,
   });
 };

@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
 import { getNoticeCache, setNoticeCache } from "@/lib/noticeCache";
+import {
+  getNoticeReadStatusCache,
+  setNoticeReadStatusCache,
+} from "@/lib/noticeReadStatusCache";
 import { ChevronRight } from "lucide-react";
 
 type NoticeListItem = {
@@ -21,8 +25,6 @@ type NoticeListItem = {
 
 type NoticeCachePayload = {
   items: NoticeListItem[];
-  readNoticeIds: string[];
-  isReadStatusReady: boolean;
 };
 
 const formatPublishedDate = (value: string | null) => {
@@ -43,12 +45,15 @@ export default function NoticePage() {
   const { openLoginSheet } = useLoginSheet();
 
   const cached = getNoticeCache<NoticeCachePayload>();
+  const cachedReadStatus = getNoticeReadStatusCache(user?.id);
 
   const [items, setItems] = useState<NoticeListItem[]>(() => cached?.items ?? []);
   const [loading, setLoading] = useState(() => !cached);
   const [error, setError] = useState<string | null>(null);
-  const [readNoticeIds, setReadNoticeIds] = useState<string[]>(() => cached?.readNoticeIds ?? []);
-  const [isReadStatusReady, setIsReadStatusReady] = useState(() => cached?.isReadStatusReady ?? false);
+  const [readNoticeIds, setReadNoticeIds] = useState<string[]>(
+    () => cachedReadStatus?.readNoticeIds ?? []
+  );
+  const [isReadStatusReady, setIsReadStatusReady] = useState(() => !!cachedReadStatus);
 
   const renderNoticeSkeleton = () => (
     <section className="divide-y divide-[#17171c]/5 rounded-xl border border-[#17171c]/5 bg-white">
@@ -79,11 +84,7 @@ export default function NoticePage() {
         if (!isMounted) return;
         const nextItems = Array.isArray(payload.items) ? payload.items : [];
         setItems(nextItems);
-        setNoticeCache<NoticeCachePayload>({
-          items: nextItems,
-          readNoticeIds: [],
-          isReadStatusReady: false,
-        });
+        setNoticeCache<NoticeCachePayload>({ items: nextItems });
       } catch {
         if (!isMounted) return;
         setError("공지사항을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -109,11 +110,21 @@ export default function NoticePage() {
         return;
       }
 
-      setIsReadStatusReady(false);
+      // 세션 내 캐시가 있으면 원을 유지한 채 백그라운드 재검증, 없을 때만 로딩 상태로
+      const cachedStatus = getNoticeReadStatusCache(user.id);
+      if (cachedStatus) {
+        setReadNoticeIds(cachedStatus.readNoticeIds);
+        setIsReadStatusReady(true);
+      } else {
+        setIsReadStatusReady(false);
+      }
       const accessToken = await getAccessToken(openLoginSheet);
       if (!accessToken) {
-        setReadNoticeIds([]);
-        setIsReadStatusReady(true);
+        // 재검증 실패 시 캐시된 값이 있으면 유지 (전부 미읽음으로 뒤집지 않음)
+        if (!cachedStatus) {
+          setReadNoticeIds([]);
+          setIsReadStatusReady(true);
+        }
         return;
       }
 
@@ -124,23 +135,24 @@ export default function NoticePage() {
         cache: "no-store",
       });
       if (!response.ok) {
-        setReadNoticeIds([]);
-        setIsReadStatusReady(true);
+        if (!cachedStatus) {
+          setReadNoticeIds([]);
+          setIsReadStatusReady(true);
+        }
         return;
       }
-      const payload = (await response.json()) as { read_notice_ids?: string[] };
+      const payload = (await response.json()) as {
+        read_notice_ids?: string[];
+        unread_notice_ids?: string[];
+      };
       const nextIds = Array.isArray(payload.read_notice_ids) ? payload.read_notice_ids : [];
       setReadNoticeIds(nextIds);
       setIsReadStatusReady(true);
-
-      const existing = getNoticeCache<NoticeCachePayload>();
-      if (existing) {
-        setNoticeCache<NoticeCachePayload>({
-          ...existing,
-          readNoticeIds: nextIds,
-          isReadStatusReady: true,
-        });
-      }
+      setNoticeReadStatusCache({
+        userId: user.id,
+        readNoticeIds: nextIds,
+        unreadNoticeIds: Array.isArray(payload.unread_notice_ids) ? payload.unread_notice_ids : [],
+      });
     };
 
     void fetchReadStatus();

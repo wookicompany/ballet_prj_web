@@ -8,6 +8,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAccessToken } from "@/lib/authSession";
+import { markNoticeReadInCache } from "@/lib/noticeReadStatusCache";
 
 type NoticeDetail = {
   id: string;
@@ -103,12 +104,16 @@ export default function NoticeDetailPage({ params }: NoticeDetailPageProps) {
       const accessToken = await getAccessToken(openLoginSheet);
       if (!accessToken) return;
 
-      await fetch(`/api/notices/${item.id}/read`, {
+      const response = await fetch(`/api/notices/${item.id}/read`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      if (response.ok) {
+        // 서버 기록 성공 시 세션 캐시도 즉시 갱신 — 목록/프로필로 돌아가면 원이 바로 꺼짐
+        markNoticeReadInCache(user.id, item.id);
+      }
     };
 
     void markNoticeAsRead();
