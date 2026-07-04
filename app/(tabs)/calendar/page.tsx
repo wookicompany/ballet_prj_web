@@ -9,7 +9,7 @@ import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import NoticePopup from "@/components/notice/NoticePopup";
+import CalendarPopupAd from "@/components/ads/CalendarPopupAd";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -758,7 +758,7 @@ export default function CalendarPage() {
         </div>
         </BottomSheet>
       </main>
-      <NoticePopup />
+      <CalendarPopupAd />
     </>
   );
 }

@@ -17,6 +17,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -63,11 +64,13 @@ type AdDetail = {
 };
 
 const placementOptions: Array<{ value: AdPlacement; label: string }> = [
+  { value: "calendar_home", label: "캘린더 팝업" },
   { value: "performance_home", label: "공연 홈" },
   { value: "brand_home", label: "브랜드 홈" },
 ];
 
 const formatPlacementLabel = (placement: AdPlacement) => {
+  if (placement === "calendar_home") return "캘린더 팝업";
   if (placement === "brand_home") return "브랜드 홈";
   return "공연 홈";
 };
@@ -85,6 +88,7 @@ export default function AdminAdDetailPage() {
 
   const [placement, setPlacement] = useState<AdPlacement>("performance_home");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState("");
@@ -103,6 +107,7 @@ export default function AdminAdDetailPage() {
   const applyAdToForm = useCallback((next: AdDetail) => {
     setPlacement(isAdPlacement(next.placement) ? next.placement : "performance_home");
     setTitle(next.title);
+    setDescription(next.description ?? "");
     setImageMode(next.image_url ? "url" : "upload");
     setImageUrlInput(next.image_url ?? "");
     setLinkUrl(next.link_url ?? "");
@@ -202,6 +207,7 @@ export default function AdminAdDetailPage() {
       const body: Record<string, unknown> = {
         placement,
         title: title.trim(),
+        description: description.trim() || null,
         link_url: linkUrl.trim() || null,
         height,
         is_active: isActive,
@@ -241,6 +247,7 @@ export default function AdminAdDetailPage() {
     ad,
     applyAdToForm,
     canSubmit,
+    description,
     endAt,
     height,
     id,
@@ -415,10 +422,12 @@ export default function AdminAdDetailPage() {
                 </Badge>
               </p>
             </div>
-            <div className="rounded-md border p-3">
-              <p className="text-xs text-muted-foreground">높이</p>
-              <p className="mt-1 font-medium">{ad.height}px</p>
-            </div>
+            {ad.placement !== "calendar_home" && (
+              <div className="rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">높이</p>
+                <p className="mt-1 font-medium">{ad.height}px</p>
+              </div>
+            )}
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">노출수</p>
               <p className="mt-1 font-medium tabular-nums">{ad.impression_count}</p>
@@ -439,24 +448,46 @@ export default function AdminAdDetailPage() {
                 <p className="mt-1 truncate font-medium text-sm">{ad.link_url}</p>
               </div>
             )}
+            {ad.description && (
+              <div className="rounded-md border p-3 lg:col-span-4">
+                <p className="text-xs text-muted-foreground">내용</p>
+                <p className="mt-1 whitespace-pre-wrap font-medium text-sm">{ad.description}</p>
+              </div>
+            )}
           </div>
 
           {/* 이미지 미리보기 */}
           {ad.image_url && (
             <div className="space-y-2">
               <p className="text-sm font-medium">이미지 미리보기</p>
-              <div
-                className="relative overflow-hidden rounded-lg border"
-                style={{ height: ad.height, maxWidth: 430 }}
-              >
-                <Image
-                  src={ad.image_url}
-                  alt="광고 이미지"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
+              {ad.placement === "calendar_home" ? (
+                <div
+                  className="relative overflow-hidden rounded-lg border"
+                  style={{ maxWidth: 430 }}
+                >
+                  <Image
+                    src={ad.image_url}
+                    alt="광고 이미지"
+                    width={430}
+                    height={430}
+                    className="h-auto max-h-[400px] w-full object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div
+                  className="relative overflow-hidden rounded-lg border"
+                  style={{ height: ad.height, maxWidth: 430 }}
+                >
+                  <Image
+                    src={ad.image_url}
+                    alt="광고 이미지"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -474,6 +505,18 @@ export default function AdminAdDetailPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="광고명을 입력해 주세요"
+                />
+              </div>
+
+              {/* 내용 */}
+              <div className="space-y-2">
+                <Label htmlFor="edit_description">내용</Label>
+                <Textarea
+                  id="edit_description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="팝업 본문에 노출할 내용을 입력해 주세요"
+                  rows={4}
                 />
               </div>
 
@@ -582,7 +625,8 @@ export default function AdminAdDetailPage() {
                 />
               </div>
 
-              {/* 높이 */}
+              {/* 높이 (배너 형태로 노출되는 위치에서만 사용) */}
+              {placement !== "calendar_home" && (
               <div className="space-y-2">
                 <Label>높이</Label>
                 <div className="flex gap-4">
@@ -610,6 +654,7 @@ export default function AdminAdDetailPage() {
                   </label>
                 </div>
               </div>
+              )}
 
               {/* 활성화 */}
               <div className="flex items-center space-x-2">

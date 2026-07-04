@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 const placementOptions: Array<{ value: AdPlacement; label: string }> = [
+  { value: "calendar_home", label: "캘린더 팝업" },
   { value: "performance_home", label: "공연 홈" },
   { value: "brand_home", label: "브랜드 홈" },
 ];
@@ -40,10 +42,11 @@ function AdminAdNewPageInner() {
   const rawPlacement = searchParams.get("placement") ?? "";
   const initialPlacement: AdPlacement = isAdPlacement(rawPlacement)
     ? rawPlacement
-    : "performance_home";
+    : "calendar_home";
 
   const [placement, setPlacement] = useState<AdPlacement>(initialPlacement);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState("");
@@ -128,6 +131,7 @@ function AdminAdNewPageInner() {
           body: JSON.stringify({
             placement,
             title: title.trim(),
+            description: description.trim() || null,
             image_url: resolvedImageUrl,
             link_url: linkUrl.trim() || null,
             height,
@@ -155,6 +159,7 @@ function AdminAdNewPageInner() {
     },
     [
       canSubmit,
+      description,
       endAt,
       height,
       imageFile,
@@ -207,6 +212,18 @@ function AdminAdNewPageInner() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="광고명을 입력해 주세요"
+              />
+            </div>
+
+            {/* 내용 (캘린더 팝업 등에서 제목 아래 본문으로 노출) */}
+            <div className="space-y-2">
+              <Label htmlFor="description">내용</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="팝업 본문에 노출할 내용을 입력해 주세요"
+                rows={4}
               />
             </div>
 
@@ -336,34 +353,36 @@ function AdminAdNewPageInner() {
               />
             </div>
 
-            {/* 높이 */}
-            <div className="space-y-2">
-              <Label>높이</Label>
-              <div className="flex gap-4">
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="height"
-                    value="50"
-                    checked={height === 50}
-                    onChange={() => setHeight(50)}
-                    className="accent-[#FF154A]"
-                  />
-                  <span className="text-sm">50px</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="height"
-                    value="100"
-                    checked={height === 100}
-                    onChange={() => setHeight(100)}
-                    className="accent-[#FF154A]"
-                  />
-                  <span className="text-sm">100px</span>
-                </label>
+            {/* 높이 (배너 형태로 노출되는 위치에서만 사용, 캘린더 팝업은 이미지 비율 그대로 노출돼서 불필요) */}
+            {placement !== "calendar_home" && (
+              <div className="space-y-2">
+                <Label>높이</Label>
+                <div className="flex gap-4">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="height"
+                      value="50"
+                      checked={height === 50}
+                      onChange={() => setHeight(50)}
+                      className="accent-[#FF154A]"
+                    />
+                    <span className="text-sm">50px</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="height"
+                      value="100"
+                      checked={height === 100}
+                      onChange={() => setHeight(100)}
+                      className="accent-[#FF154A]"
+                    />
+                    <span className="text-sm">100px</span>
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
