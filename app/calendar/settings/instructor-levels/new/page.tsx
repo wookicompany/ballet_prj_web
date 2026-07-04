@@ -25,7 +25,7 @@ export default function NewInstructorLevelPage() {
   const handleSubmit = async () => {
     if (!user) return;
     if (!form.instructor.trim() || !form.level.trim()) {
-      toast("강사님과 레벨을 모두 입력해 주세요.");
+      toast("선생님과 레벨을 모두 입력해 주세요.");
       return;
     }
     setSaving(true);
@@ -76,11 +76,11 @@ export default function NewInstructorLevelPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-4 pb-8">
-        <PageHeader title="강사님 & 레벨 추가" className="mb-6" />
+        <PageHeader title="선생님 & 레벨 추가" className="mb-6" />
 
         <div className="flex-1 space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm text-[#17171c]/60">강사님</Label>
+            <Label className="text-sm text-[#17171c]/60">선생님</Label>
             <Input
               className="h-12 text-base placeholder:text-sm"
               placeholder="예: 김선생님"

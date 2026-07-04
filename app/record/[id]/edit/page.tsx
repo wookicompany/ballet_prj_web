@@ -464,7 +464,7 @@ export default function RecordEditPage() {
     });
     if (!response.ok) {
       setSavedInstructorLoading(false);
-      toast("저장된 강사님 & 레벨을 불러오지 못했어요.");
+      toast("저장된 선생님 & 레벨을 불러오지 못했어요.");
       return;
     }
     const payload = (await response.json()) as {
@@ -494,7 +494,7 @@ export default function RecordEditPage() {
       (item) => item.id === selectedInstructorId
     );
     if (!selected) {
-      toast("선택된 강사님 & 레벨이 없어요.");
+      toast("선택된 선생님 & 레벨이 없어요.");
       return;
     }
     setShowLevelInstructor(true);
@@ -1428,14 +1428,14 @@ export default function RecordEditPage() {
                 htmlFor="level-instructor-options"
                 className="text-sm text-[#17171c]/70"
               >
-                강사님 &amp; 레벨 입력
+                선생님 &amp; 레벨 입력
               </Label>
             </div>
             {showLevelInstructor ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-[#17171c]/60">
-                    강사님 &amp; 레벨
+                    선생님 &amp; 레벨
                   </span>
                   <Button
                     type="button"
@@ -1451,7 +1451,7 @@ export default function RecordEditPage() {
                   <Input
                     type="text"
                     className="h-12 text-base placeholder:text-sm"
-                    placeholder="강사님을 입력해 주세요"
+                    placeholder="선생님을 입력해 주세요"
                     value={form.instructor}
                     onChange={(event) =>
                       setForm((prev) => ({
@@ -2111,7 +2111,7 @@ export default function RecordEditPage() {
             ) : savedInstructorLevels.length === 0 ? (
               <div className="rounded-lg border border-[#17171c]/5 bg-white px-4 py-6 text-center">
                 <p className="text-xs text-[#17171c]/70">
-                  저장된 강사님 & 레벨이 아직 없어요.
+                  저장된 선생님 & 레벨이 아직 없어요.
                 </p>
                 <Button
                   type="button"

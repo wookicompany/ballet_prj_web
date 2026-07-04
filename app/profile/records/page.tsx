@@ -59,7 +59,7 @@ function ProfileRecordsContent() {
   const isFiltered = !!(instructorParam || locationParam);
 
   // 첫 렌더 시 동기적으로 캐시 읽기 → 캐시 있으면 즉시 컨텐츠 표시 (스크롤 복원 가능)
-  // 필터된 뷰(강사/장소)는 전용 캐시 슬롯이 없으므로 항상 새로 불러온다.
+  // 필터된 뷰(선생님/장소)는 전용 캐시 슬롯이 없으므로 항상 새로 불러온다.
   const initialCached = isFiltered ? null : getProfileRecordsCacheUnsafe<CachePayload>();
 
   const [records, setRecords] = useState<RecordSummary[]>(initialCached?.records ?? []);

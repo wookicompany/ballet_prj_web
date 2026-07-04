@@ -302,7 +302,7 @@ export default function AdminRecordDetailPage() {
             </dd>
             <dt className="text-muted-foreground">장소</dt>
             <dd>{formatLocation(record.location)}</dd>
-            <dt className="text-muted-foreground">강사</dt>
+            <dt className="text-muted-foreground">선생님</dt>
             <dd>{record.instructor || "—"}</dd>
             <dt className="text-muted-foreground">레벨</dt>
             <dd>{record.level || "—"}</dd>

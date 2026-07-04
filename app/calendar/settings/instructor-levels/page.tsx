@@ -81,7 +81,7 @@ export default function SavedInstructorLevelsPage() {
     });
     if (!response.ok) {
       setListLoading(false);
-      toast("저장된 강사님 & 레벨을 불러오지 못했어요.");
+      toast("저장된 선생님 & 레벨을 불러오지 못했어요.");
       return;
     }
     const payload = (await response.json()) as {
@@ -150,7 +150,7 @@ export default function SavedInstructorLevelsPage() {
                     `/calendar/settings/instructor-levels/${item.id}/edit`
                   )
                 }
-                aria-label="강사님 & 레벨 수정"
+                aria-label="선생님 & 레벨 수정"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -160,7 +160,7 @@ export default function SavedInstructorLevelsPage() {
                 size="icon"
                 className="h-8 w-8 text-[#17171c]/70"
                 onClick={() => setDeleteTarget(item)}
-                aria-label="강사님 & 레벨 삭제"
+                aria-label="선생님 & 레벨 삭제"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -194,7 +194,7 @@ export default function SavedInstructorLevelsPage() {
     <MobileContainer>
       <main className="px-4 pb-16">
         <PageHeader
-          title="강사님 & 레벨 관리"
+          title="선생님 & 레벨 관리"
           className="mb-6"
           right={
             <Button
@@ -206,7 +206,7 @@ export default function SavedInstructorLevelsPage() {
                 router.push("/calendar/settings/instructor-levels/new")
               }
               disabled={loading}
-              aria-label="강사님 & 레벨 추가"
+              aria-label="선생님 & 레벨 추가"
             >
               <Plus className="size-5" />
             </Button>
@@ -219,7 +219,7 @@ export default function SavedInstructorLevelsPage() {
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-[#17171c]/5 bg-white px-4 py-6 text-center">
               <p className="text-sm text-[#17171c]/70">
-                저장된 강사님 & 레벨이 아직 없어요.
+                저장된 선생님 & 레벨이 아직 없어요.
               </p>
             </div>
           ) : (

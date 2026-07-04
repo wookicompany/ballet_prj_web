@@ -361,7 +361,7 @@ export default function RecordDetailPage() {
             </section>
           ) : null}
 
-          {/* 카드 1: 날짜 / 장소 / 강사 */}
+          {/* 카드 1: 날짜 / 장소 / 선생님 */}
           <div className="rounded-2xl border border-[#17171c]/5 bg-white p-5 shadow-sm space-y-3">
             <div className="flex items-start gap-3">
               <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
