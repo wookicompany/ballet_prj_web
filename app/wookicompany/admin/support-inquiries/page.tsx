@@ -47,7 +47,7 @@ export default function AdminSupportInquiriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const fetchInquiries = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
@@ -81,11 +81,13 @@ export default function AdminSupportInquiriesPage() {
   }, []);
 
   useEffect(() => {
-    fetchInquiries(0);
-  }, [fetchInquiries]);
-
-  useEffect(() => {
-    if (searchInit.current) { searchInit.current = false; return; }
+    // 검색어 변경만 디바운스, 마운트 시엔 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchInquiries(0, searchQuery);
+      return;
+    }
     const timer = setTimeout(() => { fetchInquiries(0, searchQuery); }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, fetchInquiries]);

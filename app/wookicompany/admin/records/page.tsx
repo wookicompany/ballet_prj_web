@@ -60,7 +60,7 @@ export default function AdminRecordsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const formatDateLabel = useCallback((dateText: string) => {
     return dateText.replaceAll("-", ".");
@@ -110,11 +110,13 @@ export default function AdminRecordsPage() {
   }, []);
 
   useEffect(() => {
-    fetchRecords(0);
-  }, [fetchRecords]);
-
-  useEffect(() => {
-    if (searchInit.current) { searchInit.current = false; return; }
+    // 검색어 변경만 디바운스, 마운트 시엔 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchRecords(0, searchQuery);
+      return;
+    }
     const timer = setTimeout(() => { fetchRecords(0, searchQuery); }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, fetchRecords]);

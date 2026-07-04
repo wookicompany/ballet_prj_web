@@ -50,7 +50,7 @@ export default function AdminNoticesPage() {
     "all"
   );
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const fetchNotices = useCallback(async (pageOffset: number, q = "") => {
     const token = await getAdminToken();
@@ -84,11 +84,13 @@ export default function AdminNoticesPage() {
   }, []);
 
   useEffect(() => {
-    fetchNotices(0);
-  }, [fetchNotices]);
-
-  useEffect(() => {
-    if (searchInit.current) { searchInit.current = false; return; }
+    // 검색어 변경만 디바운스, 마운트 시엔 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchNotices(0, searchQuery);
+      return;
+    }
     const timer = setTimeout(() => { fetchNotices(0, searchQuery); }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, fetchNotices]);

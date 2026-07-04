@@ -55,7 +55,7 @@ export default function AdminBrandsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("name_ko");
 
-  const searchInit = useRef(true);
+  const prevSearchQuery = useRef("");
 
   const fetchBrands = useCallback(async (pageOffset: number, q = "", s: SortKey = "name_ko") => {
     const token = await getAdminToken();
@@ -89,12 +89,11 @@ export default function AdminBrandsPage() {
   }, []);
 
   useEffect(() => {
-    fetchBrands(0, "", sort);
-  }, [fetchBrands, sort]);
-
-  useEffect(() => {
-    if (searchInit.current) {
-      searchInit.current = false;
+    // 검색어 변경만 디바운스, 마운트·정렬 변경은 즉시 fetch
+    const queryChanged = prevSearchQuery.current !== searchQuery;
+    prevSearchQuery.current = searchQuery;
+    if (!queryChanged) {
+      fetchBrands(0, searchQuery, sort);
       return;
     }
     const timer = setTimeout(() => {

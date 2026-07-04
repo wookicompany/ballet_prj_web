@@ -21,6 +21,7 @@ export default function AdminMemberDetailPage() {
   const id = params.id as string;
   const [profile, setProfile] = useState<{ id: string; nickname: string | null; avatar_url: string | null; created_at: string; ballet_started_at: string | null; app_platform: string | null; [k: string]: unknown } | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [authCreatedAt, setAuthCreatedAt] = useState<string | null>(null);
   const [recordCount, setRecordCount] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
@@ -54,6 +55,7 @@ export default function AdminMemberDetailPage() {
       const data = await res.json();
       setProfile(data.profile);
       setEmail(data.email ?? null);
+      setAuthCreatedAt(data.auth_created_at ?? null);
       setRecordCount(data.record_count ?? 0);
       setReviewCount(data.review_count ?? 0);
       setCommentCount(data.comment_count ?? 0);
@@ -83,7 +85,7 @@ export default function AdminMemberDetailPage() {
     );
   }
 
-  if (error && !profile) {
+  if (error && !authCreatedAt) {
     return (
       <div className="space-y-6">
         <AdminPageHeader title="회원 상세" />
@@ -97,20 +99,6 @@ export default function AdminMemberDetailPage() {
               <Link href="/wookicompany/admin/members">목록으로</Link>
             </Button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="space-y-6">
-        <AdminPageHeader title="회원 상세" />
-        <div className="rounded-md border border-border p-4">
-          <p className="text-sm text-muted-foreground">회원을 찾을 수 없습니다.</p>
-          <Button variant="outline" size="sm" className="mt-3" asChild>
-            <Link href="/wookicompany/admin/members">목록으로</Link>
-          </Button>
         </div>
       </div>
     );
@@ -143,14 +131,14 @@ export default function AdminMemberDetailPage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-3 rounded-md border bg-muted/20 p-3">
             <Avatar>
-              <AvatarImage src={(profile.avatar_url as string) ?? undefined} />
+              <AvatarImage src={(profile?.avatar_url as string) ?? undefined} />
               <AvatarFallback>
-                {(profile.nickname as string) ?? (profile.id as string).slice(0, 2)}
+                {(profile?.nickname as string) ?? id.slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 space-y-1">
-              <p className="font-medium">{profile.nickname ?? "-"}</p>
-              <p className="break-all text-sm text-muted-foreground">ID: {profile.id}</p>
+              <p className="font-medium">{profile?.nickname ?? "-"}</p>
+              <p className="break-all text-sm text-muted-foreground">ID: {id}</p>
             </div>
           </div>
 
@@ -162,19 +150,19 @@ export default function AdminMemberDetailPage() {
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">가입일</p>
               <p className="mt-1 font-medium">
-                {formatAdminDateTime(profile.created_at as string)}
+                {authCreatedAt ? formatAdminDateTime(authCreatedAt) : "-"}
               </p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">발레 시작일</p>
               <p className="mt-1 font-medium">
-                {profile.ballet_started_at ?? "-"}
+                {profile?.ballet_started_at ?? "-"}
               </p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">플랫폼</p>
               <p className="mt-1 font-medium">
-                {profile.app_platform ?? "-"}
+                {profile?.app_platform ?? "-"}
               </p>
             </div>
             <div className="rounded-md border p-3">
@@ -183,7 +171,7 @@ export default function AdminMemberDetailPage() {
             </div>
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">닉네임</p>
-              <p className="mt-1 font-medium">{profile.nickname ?? "-"}</p>
+              <p className="mt-1 font-medium">{profile?.nickname ?? "-"}</p>
             </div>
           </div>
 
