@@ -59,7 +59,13 @@ export default function CalendarPopupAd() {
 
         setAd(fetched);
         setOpen(true);
-        void fetch(`/api/ads/${fetched.id}/impression`, { method: "POST" });
+        // keepalive: 팝업 직후 앱 백그라운드 전환에도 요청이 살아남도록
+        void fetch(`/api/ads/${fetched.id}/impression`, {
+          method: "POST",
+          keepalive: true,
+        }).catch(() => {
+          // 노출 추적은 부가 기능이라 실패해도 무시
+        });
       } catch {
         // 부가 기능이라 실패해도 조용히 무시
       }
@@ -75,16 +81,22 @@ export default function CalendarPopupAd() {
     if (!ad) return;
     const accessToken = await getAccessToken(openLoginSheet);
     if (!accessToken) return;
-    await fetch(`/api/ads/${ad.id}/dismiss`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    try {
+      await fetch(`/api/ads/${ad.id}/dismiss`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        keepalive: true,
+      });
+    } catch {
+      // 실패 시 다음 진입 때 팝업이 다시 뜨는 fail-open 동작이라 무시
+    }
   };
 
   const handleImageClick = async () => {
     if (!ad?.link_url) return;
     try {
-      await fetch(`/api/ads/${ad.id}/click`, { method: "POST" });
+      // keepalive: 클릭 직후 외부 링크 이동에 요청이 끊기지 않도록
+      await fetch(`/api/ads/${ad.id}/click`, { method: "POST", keepalive: true });
     } catch {
       // 클릭 추적 실패는 무시
     }

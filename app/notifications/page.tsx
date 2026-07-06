@@ -83,6 +83,9 @@ export default function NotificationsPage() {
           void fetch("/api/notifications/read-all", {
             method: "POST",
             headers: { Authorization: `Bearer ${accessToken}` },
+            keepalive: true,
+          }).catch(() => {
+            // 실패해도 다음 진입 때 다시 읽음 처리되므로 무시
           });
         }
         return;
