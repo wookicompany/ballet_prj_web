@@ -34,7 +34,13 @@ export default function AdBanner({ placement }: Props) {
         const fetched = (data.ad as AdPayload | null) ?? null;
         setAd(fetched);
         if (fetched) {
-          void fetch(`/api/ads/${fetched.id}/impression`, { method: "POST" });
+          // keepalive + catch: 페이지 이탈로 요청이 끊겨도 unhandled rejection이 되지 않도록
+          void fetch(`/api/ads/${fetched.id}/impression`, {
+            method: "POST",
+            keepalive: true,
+          }).catch(() => {
+            // 노출 추적은 부가 기능이라 실패해도 무시
+          });
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
@@ -53,7 +59,8 @@ export default function AdBanner({ placement }: Props) {
   const handleClick = async () => {
     if (!ad.link_url) return;
     try {
-      await fetch(`/api/ads/${ad.id}/click`, { method: "POST" });
+      // keepalive: 클릭 직후 외부 링크 이동에 요청이 끊기지 않도록
+      await fetch(`/api/ads/${ad.id}/click`, { method: "POST", keepalive: true });
     } catch {
       // 클릭 추적 실패는 무시
     }
