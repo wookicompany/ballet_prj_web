@@ -309,8 +309,8 @@ export default function BrandPage() {
               )}
             </div>
             {activeLinks.length > 0 && (
-              // 한 줄에 최대 4개 (4×32px + 간격 12px + 좌우 패딩 8px = 148px), 5개째부터 줄바꿈
-              <div className="flex max-w-[148px] flex-wrap items-center gap-1 px-1">
+              // 이미지 가로 폭을 4등분한 고정 슬롯 — 개수와 무관하게 버튼 크기 일정, 5개째는 둘째 줄
+              <div className="grid w-full grid-cols-4 gap-1">
                 {activeLinks.map((item) => (
                   <button
                     key={item.key}
@@ -323,7 +323,7 @@ export default function BrandPage() {
                         item.linkType
                       )
                     }
-                    className="relative flex size-8 items-center justify-center rounded-lg bg-[#f5f5f7] transition-opacity active:opacity-70 after:absolute after:-inset-1 after:content-['']"
+                    className="flex aspect-square w-full items-center justify-center rounded-lg bg-[#f5f5f7] transition-opacity active:opacity-70"
                     aria-label={`${brand.name_ko} ${item.label}`}
                   >
                     {item.icon}
