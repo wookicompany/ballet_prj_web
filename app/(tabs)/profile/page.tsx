@@ -12,6 +12,11 @@ import ImageViewer from "@/components/ui/image-viewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAccessToken } from "@/lib/authSession";
+import {
+  getFirstAvailableLink,
+  openBrandLink,
+  type BrandLinkFields,
+} from "@/lib/brandLinks";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { formatCareerDuration, formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import {
@@ -62,12 +67,14 @@ type RecordSummary = {
   workoutTotalEnergyKcal: number | null;
 };
 
-type LikedBrand = {
+type LikedBrand = BrandLinkFields & {
   brand_id: string;
   name_ko: string;
   name_en: string | null;
   logo_url: string | null;
 };
+
+type LikedBrandJoinRow = Omit<LikedBrand, "brand_id"> & { id: string };
 
 type LocationStat = { name: string; count: number };
 type InstructorStat = { name: string; count: number };
@@ -301,7 +308,9 @@ export default function ProfilePage() {
           .limit(5),
         supabase
           .from("brand_likes")
-          .select("brand_id, ballet_brands(id, name_ko, name_en, logo_url)")
+          .select(
+            "brand_id, ballet_brands(id, name_ko, name_en, logo_url, website_url, instagram_url, facebook_url, threads_url, youtube_url, x_url, naver_blog_url, tiktok_url)"
+          )
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
@@ -415,12 +424,10 @@ export default function ProfilePage() {
       setLikedBrandsPreview(
         (brandsRes.data ?? [])
           .filter((row) => row.ballet_brands !== null)
-          .map((row) => ({
-            brand_id: row.brand_id,
-            name_ko: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_ko,
-            name_en: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).name_en,
-            logo_url: (row.ballet_brands as { name_ko: string; name_en: string | null; logo_url: string | null }).logo_url,
-          }))
+          .map((row) => {
+            const joined = row.ballet_brands as unknown as LikedBrandJoinRow;
+            return { ...joined, brand_id: row.brand_id } as LikedBrand;
+          })
       );
 
       setPreviewLoading(false);
@@ -1197,8 +1204,9 @@ export default function ProfilePage() {
                   type="button"
                   className="flex w-full items-center gap-3 py-3 text-left"
                   onClick={() => {
-                    sendHapticToApp();
-                    router.push(`/brand/${brand.brand_id}`);
+                    const first = getFirstAvailableLink(brand);
+                    if (!first) return;
+                    openBrandLink(brand.brand_id, brand.name_ko, first.url, first.item.linkType);
                   }}
                 >
                   <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">

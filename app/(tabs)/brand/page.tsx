@@ -3,16 +3,26 @@
 import AnimatedImage from "@/components/ui/animated-image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdBanner from "@/components/ads/AdBanner";
+import { getAccessToken } from "@/lib/authSession";
 import { getBrandHomeCache, setBrandHomeCache } from "@/lib/brandHomeCache";
+import {
+  BRAND_LINK_ITEMS,
+  getFirstAvailableLink,
+  openBrandLink,
+  type BrandLinkFields,
+} from "@/lib/brandLinks";
+import { invalidateProfileCache } from "@/lib/profileCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 
-type Brand = {
+type Brand = BrandLinkFields & {
   id: string;
   name_ko: string;
   name_en: string | null;
@@ -31,6 +41,8 @@ const PAGE_SIZE = 12;
 
 export default function BrandPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { openLoginSheet } = useLoginSheet();
   const cached = getBrandHomeCache<CachePayload>();
 
   const [brands, setBrands] = useState<Brand[]>(() => cached?.brands ?? []);
@@ -41,6 +53,7 @@ export default function BrandPage() {
   const [page, setPage] = useState(() => cached?.page ?? 0);
   const [hasMore, setHasMore] = useState(() => cached?.hasMore ?? true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestedPagesRef = useRef(
@@ -62,7 +75,8 @@ export default function BrandPage() {
 
     const rangeStart = pageToFetch * PAGE_SIZE;
     const rangeEnd = rangeStart + PAGE_SIZE - 1;
-    const baseSelect = "id, name_ko, name_en, logo_url, sort_order";
+    const baseSelect =
+      "id, name_ko, name_en, logo_url, sort_order, website_url, instagram_url, facebook_url, threads_url, youtube_url, x_url, naver_blog_url, tiktok_url";
 
     try {
       if (pageToFetch === 0) {
@@ -141,6 +155,188 @@ export default function BrandPage() {
     fetchPage(0);
   }, [cached, fetchPage]);
 
+  // 찜 상태는 유저별 데이터라 brandHomeCache에 넣지 않고 마운트마다 조회
+  useEffect(() => {
+    if (!user) {
+      setLikedIds(new Set());
+      return;
+    }
+    let isActive = true;
+    supabase
+      .from("brand_likes")
+      .select("brand_id")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .then(({ data }) => {
+        if (!isActive) return;
+        setLikedIds(new Set((data ?? []).map((r) => r.brand_id).filter(Boolean) as string[]));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
+
+  const handleLike = useCallback(
+    async (brandId: string) => {
+      if (!user) {
+        openLoginSheet();
+        return;
+      }
+      const wasLiked = likedIds.has(brandId);
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        if (wasLiked) next.delete(brandId);
+        else next.add(brandId);
+        return next;
+      });
+      sendHapticToApp();
+      const revert = () =>
+        setLikedIds((prev) => {
+          const next = new Set(prev);
+          if (wasLiked) next.add(brandId);
+          else next.delete(brandId);
+          return next;
+        });
+      try {
+        const token = await getAccessToken(openLoginSheet);
+        if (!token) {
+          revert();
+          return;
+        }
+        const res = await fetch(`/api/brands/${brandId}/like`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          revert();
+        } else {
+          invalidateProfileCache(user.id);
+        }
+      } catch {
+        revert();
+      }
+    },
+    [user, likedIds, openLoginSheet]
+  );
+
+  const openBrandHomepage = useCallback((brand: Brand) => {
+    const first = getFirstAvailableLink(brand);
+    if (!first) return;
+    openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType);
+  }, []);
+
+  const popularCards = useMemo(
+    () =>
+      popularBrands.map((brand) => (
+        <button
+          key={brand.id}
+          type="button"
+          onClick={() => openBrandHomepage(brand)}
+          className="flex w-[72px] shrink-0 snap-start flex-col items-center gap-2 transition-opacity duration-200 active:opacity-70"
+        >
+          <div className="size-[64px] overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
+            {brand.logo_url ? (
+              <AnimatedImage
+                src={brand.logo_url}
+                alt={brand.name_ko}
+                width={64}
+                height={64}
+                sizes="64px"
+                className="size-full object-cover"
+              />
+            ) : (
+              <div className="size-full" />
+            )}
+          </div>
+          <span className="w-full truncate text-center text-xs font-medium text-[#17171c]">
+            {brand.name_ko}
+          </span>
+        </button>
+      )),
+    [popularBrands, openBrandHomepage]
+  );
+
+  const allBrandCards = useMemo(
+    () =>
+      brands.map((brand) => {
+        const liked = likedIds.has(brand.id);
+        const activeLinks = BRAND_LINK_ITEMS.filter((item) => brand[item.key]);
+        return (
+          <li key={brand.id} className="flex flex-col gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => openBrandHomepage(brand)}
+                className="block w-full transition-opacity duration-200 active:opacity-70"
+                aria-label={`${brand.name_ko} 홈페이지 열기`}
+              >
+                <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
+                  {brand.logo_url ? (
+                    <AnimatedImage
+                      src={brand.logo_url}
+                      alt={brand.name_ko}
+                      width={200}
+                      height={200}
+                      sizes="(max-width: 430px) calc(50vw - 28px), 180px"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="size-full" />
+                  )}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLike(brand.id)}
+                className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white/85 shadow-sm backdrop-blur-sm transition-transform active:scale-90 after:absolute after:-inset-2 after:content-['']"
+                aria-label={liked ? "찜 해제" : "찜"}
+              >
+                <Heart
+                  className="size-4"
+                  color="#FF154A"
+                  fill={liked ? "#FF154A" : "none"}
+                />
+              </button>
+            </div>
+            <div className="flex flex-col gap-0.5 overflow-hidden px-1">
+              <span className="truncate text-left text-sm font-medium text-[#17171c]">
+                {brand.name_ko}
+              </span>
+              {brand.name_en && (
+                <span className="truncate text-left text-xs text-[#17171c]/50">
+                  {brand.name_en}
+                </span>
+              )}
+            </div>
+            {activeLinks.length > 0 && (
+              // 한 줄에 최대 4개 (4×32px + 간격 12px + 좌우 패딩 8px = 148px), 5개째부터 줄바꿈
+              <div className="flex max-w-[148px] flex-wrap items-center gap-1 px-1">
+                {activeLinks.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() =>
+                      openBrandLink(
+                        brand.id,
+                        brand.name_ko,
+                        brand[item.key] as string,
+                        item.linkType
+                      )
+                    }
+                    className="relative flex size-8 items-center justify-center rounded-lg bg-[#f5f5f7] transition-opacity active:opacity-70 after:absolute after:-inset-1 after:content-['']"
+                    aria-label={`${brand.name_ko} ${item.label}`}
+                  >
+                    {item.icon}
+                  </button>
+                ))}
+              </div>
+            )}
+          </li>
+        );
+      }),
+    [brands, likedIds, handleLike, openBrandHomepage]
+  );
+
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
@@ -181,82 +377,6 @@ export default function BrandPage() {
     observer.observe(target);
     return () => observer.disconnect();
   }, [hasMore, loadMore, loading]);
-
-  const popularCards = useMemo(
-    () =>
-      popularBrands.map((brand) => (
-        <button
-          key={brand.id}
-          type="button"
-          onClick={() => {
-            sendHapticToApp();
-            router.push(`/brand/${brand.id}`);
-          }}
-          className="flex w-[72px] shrink-0 snap-start flex-col items-center gap-2 transition-opacity duration-200 active:opacity-70"
-        >
-          <div className="size-[64px] overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
-            {brand.logo_url ? (
-              <AnimatedImage
-                src={brand.logo_url}
-                alt={brand.name_ko}
-                width={64}
-                height={64}
-                sizes="64px"
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="size-full" />
-            )}
-          </div>
-          <span className="w-full truncate text-center text-xs font-medium text-[#17171c]">
-            {brand.name_ko}
-          </span>
-        </button>
-      )),
-    [popularBrands, router]
-  );
-
-  const allBrandCards = useMemo(
-    () =>
-      brands.map((brand) => (
-        <li key={brand.id}>
-          <button
-            type="button"
-            onClick={() => {
-              sendHapticToApp();
-              router.push(`/brand/${brand.id}`);
-            }}
-            className="flex w-full flex-col gap-2 transition-opacity duration-200 active:opacity-70"
-          >
-            <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f7] ring-1 ring-[#17171c]/10">
-              {brand.logo_url ? (
-              <AnimatedImage
-                src={brand.logo_url}
-                alt={brand.name_ko}
-                width={200}
-                height={200}
-                sizes="(max-width: 430px) calc(50vw - 28px), 180px"
-                className="size-full object-cover"
-              />
-              ) : (
-                <div className="size-full" />
-              )}
-            </div>
-            <div className="flex flex-col gap-0.5 overflow-hidden px-1">
-              <span className="truncate text-left text-sm font-medium text-[#17171c]">
-                {brand.name_ko}
-              </span>
-              {brand.name_en && (
-                <span className="truncate text-left text-xs text-[#17171c]/50">
-                  {brand.name_en}
-                </span>
-              )}
-            </div>
-          </button>
-        </li>
-      )),
-    [brands, router]
-  );
 
   return (
     <>
@@ -306,6 +426,7 @@ export default function BrandPage() {
                     <Skeleton className="aspect-square w-full rounded-2xl" />
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-8 w-2/3 rounded-lg" />
                   </div>
                 ))}
               </div>
@@ -342,6 +463,7 @@ export default function BrandPage() {
                       <Skeleton className="aspect-square w-full rounded-2xl" />
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-8 w-2/3 rounded-lg" />
                     </div>
                   ))}
                 </div>

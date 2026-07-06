@@ -8,10 +8,14 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sendHapticToApp } from "@/lib/reactNativeWebView";
+import {
+  getFirstAvailableLink,
+  openBrandLink,
+  type BrandLinkFields,
+} from "@/lib/brandLinks";
 import { supabase } from "@/lib/supabaseClient";
 
-type Brand = {
+type Brand = BrandLinkFields & {
   id: string;
   name_ko: string;
   name_en: string | null;
@@ -40,7 +44,9 @@ export default function BrandSearchInputPage() {
       try {
         const { data } = await supabase
           .from("ballet_brands")
-          .select("id, name_ko, name_en, logo_url, sort_order")
+          .select(
+            "id, name_ko, name_en, logo_url, sort_order, website_url, instagram_url, facebook_url, threads_url, youtube_url, x_url, naver_blog_url, tiktok_url"
+          )
           .eq("is_active", true)
           .order("name_ko", { ascending: true });
         setAllBrands((data ?? []) as Brand[]);
@@ -143,8 +149,9 @@ export default function BrandSearchInputPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        sendHapticToApp();
-                        router.push(`/brand/${brand.id}`);
+                        const first = getFirstAvailableLink(brand);
+                        if (!first) return;
+                        openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType);
                       }}
                       className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                     >
