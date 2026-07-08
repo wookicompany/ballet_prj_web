@@ -1,6 +1,6 @@
 ---
-name: product-designer
-description: 마이발레의 UI/UX 디자인 담당. 화면 플로우·레이아웃 설계, 디자인 토큰·컴포넌트 규칙 정의, design.md 갱신, 카피 톤 검토, 시각 목업이 필요할 때 사용하세요. Use when designing screens, defining design tokens/components, updating the design system, or producing UI mockups. 앱 코드는 작성하지 않습니다.
+name: pd
+description: (product-designer / PD) 마이발레의 UI/UX 디자인 담당. 화면 플로우·레이아웃 설계, 디자인 토큰·컴포넌트 규칙 정의, design.md 갱신, 카피 톤 검토, 시각 목업이 필요할 때 사용하세요. Use when designing screens, defining design tokens/components, updating the design system, or producing UI mockups. 앱 코드는 작성하지 않습니다.
 model: sonnet
 color: pink
 tools: Read, Grep, Glob, Write, Edit, WebSearch, WebFetch

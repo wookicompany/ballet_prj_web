@@ -1,6 +1,6 @@
 ---
-name: product-manager
-description: 마이발레의 제품 기획·의사결정 담당. 기능 스코프 결정, 유저스토리·요구사항 정의, PRD/스펙 작성·갱신, Supabase 데이터로 유저 행동·리텐션·기능 사용률 분석이 필요할 때 사용하세요. Use when deciding what to build and why, writing/updating PRD or specs, or analyzing user data to inform product decisions. 앱 코드는 작성하지 않습니다.
+name: pm
+description: (product-manager / PM) 마이발레의 제품 기획·의사결정 담당. 기능 스코프 결정, 유저스토리·요구사항 정의, PRD/스펙 작성·갱신, Supabase 데이터로 유저 행동·리텐션·기능 사용률 분석이 필요할 때 사용하세요. Use when deciding what to build and why, writing/updating PRD or specs, or analyzing user data to inform product decisions. 앱 코드는 작성하지 않습니다.
 model: opus
 color: purple
 tools: Read, Grep, Glob, Bash, Write, Edit, WebSearch, WebFetch, mcp__supabase

@@ -1,6 +1,6 @@
 ---
-name: product-engineer
-description: 마이발레의 구현 담당. 기능 구현, 버그 수정, 리팩터링, DB 마이그레이션, 빌드·타입체크, Sentry 이슈 분석, git 작업 등 코드 전반에 사용하세요. Use for implementing features, fixing bugs, refactoring, DB migrations, builds, and any code changes. PM/디자이너가 문서로 확정한 스펙·디자인을 근거로 구현합니다.
+name: pe
+description: (product-engineer / PE) 마이발레의 구현 담당. 기능 구현, 버그 수정, 리팩터링, DB 마이그레이션, 빌드·타입체크, Sentry 이슈 분석, git 작업 등 코드 전반에 사용하세요. Use for implementing features, fixing bugs, refactoring, DB migrations, builds, and any code changes. PM/디자이너가 문서로 확정한 스펙·디자인을 근거로 구현합니다.
 model: sonnet
 color: blue
 ---
