@@ -573,7 +573,7 @@ export default function ProfilePage() {
             >
               <Bell className="size-6" />
               {hasUnreadNotifications ? (
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-alert" />
               ) : null}
             </Button>
             <Button
@@ -586,7 +586,7 @@ export default function ProfilePage() {
             >
               <Settings className="size-6" />
               {hasUnreadNotices ? (
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF154A]" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-alert" />
               ) : null}
             </Button>
           </div>

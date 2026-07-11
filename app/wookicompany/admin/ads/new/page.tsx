@@ -294,7 +294,7 @@ function AdminAdNewPageInner() {
                   value="upload"
                   checked={imageMode === "upload"}
                   onChange={() => setImageMode("upload")}
-                  className="accent-[#FF154A]"
+                  className="accent-brand"
                 />
                 <span className="text-sm">파일 업로드</span>
               </label>
@@ -305,7 +305,7 @@ function AdminAdNewPageInner() {
                   value="url"
                   checked={imageMode === "url"}
                   onChange={() => setImageMode("url")}
-                  className="accent-[#FF154A]"
+                  className="accent-brand"
                 />
                 <span className="text-sm">URL 직접 입력</span>
               </label>
@@ -365,7 +365,7 @@ function AdminAdNewPageInner() {
                       value="50"
                       checked={height === 50}
                       onChange={() => setHeight(50)}
-                      className="accent-[#FF154A]"
+                      className="accent-brand"
                     />
                     <span className="text-sm">50px</span>
                   </label>
@@ -376,7 +376,7 @@ function AdminAdNewPageInner() {
                       value="100"
                       checked={height === 100}
                       onChange={() => setHeight(100)}
-                      className="accent-[#FF154A]"
+                      className="accent-brand"
                     />
                     <span className="text-sm">100px</span>
                   </label>
