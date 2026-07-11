@@ -149,7 +149,7 @@ export default function NotificationsPage() {
                 <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
                   <span className="inline-flex items-center gap-2 text-sm text-[#17171c]">
                     {!item.is_read ? (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF154A]" />
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-alert" />
                     ) : null}
                     <span className="break-words">{item.title}</span>
                   </span>

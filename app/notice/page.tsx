@@ -192,7 +192,7 @@ export default function NoticePage() {
                 <span className="flex min-w-0 flex-1 flex-col items-start gap-1 pr-3">
                   <span className="inline-flex items-center gap-2 truncate text-sm text-[#17171c]">
                     {isReadStatusReady && !readNoticeIds.includes(item.id) ? (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF154A]" />
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-alert" />
                     ) : null}
                     <span className="truncate">{item.title}</span>
                   </span>

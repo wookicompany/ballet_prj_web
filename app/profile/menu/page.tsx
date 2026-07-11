@@ -150,7 +150,7 @@ export default function ProfileMenuPage() {
               <span className="inline-flex items-center gap-2">
                 공지사항
                 {hasUnreadNotices ? (
-                  <span className="h-2 w-2 rounded-full bg-[#FF154A]" />
+                  <span className="h-2 w-2 rounded-full bg-alert" />
                 ) : null}
               </span>
             </span>

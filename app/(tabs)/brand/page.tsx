@@ -292,9 +292,9 @@ export default function BrandPage() {
                 aria-label={liked ? "찜 해제" : "찜"}
               >
                 <Heart
-                  className="size-4"
-                  color="#FF154A"
-                  fill={liked ? "#FF154A" : "none"}
+                  className="size-4 text-brand"
+                  color="currentColor"
+                  fill={liked ? "currentColor" : "none"}
                 />
               </button>
             </div>
