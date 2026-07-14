@@ -122,3 +122,4 @@
 - **광고 테이블**: `ads` (`placement`, `provider`, `title`, `image_url`, `target_url`, `is_active`, `start_at`, `end_at`, `click_count`, `last_clicked_at`, `created_at`, `updated_at`).
 - **광고 마이그레이션**: `docs/sql/create_ads_table.sql` 참고.
 - **인덱스**: `support_inquiries_created_at_idx` (`created_at DESC`) — ORDER BY 성능 개선용으로 추가됨.
+- **인덱스**: `idx_ad_dismissals_user_id` (`ad_dismissals.user_id`) — 미인덱스 FK 해소용(2026-07-14 추가). PK가 `(ad_id, user_id)` 복합이라 user_id 단독 조회가 커버되지 않던 문제를 보완. `ad_dismissals_user_id_fkey → auth.users [ON DELETE CASCADE]`라 계정 완전삭제(purge) 시 CASCADE 검사가 seq scan 되던 것을 인덱스 스캔으로 개선.
