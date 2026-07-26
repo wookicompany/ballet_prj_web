@@ -22,10 +22,12 @@ npm run lint     # ESLint
 
 **마이발레** — 발레 기록·공연 탐색·브랜드 탐색 모바일 웹앱. React Native WebView 앱 내에서 구동되며 브라우저에서도 동작.
 
+> 상세 스펙·규칙은 `docs/`에 있음: `app_spec.md`(앱 기능), `admin_spec.md`(어드민·DB 인덱스), `design.md`(디자인 토큰·컴포넌트), `APP_AGENTS.md`/`ADMIN_AGENTS.md`(구현 규칙), `PRD/`·`KOPIS/`·`RN/`·`Apple Login/`(도메인별). 온보딩 진입점은 `README.md`. 이 파일과 중복되는 내용은 두지 않고 링크로 위임.
+
 ### 핵심 스택
 
 - **Next.js 16 App Router** + React 19, TypeScript 5, Tailwind CSS v4
-- **Supabase**: DB(PostgreSQL) + Auth(카카오 OAuth). 클라이언트는 `lib/supabaseClient.ts`, 서버 Admin은 `lib/supabaseAdmin.ts`
+- **Supabase**: DB(PostgreSQL) + Auth(카카오·애플 OAuth). 클라이언트는 `lib/supabaseClient.ts`, 서버 Admin은 `lib/supabaseAdmin.ts`
 - **배포**: Vercel (main 브랜치 자동 배포)
 
 ### 레이아웃 구조
@@ -57,6 +59,21 @@ app/
 - `getAdminFromRequest(request)` — 어드민 전용 (`profiles.is_admin = true` 확인)
 
 클라이언트에서 API 호출 시 `lib/authSession.ts`의 `getAccessToken(openLoginSheet)`으로 Bearer 토큰 획득.
+
+### Supabase 데이터 규칙
+
+- INSERT/UPDATE/DELETE는 **서버 API Route에서 service role로만** 수행(클라이언트는 조회 위주).
+- PATCH/DELETE 전 대상 행의 소유권을 먼저 조회 — 없으면 404, 타인 소유면 403.
+- 삭제는 **소프트 삭제(`deleted_at`)** 기본. 조회·수정·미디어 추가 시 `deleted_at IS NULL` 일관 적용.
+- 1000행 초과 조회는 `lib/fetchAllRows.ts` 사용(Supabase 기본 1000행 상한 회피).
+- 이미지 업로드 전 `lib/compressImage.ts`로 압축.
+
+### 디자인 토큰
+
+- 색상은 `app/globals.css`의 CSS 변수 토큰을 쓰고 hex 하드코딩을 지양.
+- **브랜드 강조색** `--brand`(#E8517C) — `text-brand`/`bg-brand` 등. 별점·좋아요 하트 등.
+- **알림 신호색** `--alert`(#FF154A) — 미읽음 배지 등. 브랜드색과 **의도적으로 분리**(알림 대비 우선), 브랜드색으로 통일하지 않음.
+- Tailwind v4 주의: arbitrary CSS 변수에 opacity modifier(`bg-[--brand]/20`)는 무시됨 → `--color-*`로 등록된 토큰(`bg-brand/20`)을 써야 opacity가 적용됨.
 
 ### 클라이언트 캐시 패턴
 
