@@ -27,9 +27,21 @@ const getRequiredEnv = (key: string) => {
   return value;
 };
 
+const getDateKey = (value: Date) =>
+  value.toISOString().slice(0, 10).replace(/-/g, "");
+
+const getDefaultAfterDate = () => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - 7);
+  return getDateKey(start);
+};
+
 const normalizeAfterDate = (value: string | null) => {
-  if (value === null) return undefined;
+  // 파라미터 자체가 없음(크론 자동 호출) → 오늘-7일로 증분 동기화
+  if (value === null) return getDefaultAfterDate();
   const normalized = value.trim().toLowerCase();
+  // 명시적으로 off/0/none(또는 빈 문자열) → 전체 동기화(수동 전용)
   if (!normalized || ["0", "off", "none"].includes(normalized)) {
     return undefined;
   }
