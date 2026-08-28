@@ -955,7 +955,7 @@ export default function PerformanceReviewDetailPage() {
                   <button
                     key={`${review.id}-img-${index}`}
                     type="button"
-                    className="h-20 w-20 overflow-hidden rounded-lg bg-white"
+                    className="h-20 w-20 overflow-hidden rounded-md border border-[#17171c]/5 bg-white"
                     onClick={() => {
                       sendHapticToApp();
                       setViewerUrl(url);
@@ -970,7 +970,7 @@ export default function PerformanceReviewDetailPage() {
                       height={80}
                       sizes="80px"
                       draggable={false}
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-cover"
                     />
                   </button>
                 ))}

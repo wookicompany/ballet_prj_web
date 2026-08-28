@@ -1654,30 +1654,39 @@ export default function PerformanceDetailPage() {
                           ) : null}
                           {!isReviewHidden && reviewImages[review.id]?.length ? (
                             <div className="mt-2.5 flex gap-2">
-                              {reviewImages[review.id].slice(0, 3).map((url, index) => (
-                                <button
-                                  key={`${review.id}-img-${index}`}
-                                  type="button"
-                                  className="h-16 w-16 overflow-hidden rounded-md bg-white"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    sendHapticToApp();
-                                    setViewerUrl(url);
-                                    setViewerOpen(true);
-                                  }}
-                                  aria-label="리뷰 이미지 크게 보기"
-                                >
-                                  <AnimatedImage
-                                    src={url}
-                                    alt="리뷰 이미지"
-                                    width={64}
-                                    height={64}
-                                    sizes="64px"
-                                    draggable={false}
-                                    className="h-full w-full object-contain"
-                                  />
-                                </button>
-                              ))}
+                              {reviewImages[review.id].slice(0, 3).map((url, index) => {
+                                const isLast = index === Math.min(reviewImages[review.id].length, 3) - 1;
+                                const remaining = reviewImages[review.id].length - 3;
+                                return (
+                                  <button
+                                    key={`${review.id}-img-${index}`}
+                                    type="button"
+                                    className="relative h-16 w-16 overflow-hidden rounded-md border border-[#17171c]/5 bg-white"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      sendHapticToApp();
+                                      setViewerUrl(url);
+                                      setViewerOpen(true);
+                                    }}
+                                    aria-label="리뷰 이미지 크게 보기"
+                                  >
+                                    <AnimatedImage
+                                      src={url}
+                                      alt="리뷰 이미지"
+                                      width={64}
+                                      height={64}
+                                      sizes="64px"
+                                      draggable={false}
+                                      className="h-full w-full object-cover"
+                                    />
+                                    {isLast && remaining > 0 ? (
+                                      <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
+                                        <span className="text-sm font-medium text-white">+{remaining}</span>
+                                      </div>
+                                    ) : null}
+                                  </button>
+                                );
+                              })}
                             </div>
                           ) : null}
                           <div className="mt-2.5 flex items-center gap-4 text-xs text-[#17171c]">
