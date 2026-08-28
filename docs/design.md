@@ -176,6 +176,14 @@
 
 - `bg-accent animate-pulse rounded-md`
 
+### 미디어 썸네일 (기록/리뷰 이미지 그리드)
+
+- 목록·카드에 노출되는 썸네일은 원본 비율과 무관하게 **`object-cover`로 크롭**해 통일한다. `object-contain`은 업로드 미리보기, 포스터 이미지, 확대뷰어(ImageViewer) 등 원본 비율 보존이 목적인 예외 케이스에만 쓴다.
+- 공통 스타일: `rounded-md`, `border border-[#17171c]/5`, `bg-white`(로딩 중 배경).
+- **list 프리셋** — 리뷰 목록·카드 등 여러 항목이 나열되는 곳: 썸네일 `64px`(`h-16 w-16`), 최대 3장 노출 후 4번째부터는 표시하지 않고 3번째 칸에 `absolute inset-0 flex items-center justify-center rounded-md bg-black/50` 오버레이로 `+N`(남은 장수) 표기. 예: `app/profile/reviews/page.tsx`, `app/performance/[id]/page.tsx` 리뷰 목록.
+- **detail 프리셋** — 리뷰 상세 등 단일 게시물 전체를 보여주는 곳: 썸네일 `80px`(`h-20 w-20`), 동일한 크롭·보더 스타일이되 `flex-wrap`으로 **전체 장수를 노출**(cap·`+N` 없음). 예: `app/performance/[id]/reviews/[reviewId]/page.tsx`.
+- 썸네일 탭 시 확대(ImageViewer)는 이미지에 직접 핸들러가 있는 곳(공연 상세 인라인 리뷰·리뷰 상세)에서 제공한다. 프로필 목록처럼 카드 전체가 리뷰로 이동하는 곳은 카드 내비게이션을 유지한다(썸네일 개별 확대 없음). 시각 표준(크롭·크기·`+N`)은 통일하되 인터랙션은 맥락을 따른다.
+
 ---
 
 ## 레이아웃 가이드라인
