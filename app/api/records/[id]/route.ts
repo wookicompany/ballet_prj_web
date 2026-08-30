@@ -82,7 +82,7 @@ export const PATCH = async (
   const { data: record, error: recordError } = await auth.supabaseAdmin
     .from("records")
     .select(
-      "id, user_id, deleted_at, updated_at, record_date, start_time, end_time, content, mood, location, level, instructor, bar_order, center_order, did_well, improve_next, memo, outfit, workout_activity_label, workout_source_name, workout_device_name, workout_active_energy_kcal, workout_total_energy_kcal, workout_avg_bpm, workout_max_bpm"
+      "id, user_id, deleted_at, updated_at, record_date, start_time, end_time, content, mood, status, location, level, instructor, bar_order, center_order, did_well, improve_next, memo, outfit, workout_activity_label, workout_source_name, workout_device_name, workout_active_energy_kcal, workout_total_energy_kcal, workout_avg_bpm, workout_max_bpm"
     )
     .eq("id", id)
     .maybeSingle();
@@ -105,6 +105,17 @@ export const PATCH = async (
 
   const body = await request.json();
   const payload = pickRecordPayload(body ?? {});
+  // #1 방어(defense-in-depth): body에 아예 없는(undefined) 필드는 기존 레코드 값을 보존한다.
+  // PATCH는 전체 스냅샷 덮어쓰기라 부분 페이로드를 보내면 누락 필드가 ""/null로 소거되는데,
+  // 실제 클라는 항상 전체 스냅샷을 보내므로 이 보정은 no-op이고 부분/외부 호출로 인한 소거만 막는다.
+  // 명시적 null(present)은 그대로 둔다 — 예: 헬스싱크 해제 시 workout_* = null로 의도적 비우기.
+  const recordAsRecord = record as Record<string, unknown>;
+  const bodyAsRecord = (body ?? {}) as Record<string, unknown>;
+  for (const key of Object.keys(payload) as Array<keyof typeof payload>) {
+    if (bodyAsRecord[key] === undefined && key in recordAsRecord) {
+      (payload as Record<string, unknown>)[key] = recordAsRecord[key];
+    }
+  }
   // M6: editing a planned record preserves its planned-ness — mood stays optional. Callers
   // signal "this is a planned edit, don't require mood" the same way as POST: `status:
   // "planned"`. Omitted (older clients, or editing an already-done record) keeps the
@@ -137,6 +148,14 @@ export const PATCH = async (
     moodValue = parsedMood;
   } else if (!isPlannedIntent && !isCompleteIntent) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
+  }
+
+  // 서버측 방어(defense-in-depth): 이미 완료(done)되어 감정이 기록된 기록의 감정이 어떤 경로로든
+  // null로 덮어써지지 않게 기존 감정을 보존한다. 현재 클라 UI는 이 상황을 만들지 않지만(완료+감정
+  // 있는 기록 편집은 감정 필수), API 단독/외부 호출로 인한 감정 유실을 막는다. "감정 없이 완료"로
+  // 만들어진 done-감정없음 기록(record.mood == null)은 조건에서 빠져 그대로 감정 없이 유지된다.
+  if (record.status === "done" && record.mood != null && moodValue === null) {
+    moodValue = record.mood;
   }
 
   if (

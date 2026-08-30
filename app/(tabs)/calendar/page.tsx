@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import CalendarPopupAd from "@/components/ads/CalendarPopupAd";
+import AddRecordEntrySheet from "@/components/records/AddRecordEntrySheet";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -92,8 +93,11 @@ export default function CalendarPage() {
   }, []);
 
   const cachedMonthData = getCalendarMonthData(initialMonthKey);
-  const [recordCounts, setRecordCounts] = useState<Record<string, number>>(
-    () => cachedMonthData?.recordCounts ?? {}
+  const [doneCounts, setDoneCounts] = useState<Record<string, number>>(
+    () => cachedMonthData?.doneCounts ?? {}
+  );
+  const [plannedCounts, setPlannedCounts] = useState<Record<string, number>>(
+    () => cachedMonthData?.plannedCounts ?? {}
   );
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
     () => cachedMonthData?.moodAverages ?? {}
@@ -113,6 +117,7 @@ export default function CalendarPage() {
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [addRecordSheetOpen, setAddRecordSheetOpen] = useState(false);
   const swipeStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeHandledRef = useRef(false);
   const swipeLockedRef = useRef(false);
@@ -134,7 +139,8 @@ export default function CalendarPage() {
 
   const fetchCounts = useCallback(async (force = false) => {
     if (!user) {
-      setRecordCounts({});
+      setDoneCounts({});
+      setPlannedCounts({});
       setMoodAverages({});
       return;
     }
@@ -144,7 +150,8 @@ export default function CalendarPage() {
     // 캐시 가드: force=true(record-changed 시그널)가 아니고 캐시 있으면 state 복원 후 생략
     const cachedMonthData = getCalendarMonthData(monthKey);
     if (!force && cachedMonthData) {
-      setRecordCounts(cachedMonthData.recordCounts);
+      setDoneCounts(cachedMonthData.doneCounts);
+      setPlannedCounts(cachedMonthData.plannedCounts);
       setMoodAverages(cachedMonthData.moodAverages);
       setMonthSummary(cachedMonthData.monthSummary ?? null);
       return;
@@ -152,10 +159,10 @@ export default function CalendarPage() {
 
     // M4: 캘린더 셀 표시(예정 포함)와 통계/mood평균(done만)을 별도 쿼리로 분리(§6.5 #26·#27).
     const [displayRes, statsRes] = await Promise.all([
-      // 표시용 — 날짜별 예정 존재를 포함해 보여주는 게 기능 목적이라 status 필터 없음(§9.1·§9.2)
+      // 표시용 — 날짜별 예정/완료를 구분해 보여주는 게 기능 목적이라 status를 select만 하고 필터는 걸지 않음(§9.1, §9.2, §9.7)
       supabase
         .from("records")
-        .select("record_date")
+        .select("record_date,status")
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .gte("record_date", formatSeoulDateKey(start))
@@ -179,15 +186,22 @@ export default function CalendarPage() {
     const statsData = statsRes.data;
 
     if (!force && displayData.length === 0 && statsData.length === 0) {
-      setRecordCounts({});
+      setDoneCounts({});
+      setPlannedCounts({});
       setMoodAverages({});
       setMonthSummary(null);
       return;
     }
 
-    const counts: Record<string, number> = {};
+    // 완료/예정을 별도 맵으로 집계 — 완료 채움 배지와 예정 outline 배지가 서로 다른 카운트를 쓴다(§9.7).
+    const doneCountMap: Record<string, number> = {};
+    const plannedCountMap: Record<string, number> = {};
     displayData.forEach((record) => {
-      counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
+      if (record.status === "planned") {
+        plannedCountMap[record.record_date] = (plannedCountMap[record.record_date] ?? 0) + 1;
+      } else {
+        doneCountMap[record.record_date] = (doneCountMap[record.record_date] ?? 0) + 1;
+      }
     });
 
     const moodTotals: Record<string, number> = {};
@@ -211,8 +225,14 @@ export default function CalendarPage() {
 
     const days = new Set(statsData.map((r) => r.record_date)).size;
     const summary = statsData.length > 0 ? { count: statsData.length, mins: totalMins, days } : null;
-    setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages, monthSummary: summary });
-    setRecordCounts(counts);
+    setCalendarMonthData(monthKey, {
+      doneCounts: doneCountMap,
+      plannedCounts: plannedCountMap,
+      moodAverages: averages,
+      monthSummary: summary,
+    });
+    setDoneCounts(doneCountMap);
+    setPlannedCounts(plannedCountMap);
     setMoodAverages(averages);
     setMonthSummary(summary);
   }, [user, start, end]);
@@ -293,7 +313,8 @@ export default function CalendarPage() {
   useEffect(() => {
     if (!user) {
       prevUserIdRef.current = null;
-      setRecordCounts({});
+      setDoneCounts({});
+      setPlannedCounts({});
       setMoodAverages({});
       setWeekStartMonday(false);
       setHighlightWeekend(false);
@@ -438,15 +459,25 @@ export default function CalendarPage() {
     swipeHandledRef.current = false;
   }, []);
 
-  const handleAddRecord = useCallback(async () => {
+  const handleAddRecord = useCallback(() => {
     if (!user) {
       openLoginSheet();
       return;
     }
+    setAddRecordSheetOpen(true);
+  }, [user, openLoginSheet]);
+
+  const handleSelectTodayRecord = useCallback(async () => {
     const consentOk = await ensureConsent();
     if (!consentOk) return;
     router.push(selectedDate ? `/record/new?date=${selectedDate}` : "/record/new");
-  }, [user, openLoginSheet, ensureConsent, router, selectedDate]);
+  }, [ensureConsent, router, selectedDate]);
+
+  const handleSelectRecurringRecord = useCallback(async () => {
+    const consentOk = await ensureConsent();
+    if (!consentOk) return;
+    router.push("/record/recurring/new");
+  }, [ensureConsent, router]);
 
   useEffect(() => {
     if (!monthSheetOpen) return;
@@ -576,9 +607,13 @@ export default function CalendarPage() {
           {cells.map((cell, index) => {
             const isEmpty = !cell.date;
             const dateStr = cell.date ? formatSeoulDateKey(cell.date) : "";
-            const count = recordCounts[dateStr] ?? 0;
+            const doneCount = doneCounts[dateStr] ?? 0;
+            const plannedCount = plannedCounts[dateStr] ?? 0;
+            const hasPlanned = plannedCount > 0;
+            const hasDone = doneCount > 0;
             const moodValue = moodAverages[dateStr];
             const isToday = !!dateStr && dateStr === todayStr;
+            const isPastDate = !!dateStr && dateStr < todayStr;
             const dayOfWeek = cell.date ? cell.date.getDay() : null;
             const isSaturday = dayOfWeek === 6;
             const isSunday = dayOfWeek === 0;
@@ -640,18 +675,59 @@ export default function CalendarPage() {
                         className="h-full w-full max-h-[52px] object-contain"
                         loading="eager"
                       />
-                      {count >= 2 ? (
+                      {doneCount >= 2 ? (
                         <Badge className="absolute right-0.5 -top-1 min-w-6 justify-center rounded-full bg-primary px-1.5 text-xs text-white">
-                          {count}
+                          {doneCount}
+                        </Badge>
+                      ) : null}
+                      {hasPlanned ? (
+                        // 혼합(완료+예정) — 완료 배지가 이미 코너를 차지해 outline 배지를 더 넣을 여백이 없는
+                        // 압축 위치라 6px 저투명 도트로만 "예정도 있음"을 보조 표기한다(design.md 작은 도트 규칙)
+                        <span
+                          aria-hidden
+                          className="absolute -top-1 left-0.5 size-1.5 rounded-full bg-[#17171c]/30"
+                        />
+                      ) : null}
+                    </div>
+                  ) : hasDone ? (
+                    // 완료(감정 없음) — "감정 없이 완료"한 기록은 무드 얼굴이 없으므로 채운 원으로 완료를
+                    // 표기한다(예정의 점선 원과 대비). 개수(2건 이상)는 셀 우상단 배지에서 별도 표기.
+                    <div className="relative flex h-full w-full items-center justify-center overflow-visible">
+                      <div
+                        aria-hidden
+                        className="h-10 w-10 rounded-full bg-[#17171c]/10"
+                      />
+                      {hasPlanned ? (
+                        <span
+                          aria-hidden
+                          className="absolute -top-1 left-0.5 size-1.5 rounded-full bg-[#17171c]/30"
+                        />
+                      ) : null}
+                    </div>
+                  ) : hasPlanned ? (
+                    // 예정만(완료 mood 없음) — 무드 이미지 자리에 점선 원으로 대체(design.md 무드 슬롯 표현)
+                    <div className="relative flex h-full w-full items-center justify-center overflow-visible">
+                      <div
+                        aria-hidden
+                        className={`h-10 w-10 rounded-full border-2 border-dashed ${
+                          isPastDate ? "border-[#17171c]/20" : "border-[#17171c]/40"
+                        }`}
+                      />
+                      {plannedCount >= 2 ? (
+                        <Badge
+                          variant="outline"
+                          className="absolute right-0.5 -top-1 min-w-6 justify-center rounded-full border-[#17171c]/30 bg-background px-1.5 text-xs text-[#17171c]/70"
+                        >
+                          {plannedCount}
                         </Badge>
                       ) : null}
                     </div>
                   ) : null}
                 </button>
 
-                {!moodValue && count >= 2 ? (
+                {!moodValue && doneCount >= 2 ? (
                   <Badge className="absolute right-2 top-1 min-w-5 justify-center rounded-full bg-primary px-1 text-xs text-white pointer-events-none">
-                    {count}
+                    {doneCount}
                   </Badge>
                 ) : null}
               </div>
@@ -661,7 +737,10 @@ export default function CalendarPage() {
 
         {selectedDateRecords.length > 0 && (
           <section className="mt-2 divide-y divide-[#17171c]/5 border-t border-[#17171c]/5">
-            {selectedDateRecords.map((record) => (
+            {selectedDateRecords.map((record) => {
+              const isPlanned = record.status === "planned";
+              const isPastSelectedDate = !!selectedDate && selectedDate < todayStr;
+              return (
               <button
                 key={record.id}
                 type="button"
@@ -678,6 +757,13 @@ export default function CalendarPage() {
                     draggable={false}
                     className="h-12 w-12 shrink-0 object-contain"
                   />
+                ) : isPlanned ? (
+                  <div
+                    aria-hidden
+                    className={`h-12 w-12 shrink-0 rounded-full border-2 border-dashed ${
+                      isPastSelectedDate ? "border-[#17171c]/20" : "border-[#17171c]/40"
+                    }`}
+                  />
                 ) : (
                   <div className="h-12 w-12 shrink-0 rounded-full bg-[#17171c]/5" />
                 )}
@@ -685,6 +771,14 @@ export default function CalendarPage() {
                   <p className="flex items-center gap-1 text-sm text-[#17171c]">
                     <Clock className="h-3 w-3 shrink-0" />
                     {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
+                    {isPlanned && (
+                      <Badge
+                        variant="outline"
+                        className="ml-1 border-[#17171c]/30 bg-background px-1.5 py-0 text-[10px] text-[#17171c]/70"
+                      >
+                        예정
+                      </Badge>
+                    )}
                   </p>
                   {record.content && (
                     <p className="flex items-start gap-1 truncate text-xs text-[#17171c]">
@@ -711,7 +805,8 @@ export default function CalendarPage() {
                 </div>
                 <ChevronRight className="size-5 shrink-0 text-[#17171c]/30" />
               </button>
-            ))}
+              );
+            })}
           </section>
         )}
       </div>
@@ -779,6 +874,12 @@ export default function CalendarPage() {
           </Button>
         </div>
         </BottomSheet>
+        <AddRecordEntrySheet
+          open={addRecordSheetOpen}
+          onOpenChange={setAddRecordSheetOpen}
+          onSelectToday={handleSelectTodayRecord}
+          onSelectRecurring={handleSelectRecurringRecord}
+        />
       </main>
       <CalendarPopupAd />
     </>

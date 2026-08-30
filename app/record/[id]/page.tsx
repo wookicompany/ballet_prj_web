@@ -28,12 +28,13 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
-import { parseDateKey } from "@/lib/kstDateTime";
+import { formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
-import { Activity, CalendarDays, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
+import { markRecordDatesChanged } from "@/lib/recordChangeFlags";
+import { Activity, CalendarDays, CheckCircle, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 type RecordDetail = {
@@ -61,6 +62,7 @@ type RecordDetail = {
   workout_max_bpm: number | null;
   status: string;
   recurrence_id: string | null;
+  updated_at: string;
 };
 
 type MediaItem = {
@@ -154,6 +156,10 @@ export default function RecordDetailPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [recurrenceDeleteDialogOpen, setRecurrenceDeleteDialogOpen] = useState(false);
+  const [deletingRecurrence, setDeletingRecurrence] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -171,7 +177,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,recurrence_id,record_media(id,media_type,url,deleted_at)"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,recurrence_id,updated_at,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -245,6 +251,134 @@ export default function RecordDetailPage() {
     router.back();
   };
 
+  // §9.4/§11.2.PATCH: 예정을 무드 없이 완료 처리. records_enforce_status_monotonic 트리거가
+  // status를 'done'으로 확정하므로, 서버에는 기존 필드값 그대로 + complete:true만 실어 보낸다
+  // (PATCH가 부분 patch가 아니라 전체 스냅샷 덮어쓰기이기 때문 — §11.5).
+  const handleCompleteWithoutMood = async () => {
+    if (!user || !record) {
+      openLoginSheet();
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    setCompleting(true);
+    let response: Response;
+    try {
+      response = await fetch(`/api/records/${record.id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          record_date: record.record_date,
+          start_time: record.start_time,
+          end_time: record.end_time,
+          content: record.content ?? "",
+          mood: record.mood,
+          location: record.location ?? "",
+          level: record.level ?? "",
+          instructor: record.instructor ?? "",
+          bar_order: record.bar_order ?? "",
+          center_order: record.center_order ?? "",
+          did_well: record.did_well ?? "",
+          improve_next: record.improve_next ?? "",
+          outfit: record.outfit ?? "",
+          memo: record.memo ?? "",
+          workout_activity_label: record.workout_activity_label,
+          workout_source_name: record.workout_source_name,
+          workout_device_name: record.workout_device_name,
+          workout_active_energy_kcal: record.workout_active_energy_kcal,
+          workout_total_energy_kcal: record.workout_total_energy_kcal,
+          workout_avg_bpm: record.workout_avg_bpm,
+          workout_max_bpm: record.workout_max_bpm,
+          complete: true,
+          expected_updated_at: record.updated_at,
+        }),
+      });
+    } catch {
+      setCompleting(false);
+      toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+      return;
+    }
+
+    setCompleting(false);
+    if (!response.ok) {
+      if (response.status === 409) {
+        toast("다른 기기에서 방금 이 기록이 바뀌었어요. 새로고침해 주세요.");
+      } else {
+        toast("완료 처리에 실패했어요.");
+      }
+      return;
+    }
+
+    invalidateProfileCache(user.id);
+    invalidateProfileRecordsCache(user.id);
+    sessionStorage.setItem(`record-changed:${record.record_date}`, "1");
+    setRecord((prev) => (prev ? { ...prev, status: "done" } : prev));
+    toast("완료로 표시했어요.");
+  };
+
+  // §9.9/§11.8: "남은 예정 전체 삭제"(planned 카드) / "다음 예정 전체 삭제"(done 카드) —
+  // 이미 구현된 DELETE /api/records/recurrences/[id]를 호출만 한다(재구현 금지). 그 엔드포인트가
+  // 소유권(404/403), status='planned', deleted_at 스코프를 단일 원자적 UPDATE로 전부 처리한다.
+  const handleDeleteRecurrence = async () => {
+    if (!user || !record || !record.recurrence_id) {
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const wasPlanned = record.status === "planned";
+    setDeletingRecurrence(true);
+    let response: Response;
+    try {
+      response = await fetch(`/api/records/recurrences/${record.recurrence_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+    } catch {
+      setDeletingRecurrence(false);
+      toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+      return;
+    }
+
+    setDeletingRecurrence(false);
+    if (!response.ok) {
+      // §9.12 삭제 부분 실패 카피 재사용(서버는 단일 UPDATE라 원자적이지만, 요청 자체가
+      // 실패하는 경우도 동일 카피로 안내).
+      toast("일부 예정을 삭제하지 못했어요. 다시 시도해 주세요.");
+      return;
+    }
+
+    const payload = (await response.json().catch(() => null)) as
+      | { cancelledDates?: string[] }
+      | null;
+    const cancelledDates = payload?.cancelledDates ?? [];
+
+    // §11.3: 취소된 날짜가 여러 달에 걸칠 수 있다 — 날짜별로 dirty flag를 남겨 day뷰까지
+    // 반영시키고, 프로필 캐시는 유저 단위 1회 호출로 충분하다.
+    invalidateProfileCache(user.id);
+    invalidateProfileRecordsCache(user.id);
+    markRecordDatesChanged(cancelledDates);
+
+    // 지금 보고 있던 기록 자체가 planned였다면 이번 삭제로 함께 취소됐으므로(§11.8 WHERE
+    // status='planned') 더 이상 존재하지 않는 상세 화면을 벗어난다. done 카드에서 실행한
+    // "다음 예정 전체 삭제"는 현재 기록 자체는 그대로라 화면에 머문다.
+    if (wasPlanned) {
+      router.back();
+      return;
+    }
+    // done 카드에서 실행했는데 취소된 예정이 하나도 없으면(이미 다 완료/삭제됨) 사실과 맞게 안내.
+    toast(
+      cancelledDates.length > 0
+        ? "남은 예정을 모두 삭제했어요."
+        : "삭제할 남은 예정이 없어요."
+    );
+  };
+
+  const isPlanned = record.status === "planned";
+  const isPastPlanned = isPlanned && record.record_date < formatSeoulDateKey();
+
   const barOrderTags = parseOrderTags(record.bar_order);
   const centerOrderTags = parseOrderTags(record.center_order);
   const hasWorkoutInfo =
@@ -271,7 +405,7 @@ export default function RecordDetailPage() {
 
   return (
     <MobileContainer>
-      {deleting ? <LoadingOverlay /> : null}
+      {deleting || completing || deletingRecurrence ? <LoadingOverlay /> : null}
       <main className="px-4 pb-10">
         <PageHeader
           title="기록 상세"
@@ -291,7 +425,40 @@ export default function RecordDetailPage() {
         />
 
         <div className="space-y-3">
-          {/* 사진/영상 */}
+          {/* §9.2: 지난(놓친) 예정 안내 — 경고색 미사용, opacity 스케일만 */}
+          {isPastPlanned ? (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[#17171c]/20 bg-[#17171c]/5 px-4 py-3">
+              <span className="text-sm text-[#17171c]/60">지난 예정이에요</span>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 text-xs"
+                  onClick={() => {
+                    sendHapticToApp();
+                    setCompleteDialogOpen(true);
+                  }}
+                >
+                  완료로 표시
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 text-xs text-red-500 hover:text-red-500"
+                  onClick={() => {
+                    sendHapticToApp();
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* 사진/영상 — §9.11: 예정 상태는 미디어를 첨부할 수 없어 원천적으로 비어 있음(회귀 아님) */}
           {media.length > 0 ? (
             <section className="space-y-3">
               <div
@@ -591,6 +758,21 @@ export default function RecordDetailPage() {
               <PenLine className="mr-2 h-4 w-4" />
               수정하기
             </Button>
+            {isPlanned ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full justify-start text-sm"
+                onClick={() => {
+                  sendHapticToApp();
+                  setMenuOpen(false);
+                  setCompleteDialogOpen(true);
+                }}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                감정 기록 없이 완료하기
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -603,6 +785,21 @@ export default function RecordDetailPage() {
             <Trash2 className="mr-2 h-4 w-4" />
             삭제하기
             </Button>
+            {record.recurrence_id ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full justify-start text-sm text-red-500 hover:text-red-500"
+                onClick={() => {
+                  sendHapticToApp();
+                  setMenuOpen(false);
+                  setRecurrenceDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isPlanned ? "남은 예정 전체 삭제" : "다음 예정 전체 삭제"}
+              </Button>
+            ) : null}
           </div>
         </BottomSheet>
         <AlertDialog
@@ -624,6 +821,60 @@ export default function RecordDetailPage() {
                 onClick={async () => {
                   setDeleteDialogOpen(false);
                   await handleDelete();
+                }}
+              >
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog
+          open={completeDialogOpen}
+          onOpenChange={setCompleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>감정 기록 없이 완료할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                완료 후에는 예정으로 되돌릴 수 없어요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row gap-2">
+              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogAction
+                variant="outline"
+                className="flex-1"
+                onClick={async () => {
+                  setCompleteDialogOpen(false);
+                  await handleCompleteWithoutMood();
+                }}
+              >
+                완료
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog
+          open={recurrenceDeleteDialogOpen}
+          onOpenChange={setRecurrenceDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {isPlanned ? "남은 예정을 모두 삭제할까요?" : "다음 예정을 모두 삭제할까요?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                직접 시간 바꾼 예정도 함께 삭제돼요. 완료된 기록은 삭제되지 않아요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row gap-2">
+              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogAction
+                variant="outline"
+                className="flex-1 text-red-500 hover:text-red-500"
+                onClick={async () => {
+                  setRecurrenceDeleteDialogOpen(false);
+                  await handleDeleteRecurrence();
                 }}
               >
                 삭제

@@ -23,6 +23,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import {
+  formatSeoulDateKey,
   getSeoulDateParts,
   getSeoulTodayDate,
   getSeoulTimeParts,
@@ -226,6 +227,11 @@ export default function RecordEditPage() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [recordLoading, setRecordLoading] = useState(true);
+  // §9.11: 예정 상태에서는 미디어 업로드 섹션을 완전히 숨긴다(완료로 전환되기 전까지 사진 첨부 불가).
+  const [recordStatus, setRecordStatus] = useState<"planned" | "done">("done");
+  // "감정 없이 완료"로 만들어진 done(mood=null) 기록인지(로드 시점 기준). 이 경우 편집에서 감정을
+  // 강제하지 않고, 저장 시 complete:true로 done 상태를 유지시킨다(감정 재입력 강요 방지).
+  const [wasDoneWithoutMood, setWasDoneWithoutMood] = useState(false);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -613,7 +619,7 @@ export default function RecordEditPage() {
       const { data, error } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,record_media(id,url,created_at,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -658,6 +664,8 @@ export default function RecordEditPage() {
         workout_avg_bpm: data.workout_avg_bpm ?? null,
         workout_max_bpm: data.workout_max_bpm ?? null,
       });
+      setRecordStatus(data.status === "planned" ? "planned" : "done");
+      setWasDoneWithoutMood(data.status === "done" && data.mood == null);
       setBarOrderTags(barTags);
       setCenterOrderTags(centerTags);
       const hasHealthSyncValue = Boolean(
@@ -738,6 +746,11 @@ export default function RecordEditPage() {
       setHealthSyncRequestId(null);
 
       if (result.status === "error") {
+        // §12.3(1) RN 요청: 다른 요청이 이미 진행 중이라 실패한 정상적 경합이지 사용자
+        // 오류가 아니다 — 에러 토스트 없이 조용히 무시한다. 완료 전환(mood 저장)은 이 결과와
+        // 무관하게 계속 진행되고(제출 버튼은 healthSyncing을 보지 않음), 사용자가 원하면
+        // "불러오기" 버튼으로 다시 시도할 수 있다.
+        if (result.code === "QUERY_FAILED") return;
         toast(getHealthSyncErrorMessage(result.code));
         return;
       }
@@ -839,11 +852,36 @@ export default function RecordEditPage() {
 
   const workoutCard = showHealthSync ? syncedWorkoutDraft ?? appliedWorkout : null;
 
+  // §6.2 #9/M6: 예정(planned) 기록은 무드 없이 필드만 고쳐도 예정 상태를 유지한 채 저장할 수
+  // 있다. recordStatus는 진입 시점(로드 시) 상태를 그대로 들고 있어 편집 도중 바뀌지 않는다.
+  const isPlannedEdit = recordStatus === "planned";
+  // 지난(과거 날짜) 예정은 "예정 상태 그대로 저장"이 의미상 성립하지 않는다(§9.2). 무드를 남겨
+  // 완료하거나 삭제만 할 수 있다. 무드 없이 저장하면 서버 D5 가드(status:"planned" + 과거 날짜)가
+  // 막는데, 그 메시지가 "날짜 이동"을 말해 상황과 안 맞으므로 클라에서 먼저 맞는 안내로 막는다.
+  const isPastPlannedEdit =
+    isPlannedEdit && !!form.record_date && form.record_date < formatSeoulDateKey();
+
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
-    if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
-      toast("날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요.");
+    // 감정 필수는 "완료 상태 + 원래 감정이 있던 기록"에만 적용한다. 예정(isPlannedEdit)과
+    // "감정 없이 완료"로 만들어진 done-무드없음(wasDoneWithoutMood)은 감정 없이도 저장 가능.
+    const moodOptional = isPlannedEdit || wasDoneWithoutMood;
+    if (
+      !form.record_date ||
+      !form.start_time ||
+      !form.end_time ||
+      (!moodOptional && !form.mood)
+    ) {
+      toast(
+        moodOptional
+          ? "날짜, 시작 시간, 종료 시간은 필수예요."
+          : "날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요."
+      );
+      return;
+    }
+    if (isPastPlannedEdit && form.mood === null) {
+      toast("지난 예정은 완료하거나 삭제할 수 있어요. 감정을 남기면 완료로 저장돼요.");
       return;
     }
     if (form.end_time <= form.start_time) {
@@ -906,6 +944,21 @@ export default function RecordEditPage() {
           instructor: showLevelInstructor ? form.instructor : "",
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
+          // 감정을 입력한 경우는 어떤 status/complete 필드도 보내지 않는다 —
+          // records_enforce_status_monotonic 트리거가 NEW.mood IS NOT NULL만으로 done 전환을
+          // 결정하는 기존 경로를 그대로 타게 하기 위함. 감정이 없을 때만 의도를 실어 서버의
+          // mood-필수 검증을 우회한다:
+          //  - 예정(isPlannedEdit) 편집: status:"planned"로 예정 유지. (단 과거 예정은 위에서 선차단)
+          //  - done-무드없음(wasDoneWithoutMood) 편집: complete:true로 done 유지(감정 재입력 강요 방지).
+          //    complete:true는 isCompleteIntent라 D5 가드(isPlannedIntent 전용)에 걸리지 않아
+          //    지난 날짜의 done-무드없음 기록도 정상 저장된다.
+          ...(form.mood === null
+            ? isPlannedEdit
+              ? { status: "planned" }
+              : wasDoneWithoutMood
+                ? { complete: true }
+                : {}
+            : {}),
         }),
       });
     } catch {
@@ -916,6 +969,16 @@ export default function RecordEditPage() {
 
     if (!response.ok) {
       setSaving(false);
+      // D5 가드(예정을 과거 날짜로 옮기려는 시도)만 서버 메시지를 그대로 보여준다 — 이 API가
+      // 던지는 다른 오류 메시지는 영문/기술적 문구("Bad request" 등)라 그대로 노출하기엔
+      // 부적절해 일반 안내로 유지한다.
+      if (response.status === 400) {
+        const errorBody = await response.json().catch(() => null);
+        if (errorBody?.message === "예정은 오늘 이후 날짜로만 옮길 수 있어요.") {
+          toast(errorBody.message);
+          return;
+        }
+      }
       toast("기록 수정에 실패했습니다.");
       return;
     }
@@ -1122,60 +1185,70 @@ export default function RecordEditPage() {
         <PageHeader title="기록 수정" className="mb-6" />
 
         <div className="space-y-8">
-          <section className="space-y-3">
-            <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
-              <button
-                type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
-                onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
-                aria-label="사진 추가"
-              >
-                <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
-              </button>
-              {mediaItems.map((item, index) => (
-                <div
-                  key={`image-${item.type === "existing" ? item.id : index}`}
-                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+          {/* §9.11: 예정 상태는 미디어 업로드 섹션을 렌더링하지 않고(비활성화가 아니라 숨김) 안내 캡션만 노출 */}
+          {recordStatus === "planned" ? (
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <p className="text-[13px] text-[#17171c]/50">
+                완료하면 사진을 추가할 수 있어요.
+              </p>
+            </section>
+          ) : (
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
+                <button
+                  type="button"
+                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                  onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
+                  aria-label="사진 추가"
                 >
-                  <AnimatedImage
-                    src={item.url}
-                    alt="업로드 사진"
-                    width={1600}
-                    height={1600}
-                    unoptimized
-                    draggable={false}
-                    className="h-full w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                    onClick={() =>
-                      handleRemoveImage(
-                        index,
-                        item.type === "existing"
-                          ? { type: "existing", id: item.id }
-                          : { type: "new" }
-                      )
-                    }
-                    aria-label="업로드 사진 삭제"
+                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
+                </button>
+                {mediaItems.map((item, index) => (
+                  <div
+                    key={`image-${item.type === "existing" ? item.id : index}`}
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleMediaSelect}
-            />
-            <p className="text-xs text-[#17171c]/50">
-              사진은 최대 3장까지 업로드할 수 있어요.
-            </p>
-          </section>
+                    <AnimatedImage
+                      src={item.url}
+                      alt="업로드 사진"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
+                      className="h-full w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                      onClick={() =>
+                        handleRemoveImage(
+                          index,
+                          item.type === "existing"
+                            ? { type: "existing", id: item.id }
+                            : { type: "new" }
+                        )
+                      }
+                      aria-label="업로드 사진 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleMediaSelect}
+              />
+              <p className="text-xs text-[#17171c]/50">
+                사진은 최대 3장까지 업로드할 수 있어요.
+              </p>
+            </section>
+          )}
 
           <Separator />
 
@@ -1262,6 +1335,13 @@ export default function RecordEditPage() {
                   }
                 />
               </div>
+              {isPlannedEdit ? (
+                <p className="mt-2 text-[13px] text-[#17171c]/50">
+                  {isPastPlannedEdit
+                    ? "지난 예정이에요. 감정을 남기면 완료로 저장돼요."
+                    : "감정을 남기지 않으면 예정 상태로 저장돼요. 감정을 남기면 완료로 바뀌어요."}
+                </p>
+              ) : null}
             </div>
             <div className="pt-2">
               <div className="flex items-center justify-between">
