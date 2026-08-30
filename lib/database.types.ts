@@ -1274,6 +1274,65 @@ export type Database = {
           },
         ]
       }
+      record_recurrences: {
+        Row: {
+          bar_order: string | null
+          center_order: string | null
+          client_request_id: string
+          created_at: string
+          deleted_at: string | null
+          end_time: string
+          id: string
+          instructor: string | null
+          level: string | null
+          location: string | null
+          start_time: string
+          until_date: string
+          user_id: string
+          weekdays: number[]
+        }
+        Insert: {
+          bar_order?: string | null
+          center_order?: string | null
+          client_request_id: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time: string
+          id?: string
+          instructor?: string | null
+          level?: string | null
+          location?: string | null
+          start_time: string
+          until_date: string
+          user_id: string
+          weekdays: number[]
+        }
+        Update: {
+          bar_order?: string | null
+          center_order?: string | null
+          client_request_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time?: string
+          id?: string
+          instructor?: string | null
+          level?: string | null
+          location?: string | null
+          start_time?: string
+          until_date?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_recurrences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       records: {
         Row: {
           bar_order: string | null
@@ -1292,7 +1351,9 @@ export type Database = {
           mood: number | null
           outfit: string | null
           record_date: string
+          recurrence_id: string | null
           start_time: string
+          status: string
           updated_at: string
           user_id: string
           workout_active_energy_kcal: number | null
@@ -1320,7 +1381,9 @@ export type Database = {
           mood?: number | null
           outfit?: string | null
           record_date: string
+          recurrence_id?: string | null
           start_time: string
+          status?: string
           updated_at?: string
           user_id: string
           workout_active_energy_kcal?: number | null
@@ -1348,7 +1411,9 @@ export type Database = {
           mood?: number | null
           outfit?: string | null
           record_date?: string
+          recurrence_id?: string | null
           start_time?: string
+          status?: string
           updated_at?: string
           user_id?: string
           workout_active_energy_kcal?: number | null
@@ -1360,6 +1425,13 @@ export type Database = {
           workout_total_energy_kcal?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "records_recurrence_id_fkey"
+            columns: ["recurrence_id"]
+            isOneToOne: false
+            referencedRelation: "record_recurrences"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "records_user_id_fkey"
             columns: ["user_id"]
@@ -1722,6 +1794,27 @@ export type Database = {
       get_daily_signup_stats: {
         Args: { days?: number }
         Returns: { stat_date: string; signup_count: number }[]
+      }
+      create_record_recurrences: {
+        Args: {
+          p_bar_order?: string
+          p_center_order?: string
+          p_client_request_id: string
+          p_end_time: string
+          p_instructor?: string
+          p_level?: string
+          p_location?: string
+          p_start_time: string
+          p_until_date: string
+          p_user_id: string
+          p_weekdays: number[]
+        }
+        Returns: {
+          created: string[]
+          recurrence_id: string
+          replayed: boolean
+          skipped: string[]
+        }[]
       }
       increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
       increment_ad_impression: { Args: { ad_id: string }; Returns: undefined }
