@@ -1274,6 +1274,65 @@ export type Database = {
           },
         ]
       }
+      record_recurrences: {
+        Row: {
+          bar_order: string | null
+          center_order: string | null
+          client_request_id: string
+          created_at: string
+          deleted_at: string | null
+          end_time: string
+          id: string
+          instructor: string | null
+          level: string | null
+          location: string | null
+          start_time: string
+          until_date: string
+          user_id: string
+          weekdays: number[]
+        }
+        Insert: {
+          bar_order?: string | null
+          center_order?: string | null
+          client_request_id: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time: string
+          id?: string
+          instructor?: string | null
+          level?: string | null
+          location?: string | null
+          start_time: string
+          until_date: string
+          user_id: string
+          weekdays: number[]
+        }
+        Update: {
+          bar_order?: string | null
+          center_order?: string | null
+          client_request_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time?: string
+          id?: string
+          instructor?: string | null
+          level?: string | null
+          location?: string | null
+          start_time?: string
+          until_date?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_recurrences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       records: {
         Row: {
           bar_order: string | null
@@ -1292,7 +1351,9 @@ export type Database = {
           mood: number | null
           outfit: string | null
           record_date: string
+          recurrence_id: string | null
           start_time: string
+          status: string
           updated_at: string
           user_id: string
           workout_active_energy_kcal: number | null
@@ -1320,7 +1381,9 @@ export type Database = {
           mood?: number | null
           outfit?: string | null
           record_date: string
+          recurrence_id?: string | null
           start_time: string
+          status?: string
           updated_at?: string
           user_id: string
           workout_active_energy_kcal?: number | null
@@ -1348,7 +1411,9 @@ export type Database = {
           mood?: number | null
           outfit?: string | null
           record_date?: string
+          recurrence_id?: string | null
           start_time?: string
+          status?: string
           updated_at?: string
           user_id?: string
           workout_active_energy_kcal?: number | null
@@ -1360,6 +1425,13 @@ export type Database = {
           workout_total_energy_kcal?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "records_recurrence_id_fkey"
+            columns: ["recurrence_id"]
+            isOneToOne: false
+            referencedRelation: "record_recurrences"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "records_user_id_fkey"
             columns: ["user_id"]
