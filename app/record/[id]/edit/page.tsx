@@ -23,6 +23,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import {
+  formatSeoulDateKey,
   getSeoulDateParts,
   getSeoulTodayDate,
   getSeoulTimeParts,
@@ -847,11 +848,33 @@ export default function RecordEditPage() {
 
   const workoutCard = showHealthSync ? syncedWorkoutDraft ?? appliedWorkout : null;
 
+  // §6.2 #9/M6: 예정(planned) 기록은 무드 없이 필드만 고쳐도 예정 상태를 유지한 채 저장할 수
+  // 있다. recordStatus는 진입 시점(로드 시) 상태를 그대로 들고 있어 편집 도중 바뀌지 않는다.
+  const isPlannedEdit = recordStatus === "planned";
+  // 지난(과거 날짜) 예정은 "예정 상태 그대로 저장"이 의미상 성립하지 않는다(§9.2). 무드를 남겨
+  // 완료하거나 삭제만 할 수 있다. 무드 없이 저장하면 서버 D5 가드(status:"planned" + 과거 날짜)가
+  // 막는데, 그 메시지가 "날짜 이동"을 말해 상황과 안 맞으므로 클라에서 먼저 맞는 안내로 막는다.
+  const isPastPlannedEdit =
+    isPlannedEdit && !!form.record_date && form.record_date < formatSeoulDateKey();
+
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
-    if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
-      toast("날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요.");
+    if (
+      !form.record_date ||
+      !form.start_time ||
+      !form.end_time ||
+      (!isPlannedEdit && !form.mood)
+    ) {
+      toast(
+        isPlannedEdit
+          ? "날짜, 시작 시간, 종료 시간은 필수예요."
+          : "날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요."
+      );
+      return;
+    }
+    if (isPastPlannedEdit && form.mood === null) {
+      toast("지난 예정은 완료하거나 삭제할 수 있어요. 감정을 남기면 완료로 저장돼요.");
       return;
     }
     if (form.end_time <= form.start_time) {
@@ -914,6 +937,14 @@ export default function RecordEditPage() {
           instructor: showLevelInstructor ? form.instructor : "",
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
+          // M6: 예정을 무드 없이 저장할 때만 status:"planned"를 실어 서버의 mood-필수 검증을
+          // 우회한다(app/api/records/[id]/route.ts의 isPlannedIntent 계약). 무드를 입력한
+          // 경우는 이 필드를 아예 보내지 않아야 한다 — records_enforce_status_monotonic
+          // 트리거가 NEW.mood IS NOT NULL만으로 done 전환을 결정하는 기존 경로를 그대로 타게
+          // 하기 위함. 만약 여기서도 항상 status:"planned"를 보내면, 이미 지난 날짜인 예정을
+          // 뒤늦게 완료(§6.2 #14)하려 할 때 PATCH 라우트의 D5 가드("예정은 오늘 이후 날짜로만
+          // 옮길 수 있어요")가 record_date 자체는 바뀌지 않았는데도 오탐 차단해 버린다.
+          ...(isPlannedEdit && form.mood === null ? { status: "planned" } : {}),
         }),
       });
     } catch {
@@ -924,6 +955,16 @@ export default function RecordEditPage() {
 
     if (!response.ok) {
       setSaving(false);
+      // D5 가드(예정을 과거 날짜로 옮기려는 시도)만 서버 메시지를 그대로 보여준다 — 이 API가
+      // 던지는 다른 오류 메시지는 영문/기술적 문구("Bad request" 등)라 그대로 노출하기엔
+      // 부적절해 일반 안내로 유지한다.
+      if (response.status === 400) {
+        const errorBody = await response.json().catch(() => null);
+        if (errorBody?.message === "예정은 오늘 이후 날짜로만 옮길 수 있어요.") {
+          toast(errorBody.message);
+          return;
+        }
+      }
       toast("기록 수정에 실패했습니다.");
       return;
     }
@@ -1280,6 +1321,13 @@ export default function RecordEditPage() {
                   }
                 />
               </div>
+              {isPlannedEdit ? (
+                <p className="mt-2 text-[13px] text-[#17171c]/50">
+                  {isPastPlannedEdit
+                    ? "지난 예정이에요. 감정을 남기면 완료로 저장돼요."
+                    : "감정을 남기지 않으면 예정 상태로 저장돼요. 감정을 남기면 완료로 바뀌어요."}
+                </p>
+              ) : null}
             </div>
             <div className="pt-2">
               <div className="flex items-center justify-between">

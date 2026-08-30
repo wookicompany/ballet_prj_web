@@ -33,6 +33,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
+import { markRecordDatesChanged } from "@/lib/recordChangeFlags";
 import { Activity, CalendarDays, CheckCircle, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -157,6 +158,8 @@ export default function RecordDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [recurrenceDeleteDialogOpen, setRecurrenceDeleteDialogOpen] = useState(false);
+  const [deletingRecurrence, setDeletingRecurrence] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -316,6 +319,58 @@ export default function RecordDetailPage() {
     toast("완료로 표시했어요.");
   };
 
+  // §9.9/§11.8: "남은 예정 전체 삭제"(planned 카드) / "다음 예정 전체 삭제"(done 카드) —
+  // 이미 구현된 DELETE /api/records/recurrences/[id]를 호출만 한다(재구현 금지). 그 엔드포인트가
+  // 소유권(404/403), status='planned', deleted_at 스코프를 단일 원자적 UPDATE로 전부 처리한다.
+  const handleDeleteRecurrence = async () => {
+    if (!user || !record || !record.recurrence_id) {
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    const wasPlanned = record.status === "planned";
+    setDeletingRecurrence(true);
+    let response: Response;
+    try {
+      response = await fetch(`/api/records/recurrences/${record.recurrence_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+    } catch {
+      setDeletingRecurrence(false);
+      toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+      return;
+    }
+
+    setDeletingRecurrence(false);
+    if (!response.ok) {
+      // §9.12 삭제 부분 실패 카피 재사용(서버는 단일 UPDATE라 원자적이지만, 요청 자체가
+      // 실패하는 경우도 동일 카피로 안내).
+      toast("일부 예정을 삭제하지 못했어요. 다시 시도해 주세요.");
+      return;
+    }
+
+    const payload = (await response.json().catch(() => null)) as
+      | { cancelledDates?: string[] }
+      | null;
+    const cancelledDates = payload?.cancelledDates ?? [];
+
+    // §11.3: 취소된 날짜가 여러 달에 걸칠 수 있다 — 날짜별로 dirty flag를 남겨 day뷰까지
+    // 반영시키고, 프로필 캐시는 유저 단위 1회 호출로 충분하다.
+    invalidateProfileCache(user.id);
+    invalidateProfileRecordsCache(user.id);
+    markRecordDatesChanged(cancelledDates);
+
+    // 지금 보고 있던 기록 자체가 planned였다면 이번 삭제로 함께 취소됐으므로(§11.8 WHERE
+    // status='planned') 더 이상 존재하지 않는 상세 화면을 벗어난다. done 카드에서 실행한
+    // "다음 예정 전체 삭제"는 현재 기록 자체는 그대로라 화면에 머문다.
+    if (wasPlanned) {
+      router.back();
+      return;
+    }
+    toast("남은 예정을 모두 삭제했어요.");
+  };
+
   const isPlanned = record.status === "planned";
   const isPastPlanned = isPlanned && record.record_date < formatSeoulDateKey();
 
@@ -345,7 +400,7 @@ export default function RecordDetailPage() {
 
   return (
     <MobileContainer>
-      {deleting || completing ? <LoadingOverlay /> : null}
+      {deleting || completing || deletingRecurrence ? <LoadingOverlay /> : null}
       <main className="px-4 pb-10">
         <PageHeader
           title="기록 상세"
@@ -710,7 +765,7 @@ export default function RecordDetailPage() {
                 }}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
-                무드 없이 완료 처리
+                감정 없이 완료하기
               </Button>
             ) : null}
             <Button
@@ -725,6 +780,21 @@ export default function RecordDetailPage() {
             <Trash2 className="mr-2 h-4 w-4" />
             삭제하기
             </Button>
+            {record.recurrence_id ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full justify-start text-sm text-red-500 hover:text-red-500"
+                onClick={() => {
+                  sendHapticToApp();
+                  setMenuOpen(false);
+                  setRecurrenceDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isPlanned ? "남은 예정 전체 삭제" : "다음 예정 전체 삭제"}
+              </Button>
+            ) : null}
           </div>
         </BottomSheet>
         <AlertDialog
@@ -759,7 +829,7 @@ export default function RecordDetailPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>무드 없이 완료 처리할까요?</AlertDialogTitle>
+              <AlertDialogTitle>감정 없이 완료할까요?</AlertDialogTitle>
               <AlertDialogDescription>
                 완료 후에는 예정으로 되돌릴 수 없어요.
               </AlertDialogDescription>
@@ -775,6 +845,34 @@ export default function RecordDetailPage() {
                 }}
               >
                 완료
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog
+          open={recurrenceDeleteDialogOpen}
+          onOpenChange={setRecurrenceDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {isPlanned ? "남은 예정을 모두 삭제할까요?" : "다음 예정을 모두 삭제할까요?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                직접 시간 바꾼 예정도 함께 삭제돼요. 완료된 기록은 삭제되지 않아요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row gap-2">
+              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogAction
+                variant="outline"
+                className="flex-1 text-red-500 hover:text-red-500"
+                onClick={async () => {
+                  setRecurrenceDeleteDialogOpen(false);
+                  await handleDeleteRecurrence();
+                }}
+              >
+                삭제
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

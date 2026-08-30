@@ -20,7 +20,7 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
-import { getSeoulTodayDate, parseDateKey } from "@/lib/kstDateTime";
+import { getSeoulTimeParts, getSeoulTodayDate, parseDateKey } from "@/lib/kstDateTime";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,6 +41,9 @@ import {
   getCenterOrdersCache,
   setCenterOrdersCache,
 } from "@/lib/centerOrdersCache";
+import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
+import { markRecordDatesChanged } from "@/lib/recordChangeFlags";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
@@ -282,6 +285,16 @@ export default function RecordRecurringNewPage() {
   };
   const formatTimeDisplay = (hour: string, minute: string) =>
     `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
+  // app/record/new/page.tsx의 getClampedNowTime과 동일한 로직 — 값이 없는 시간 피커를 열 때
+  // 00:00 대신 현재 KST 시각으로 드래프트를 채운다(이른 새벽엔 최소 6시로 클램프).
+  const getClampedNowTime = () => {
+    const { hour, minute } = getSeoulTimeParts();
+    const hourValue = Math.max(hour, 6);
+    return {
+      hour: String(hourValue).padStart(2, "0"),
+      minute: String(minute).padStart(2, "0"),
+    };
+  };
 
   useEffect(() => {
     if (!startSheetOpen) return;
@@ -667,6 +680,15 @@ export default function RecordRecurringNewPage() {
         return;
       }
 
+      // §11.3: 생성된 예정 날짜가 여러 달에 걸칠 수 있다. 프로필 캐시는 유저 단위라 1회
+      // 호출로 충분(§11.3)하고, 날짜별 정밀도가 필요한 day뷰 캐시는 created 전체를 순회해
+      // 각 날짜에 dirty flag를 남긴다. 캘린더 페이지는 이 flag가 하나라도 있으면 자체적으로
+      // invalidateCalendarCache()를 호출해 전체 캐시를 무효화한다(app/(tabs)/calendar/page.tsx
+      // handleRefresh 참조) — 여기서 별도로 호출할 필요 없음.
+      invalidateProfileCache(user.id);
+      invalidateProfileRecordsCache(user.id);
+      markRecordDatesChanged(created);
+
       if (skipped.length === 0 && !wasCapped) {
         toast(`예정 ${created.length}개를 만들었어요.`);
         router.replace("/calendar");
@@ -802,10 +824,12 @@ export default function RecordRecurringNewPage() {
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
                   onClick={() => {
-                    const [hour, minute] = startTime
-                      ? startTime.split(":")
-                      : ["00", "00"];
-                    setStartDraft({ hour, minute });
+                    if (startTime) {
+                      const [hour, minute] = startTime.split(":");
+                      setStartDraft({ hour, minute });
+                    } else {
+                      setStartDraft(getClampedNowTime());
+                    }
                     setStartSheetOpen(true);
                   }}
                 >
@@ -823,10 +847,12 @@ export default function RecordRecurringNewPage() {
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
                   onClick={() => {
-                    const [hour, minute] = endTime
-                      ? endTime.split(":")
-                      : ["00", "00"];
-                    setEndDraft({ hour, minute });
+                    if (endTime) {
+                      const [hour, minute] = endTime.split(":");
+                      setEndDraft({ hour, minute });
+                    } else {
+                      setEndDraft(getClampedNowTime());
+                    }
                     setEndSheetOpen(true);
                   }}
                 >
