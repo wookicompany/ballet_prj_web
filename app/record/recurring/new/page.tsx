@@ -862,10 +862,6 @@ export default function RecordRecurringNewPage() {
                 </Button>
               </div>
             </div>
-
-            <div className="rounded-lg bg-[#17171c]/5 px-4 py-3 text-sm text-[#17171c]/80">
-              총 {plannedCount}회 예정을 만들어요.
-            </div>
           </section>
 
           <Separator />
