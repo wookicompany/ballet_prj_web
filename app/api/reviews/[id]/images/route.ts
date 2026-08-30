@@ -46,10 +46,33 @@ export const POST = async (
     return NextResponse.json({ ok: true });
   }
 
+  // 멱등성: 같은 리뷰에 이미 존재하는 url은 다시 넣지 않는다. WKWebView에서 서버는 삽입을
+  // 마쳤는데 응답만 유실돼 클라가 같은 url로 재시도하는 경우, 중복 이미지 행이 생기는 것을 막는다.
+  // (제출 중 버튼이 비활성이라 재시도는 순차적 — 동시 요청 경합은 발생하지 않는다.)
+  const { data: existingRows, error: existingError } = await auth.supabaseAdmin
+    .from("performance_review_images")
+    .select("url")
+    .eq("review_id", id)
+    .is("deleted_at", null);
+
+  if (existingError) {
+    console.error("Failed to load existing review images", existingError);
+    return NextResponse.json(
+      { message: "Failed to load images" },
+      { status: 500 }
+    );
+  }
+
+  const existingUrls = new Set((existingRows ?? []).map((row) => row.url));
+  const newUrls = cleanedUrls.filter((url: string) => !existingUrls.has(url));
+  if (newUrls.length === 0) {
+    return NextResponse.json({ ok: true });
+  }
+
   const { error: insertError } = await auth.supabaseAdmin
     .from("performance_review_images")
     .insert(
-      cleanedUrls.map((url: string) => ({
+      newUrls.map((url: string) => ({
         review_id: id,
         user_id: auth.user.id,
         url,
