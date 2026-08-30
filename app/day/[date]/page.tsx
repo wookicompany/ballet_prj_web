@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
 import AddRecordEntrySheet from "@/components/records/AddRecordEntrySheet";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   formatSeoulDateKey,
@@ -56,6 +57,8 @@ export default function DayPage() {
 
   const dateStr = params.date;
   const todayKey = useMemo(() => formatSeoulDateKey(), []);
+  // 지난(놓친) 예정 판별 — day-level 비교(오늘/미래는 동일 취급, design.md 무드 슬롯 표현 참조)
+  const isPastDate = dateStr < todayKey;
 
   const fetchRecords = useCallback(async () => {
     if (!user) {
@@ -268,6 +271,7 @@ export default function DayPage() {
             const top = Math.max(start - 6 * 60, 0);
             const clampedHeight = Math.min(height, 1080 - top);
             const media = mediaByRecord[record.id];
+            const isPlanned = record.status === "planned";
 
             return (
               <Button
@@ -288,13 +292,30 @@ export default function DayPage() {
                       draggable={false}
                       className="h-9 w-9 shrink-0 object-contain"
                     />
+                  ) : isPlanned ? (
+                    // 예정 — 무드 이모지 대신 점선 원 placeholder(design.md 무드 슬롯 표현, 지난 예정은 더 옅게)
+                    <div
+                      aria-hidden
+                      className={`h-9 w-9 shrink-0 rounded-full border-2 border-dashed ${
+                        isPastDate ? "border-[#17171c]/20" : "border-[#17171c]/40"
+                      }`}
+                    />
                   ) : (
                     <div className="h-9 w-9 shrink-0 rounded-full bg-[#17171c]/5" />
                   )}
                   <div className="min-w-0 flex-1 text-center">
-                    <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
-                      {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
-                    </p>
+                    {isPlanned ? (
+                      <Badge
+                        variant="outline"
+                        className="border-[#17171c]/30 bg-background px-2 text-[#17171c]/70"
+                      >
+                        예정
+                      </Badge>
+                    ) : (
+                      <p className="line-clamp-1 text-sm font-semibold text-[#17171c]">
+                        {record.content || "오늘의 발레를 한 줄로 남겨주세요."}
+                      </p>
+                    )}
                   </div>
                   {media?.url ? (
                     <div className="relative h-9 w-9 shrink-0 rounded-lg bg-[#17171c]/5">

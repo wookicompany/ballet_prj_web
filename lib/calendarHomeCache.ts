@@ -1,5 +1,8 @@
 type CalendarMonthData = {
-  recordCounts: Record<string, number>;
+  // 완료(status='done') 기록 개수 — 캘린더 셀의 채움 배지에 쓰인다.
+  doneCounts: Record<string, number>;
+  // 예정(status='planned') 기록 개수 — 캘린더 셀의 outline 배지/점선 원에 쓰인다.
+  plannedCounts: Record<string, number>;
   moodAverages: Record<string, number>;
   monthSummary: { count: number; mins: number; days: number } | null;
 };
