@@ -770,7 +770,7 @@ export default function RecordDetailPage() {
                 }}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
-                감정 없이 완료하기
+                감정 기록 없이 완료하기
               </Button>
             ) : null}
             <Button
@@ -834,7 +834,7 @@ export default function RecordDetailPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>감정 없이 완료할까요?</AlertDialogTitle>
+              <AlertDialogTitle>감정 기록 없이 완료할까요?</AlertDialogTitle>
               <AlertDialogDescription>
                 완료 후에는 예정으로 되돌릴 수 없어요.
               </AlertDialogDescription>
