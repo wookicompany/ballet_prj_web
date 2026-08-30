@@ -56,6 +56,8 @@ type SelectedRecord = {
   location: string | null;
   instructor: string | null;
   level: string | null;
+  status: string;
+  recurrence_id: string | null;
 };
 
 const parseLocationName = (value: string | null) => {
@@ -148,19 +150,35 @@ export default function CalendarPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("records")
-      .select("record_date,mood,start_time,end_time")
-      .eq("user_id", user.id)
-      .is("deleted_at", null)
-      .gte("record_date", formatSeoulDateKey(start))
-      .lte("record_date", formatSeoulDateKey(end));
+    // M4: 캘린더 셀 표시(예정 포함)와 통계/mood평균(done만)을 별도 쿼리로 분리(§6.5 #26·#27).
+    const [displayRes, statsRes] = await Promise.all([
+      // 표시용 — 날짜별 예정 존재를 포함해 보여주는 게 기능 목적이라 status 필터 없음(§9.1·§9.2)
+      supabase
+        .from("records")
+        .select("record_date")
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .gte("record_date", formatSeoulDateKey(start))
+        .lte("record_date", formatSeoulDateKey(end)),
+      // 통계용 — mood 평균·월 요약은 D1에 따라 완료(done)만 집계
+      supabase
+        .from("records")
+        .select("record_date,mood,start_time,end_time")
+        .eq("user_id", user.id)
+        .eq("status", "done")
+        .is("deleted_at", null)
+        .gte("record_date", formatSeoulDateKey(start))
+        .lte("record_date", formatSeoulDateKey(end)),
+    ]);
 
-    if (error || !data) {
+    if (displayRes.error || !displayRes.data || statsRes.error || !statsRes.data) {
       return;
     }
 
-    if (!force && data.length === 0) {
+    const displayData = displayRes.data;
+    const statsData = statsRes.data;
+
+    if (!force && displayData.length === 0 && statsData.length === 0) {
       setRecordCounts({});
       setMoodAverages({});
       setMonthSummary(null);
@@ -168,11 +186,14 @@ export default function CalendarPage() {
     }
 
     const counts: Record<string, number> = {};
+    displayData.forEach((record) => {
+      counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
+    });
+
     const moodTotals: Record<string, number> = {};
     const moodCounts: Record<string, number> = {};
     let totalMins = 0;
-    data.forEach((record) => {
-      counts[record.record_date] = (counts[record.record_date] ?? 0) + 1;
+    statsData.forEach((record) => {
       if (record.mood) {
         moodTotals[record.record_date] =
           (moodTotals[record.record_date] ?? 0) + record.mood;
@@ -188,8 +209,8 @@ export default function CalendarPage() {
       averages[date] = Math.min(8, Math.max(1, rounded));
     });
 
-    const days = Object.keys(counts).length;
-    const summary = data.length > 0 ? { count: data.length, mins: totalMins, days } : null;
+    const days = new Set(statsData.map((r) => r.record_date)).size;
+    const summary = statsData.length > 0 ? { count: statsData.length, mins: totalMins, days } : null;
     setCalendarMonthData(monthKey, { recordCounts: counts, moodAverages: averages, monthSummary: summary });
     setRecordCounts(counts);
     setMoodAverages(averages);
@@ -232,9 +253,10 @@ export default function CalendarPage() {
       setSelectedDateRecords([]);
       return;
     }
+    // 표시 목적(선택 날짜 기록 나열) — status 필터 없음. select에 status·recurrence_id 포함(G2)
     const { data } = await supabase
       .from("records")
-      .select("id, start_time, end_time, content, mood, created_at, location, instructor, level")
+      .select("id, start_time, end_time, content, mood, created_at, location, instructor, level, status, recurrence_id")
       .eq("user_id", user.id)
       .eq("record_date", date)
       .is("deleted_at", null)

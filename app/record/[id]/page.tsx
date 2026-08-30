@@ -59,6 +59,8 @@ type RecordDetail = {
   workout_total_energy_kcal: number | null;
   workout_avg_bpm: number | null;
   workout_max_bpm: number | null;
+  status: string;
+  recurrence_id: string | null;
 };
 
 type MediaItem = {
@@ -165,10 +167,11 @@ export default function RecordDetailPage() {
         return;
       }
 
+      // 상세 표시 — status 필터 없음. select에 status·recurrence_id 포함(G2: "남은 삭제" 액션 노출 판단용)
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,media_type,url,deleted_at)"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,recurrence_id,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)

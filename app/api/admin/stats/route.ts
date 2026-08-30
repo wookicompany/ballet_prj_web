@@ -23,7 +23,7 @@ export const GET = async (request: Request) => {
     { data: brandUsersData },
   ] = await Promise.all([
     supabaseAdmin.rpc("get_total_auth_users_count"),
-    supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabaseAdmin.from("records").select("id", { count: "exact", head: true }).eq("status", "done").is("deleted_at", null),
     supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("brand_likes").select("id", { count: "exact", head: true }).is("deleted_at", null),

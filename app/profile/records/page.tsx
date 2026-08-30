@@ -32,6 +32,8 @@ type RecordSummary = {
   outfit: string | null;
   memo: string | null;
   workoutTotalEnergyKcal: number | null;
+  status: string;
+  recurrenceId: string | null;
 };
 
 type CachePayload = {
@@ -109,10 +111,12 @@ function ProfileRecordsContent() {
         const from = (page - 1) * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
+        // "발레 기록" 전체보기 목록 — §6.5(#31)에 따라 예정(planned)은 제외(D1)
         let listQuery = supabase
           .from("records")
-          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal")
+          .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal,status,recurrence_id")
           .eq("user_id", user.id)
+          .eq("status", "done")
           .is("deleted_at", null);
 
         if (instructorParam) {
@@ -145,6 +149,8 @@ function ProfileRecordsContent() {
           outfit: row.outfit,
           memo: row.memo,
           workoutTotalEnergyKcal: row.workout_total_energy_kcal,
+          status: row.status,
+          recurrenceId: row.recurrence_id,
         }));
 
         setRecords((prev) => {
