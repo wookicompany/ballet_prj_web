@@ -102,10 +102,15 @@ export const POST = async (request: Request) => {
 
   if (error || !data) {
     console.error("Failed to create record recurrences", error);
-    if (error?.message?.includes("RECURRING_INVALID_INPUT")) {
+    // RPC의 RAISE EXCEPTION(P0001) 마커를 message뿐 아니라 details/hint까지 훑어 매핑한다 —
+    // PostgREST가 예외 텍스트를 어느 필드에 싣든(구현/버전 차) 500으로 새지 않도록 견고화.
+    const rpcErrorText = [error?.message, error?.details, error?.hint]
+      .filter(Boolean)
+      .join(" ");
+    if (rpcErrorText.includes("RECURRING_INVALID_INPUT")) {
       return NextResponse.json({ message: "Bad request" }, { status: 400 });
     }
-    if (error?.message?.includes("RECURRING_ZERO_CREATED")) {
+    if (rpcErrorText.includes("RECURRING_ZERO_CREATED")) {
       // #16/§9.6: all candidate dates collided with existing records — same "0건" UX as the
       // zero-matching-date case below, so callers only need to branch on `created.length`.
       return NextResponse.json({ created: [], skipped: [] });

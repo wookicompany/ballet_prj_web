@@ -231,9 +231,11 @@ export const PATCH = async (
     }
   }
 
-  // P1: only the completion-intent path writes `status`. Kept out of `normalizedPayload` (and
-  // thus out of the §11.5 expected_updated_at diff above) because `record` doesn't select
-  // `status` — adding it there would compare against `undefined` and false-positive a conflict.
+  // P1: only the completion-intent path writes `status`. It is deliberately kept OUT of
+  // `normalizedPayload`, so the §11.5 expected_updated_at diff above (which iterates
+  // `normalizedPayload` keys) never compares `status` and can't false-positive a conflict on it.
+  // (`record` does select `status` now — for the mood-preservation guard — but that select is
+  // unrelated to the diff, which only reads `record[key]` for keys present in `normalizedPayload`.)
   const updatePayload = isCompleteIntent
     ? { ...normalizedPayload, status: "done" as const }
     : normalizedPayload;
