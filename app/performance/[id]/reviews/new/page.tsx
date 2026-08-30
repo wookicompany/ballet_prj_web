@@ -145,6 +145,33 @@ export default function PerformanceReviewNewPage() {
       }
       reviewId = payload.id;
       createdReviewIdRef.current = reviewId;
+    } else {
+      // 재시도: 리뷰는 이미 있으므로, 그 사이 사용자가 별점이나 내용을 바꿨을 수 있어 PATCH로
+      // 동기화한 뒤 사진 연결을 재시도한다(변경이 조용히 무시되는 것을 막는다). 사진 세트 변경은
+      // 재사용하는 업로드 URL을 그대로 쓰므로 원래 사진이 유지된다.
+      let patchResponse: Response;
+      try {
+        patchResponse = await fetch(`/api/reviews/${reviewId}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rating,
+            content: content.trim() ? content.trim() : null,
+          }),
+        });
+      } catch {
+        setSaving(false);
+        toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+        return;
+      }
+      if (!patchResponse.ok) {
+        toast("리뷰 저장에 실패했습니다.");
+        setSaving(false);
+        return;
+      }
     }
 
     if (mediaItems.length > 0) {
