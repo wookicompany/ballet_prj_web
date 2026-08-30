@@ -1795,6 +1795,27 @@ export type Database = {
         Args: { days?: number }
         Returns: { stat_date: string; signup_count: number }[]
       }
+      create_record_recurrences: {
+        Args: {
+          p_bar_order?: string
+          p_center_order?: string
+          p_client_request_id: string
+          p_end_time: string
+          p_instructor?: string
+          p_level?: string
+          p_location?: string
+          p_start_time: string
+          p_until_date: string
+          p_user_id: string
+          p_weekdays: number[]
+        }
+        Returns: {
+          created: string[]
+          recurrence_id: string
+          replayed: boolean
+          skipped: string[]
+        }[]
+      }
       increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
       increment_ad_impression: { Args: { ad_id: string }; Returns: undefined }
       purge_soft_deleted_accounts: { Args: never; Returns: Json }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/apiAuth";
+import { formatSeoulDateKey, isValidDateKey } from "@/lib/kstDateTime";
 
 const pickRecordPayload = (body: Record<string, unknown>) => ({
   record_date: String(body.record_date ?? ""),
@@ -71,21 +72,40 @@ export const POST = async (request: Request) => {
 
   const body = await request.json();
   const payload = pickRecordPayload(body ?? {});
-  const moodValue = Number(payload.mood);
+  // M6 / D5: an explicit `status: "planned"` intent relaxes mood validation (mood may be
+  // omitted/null — the records_enforce_status_monotonic DB trigger derives status from mood
+  // presence on INSERT, so we never set `status` ourselves). Any other value (including
+  // omitted, for backward compat with older clients) keeps the existing "done" behavior
+  // where mood is required.
+  const isPlannedIntent =
+    typeof body?.status === "string" && body.status === "planned";
   const workoutActiveEnergy = parseNullableNumber(payload.workout_active_energy_kcal);
   const workoutTotalEnergy = parseNullableNumber(payload.workout_total_energy_kcal);
   const workoutAvgBpm = parseNullableBpm(payload.workout_avg_bpm);
   const workoutMaxBpm = parseNullableBpm(payload.workout_max_bpm);
 
+  let moodValue: number | null = null;
+  if (payload.mood !== null) {
+    const parsedMood = Number(payload.mood);
+    if (
+      !Number.isFinite(parsedMood) ||
+      !Number.isInteger(parsedMood) ||
+      parsedMood < 1 ||
+      parsedMood > 8
+    ) {
+      return NextResponse.json({ message: "Bad request" }, { status: 400 });
+    }
+    moodValue = parsedMood;
+  } else if (!isPlannedIntent) {
+    // Non-planned (done) creation still requires mood, matching pre-existing behavior.
+    return NextResponse.json({ message: "Bad request" }, { status: 400 });
+  }
+
   if (
     !payload.record_date ||
+    !isValidDateKey(payload.record_date) ||
     !payload.start_time ||
     !payload.end_time ||
-    payload.mood === null ||
-    !Number.isFinite(moodValue) ||
-    !Number.isInteger(moodValue) ||
-    moodValue < 1 ||
-    moodValue > 8 ||
     Number.isNaN(workoutActiveEnergy) ||
     Number.isNaN(workoutTotalEnergy) ||
     Number.isNaN(workoutAvgBpm) ||
@@ -96,6 +116,14 @@ export const POST = async (request: Request) => {
     (workoutMaxBpm !== null && workoutMaxBpm <= 0)
   ) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
+  }
+
+  // D5: a planned record can't be created in the past (KST).
+  if (isPlannedIntent && payload.record_date < formatSeoulDateKey()) {
+    return NextResponse.json(
+      { message: "예정은 오늘 이후 날짜에만 만들 수 있어요." },
+      { status: 400 }
+    );
   }
 
   const normalizedPayload = {
@@ -118,6 +146,13 @@ export const POST = async (request: Request) => {
 
   if (error || !data) {
     console.error("Failed to create record", error);
+    if (error?.code === "23505") {
+      // records_user_date_start_dedup_idx (§11.2): same date+start_time already exists.
+      return NextResponse.json(
+        { message: "같은 날짜·시간에 이미 기록이 있어요." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { message: "Failed to create record" },
       { status: 500 }
