@@ -30,6 +30,8 @@ type RecordItem = {
   end_time: string;
   content: string;
   mood: number | null;
+  status: string;
+  recurrence_id: string | null;
   record_media: RecordMedia[];
 };
 
@@ -59,9 +61,10 @@ export default function DayPage() {
       setMediaByRecord({});
       return;
     }
+    // 타임라인 표시 — status 필터 없음(예정도 보여주는 게 기능 목적). select에 status·recurrence_id 포함(G2)
     const { data } = await supabase
       .from("records")
-      .select("id,start_time,end_time,content,mood,record_media(record_id,url,created_at,deleted_at)")
+      .select("id,start_time,end_time,content,mood,status,recurrence_id,record_media(record_id,url,created_at,deleted_at)")
       .eq("user_id", user.id)
       .eq("record_date", dateStr)
       .is("deleted_at", null)

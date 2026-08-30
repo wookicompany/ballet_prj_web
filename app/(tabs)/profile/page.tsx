@@ -247,6 +247,7 @@ export default function ProfilePage() {
             .from("records")
             .select("start_time,end_time,record_date")
             .eq("user_id", user.id)
+            .eq("status", "done")
             .is("deleted_at", null),
           supabase
             .from("performance_reviews")
@@ -256,11 +257,13 @@ export default function ProfilePage() {
         ]),
         // .range() 없이 select하면 PostgREST 기본 row cap(보통 1000행)에 걸려
         // 그 이후 기록이 선생님/장소 집계에서 누락될 수 있어 fetchAllRows로 전부 가져온다.
+        // D1: 통계 집계라 예정(planned)은 제외
         fetchAllRows<AllLocationInstructorRow>((from, to) =>
           supabase
             .from("records")
             .select("location,instructor,record_date")
             .eq("user_id", user.id)
+            .eq("status", "done")
             .is("deleted_at", null)
             .range(from, to)
         ),
@@ -291,10 +294,12 @@ export default function ProfilePage() {
 
       // Step 2: 미리보기 데이터 3개씩 병렬 fetch
       const [recordsRes, reviewsRes, brandsRes] = await Promise.all([
+        // "최근 기록" 미리보기라 예정(planned)은 제외(D1)
         supabase
           .from("records")
           .select("id,record_date,start_time,end_time,content,mood,created_at,did_well,improve_next,outfit,memo,workout_total_energy_kcal")
           .eq("user_id", user.id)
+          .eq("status", "done")
           .is("deleted_at", null)
           .order("record_date", { ascending: false })
           .order("created_at", { ascending: false })

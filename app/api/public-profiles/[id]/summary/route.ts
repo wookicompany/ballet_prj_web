@@ -42,10 +42,12 @@ export const GET = async (_request: Request, { params }: Params) => {
 
     const [{ data: recordRows, error: recordError }, reviewCountResult] =
       await Promise.all([
+        // 공개프로필 요약 집계 — D1에 따라 예정(planned) 제외(M8)
         supabaseAdmin
           .from("records")
           .select("start_time,end_time,record_date")
           .eq("user_id", id)
+          .eq("status", "done")
           .is("deleted_at", null),
         supabaseAdmin
           .from("performance_reviews")

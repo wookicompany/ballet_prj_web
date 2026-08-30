@@ -34,7 +34,7 @@ export const GET = async (
     { data: recentLikedBrands },
   ] = await Promise.all([
     result.supabaseAdmin.from("profiles").select("*").eq("id", id).maybeSingle(),
-    result.supabaseAdmin.from("records").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
+    result.supabaseAdmin.from("records").select("id", { count: "exact", head: true }).eq("user_id", id).eq("status", "done").is("deleted_at", null),
     result.supabaseAdmin.from("performance_reviews").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("performance_review_comments").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),
     result.supabaseAdmin.from("brand_likes").select("id", { count: "exact", head: true }).eq("user_id", id).is("deleted_at", null),

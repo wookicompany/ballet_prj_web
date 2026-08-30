@@ -47,11 +47,13 @@ export default function ProfileInstructorsPage() {
 
     const fetchInstructors = async () => {
       setListLoading(true);
+      // 건수 집계(통계)라 예정(planned)은 제외(D1, §6.5)
       const data = await fetchAllRows<{ instructor: string | null }>((from, to) =>
         supabase
           .from("records")
           .select("instructor")
           .eq("user_id", user.id)
+          .eq("status", "done")
           .is("deleted_at", null)
           .range(from, to)
       );
