@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
+import AddRecordEntrySheet from "@/components/records/AddRecordEntrySheet";
 import { Button } from "@/components/ui/button";
 import {
   formatSeoulDateKey,
@@ -50,6 +51,7 @@ export default function DayPage() {
     Record<string, { url: string | null; count: number }>
   >({});
   const [datesWithRecords, setDatesWithRecords] = useState<Set<string>>(new Set());
+  const [addRecordSheetOpen, setAddRecordSheetOpen] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const dateStr = params.date;
@@ -329,12 +331,18 @@ export default function DayPage() {
               openLoginSheet();
               return;
             }
-            router.push(`/record/new?date=${dateStr}`);
+            setAddRecordSheetOpen(true);
           }}
         >
           <Plus className="size-6" strokeWidth={2.8} />
         </Button>
       </div>
+      <AddRecordEntrySheet
+        open={addRecordSheetOpen}
+        onOpenChange={setAddRecordSheetOpen}
+        onSelectToday={() => router.push(`/record/new?date=${dateStr}`)}
+        onSelectRecurring={() => router.push("/record/recurring/new")}
+      />
     </main>
     </MobileContainer>
   );

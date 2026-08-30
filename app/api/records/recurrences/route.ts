@@ -39,6 +39,10 @@ export const POST = async (request: Request) => {
     : [];
   const startTime = typeof b.start_time === "string" ? b.start_time : "";
   const endTime = typeof b.end_time === "string" ? b.end_time : "";
+  // PM follow-up (user-selectable start date, replacing the old "always today" assumption):
+  // optional for backward compatibility with any caller that omits it — the RPC itself still
+  // defaults to today when p_starts_on is not supplied.
+  const startDate = typeof b.start_date === "string" ? b.start_date : "";
   const untilDate = typeof b.until_date === "string" ? b.until_date : "";
   const clientRequestId =
     typeof b.client_request_id === "string" ? b.client_request_id.trim() : "";
@@ -49,6 +53,7 @@ export const POST = async (request: Request) => {
     !TIME_PATTERN.test(startTime) ||
     !TIME_PATTERN.test(endTime) ||
     endTime <= startTime ||
+    (startDate !== "" && !isValidDateKey(startDate)) ||
     !isValidDateKey(untilDate) ||
     !clientRequestId ||
     clientRequestId.length > 200
@@ -56,6 +61,11 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
+  // p_starts_on: the user-selected start date. The create_record_recurrences RPC takes an
+  // optional `p_starts_on date DEFAULT NULL` and server-clamps it to `GREATEST(p_starts_on,
+  // today KST)` (never past — D5). Migration applied to Supabase 2026-08-30
+  // (recurrences_add_optional_p_starts_on). Omitting it (empty start date) keeps the RPC's
+  // "start from today" default, so older callers stay backward compatible.
   const rpcParams = {
     p_user_id: auth.user.id,
     p_weekdays: weekdays,
@@ -68,6 +78,7 @@ export const POST = async (request: Request) => {
     p_level: toNullableString(b.level),
     p_bar_order: toNullableString(b.bar_order),
     p_center_order: toNullableString(b.center_order),
+    p_starts_on: startDate || undefined,
   };
 
   let { data, error } = await auth.supabaseAdmin
