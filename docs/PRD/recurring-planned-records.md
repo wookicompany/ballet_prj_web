@@ -29,6 +29,7 @@
 ### 후속(2차 이후) — 명시적 제외
 - 복잡한 반복 규칙(격주·매월 n번째·요일별 다른 시간). MVP는 "매주 같은 요일·시간"만.
 - this/following/all 분기 수정. MVP는 단건 예외 + 남은 전체 삭제만.
+- **반복 규칙 자체 수정(요일·종료일 변경)**: MVP 제외(record_recurrences에 Update 경로 없음). **워크어라운드(G1)**: 규칙을 바꾸려면 "남은 예정 전체 삭제(§11.8) → 새 규칙으로 재등록(§11.2)". Create+Delete 조합으로 커버되며, 인라인 규칙 편집 UI는 후속.
 - 예정 미완료 리마인더/푸시.
 - rolling 무한 반복(3개월 하드캡으로 대체).
 - **기록 스트릭 시각화**: 후속. 단 예정/완료 상태가 스트릭 "완료 기준"의 선행 인프라가 됨.
@@ -72,6 +73,7 @@
 반복 규칙 원본 1행 = 한 반복 그룹.
 - `id`, `user_id`, `weekdays`(요일 집합), `start_time`/`end_time`, 템플릿(location·instructor·level 등), `starts_on`, `ends_on`, `client_request_id`(user_id와 복합 unique — 멱등키, §11.4), `created_at`, `deleted_at`.
 - 그룹 자체 취소는 자식 planned 회차의 소프트 삭제로 충분(그룹 취소 컬럼 불필요, 필요 시 향후 추가).
+- **고아 규칙 행 정책(G3, 의도적 결정)**: "남은 예정 전체 삭제"(§11.8) 후 자식이 전부 done/삭제돼도 **부모 규칙 행은 유지한다** — 별도 GC/삭제 없음. 어떤 조회도 규칙 행을 나열하지 않고(§7 지표는 records 기준), FK·통계에 무해하므로 방치가 정상. 원자 생성(§11.2·§11.7)으로 "자식 0인 규칙 행이 처음부터 생기는" 경로는 차단되며, 여기서 "유지"란 정상적으로 자식을 다 소진한 뒤 남는 규칙 행만을 뜻한다.
 
 ### 상태·생명주기 불변식
 1. **monotonic**: `status`는 planned→done만. done→planned UPDATE는 **DB 트리거로 거부**.
@@ -86,7 +88,7 @@
 |---|---|---|---|
 | M1 | SQL 함수 3개 재정의 | 통계 집계 함수(캘린더/기록 스탯 계열)에 `status='done'` 필터 추가 | D1 전면 적용 |
 | M2 | `app/api/admin/members` (route.ts, [id]/route.ts) | 멤버 기록 집계에서 예정 제외 | D1(어드민) |
-| M3 | records를 select하는 통계/노출 3곳 | select 목록에 `status` 추가 + planned 필터 | D1 |
+| M3 | records를 select하는 통계/노출 지점 | 통계 쿼리: select에 `status` 추가 + planned 필터(D1). **표시/상세 Read(캘린더·day·record/[id]·카드)**: select에 `status` **및 `recurrence_id`** 포함 — 클라가 "반복 회차인지" 판별해 "남은 삭제" 액션(§11.8) 노출·호출(G2) | D1 + 반복 액션 |
 | M4 | 캘린더 쿼리 분리 | 캘린더 표시(예정 포함, 흐림)와 통계/mood 평균(done만)을 **별도 쿼리로 분리** | 캘린더는 예정 보여줘야 하나 통계는 제외 |
 | M5 | DB 트리거 | done→planned 전이 거부(monotonic 강제) | 완료 단방향 불변식 |
 | M6 | `app/api/records/route.ts`, `[id]/route.ts` 검증 | 예정: mood·content 필수 해제 / 완료: mood 존재 확인. 편집은 status 유지 | 자동완료·예정편집 정합 |
@@ -240,7 +242,7 @@
 
 - **구현 접근**: check-then-insert(먼저 SELECT로 겹치는지 확인 후 INSERT)는 동시 요청 사이에서 TOCTOU 레이스가 생겨 dedup을 보장하지 못한다. 대신:
   1. `records(user_id, record_date, start_time)`에 대해 **`WHERE deleted_at IS NULL` 조건의 partial unique index**를 추가한다(취소 표식이 `deleted_at` 재사용으로 통일됐으므로 조건 단일 — §11.8). 현재 `records`의 인덱스는 `records_pkey`, `records_user_id_idx`, `records_user_date_idx(user_id, record_date)`, `records_deleted_at_idx`뿐이고 `start_time`까지 포함한 유니크 제약은 없음(Supabase 실측: `pg_indexes`/`pg_constraint` on `public.records`, CHECK 제약은 `records_mood_range`/`records_time_order`/`records_workout_*`만 존재).
-  2. 반복 생성 RPC(SQL/PL 함수, `SECURITY DEFINER`)는 요일×종료일×26회 하드캡으로 산출한 후보 날짜 집합을 **하나의 `INSERT ... SELECT ... ON CONFLICT (user_id, record_date, start_time) WHERE deleted_at IS NULL DO NOTHING RETURNING record_date`** 문으로 삽입한다. 단일 SQL 문의 원자성(statement-level atomicity)이 dedup과 트랜잭션 원자성(§11.7)을 동시에 보장 — 동시 호출 두 건이 같은 슬롯을 놓고 경쟁해도 DB 레벨에서 하나만 성공한다(레이스에 강함, check-then-insert보다 우월).
+  2. 반복 생성 RPC(SQL/PL 함수, `SECURITY DEFINER`)는 **부모 `record_recurrences` INSERT와 자식 `records` 일괄 INSERT를 하나의 RPC 트랜잭션 안에서 순서대로 수행한다(G4, 부분 커밋 없음)** — 함수 호출 1건 = 트랜잭션 1건이므로, 부모만 커밋되고 자식이 안 들어가거나 그 반대인 상태가 **구조적으로 불가능**하다(예외 시 부모·자식 전부 롤백). 자식은 요일×종료일×26회 하드캡으로 산출한 후보 날짜 집합을 **하나의 `INSERT ... SELECT ... ON CONFLICT (user_id, record_date, start_time) WHERE deleted_at IS NULL DO NOTHING RETURNING record_date`** 문으로, 방금 만든 부모의 `recurrence_id`를 채워 삽입한다. 단일 SQL 문의 원자성(statement-level atomicity)이 dedup과 트랜잭션 원자성(§11.7)을 동시에 보장 — 동시 호출 두 건이 같은 슬롯을 놓고 경쟁해도 DB 레벨에서 하나만 성공한다(레이스에 강함, check-then-insert보다 우월).
   3. 응답은 `{ created: string[], skipped: string[] }`(요청 후보 날짜 - RETURNING 날짜 = skipped)로 반환해 프런트가 "겹치는 N일은 건너뛰었어요" 안내 + §11.3의 캐시 무효화에 그대로 사용.
 - **해소된 리스크(취소 표식 통일)**: 초안에서는 반복 회차 취소를 별도 컬럼으로 두면 partial unique index에 취소·삭제 두 조건을 함께 걸어야 해(`deleted_at IS NULL AND <취소> IS NULL`) 취소된 슬롯 재생성이 막히는 오탐 리스크가 있었다. 취소 표식을 **`deleted_at` 재사용으로 확정(§4, §11.8)**하면서 조건이 `WHERE deleted_at IS NULL` 하나로 단순해져 이 분기·오탐 리스크가 **원천 제거**됐다. 취소된 예정(`deleted_at IS NOT NULL AND status='planned'`)은 소프트삭제 상태라 유니크 슬롯을 점유하지 않으므로 재생성이 정상 허용된다.
 
@@ -262,7 +264,7 @@
 
 1. **클라 — 동기 ref 가드**: 기존 패턴(`app/record/new/page.tsx:1653` `disabled={saving}`)은 React state 기반이라 재렌더 커밋 전 한 프레임(~16ms) 안에 들어오는 두 번째 탭 이벤트는 여전히 핸들러를 통과할 수 있다(state 업데이트는 비동기, 두 탭이 같은 이벤트 루프 틱 안에서 들어오면 둘 다 `disabled` 반영 전에 실행됨). 반복 생성은 실패 결과(중복 그룹)가 단건보다 무거우므로, 버튼 onClick 최초 진입점에서 `useRef<boolean>` 동기 플래그로 즉시 재진입을 차단하는 걸 추가 요구사항으로 둔다(state와 별개로 ref는 같은 틱에서도 즉시 최신값 확인 가능).
 2. **클라 — idempotency key**: 기존 `createRequestId()`(`app/record/new/page.tsx:168-173`, 헬스싱크 상관관계 ID로 이미 쓰이는 유틸) 패턴을 재사용해 생성 요청마다 클라이언트가 UUID를 만들어 RPC에 `p_client_request_id`로 전달. `record_recurrences`에 `client_request_id`(user_id와 복합 unique) 컬럼을 두면, 네트워크 재시도(첫 응답이 타임아웃돼 클라가 실패로 오인하고 같은 요청을 다시 보내는 경우)에서도 같은 키로는 새 그룹을 만들지 않고 기존 그룹 결과를 그대로 반환한다.
-3. **서버 — §11.2의 partial unique index가 최종 방어선**: 1·2가 뚫려도(예: 사용자가 두 개의 다른 탭에서 각각 새 요청ID로 "따로" 두 번 실제 제출) `records`에 대한 slot 유니크 인덱스가 실제 회차 row 중복 생성만은 막는다. 다만 이 경우 `record_recurrences` 그룹 행 자체는 두 개 생성될 수 있고(하나는 자식 record가 0건인 고아 그룹), §7 성공지표의 "recurrence_id 기준 원시 집계"는 records 행 기준이라 왜곡되지 않지만 `record_recurrences` 테이블에는 죽은 행이 남는다 — 1·2번 방어가 정상 동작한다는 전제하에 발생 확률은 낮지만, 완전 배제는 아님(남은 미해결로 아래 표기).
+3. **서버 — §11.2의 partial unique index가 최종 방어선**: 1·2가 뚫려도(예: 사용자가 두 개의 다른 탭에서 각각 새 요청ID로 "따로" 두 번 실제 제출) `records`에 대한 slot 유니크 인덱스가 실제 회차 row 중복 생성만은 막는다. 이 경우 두 번째 호출의 자식 INSERT는 전부 `ON CONFLICT`로 스킵(created=0)된다. **주의(§11.7과의 정합)**: `ON CONFLICT DO NOTHING`으로 0건이 된 것은 예외가 아니라 "정상 스킵"이라 자동 롤백되지 않는다 → 방치하면 부모 규칙 행만 자식 0으로 커밋되는 고아가 생긴다. 따라서 **RPC는 "created 개수 = 0이면 명시적으로 트랜잭션 중단(RAISE)"하거나, 부모 INSERT를 자식 ≥1건 확정 이후로 배치**해야 한다(G4 요구사항). 이 명시적 가드가 있어야만 "부모+자식 원자성"이 완성되고 최종 상태가 "중복 회차 없음 + 고아 부모 없음"으로 정합해진다(종전 초안의 "자식 0 고아 부모가 남는다"는 이 가드로 폐기). §7 지표(records 기준)도 왜곡 없음.
 - **확실히 깨지는 지점**: 1번만 하고 2·3번을 생략하면(가장 흔한 축소 구현), "새로고침 직후 재탭"이나 "느린 네트워크에서 첫 요청이 아직 안 끝났는데 앱을 백그라운드→포그라운드 전환 후 재탭" 같은, 같은 틱이 아닌 정상적인 재요청 시나리오에서 중복 그룹이 그대로 생성된다. ref 가드는 "빠른 더블탭"만 막고 "느린 네트워크 재시도"는 못 막으므로 반드시 서버측(idempotency key 또는 최소한 §11.2 인덱스)이 같이 있어야 함.
 
 ### 11.5 (#41) 예정→완료 PATCH 동시성과 M5 트리거의 관계
@@ -282,11 +284,13 @@
 
 - **구현 접근**: RPC를 **단일 SQL/PL 함수**로 만들고, 그 안의 핵심 쓰기를 §11.2에서 정의한 **단일 `INSERT ... SELECT ... ON CONFLICT DO NOTHING`** 한 문장으로 구성한다. Postgres에서 함수 호출 1건 = 암묵적 트랜잭션 1건이고, 다중 행 INSERT 한 문장도 statement-level에서 원자적이다(이 SELECT/generate_series 기반 후보 생성부터 INSERT까지 루프 없이 set-based로 처리하면 "일부만 커밋"이 애초에 발생할 수 없는 구조).
 - **"부분 실패"와 "정상 스킵"을 구분하는 게 핵심**: dedup으로 인한 skip(§11.2)은 `ON CONFLICT DO NOTHING`이 처리하는 **정상 동작**이지 실패가 아니다 — 응답의 `skipped` 배열로 표현. 진짜 실패(제약 위반, DB 커넥션 에러 등)는 INSERT 문 자체가 예외를 던지고, 그 순간 함수 전체가 롤백되어 **0건도 생성되지 않는다**(전부 롤백, 부분 커밋 없음). 즉 정책은 "생성은 전부-아니면-전무(all-or-nothing), 예외는 26건 중 몇 건이 아니라 호출 전체 단위로만 발생"으로 확정 — "부분 커밋 + 재시도" 옵션은 애초에 구조상 선택지가 아니게 설계.
+- **created=0(전부 스킵) 시 부모 고아 방지(G4 연결)**: 위처럼 전부 스킵은 예외가 아니라 정상 커밋이므로, **신규 그룹인데 자식이 0건이면 부모 규칙 행만 남는 고아**가 된다. 이를 막기 위해 RPC는 "created=0이면 명시적으로 `RAISE`해 트랜잭션 중단" 또는 "부모 INSERT를 자식 ≥1건 확정 후 배치"를 **반드시 포함**한다(§11.4 3번과 동일 규칙). 단, 멱등키(§11.4 2번)로 기존 그룹을 재조회해 반환하는 경로는 예외 — 이 경우는 "이미 만든 것을 그대로 돌려주기"라 새 부모를 안 만들므로 고아가 아니다.
 - **확실히 깨지는 지점**: 만약 구현을 set-based INSERT 대신 "날짜별 for-loop + 개별 INSERT + 실패 시 continue" 방식의 PL/pgSQL로 짜면(직관적으로 짜기 쉬운 형태), 정확히 PRD가 우려하는 "26건 중 일부만 커밋" 상황이 실제로 만들어진다 — 루프 내 개별 INSERT는 각각이 서브트랜잭션이 아니므로 하나가 실패하면 전체 함수가 예외로 죽거나(SAVEPOINT 없이), SAVEPOINT를 걸면 반대로 의도적 부분 커밋이 되어버린다. **이번 정책상 루프 기반 구현은 채택하지 않음**을 명시적으로 남겨야 함 — 이는 구현 착수 시 "쉬운 길"로 잘못 갈 수 있는 지점이라 특히 표시.
 
 ### 11.8 (#45) "남은 예정 전체 삭제" 원자성 + 취소 표식 정합(확정)
 
-- **원자성**: API 라우트가 대상 레코드 id 목록을 받아 **개별 UPDATE를 반복 호출**하는 방식(클라가 목록을 순회하며 기존 단건 삭제 엔드포인트를 N번 호출)은 절대 쓰지 않는다 — 이 경우 중간에 네트워크가 끊기면 정확히 PRD가 우려하는 "일부만 취소됨" 상태가 남는다. 대신 **`recurrence_id` 하나를 조건으로 건 단일 `UPDATE records SET deleted_at = now() WHERE recurrence_id = $1 AND status = 'planned' AND deleted_at IS NULL`** 문 하나로 처리한다 — 다중 행에 걸친 단일 UPDATE 문도 statement-level에서 원자적이라(매칭되는 모든 행이 같은 트랜잭션 안에서 함께 성공하거나 함께 실패), "부분 실패"가 구조적으로 발생하지 않는다.
+- **소유권 스코프(G5, 보안·필수)**: "남은 삭제"의 단일 UPDATE는 **반드시 `user_id`를 WHERE에 포함**해야 한다 — `UPDATE records SET deleted_at = now() WHERE recurrence_id = $1 AND user_id = <caller> AND status = 'planned' AND deleted_at IS NULL`. `recurrence_id`만으로 걸면 그 값을 아는(또는 추측한) 타인이 남의 예정을 삭제하는 IDOR가 된다. `<caller>`는 `getUserFromRequest`로 검증된 세션 유저. 동등한 대안: 실행 전 `record_recurrences`(또는 대표 record) 1행을 SELECT해 `user_id != caller`면 **403**, 없으면 **404**로 거른 뒤 UPDATE — CLAUDE.md "PATCH/DELETE 전 소유권 조회, 없으면 404·타인 소유면 403" 규칙 준수. WHERE에 user_id를 넣는 방식이 더 단순하며 원자성도 유지.
+- **원자성**: API 라우트가 대상 레코드 id 목록을 받아 **개별 UPDATE를 반복 호출**하는 방식(클라가 목록을 순회하며 기존 단건 삭제 엔드포인트를 N번 호출)은 절대 쓰지 않는다 — 이 경우 중간에 네트워크가 끊기면 정확히 PRD가 우려하는 "일부만 취소됨" 상태가 남는다. 대신 위의 **소유권 스코프가 걸린 단일 UPDATE** 문 하나로 처리한다 — 다중 행에 걸친 단일 UPDATE 문도 statement-level에서 원자적이라(매칭되는 모든 행이 같은 트랜잭션 안에서 함께 성공하거나 함께 실패), "부분 실패"가 구조적으로 발생하지 않는다.
 - **취소 표식 = `deleted_at` 재사용(확정)**: PRD가 pe에게 위임했던 "별도 취소 컬럼 vs `deleted_at` 재사용" 판단을 **`deleted_at` 재사용으로 확정**하고 §4 본문에 반영했다. 근거: 이 repo의 "예정 제외/미노출" 계열 쿼리는 예외 없이 전부 `.is("deleted_at", null)` 한 조건에만 의존한다(캘린더 `app/(tabs)/calendar/page.tsx:155,240`, day뷰 `app/day/[date]/page.tsx:107`, M3 대상 전체, SQL 함수 3개 모두 `deleted_at IS NULL`만 검사, §11.2 인덱스도 `records_deleted_at_idx` 하나뿐). 별도 취소 컬럼을 신설했다면 이 6곳+SQL 3개+어드민+공개프로필 **전부에 `AND <취소> IS NULL`을 빠짐없이 추가**해야 유령 카드가 안 남는데, 하나라도 누락하면 즉시 회귀. `deleted_at` 재사용은 이 전파 리스크를 **구조적으로 제거**한다.
 - **취소/삭제 구분은 status로**: "취소된 예정"(`deleted_at IS NOT NULL AND status='planned'`)과 "삭제된 완료 기록"(`... AND status='done'`)은 소프트삭제 시점의 status 값으로 항상 구분 가능(status 단방향이라 안정적). 별도 컬럼 없이도 사후 분석·복원에 충분.
 - **정합 완료**: 이 결정으로 §4 데이터 모델·§11.2 인덱스 조건·본 절이 모두 `deleted_at` 단일 조건으로 일치. 잔여 상충 없음.
@@ -307,3 +311,10 @@
 - **M7 누락**: `record_recurrences.client_request_id`(멱등키)를 §4·M7에 명시 반영 완료.
 
 **남은 것(문서 밖 작업, 착수 단계)**: pd의 `design.md` 실제 갱신(§9 전건 명문화), pe의 마이그레이션·트리거·`database.types.ts`·빌드. 스펙 레벨 결정 구멍은 없음.
+
+---
+
+## 12. 신규 엔드포인트 공통 규칙 & Read 견고성 (CRUD 감사 반영)
+
+- **§12.1 소유권·소프트삭제 일관(G5 일반화)**: 이번에 신설되는 **반복 생성 RPC/엔드포인트**와 **"남은 예정 전체 삭제" 엔드포인트**는 기존 `PATCH /api/records/[id]`·`DELETE /api/records/[id]/delete`와 **동일한 인증·소유권 패턴**을 따른다 — `getUserFromRequest`로 세션 유저 확정, 대상 부재 시 **404**, 타인 소유 시 **403**(CLAUDE.md 규칙). 반복 생성 시 자식 `records`·부모 `record_recurrences` 모두 `user_id`를 세션 유저로 세팅하고, dedup 유니크(§11.2)·"남은 삭제" UPDATE(§11.8) 조건에 `user_id`를 포함해 **타 유저 데이터에 절대 교차 접근 불가**. 삭제는 전부 **소프트삭제(`deleted_at`)** 로 통일(하드 삭제 없음), 조회·필터는 `deleted_at IS NULL` 일관 적용.
+- **§12.2 planned Read null-safe(G7)**: 예정 기록은 `mood`·`content`가 **null**이다. 상세/카드 Read(`record/[id]/page.tsx`, 캘린더·day 카드 등)는 mood 아이콘·후기 텍스트가 없어도 **크래시 없이 렌더**해야 한다(빈 상태 처리). 기존 렌더가 "mood·content 항상 존재" 가정을 깔고 있으면 예정에서 깨지므로, pe는 구현 시 이 지점을 **null-safe로 점검**(§9.4 완료 유도 UI·§9.11 미디어 숨김과 연결). select에 `status`·`recurrence_id`를 포함(M3)해 렌더 분기의 근거로 사용.
