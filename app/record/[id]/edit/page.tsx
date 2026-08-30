@@ -226,6 +226,8 @@ export default function RecordEditPage() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [recordLoading, setRecordLoading] = useState(true);
+  // §9.11: 예정 상태에서는 미디어 업로드 섹션을 완전히 숨긴다(완료로 전환되기 전까지 사진 첨부 불가).
+  const [recordStatus, setRecordStatus] = useState<"planned" | "done">("done");
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -613,7 +615,7 @@ export default function RecordEditPage() {
       const { data, error } = await supabase
         .from("records")
         .select(
-          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,record_media(id,url,created_at,deleted_at)"
+          "record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,record_media(id,url,created_at,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -658,6 +660,7 @@ export default function RecordEditPage() {
         workout_avg_bpm: data.workout_avg_bpm ?? null,
         workout_max_bpm: data.workout_max_bpm ?? null,
       });
+      setRecordStatus(data.status === "planned" ? "planned" : "done");
       setBarOrderTags(barTags);
       setCenterOrderTags(centerTags);
       const hasHealthSyncValue = Boolean(
@@ -738,6 +741,11 @@ export default function RecordEditPage() {
       setHealthSyncRequestId(null);
 
       if (result.status === "error") {
+        // §12.3(1) RN 요청: 다른 요청이 이미 진행 중이라 실패한 정상적 경합이지 사용자
+        // 오류가 아니다 — 에러 토스트 없이 조용히 무시한다. 완료 전환(mood 저장)은 이 결과와
+        // 무관하게 계속 진행되고(제출 버튼은 healthSyncing을 보지 않음), 사용자가 원하면
+        // "불러오기" 버튼으로 다시 시도할 수 있다.
+        if (result.code === "QUERY_FAILED") return;
         toast(getHealthSyncErrorMessage(result.code));
         return;
       }
@@ -1122,60 +1130,70 @@ export default function RecordEditPage() {
         <PageHeader title="기록 수정" className="mb-6" />
 
         <div className="space-y-8">
-          <section className="space-y-3">
-            <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
-              <button
-                type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
-                onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
-                aria-label="사진 추가"
-              >
-                <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
-              </button>
-              {mediaItems.map((item, index) => (
-                <div
-                  key={`image-${item.type === "existing" ? item.id : index}`}
-                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+          {/* §9.11: 예정 상태는 미디어 업로드 섹션을 렌더링하지 않고(비활성화가 아니라 숨김) 안내 캡션만 노출 */}
+          {recordStatus === "planned" ? (
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <p className="text-[13px] text-[#17171c]/50">
+                완료하면 사진을 추가할 수 있어요.
+              </p>
+            </section>
+          ) : (
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
+                <button
+                  type="button"
+                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                  onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
+                  aria-label="사진 추가"
                 >
-                  <AnimatedImage
-                    src={item.url}
-                    alt="업로드 사진"
-                    width={1600}
-                    height={1600}
-                    unoptimized
-                    draggable={false}
-                    className="h-full w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                    onClick={() =>
-                      handleRemoveImage(
-                        index,
-                        item.type === "existing"
-                          ? { type: "existing", id: item.id }
-                          : { type: "new" }
-                      )
-                    }
-                    aria-label="업로드 사진 삭제"
+                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
+                </button>
+                {mediaItems.map((item, index) => (
+                  <div
+                    key={`image-${item.type === "existing" ? item.id : index}`}
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleMediaSelect}
-            />
-            <p className="text-xs text-[#17171c]/50">
-              사진은 최대 3장까지 업로드할 수 있어요.
-            </p>
-          </section>
+                    <AnimatedImage
+                      src={item.url}
+                      alt="업로드 사진"
+                      width={1600}
+                      height={1600}
+                      unoptimized
+                      draggable={false}
+                      className="h-full w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                      onClick={() =>
+                        handleRemoveImage(
+                          index,
+                          item.type === "existing"
+                            ? { type: "existing", id: item.id }
+                            : { type: "new" }
+                        )
+                      }
+                      aria-label="업로드 사진 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleMediaSelect}
+              />
+              <p className="text-xs text-[#17171c]/50">
+                사진은 최대 3장까지 업로드할 수 있어요.
+              </p>
+            </section>
+          )}
 
           <Separator />
 

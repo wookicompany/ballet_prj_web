@@ -28,12 +28,12 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
-import { parseDateKey } from "@/lib/kstDateTime";
+import { formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
 import { invalidateProfileRecordsCache } from "@/lib/profileRecordsCache";
-import { Activity, CalendarDays, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
+import { Activity, CalendarDays, CheckCircle, Clock, Flame, Heart, HeartPulse, Layers, MapPin, Menu, PenLine, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 type RecordDetail = {
@@ -61,6 +61,7 @@ type RecordDetail = {
   workout_max_bpm: number | null;
   status: string;
   recurrence_id: string | null;
+  updated_at: string;
 };
 
 type MediaItem = {
@@ -154,6 +155,8 @@ export default function RecordDetailPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -171,7 +174,7 @@ export default function RecordDetailPage() {
       const { data } = await supabase
         .from("records")
         .select(
-          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,recurrence_id,record_media(id,media_type,url,deleted_at)"
+          "id,record_date,start_time,end_time,content,mood,location,level,instructor,bar_order,center_order,did_well,improve_next,outfit,memo,workout_activity_label,workout_source_name,workout_device_name,workout_active_energy_kcal,workout_total_energy_kcal,workout_avg_bpm,workout_max_bpm,status,recurrence_id,updated_at,record_media(id,media_type,url,deleted_at)"
         )
         .eq("id", params.id)
         .eq("user_id", user.id)
@@ -245,6 +248,77 @@ export default function RecordDetailPage() {
     router.back();
   };
 
+  // §9.4/§11.2.PATCH: 예정을 무드 없이 완료 처리. records_enforce_status_monotonic 트리거가
+  // status를 'done'으로 확정하므로, 서버에는 기존 필드값 그대로 + complete:true만 실어 보낸다
+  // (PATCH가 부분 patch가 아니라 전체 스냅샷 덮어쓰기이기 때문 — §11.5).
+  const handleCompleteWithoutMood = async () => {
+    if (!user || !record) {
+      openLoginSheet();
+      return;
+    }
+    const session = await ensureSessionOrLogin(openLoginSheet);
+    if (!session) return;
+    setCompleting(true);
+    let response: Response;
+    try {
+      response = await fetch(`/api/records/${record.id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          record_date: record.record_date,
+          start_time: record.start_time,
+          end_time: record.end_time,
+          content: record.content ?? "",
+          mood: record.mood,
+          location: record.location ?? "",
+          level: record.level ?? "",
+          instructor: record.instructor ?? "",
+          bar_order: record.bar_order ?? "",
+          center_order: record.center_order ?? "",
+          did_well: record.did_well ?? "",
+          improve_next: record.improve_next ?? "",
+          outfit: record.outfit ?? "",
+          memo: record.memo ?? "",
+          workout_activity_label: record.workout_activity_label,
+          workout_source_name: record.workout_source_name,
+          workout_device_name: record.workout_device_name,
+          workout_active_energy_kcal: record.workout_active_energy_kcal,
+          workout_total_energy_kcal: record.workout_total_energy_kcal,
+          workout_avg_bpm: record.workout_avg_bpm,
+          workout_max_bpm: record.workout_max_bpm,
+          complete: true,
+          expected_updated_at: record.updated_at,
+        }),
+      });
+    } catch {
+      setCompleting(false);
+      toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
+      return;
+    }
+
+    setCompleting(false);
+    if (!response.ok) {
+      if (response.status === 409) {
+        toast("다른 기기에서 방금 이 기록이 바뀌었어요. 새로고침해 주세요.");
+      } else {
+        toast("완료 처리에 실패했어요.");
+      }
+      return;
+    }
+
+    invalidateProfileCache(user.id);
+    invalidateProfileRecordsCache(user.id);
+    sessionStorage.setItem(`record-changed:${record.record_date}`, "1");
+    setRecord((prev) => (prev ? { ...prev, status: "done" } : prev));
+    toast("완료로 표시했어요.");
+  };
+
+  const isPlanned = record.status === "planned";
+  const isPastPlanned = isPlanned && record.record_date < formatSeoulDateKey();
+
   const barOrderTags = parseOrderTags(record.bar_order);
   const centerOrderTags = parseOrderTags(record.center_order);
   const hasWorkoutInfo =
@@ -271,7 +345,7 @@ export default function RecordDetailPage() {
 
   return (
     <MobileContainer>
-      {deleting ? <LoadingOverlay /> : null}
+      {deleting || completing ? <LoadingOverlay /> : null}
       <main className="px-4 pb-10">
         <PageHeader
           title="기록 상세"
@@ -291,7 +365,40 @@ export default function RecordDetailPage() {
         />
 
         <div className="space-y-3">
-          {/* 사진/영상 */}
+          {/* §9.2: 지난(놓친) 예정 안내 — 경고색 미사용, opacity 스케일만 */}
+          {isPastPlanned ? (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[#17171c]/20 bg-[#17171c]/5 px-4 py-3">
+              <span className="text-sm text-[#17171c]/60">지난 예정이에요</span>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 text-xs"
+                  onClick={() => {
+                    sendHapticToApp();
+                    setCompleteDialogOpen(true);
+                  }}
+                >
+                  완료로 표시
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 text-xs text-red-500 hover:text-red-500"
+                  onClick={() => {
+                    sendHapticToApp();
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* 사진/영상 — §9.11: 예정 상태는 미디어를 첨부할 수 없어 원천적으로 비어 있음(회귀 아님) */}
           {media.length > 0 ? (
             <section className="space-y-3">
               <div
@@ -591,6 +698,21 @@ export default function RecordDetailPage() {
               <PenLine className="mr-2 h-4 w-4" />
               수정하기
             </Button>
+            {isPlanned ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full justify-start text-sm"
+                onClick={() => {
+                  sendHapticToApp();
+                  setMenuOpen(false);
+                  setCompleteDialogOpen(true);
+                }}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                무드 없이 완료 처리
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -627,6 +749,32 @@ export default function RecordDetailPage() {
                 }}
               >
                 삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog
+          open={completeDialogOpen}
+          onOpenChange={setCompleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>무드 없이 완료 처리할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                완료 후에는 예정으로 되돌릴 수 없어요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row gap-2">
+              <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+              <AlertDialogAction
+                variant="outline"
+                className="flex-1"
+                onClick={async () => {
+                  setCompleteDialogOpen(false);
+                  await handleCompleteWithoutMood();
+                }}
+              >
+                완료
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
