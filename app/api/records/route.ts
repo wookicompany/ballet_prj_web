@@ -149,7 +149,7 @@ export const POST = async (request: Request) => {
     if (error?.code === "23505") {
       // records_user_date_start_dedup_idx (§11.2): same date+start_time already exists.
       return NextResponse.json(
-        { message: "같은 날짜·시간에 이미 기록이 있어요." },
+        { message: "같은 날짜와 시간에 이미 기록이 있어요." },
         { status: 409 }
       );
     }
