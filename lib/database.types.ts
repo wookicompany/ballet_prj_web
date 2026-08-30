@@ -1812,7 +1812,7 @@ export type Database = {
         }
         Returns: {
           created: string[]
-          recurrence_id: string
+          recurrence_id: string | null
           replayed: boolean
           skipped: string[]
         }[]
