@@ -368,7 +368,12 @@ export default function RecordDetailPage() {
       router.back();
       return;
     }
-    toast("남은 예정을 모두 삭제했어요.");
+    // done 카드에서 실행했는데 취소된 예정이 하나도 없으면(이미 다 완료/삭제됨) 사실과 맞게 안내.
+    toast(
+      cancelledDates.length > 0
+        ? "남은 예정을 모두 삭제했어요."
+        : "삭제할 남은 예정이 없어요."
+    );
   };
 
   const isPlanned = record.status === "planned";

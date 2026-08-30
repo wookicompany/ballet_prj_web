@@ -229,6 +229,9 @@ export default function RecordEditPage() {
   const [recordLoading, setRecordLoading] = useState(true);
   // §9.11: 예정 상태에서는 미디어 업로드 섹션을 완전히 숨긴다(완료로 전환되기 전까지 사진 첨부 불가).
   const [recordStatus, setRecordStatus] = useState<"planned" | "done">("done");
+  // "감정 없이 완료"로 만들어진 done(mood=null) 기록인지(로드 시점 기준). 이 경우 편집에서 감정을
+  // 강제하지 않고, 저장 시 complete:true로 done 상태를 유지시킨다(감정 재입력 강요 방지).
+  const [wasDoneWithoutMood, setWasDoneWithoutMood] = useState(false);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -662,6 +665,7 @@ export default function RecordEditPage() {
         workout_max_bpm: data.workout_max_bpm ?? null,
       });
       setRecordStatus(data.status === "planned" ? "planned" : "done");
+      setWasDoneWithoutMood(data.status === "done" && data.mood == null);
       setBarOrderTags(barTags);
       setCenterOrderTags(centerTags);
       const hasHealthSyncValue = Boolean(
@@ -860,14 +864,17 @@ export default function RecordEditPage() {
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
+    // 감정 필수는 "완료 상태 + 원래 감정이 있던 기록"에만 적용한다. 예정(isPlannedEdit)과
+    // "감정 없이 완료"로 만들어진 done-무드없음(wasDoneWithoutMood)은 감정 없이도 저장 가능.
+    const moodOptional = isPlannedEdit || wasDoneWithoutMood;
     if (
       !form.record_date ||
       !form.start_time ||
       !form.end_time ||
-      (!isPlannedEdit && !form.mood)
+      (!moodOptional && !form.mood)
     ) {
       toast(
-        isPlannedEdit
+        moodOptional
           ? "날짜, 시작 시간, 종료 시간은 필수예요."
           : "날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요."
       );
@@ -937,14 +944,21 @@ export default function RecordEditPage() {
           instructor: showLevelInstructor ? form.instructor : "",
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-          // M6: 예정을 무드 없이 저장할 때만 status:"planned"를 실어 서버의 mood-필수 검증을
-          // 우회한다(app/api/records/[id]/route.ts의 isPlannedIntent 계약). 무드를 입력한
-          // 경우는 이 필드를 아예 보내지 않아야 한다 — records_enforce_status_monotonic
-          // 트리거가 NEW.mood IS NOT NULL만으로 done 전환을 결정하는 기존 경로를 그대로 타게
-          // 하기 위함. 만약 여기서도 항상 status:"planned"를 보내면, 이미 지난 날짜인 예정을
-          // 뒤늦게 완료(§6.2 #14)하려 할 때 PATCH 라우트의 D5 가드("예정은 오늘 이후 날짜로만
-          // 옮길 수 있어요")가 record_date 자체는 바뀌지 않았는데도 오탐 차단해 버린다.
-          ...(isPlannedEdit && form.mood === null ? { status: "planned" } : {}),
+          // 감정을 입력한 경우는 어떤 status/complete 필드도 보내지 않는다 —
+          // records_enforce_status_monotonic 트리거가 NEW.mood IS NOT NULL만으로 done 전환을
+          // 결정하는 기존 경로를 그대로 타게 하기 위함. 감정이 없을 때만 의도를 실어 서버의
+          // mood-필수 검증을 우회한다:
+          //  - 예정(isPlannedEdit) 편집: status:"planned"로 예정 유지. (단 과거 예정은 위에서 선차단)
+          //  - done-무드없음(wasDoneWithoutMood) 편집: complete:true로 done 유지(감정 재입력 강요 방지).
+          //    complete:true는 isCompleteIntent라 D5 가드(isPlannedIntent 전용)에 걸리지 않아
+          //    지난 날짜의 done-무드없음 기록도 정상 저장된다.
+          ...(form.mood === null
+            ? isPlannedEdit
+              ? { status: "planned" }
+              : wasDoneWithoutMood
+                ? { complete: true }
+                : {}
+            : {}),
         }),
       });
     } catch {
