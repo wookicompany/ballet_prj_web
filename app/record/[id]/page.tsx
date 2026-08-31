@@ -388,7 +388,7 @@ export default function RecordDetailPage() {
             </div>
           ) : null}
 
-          {/* 사진/영상 — §9.11: 예정 상태는 미디어를 첨부할 수 없어 원천적으로 비어 있음(회귀 아님) */}
+          {/* 사진/영상 — 상태와 무관하게 media가 있으면 표시(예정 기록도 미디어 첨부 가능, §9.11 갱신) */}
           {media.length > 0 ? (
             <section className="space-y-3">
               <div
