@@ -23,7 +23,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import {
-  formatSeoulDateKey,
   getSeoulDateParts,
   getSeoulTodayDate,
   getSeoulTimeParts,
@@ -228,8 +227,6 @@ export default function RecordEditPage() {
   const [images, setImages] = useState<File[]>([]);
   const [recordLoading, setRecordLoading] = useState(true);
   // §9.11(갱신): 예정 상태에서도 미디어 업로드 UI를 그대로 노출한다(완료 전환 여부와 무관하게 첨부 가능).
-  // recordStatus는 감정 필수 여부(isPlannedEdit) 판단에 계속 쓰인다.
-  const [recordStatus, setRecordStatus] = useState<"planned" | "done">("done");
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -662,7 +659,6 @@ export default function RecordEditPage() {
         workout_avg_bpm: data.workout_avg_bpm ?? null,
         workout_max_bpm: data.workout_max_bpm ?? null,
       });
-      setRecordStatus(data.status === "planned" ? "planned" : "done");
       setBarOrderTags(barTags);
       setCenterOrderTags(centerTags);
       const hasHealthSyncValue = Boolean(
@@ -849,36 +845,18 @@ export default function RecordEditPage() {
 
   const workoutCard = showHealthSync ? syncedWorkoutDraft ?? appliedWorkout : null;
 
-  // §6.2 #9/M6: 예정(planned) 기록은 무드 없이 필드만 고쳐도 예정 상태를 유지한 채 저장할 수
-  // 있다. recordStatus는 진입 시점(로드 시) 상태를 그대로 들고 있어 편집 도중 바뀌지 않는다.
-  const isPlannedEdit = recordStatus === "planned";
-  // 지난(과거 날짜) 예정은 "예정 상태 그대로 저장"이 의미상 성립하지 않는다(§9.2). 무드를 남겨
-  // 완료하거나 삭제만 할 수 있다. 무드 없이 저장하면 서버 D5 가드(status:"planned" + 과거 날짜)가
-  // 막는데, 그 메시지가 "날짜 이동"을 말해 상황과 안 맞으므로 클라에서 먼저 맞는 안내로 막는다.
-  const isPastPlannedEdit =
-    isPlannedEdit && !!form.record_date && form.record_date < formatSeoulDateKey();
-
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
-    // 감정 필수는 "완료 상태로 편집하는 기록"에만 적용한다. 예정(isPlannedEdit)은 감정 없이도
-    // 저장 가능(예정 상태를 유지한 채 필드만 고칠 수 있음).
-    const moodOptional = isPlannedEdit;
+    // 기록 작성(record/new)과 동일하게 날짜, 시간, 감정을 모두 필수로 검증한다. 예정 기록도
+    // 저장하려면 감정을 남겨야 하고, 감정이 있으면 DB 트리거가 완료(done)로 전환한다.
     if (
       !form.record_date ||
       !form.start_time ||
       !form.end_time ||
-      (!moodOptional && !form.mood)
+      !form.mood
     ) {
-      toast(
-        moodOptional
-          ? "날짜, 시작 시간, 종료 시간은 필수예요."
-          : "날짜, 시작 시간, 종료 시간, 오늘 발레는 어땠나요?는 필수예요."
-      );
-      return;
-    }
-    if (isPastPlannedEdit && form.mood === null) {
-      toast("지난 예정은 완료하거나 삭제할 수 있어요. 감정을 남기면 완료로 저장돼요.");
+      toast("필수 항목을 입력해 주세요.");
       return;
     }
     if (form.end_time <= form.start_time) {
@@ -941,11 +919,8 @@ export default function RecordEditPage() {
           instructor: showLevelInstructor ? form.instructor : "",
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-          // 감정을 입력한 경우는 어떤 status 필드도 보내지 않는다 —
-          // records_enforce_status_monotonic 트리거가 NEW.mood IS NOT NULL만으로 done 전환을
-          // 결정하는 기존 경로를 그대로 타게 하기 위함. 감정이 없고 예정(isPlannedEdit) 편집일 때만
-          // status:"planned"를 실어 예정 상태를 유지시킨다(단 과거 예정은 위에서 선차단).
-          ...(form.mood === null && isPlannedEdit ? { status: "planned" } : {}),
+          // status 필드는 보내지 않는다 — records_enforce_status_monotonic 트리거가 NEW.mood IS
+          // NOT NULL만으로 done 전환을 결정한다(감정이 필수라 저장 시 항상 완료로 기록된다).
         }),
       });
     } catch {
@@ -1313,13 +1288,6 @@ export default function RecordEditPage() {
                   }
                 />
               </div>
-              {isPlannedEdit ? (
-                <p className="mt-2 text-[13px] text-[#17171c]/50">
-                  {isPastPlannedEdit
-                    ? "지난 예정이에요. 감정을 남기면 완료로 저장돼요."
-                    : "감정을 남기지 않으면 예정 상태로 저장돼요. 감정을 남기면 완료로 바뀌어요."}
-                </p>
-              ) : null}
             </div>
             <div className="pt-2">
               <div className="flex items-center justify-between">
