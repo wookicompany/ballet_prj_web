@@ -58,7 +58,7 @@ export const GET = async (request: Request) => {
   const userIds = [...new Set((rows ?? []).map((r) => r.user_id))];
   const reviewIds = (rows ?? []).map((r) => r.id);
 
-  const [performancesRes, profilesRes, reportsCountRes] = await Promise.all([
+  const [performancesRes, profilesRes, reportsCountRes, imagesRes] = await Promise.all([
     performanceIds.length > 0
       ? result.supabaseAdmin.from("kopis_performances").select("mt20id, prfnm").in("mt20id", performanceIds)
       : { data: [] as { mt20id: string; prfnm: string | null }[] },
@@ -68,6 +68,14 @@ export const GET = async (request: Request) => {
     reviewIds.length > 0
       ? result.supabaseAdmin.from("performance_review_reports").select("review_id").in("review_id", reviewIds)
       : { data: [] as { review_id: string }[] },
+    reviewIds.length > 0
+      ? result.supabaseAdmin
+          .from("performance_review_images")
+          .select("review_id, url, created_at")
+          .in("review_id", reviewIds)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true })
+      : { data: [] as { review_id: string; url: string; created_at: string }[] },
   ]);
 
   const prfnmMap: Record<string, string> = {};
@@ -82,12 +90,17 @@ export const GET = async (request: Request) => {
   for (const r of reportsCountRes.data ?? []) {
     reportCountMap[r.review_id] = (reportCountMap[r.review_id] ?? 0) + 1;
   }
+  const imagesMap: Record<string, string[]> = {};
+  for (const img of imagesRes.data ?? []) {
+    (imagesMap[img.review_id] ??= []).push(img.url);
+  }
 
   const reviews = (rows ?? []).map((r) => ({
     ...r,
     prfnm: prfnmMap[r.performance_id] ?? r.performance_id,
     nickname: nicknameMap[r.user_id] ?? null,
     report_count: reportCountMap[r.id] ?? 0,
+    images: imagesMap[r.id] ?? [],
   }));
 
   return NextResponse.json({
