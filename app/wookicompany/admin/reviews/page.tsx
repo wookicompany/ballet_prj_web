@@ -40,6 +40,7 @@ type ReviewRow = {
   prfnm: string;
   nickname: string | null;
   report_count: number;
+  images: string[];
 };
 
 type CommentRow = {
@@ -257,6 +258,7 @@ export default function AdminReviewsPage() {
                         <TableHead>사용자</TableHead>
                         <TableHead>평점</TableHead>
                         <TableHead className="max-w-[200px]">내용</TableHead>
+                        <TableHead>미디어</TableHead>
                         <TableHead>신고</TableHead>
                         <TableHead>작성일</TableHead>
                         <TableHead className="w-10" />
@@ -265,7 +267,7 @@ export default function AdminReviewsPage() {
                     <TableBody>
                       {filteredReviews.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                             {searchQuery.trim() || reportFilter === "reported"
                               ? "검색/필터 결과가 없습니다."
                               : "등록된 리뷰가 없습니다."}
@@ -282,6 +284,22 @@ export default function AdminReviewsPage() {
                               title={r.content ?? "-"}
                             >
                               {r.content ?? "-"}
+                            </TableCell>
+                            <TableCell>
+                              {r.images.length > 0 ? (
+                                <div className="relative h-12 w-12">
+                                  <img
+                                    src={r.images[0]}
+                                    alt="리뷰 이미지"
+                                    className="h-12 w-12 rounded object-cover"
+                                  />
+                                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#17171c] px-1 text-[10px] text-white">
+                                    {r.images.length}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {r.report_count > 0 ? (
