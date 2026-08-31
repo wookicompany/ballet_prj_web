@@ -77,14 +77,29 @@ export default function AdminRecordsPage() {
   const formatCreatedDate = useCallback((value: string) => {
     const d = new Date(value);
     if (isNaN(d.getTime())) return "-";
-    const base = d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
-    return `${base} (${WEEKDAY_KR[d.getDay()]})`;
+    // created_at은 timestamptz라 항상 KST(Asia/Seoul) 기준으로 날짜·요일을 표시한다(앱 표준).
+    const base = d.toLocaleDateString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const weekday = d.toLocaleDateString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      weekday: "short",
+    });
+    return `${base} (${weekday})`;
   }, []);
 
   const formatCreatedTime = useCallback((value: string) => {
     const d = new Date(value);
     if (isNaN(d.getTime())) return "-";
-    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return d.toLocaleTimeString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   }, []);
 
   const fetchRecords = useCallback(async (pageOffset: number, q = "") => {
