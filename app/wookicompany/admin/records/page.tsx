@@ -30,6 +30,7 @@ type RecordRow = {
   end_time: string;
   content: string;
   mood: number | null;
+  status: "planned" | "done";
   created_at: string;
   nickname: string | null;
   avatar_url: string | null;
@@ -247,7 +248,18 @@ export default function AdminRecordsPage() {
                       </div>
                     </div>
                     <div className="self-center space-y-0.5">
-                      <p className="text-xs">{formatDateLabel(r.record_date)}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs">{formatDateLabel(r.record_date)}</p>
+                        <span
+                          className={`inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none ${
+                            r.status === "planned"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-emerald-100 text-emerald-700"
+                          }`}
+                        >
+                          {r.status === "planned" ? "예정" : "완료"}
+                        </span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {r.start_time.slice(0, 5)} ~ {r.end_time.slice(0, 5)}
                       </p>

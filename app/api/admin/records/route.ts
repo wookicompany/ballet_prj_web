@@ -33,7 +33,7 @@ export const GET = async (request: Request) => {
 
   let query = result.supabaseAdmin
     .from("records")
-    .select("id, user_id, record_date, start_time, end_time, content, mood, created_at, location, instructor, level, did_well, improve_next, outfit, memo, record_media(id, url, media_type, deleted_at)")
+    .select("id, user_id, record_date, start_time, end_time, content, mood, status, created_at, location, instructor, level, did_well, improve_next, outfit, memo, record_media(id, url, media_type, deleted_at)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (q) query = query.or(buildOrStr());
@@ -70,9 +70,18 @@ export const GET = async (request: Request) => {
     ...r,
     nickname: profilesMap[r.user_id]?.nickname ?? null,
     avatar_url: profilesMap[r.user_id]?.avatar_url ?? null,
-    media: ((r as any).record_media ?? [])
-      .filter((m: any) => !m.deleted_at)
-      .map((m: any) => ({ id: m.id, url: m.url, media_type: m.media_type })),
+    media: (
+      (r as {
+        record_media?: {
+          id: string;
+          url: string;
+          media_type: string;
+          deleted_at: string | null;
+        }[];
+      }).record_media ?? []
+    )
+      .filter((m) => !m.deleted_at)
+      .map((m) => ({ id: m.id, url: m.url, media_type: m.media_type })),
   }));
 
   return NextResponse.json({
