@@ -227,11 +227,9 @@ export default function RecordEditPage() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [recordLoading, setRecordLoading] = useState(true);
-  // §9.11: 예정 상태에서는 미디어 업로드 섹션을 완전히 숨긴다(완료로 전환되기 전까지 사진 첨부 불가).
+  // §9.11(갱신): 예정 상태에서도 미디어 업로드 UI를 그대로 노출한다(완료 전환 여부와 무관하게 첨부 가능).
+  // recordStatus는 감정 필수 여부(isPlannedEdit) 판단에 계속 쓰인다.
   const [recordStatus, setRecordStatus] = useState<"planned" | "done">("done");
-  // "감정 없이 완료"로 만들어진 done(mood=null) 기록인지(로드 시점 기준). 이 경우 편집에서 감정을
-  // 강제하지 않고, 저장 시 complete:true로 done 상태를 유지시킨다(감정 재입력 강요 방지).
-  const [wasDoneWithoutMood, setWasDoneWithoutMood] = useState(false);
   const [showBarOrder, setShowBarOrder] = useState(false);
   const [showCenterOrder, setShowCenterOrder] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -665,7 +663,6 @@ export default function RecordEditPage() {
         workout_max_bpm: data.workout_max_bpm ?? null,
       });
       setRecordStatus(data.status === "planned" ? "planned" : "done");
-      setWasDoneWithoutMood(data.status === "done" && data.mood == null);
       setBarOrderTags(barTags);
       setCenterOrderTags(centerTags);
       const hasHealthSyncValue = Boolean(
@@ -864,9 +861,9 @@ export default function RecordEditPage() {
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
-    // 감정 필수는 "완료 상태 + 원래 감정이 있던 기록"에만 적용한다. 예정(isPlannedEdit)과
-    // "감정 없이 완료"로 만들어진 done-무드없음(wasDoneWithoutMood)은 감정 없이도 저장 가능.
-    const moodOptional = isPlannedEdit || wasDoneWithoutMood;
+    // 감정 필수는 "완료 상태로 편집하는 기록"에만 적용한다. 예정(isPlannedEdit)은 감정 없이도
+    // 저장 가능(예정 상태를 유지한 채 필드만 고칠 수 있음).
+    const moodOptional = isPlannedEdit;
     if (
       !form.record_date ||
       !form.start_time ||
@@ -944,21 +941,11 @@ export default function RecordEditPage() {
           instructor: showLevelInstructor ? form.instructor : "",
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
-          // 감정을 입력한 경우는 어떤 status/complete 필드도 보내지 않는다 —
+          // 감정을 입력한 경우는 어떤 status 필드도 보내지 않는다 —
           // records_enforce_status_monotonic 트리거가 NEW.mood IS NOT NULL만으로 done 전환을
-          // 결정하는 기존 경로를 그대로 타게 하기 위함. 감정이 없을 때만 의도를 실어 서버의
-          // mood-필수 검증을 우회한다:
-          //  - 예정(isPlannedEdit) 편집: status:"planned"로 예정 유지. (단 과거 예정은 위에서 선차단)
-          //  - done-무드없음(wasDoneWithoutMood) 편집: complete:true로 done 유지(감정 재입력 강요 방지).
-          //    complete:true는 isCompleteIntent라 D5 가드(isPlannedIntent 전용)에 걸리지 않아
-          //    지난 날짜의 done-무드없음 기록도 정상 저장된다.
-          ...(form.mood === null
-            ? isPlannedEdit
-              ? { status: "planned" }
-              : wasDoneWithoutMood
-                ? { complete: true }
-                : {}
-            : {}),
+          // 결정하는 기존 경로를 그대로 타게 하기 위함. 감정이 없고 예정(isPlannedEdit) 편집일 때만
+          // status:"planned"를 실어 예정 상태를 유지시킨다(단 과거 예정은 위에서 선차단).
+          ...(form.mood === null && isPlannedEdit ? { status: "planned" } : {}),
         }),
       });
     } catch {
@@ -1185,70 +1172,61 @@ export default function RecordEditPage() {
         <PageHeader title="기록 수정" className="mb-6" />
 
         <div className="space-y-8">
-          {/* §9.11: 예정 상태는 미디어 업로드 섹션을 렌더링하지 않고(비활성화가 아니라 숨김) 안내 캡션만 노출 */}
-          {recordStatus === "planned" ? (
-            <section className="space-y-3">
-              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-              <p className="text-[13px] text-[#17171c]/50">
-                완료하면 사진을 추가할 수 있어요.
-              </p>
-            </section>
-          ) : (
-            <section className="space-y-3">
-              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
-                <button
-                  type="button"
-                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
-                  onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
-                  aria-label="사진 추가"
+          {/* §9.11(갱신): 예정 상태에서도 미디어 업로드 UI를 그대로 노출한다 */}
+          <section className="space-y-3">
+            <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
+              <button
+                type="button"
+                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                onClick={() => { sendHapticToApp(); fileInputRef.current?.click(); }}
+                aria-label="사진 추가"
+              >
+                <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
+              </button>
+              {mediaItems.map((item, index) => (
+                <div
+                  key={`image-${item.type === "existing" ? item.id : index}`}
+                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
                 >
-                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
-                </button>
-                {mediaItems.map((item, index) => (
-                  <div
-                    key={`image-${item.type === "existing" ? item.id : index}`}
-                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+                  <AnimatedImage
+                    src={item.url}
+                    alt="업로드 사진"
+                    width={1600}
+                    height={1600}
+                    unoptimized
+                    draggable={false}
+                    className="h-full w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                    onClick={() =>
+                      handleRemoveImage(
+                        index,
+                        item.type === "existing"
+                          ? { type: "existing", id: item.id }
+                          : { type: "new" }
+                      )
+                    }
+                    aria-label="업로드 사진 삭제"
                   >
-                    <AnimatedImage
-                      src={item.url}
-                      alt="업로드 사진"
-                      width={1600}
-                      height={1600}
-                      unoptimized
-                      draggable={false}
-                      className="h-full w-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                      onClick={() =>
-                        handleRemoveImage(
-                          index,
-                          item.type === "existing"
-                            ? { type: "existing", id: item.id }
-                            : { type: "new" }
-                        )
-                      }
-                      aria-label="업로드 사진 삭제"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleMediaSelect}
-              />
-              <p className="text-xs text-[#17171c]/50">
-                사진은 최대 3장까지 업로드할 수 있어요.
-              </p>
-            </section>
-          )}
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleMediaSelect}
+            />
+            <p className="text-xs text-[#17171c]/50">
+              사진은 최대 3장까지 업로드할 수 있어요.
+            </p>
+          </section>
 
           <Separator />
 

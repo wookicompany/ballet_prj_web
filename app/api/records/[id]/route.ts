@@ -122,13 +122,6 @@ export const PATCH = async (
   // pre-existing "mood required" behavior.
   const isPlannedIntent =
     typeof body?.status === "string" && body.status === "planned";
-  // P1/§9.4/#13: "무드 없이 완료 처리" — explicit completion intent without a mood value.
-  // Signaled either by `status: "done"` or `complete: true`. Unlike the mood-driven path, the
-  // API here writes `status: 'done'` itself so the records_enforce_status_monotonic DB trigger
-  // can coerce NEW.status to 'done' even when mood stays null (see updatePayload below).
-  const isCompleteIntent =
-    (typeof body?.status === "string" && body.status === "done") ||
-    body?.complete === true;
   const workoutActiveEnergy = parseNullableNumber(payload.workout_active_energy_kcal);
   const workoutTotalEnergy = parseNullableNumber(payload.workout_total_energy_kcal);
   const workoutAvgBpm = parseNullableBpm(payload.workout_avg_bpm);
@@ -146,14 +139,14 @@ export const PATCH = async (
       return NextResponse.json({ message: "Bad request" }, { status: 400 });
     }
     moodValue = parsedMood;
-  } else if (!isPlannedIntent && !isCompleteIntent) {
+  } else if (!isPlannedIntent) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
   // 서버측 방어(defense-in-depth): 이미 완료(done)되어 감정이 기록된 기록의 감정이 어떤 경로로든
   // null로 덮어써지지 않게 기존 감정을 보존한다. 현재 클라 UI는 이 상황을 만들지 않지만(완료+감정
-  // 있는 기록 편집은 감정 필수), API 단독/외부 호출로 인한 감정 유실을 막는다. "감정 없이 완료"로
-  // 만들어진 done-감정없음 기록(record.mood == null)은 조건에서 빠져 그대로 감정 없이 유지된다.
+  // 있는 기록 편집은 감정 필수), API 단독/외부 호출로 인한 감정 유실을 막는다(isPlannedIntent 경로
+  // 방어).
   if (record.status === "done" && record.mood != null && moodValue === null) {
     moodValue = record.mood;
   }
@@ -231,18 +224,13 @@ export const PATCH = async (
     }
   }
 
-  // P1: only the completion-intent path writes `status`. It is deliberately kept OUT of
-  // `normalizedPayload`, so the §11.5 expected_updated_at diff above (which iterates
-  // `normalizedPayload` keys) never compares `status` and can't false-positive a conflict on it.
-  // (`record` does select `status` now — for the mood-preservation guard — but that select is
-  // unrelated to the diff, which only reads `record[key]` for keys present in `normalizedPayload`.)
-  const updatePayload = isCompleteIntent
-    ? { ...normalizedPayload, status: "done" as const }
-    : normalizedPayload;
-
+  // status는 이 라우트에서 직접 쓰지 않는다 — records_enforce_status_monotonic 트리거가
+  // NEW.mood IS NOT NULL 여부만으로 done 전환을 결정한다(mood가 있으면 done, 없고
+  // isPlannedIntent면 planned 유지). `status`가 normalizedPayload에 없으므로 §11.5
+  // expected_updated_at diff도 그 필드를 비교하지 않는다.
   const { error: updateError } = await auth.supabaseAdmin
     .from("records")
-    .update(updatePayload)
+    .update(normalizedPayload)
     .eq("id", id)
     .is("deleted_at", null);
 

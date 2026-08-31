@@ -610,7 +610,6 @@ export default function CalendarPage() {
             const doneCount = doneCounts[dateStr] ?? 0;
             const plannedCount = plannedCounts[dateStr] ?? 0;
             const hasPlanned = plannedCount > 0;
-            const hasDone = doneCount > 0;
             const moodValue = moodAverages[dateStr];
             const isToday = !!dateStr && dateStr === todayStr;
             const isPastDate = !!dateStr && dateStr < todayStr;
@@ -689,21 +688,6 @@ export default function CalendarPage() {
                         />
                       ) : null}
                     </div>
-                  ) : hasDone ? (
-                    // 완료(감정 없음) — "감정 없이 완료"한 기록은 무드 얼굴이 없으므로 채운 원으로 완료를
-                    // 표기한다(예정의 점선 원과 대비). 개수(2건 이상)는 셀 우상단 배지에서 별도 표기.
-                    <div className="relative flex h-full w-full items-center justify-center overflow-visible">
-                      <div
-                        aria-hidden
-                        className="h-10 w-10 rounded-full bg-[#17171c]/10"
-                      />
-                      {hasPlanned ? (
-                        <span
-                          aria-hidden
-                          className="absolute -top-1 left-0.5 size-1.5 rounded-full bg-[#17171c]/30"
-                        />
-                      ) : null}
-                    </div>
                   ) : hasPlanned ? (
                     // 예정만(완료 mood 없음) — 무드 이미지 자리에 점선 원으로 대체(design.md 무드 슬롯 표현)
                     <div className="relative flex h-full w-full items-center justify-center overflow-visible">
@@ -724,12 +708,6 @@ export default function CalendarPage() {
                     </div>
                   ) : null}
                 </button>
-
-                {!moodValue && doneCount >= 2 ? (
-                  <Badge className="absolute right-2 top-1 min-w-5 justify-center rounded-full bg-primary px-1 text-xs text-white pointer-events-none">
-                    {doneCount}
-                  </Badge>
-                ) : null}
               </div>
             );
           })}
