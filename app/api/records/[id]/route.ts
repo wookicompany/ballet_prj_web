@@ -139,9 +139,8 @@ export const PATCH = async (
       return NextResponse.json({ message: "Bad request" }, { status: 400 });
     }
     moodValue = parsedMood;
-  } else if (!isPlannedIntent) {
-    return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
+  // 감정(mood)은 선택값 — 없이 저장 가능. 트리거가 mood 유무로 done/planned를 결정한다.
 
   // 서버측 방어(defense-in-depth): 이미 완료(done)되어 감정이 기록된 기록의 감정이 어떤 경로로든
   // null로 덮어써지지 않게 기존 감정을 보존한다. 현재 클라 UI는 이 상황을 만들지 않지만(완료+감정

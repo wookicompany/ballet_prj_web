@@ -815,7 +815,7 @@ function RecordNewContent() {
   const handleSubmit = async () => {
     if (!user) return;
 
-    if (!form.record_date || !form.start_time || !form.end_time || !form.mood) {
+    if (!form.record_date || !form.start_time || !form.end_time) {
       toast("필수 항목을 입력해 주세요.");
       return;
     }
@@ -1117,7 +1117,7 @@ function RecordNewContent() {
             </div>
             <div className="pt-2">
               <Label className="text-sm text-[#17171c]/60">
-                오늘 발레는 어땠나요?<span className="-ml-[1px] text-[#17171c]/50">*</span>
+                오늘 발레는 어땠나요?
               </Label>
               <div className="mt-2">
                 <MoodSelector
