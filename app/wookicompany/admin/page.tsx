@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
           title="캘린더"
           items={[
             { label: "캘린더 사용자 수", value: stats.calendar_users },
-            { label: "기록 등록 건 수(완료)", value: stats.total_records },
+            { label: "기록 등록 건 수", value: stats.total_records },
           ]}
         />
         <SectionCard

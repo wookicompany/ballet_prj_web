@@ -22,6 +22,8 @@ import { ChevronRight, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
+const WEEKDAY_KR = ["일", "월", "화", "수", "목", "금", "토"];
+
 type RecordRow = {
   id: string;
   user_id: string;
@@ -64,13 +66,19 @@ export default function AdminRecordsPage() {
   const prevSearchQuery = useRef("");
 
   const formatDateLabel = useCallback((dateText: string) => {
-    return dateText.replaceAll("-", ".");
+    const base = dateText.replaceAll("-", ".");
+    const [y, m, d] = dateText.split("-").map(Number);
+    if (!y || !m || !d) return base;
+    // 날짜 부분(y/m/d)으로 로컬 자정 기준 요일 계산 — 타임존 이동 없이 그 날짜의 요일이 나온다.
+    const weekday = WEEKDAY_KR[new Date(y, m - 1, d).getDay()];
+    return `${base} (${weekday})`;
   }, []);
 
   const formatCreatedDate = useCallback((value: string) => {
     const d = new Date(value);
     if (isNaN(d.getTime())) return "-";
-    return d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
+    const base = d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
+    return `${base} (${WEEKDAY_KR[d.getDay()]})`;
   }, []);
 
   const formatCreatedTime = useCallback((value: string) => {
