@@ -848,14 +848,9 @@ export default function RecordEditPage() {
   const handleSubmit = async () => {
     if (!user || authLoading) return;
 
-    // 기록 작성(record/new)과 동일하게 날짜, 시간, 감정을 모두 필수로 검증한다. 예정 기록도
-    // 저장하려면 감정을 남겨야 하고, 감정이 있으면 DB 트리거가 완료(done)로 전환한다.
-    if (
-      !form.record_date ||
-      !form.start_time ||
-      !form.end_time ||
-      !form.mood
-    ) {
+    // 감정은 선택값이다. 날짜·시간만 필수. 감정이 없으면 DB 트리거가 예정(planned)으로 두어
+    // 캘린더에 점선 동그라미로 표시되고, 감정이 있으면 완료(done)로 전환한다.
+    if (!form.record_date || !form.start_time || !form.end_time) {
       toast("필수 항목을 입력해 주세요.");
       return;
     }
@@ -920,7 +915,7 @@ export default function RecordEditPage() {
           bar_order: showBarOrder ? barOrderTags.join(", ") : "",
           center_order: showCenterOrder ? centerOrderTags.join(", ") : "",
           // status 필드는 보내지 않는다 — records_enforce_status_monotonic 트리거가 NEW.mood IS
-          // NOT NULL만으로 done 전환을 결정한다(감정이 필수라 저장 시 항상 완료로 기록된다).
+          // NOT NULL만으로 done 전환을 결정한다(감정 없이 저장하면 예정(planned)으로 유지된다).
         }),
       });
     } catch {

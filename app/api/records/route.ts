@@ -96,10 +96,9 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ message: "Bad request" }, { status: 400 });
     }
     moodValue = parsedMood;
-  } else if (!isPlannedIntent) {
-    // Non-planned (done) creation still requires mood, matching pre-existing behavior.
-    return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
+  // 감정(mood)은 선택값 — 없이 생성하면 records_enforce_status_monotonic 트리거가 예정(planned)으로
+  // 둔다(캘린더에 점선 동그라미). 감정이 있으면 done. status는 이 라우트에서 쓰지 않는다.
 
   if (
     !payload.record_date ||
