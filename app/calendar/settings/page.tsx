@@ -61,21 +61,36 @@ export default function CalendarSettingsPage() {
   }, [user]);
 
   const isInitialSettingsLoad = useRef(true);
+  const previousSettingsRef = useRef({ weekStartMonday, highlightWeekend });
   useEffect(() => {
     if (!settingsLoaded || !user) return;
     if (isInitialSettingsLoad.current) {
       isInitialSettingsLoad.current = false;
+      previousSettingsRef.current = { weekStartMonday, highlightWeekend };
+      return;
+    }
+    const previous = previousSettingsRef.current;
+    const next = { weekStartMonday, highlightWeekend };
+    if (
+      next.weekStartMonday === previous.weekStartMonday &&
+      next.highlightWeekend === previous.highlightWeekend
+    ) {
       return;
     }
     const persistSettings = async () => {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
-        calendar_week_start_monday: weekStartMonday,
-        calendar_highlight_weekend: highlightWeekend,
+        calendar_week_start_monday: next.weekStartMonday,
+        calendar_highlight_weekend: next.highlightWeekend,
       });
       if (error) {
+        // all-or-nothing: 저장 실패 시 이전 값으로 롤백
+        setWeekStartMonday(previous.weekStartMonday);
+        setHighlightWeekend(previous.highlightWeekend);
         toast("캘린더 설정 저장에 실패했습니다.");
+        return;
       }
+      previousSettingsRef.current = next;
     };
     void persistSettings();
   }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);

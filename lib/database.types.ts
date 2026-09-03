@@ -1184,6 +1184,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           expo_push_token: string | null
+          haptic_enabled: boolean
           id: string
           is_admin: boolean
           nickname: string | null
@@ -1199,6 +1200,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
+          haptic_enabled?: boolean
           id: string
           is_admin?: boolean
           nickname?: string | null
@@ -1214,6 +1216,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           expo_push_token?: string | null
+          haptic_enabled?: boolean
           id?: string
           is_admin?: boolean
           nickname?: string | null

@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Database,
   MessageCircle,
+  Settings,
   ShieldCheck,
   User,
 } from "lucide-react";
@@ -112,6 +113,18 @@ export default function ProfileMenuPage() {
             <span className="flex items-center gap-3 text-sm text-[#17171c]">
               <Calendar className="h-5 w-5 text-[#17171c]/70" />
               캘린더 설정
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 w-full justify-between px-4"
+            onClick={() => router.push("/profile/general")}
+          >
+            <span className="flex items-center gap-3 text-sm text-[#17171c]">
+              <Settings className="h-5 w-5 text-[#17171c]/70" />
+              앱 설정
             </span>
             <ChevronRight className="h-4 w-4 text-[#17171c]/40" />
           </Button>
