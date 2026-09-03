@@ -20,7 +20,12 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
-import { getSeoulTimeParts, getSeoulTodayDate, parseDateKey } from "@/lib/kstDateTime";
+import {
+  formatKoreanTimeLabel,
+  getSeoulTimeParts,
+  getSeoulTodayDate,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,6 +35,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import TimePickerSheet from "@/components/sheets/TimePickerSheet";
 import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { getLocationsCache, setLocationsCache } from "@/lib/locationsCache";
 import {
@@ -259,31 +265,9 @@ export default function RecordRecurringNewPage() {
     string | null
   >(null);
 
-  const hours = useMemo(
-    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
-  );
-  const minutes = useMemo(
-    () => Array.from({ length: 60 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
-  );
-  const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
-  const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
-  const startHourListRef = useRef<HTMLDivElement>(null);
-  const startMinuteListRef = useRef<HTMLDivElement>(null);
-  const endHourListRef = useRef<HTMLDivElement>(null);
-  const endMinuteListRef = useRef<HTMLDivElement>(null);
-
-  const formatMeridiem = (hour: string) => (Number(hour) < 12 ? "오전" : "오후");
-  const formatHour12 = (hour: string) => {
-    const value = Number(hour);
-    const normalized = value % 12 === 0 ? 12 : value % 12;
-    return String(normalized);
-  };
-  const formatTimeDisplay = (hour: string, minute: string) =>
-    `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
-  // app/record/new/page.tsx의 getClampedNowTime과 동일한 로직 — 값이 없는 시간 피커를 열 때
-  // 00:00 대신 현재 KST 시각으로 드래프트를 채운다(이른 새벽엔 최소 6시로 클램프).
+  // 이 페이지는 반복 예정 특성상 값이 없는 시간 피커를 열 때 00:00 대신 현재 KST 시각으로
+  // 채우되, 이른 새벽엔 최소 6시로 클램프한다(기존 동작 유지 — ② 시간 피커 재설계에서
+  // record/new의 기본값 자동채움과는 별개로 이 페이지의 클램프 동작은 그대로 둔다).
   const getClampedNowTime = () => {
     const { hour, minute } = getSeoulTimeParts();
     const hourValue = Math.max(hour, 6);
@@ -292,30 +276,6 @@ export default function RecordRecurringNewPage() {
       minute: String(minute).padStart(2, "0"),
     };
   };
-
-  useEffect(() => {
-    if (!startSheetOpen) return;
-    requestAnimationFrame(() => {
-      startHourListRef.current
-        ?.querySelector(`[data-value="${startDraft.hour}"]`)
-        ?.scrollIntoView({ block: "center" });
-      startMinuteListRef.current
-        ?.querySelector(`[data-value="${startDraft.minute}"]`)
-        ?.scrollIntoView({ block: "center" });
-    });
-  }, [startSheetOpen, startDraft]);
-
-  useEffect(() => {
-    if (!endSheetOpen) return;
-    requestAnimationFrame(() => {
-      endHourListRef.current
-        ?.querySelector(`[data-value="${endDraft.hour}"]`)
-        ?.scrollIntoView({ block: "center" });
-      endMinuteListRef.current
-        ?.querySelector(`[data-value="${endDraft.minute}"]`)
-        ?.scrollIntoView({ block: "center" });
-    });
-  }, [endSheetOpen, endDraft]);
 
   useEffect(() => {
     if (loading) return;
@@ -828,18 +788,10 @@ export default function RecordRecurringNewPage() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    if (startTime) {
-                      const [hour, minute] = startTime.split(":");
-                      setStartDraft({ hour, minute });
-                    } else {
-                      setStartDraft(getClampedNowTime());
-                    }
-                    setStartSheetOpen(true);
-                  }}
+                  onClick={() => setStartSheetOpen(true)}
                 >
                   {startTime
-                    ? formatTimeDisplay(...(startTime.split(":") as [string, string]))
+                    ? formatKoreanTimeLabel(startTime)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -851,18 +803,10 @@ export default function RecordRecurringNewPage() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    if (endTime) {
-                      const [hour, minute] = endTime.split(":");
-                      setEndDraft({ hour, minute });
-                    } else {
-                      setEndDraft(getClampedNowTime());
-                    }
-                    setEndSheetOpen(true);
-                  }}
+                  onClick={() => setEndSheetOpen(true)}
                 >
                   {endTime
-                    ? formatTimeDisplay(...(endTime.split(":") as [string, string]))
+                    ? formatKoreanTimeLabel(endTime)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -1216,145 +1160,27 @@ export default function RecordRecurringNewPage() {
           </Button>
         </div>
 
-        <BottomSheet open={startSheetOpen} onOpenChange={setStartSheetOpen}>
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={startHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`start-hour-${hour}`}
-                  type="button"
-                  variant={startDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={startMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`start-min-${minute}`}
-                  type="button"
-                  variant={startDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setStartTime(`${startDraft.hour}:${startDraft.minute}`);
-                setStartSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+        <TimePickerSheet
+          open={startSheetOpen}
+          onOpenChange={setStartSheetOpen}
+          value={
+            startTime ||
+            `${getClampedNowTime().hour}:${getClampedNowTime().minute}`
+          }
+          onConfirm={(next) => setStartTime(next)}
+          title="시작 시간"
+        />
 
-        <BottomSheet open={endSheetOpen} onOpenChange={setEndSheetOpen}>
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={endHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`end-hour-${hour}`}
-                  type="button"
-                  variant={endDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={endMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`end-min-${minute}`}
-                  type="button"
-                  variant={endDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setEndTime(`${endDraft.hour}:${endDraft.minute}`);
-                setEndSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+        <TimePickerSheet
+          open={endSheetOpen}
+          onOpenChange={setEndSheetOpen}
+          value={
+            endTime ||
+            `${getClampedNowTime().hour}:${getClampedNowTime().minute}`
+          }
+          onConfirm={(next) => setEndTime(next)}
+          title="종료 시간"
+        />
 
         <BottomSheet open={startDateSheetOpen} onOpenChange={setStartDateSheetOpen}>
           <div className="flex justify-center">

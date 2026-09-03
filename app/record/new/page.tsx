@@ -24,6 +24,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
 import {
+  formatKoreanTimeLabel,
   formatSeoulDateKey,
   getSeoulDateParts,
   getSeoulTodayDate,
@@ -73,6 +74,7 @@ import {
   X,
 } from "lucide-react";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import TimePickerSheet from "@/components/sheets/TimePickerSheet";
 import { toast } from "sonner";
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -249,12 +251,6 @@ function RecordNewContent() {
   const yearListRef = useRef<HTMLDivElement>(null);
   const monthListRef = useRef<HTMLDivElement>(null);
   const dayListRef = useRef<HTMLDivElement>(null);
-  const startHourListRef = useRef<HTMLDivElement>(null);
-  const startMinuteListRef = useRef<HTMLDivElement>(null);
-  const endHourListRef = useRef<HTMLDivElement>(null);
-  const endMinuteListRef = useRef<HTMLDivElement>(null);
-  const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
-  const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
   const [dateDraft, setDateDraft] = useState(() => getSeoulDateParts());
   const [locationName, setLocationName] = useState("");
   const [locationBase, setLocationBase] = useState("");
@@ -269,14 +265,6 @@ function RecordNewContent() {
   );
   const [syncedWorkoutDraft, setSyncedWorkoutDraft] = useState<SyncedWorkout | null>(
     null
-  );
-  const hours = useMemo(
-    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
-  );
-  const minutes = useMemo(
-    () => Array.from({ length: 60 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
   );
   const years = useMemo(() => {
     const currentYear = getSeoulDateParts().year;
@@ -541,6 +529,19 @@ function RecordNewContent() {
     });
   }, [searchParams]);
 
+  // ② 시간 피커 재설계: 새 기록 작성 화면은 진입 시 시작 시간을 현재 KST 시각으로,
+  // 종료 시간을 시작+1시간(23:59 캡)으로 자동 채운다. 클램프·반올림 없이 정확한 시각을 쓴다.
+  useEffect(() => {
+    const { hour, minute } = getSeoulTimeParts();
+    const startTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    const maxMinutesOfDay = 23 * 60 + 59;
+    const endTotalMinutes = Math.min(hour * 60 + minute + 60, maxMinutesOfDay);
+    const endHour = Math.floor(endTotalMinutes / 60);
+    const endMinute = endTotalMinutes % 60;
+    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+    setForm((prev) => ({ ...prev, start_time: startTime, end_time: endTime }));
+  }, []);
+
   useEffect(() => {
     if (!locationSheetOpen) return;
     setSelectedLocationId(null);
@@ -761,56 +762,13 @@ function RecordNewContent() {
 
   const workoutCard = showHealthSync ? syncedWorkoutDraft ?? appliedWorkout : null;
 
-  const startHour = form.start_time ? form.start_time.split(":")[0] : "00";
-  const startMinute = form.start_time ? form.start_time.split(":")[1] : "00";
-  const endHour = form.end_time ? form.end_time.split(":")[0] : "00";
-  const endMinute = form.end_time ? form.end_time.split(":")[1] : "00";
-  const formatMeridiem = (hour: string) =>
-    Number(hour) < 12 ? "오전" : "오후";
-  const formatHour12 = (hour: string) => {
-    const value = Number(hour);
-    const normalized = value % 12 === 0 ? 12 : value % 12;
-    return String(normalized);
-  };
-  const formatTimeDisplay = (hour: string, minute: string) =>
-    `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
-  const getClampedNowTime = () => {
+  const getNowTime = () => {
     const { hour, minute } = getSeoulTimeParts();
-    const hourValue = Math.max(hour, 6);
-    const minuteValue = minute;
     return {
-      hour: String(hourValue).padStart(2, "0"),
-      minute: String(minuteValue).padStart(2, "0"),
+      hour: String(hour).padStart(2, "0"),
+      minute: String(minute).padStart(2, "0"),
     };
   };
-
-  useEffect(() => {
-    if (!startSheetOpen) return;
-    requestAnimationFrame(() => {
-      const hourTarget = startHourListRef.current?.querySelector(
-        `[data-value="${startDraft.hour}"]`
-      );
-      const minuteTarget = startMinuteListRef.current?.querySelector(
-        `[data-value="${startDraft.minute}"]`
-      );
-      hourTarget?.scrollIntoView({ block: "center" });
-      minuteTarget?.scrollIntoView({ block: "center" });
-    });
-  }, [startSheetOpen, startDraft]);
-
-  useEffect(() => {
-    if (!endSheetOpen) return;
-    requestAnimationFrame(() => {
-      const hourTarget = endHourListRef.current?.querySelector(
-        `[data-value="${endDraft.hour}"]`
-      );
-      const minuteTarget = endMinuteListRef.current?.querySelector(
-        `[data-value="${endDraft.minute}"]`
-      );
-      hourTarget?.scrollIntoView({ block: "center" });
-      minuteTarget?.scrollIntoView({ block: "center" });
-    });
-  }, [endSheetOpen, endDraft]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -820,7 +778,7 @@ function RecordNewContent() {
       return;
     }
     if (form.end_time <= form.start_time) {
-      toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
+      toast("종료 시간이 시작 시간보다 늦어야 해요.");
       return;
     }
 
@@ -1080,16 +1038,10 @@ function RecordNewContent() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    const nextDraft = form.start_time
-                      ? { hour: startHour, minute: startMinute }
-                      : getClampedNowTime();
-                    setStartDraft(nextDraft);
-                    setStartSheetOpen(true);
-                  }}
+                  onClick={() => setStartSheetOpen(true)}
                 >
                   {form.start_time
-                    ? formatTimeDisplay(startHour, startMinute)
+                    ? formatKoreanTimeLabel(form.start_time)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -1101,16 +1053,10 @@ function RecordNewContent() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    const nextDraft = form.end_time
-                      ? { hour: endHour, minute: endMinute }
-                      : getClampedNowTime();
-                    setEndDraft(nextDraft);
-                    setEndSheetOpen(true);
-                  }}
+                  onClick={() => setEndSheetOpen(true)}
                 >
                   {form.end_time
-                    ? formatTimeDisplay(endHour, endMinute)
+                    ? formatKoreanTimeLabel(form.end_time)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -1745,157 +1691,27 @@ function RecordNewContent() {
           </div>
         </BottomSheet>
 
-        <BottomSheet
+        <TimePickerSheet
           open={startSheetOpen}
           onOpenChange={setStartSheetOpen}
-        >
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={startHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`start-drawer-hour-${hour}`}
-                  type="button"
-                  variant={startDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={startMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`start-drawer-min-${minute}`}
-                  type="button"
-                  variant={startDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setForm((prev) => ({
-                  ...prev,
-                  start_time: `${startDraft.hour}:${startDraft.minute}`,
-                }));
-                setStartSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+          value={
+            form.start_time || `${getNowTime().hour}:${getNowTime().minute}`
+          }
+          onConfirm={(next) =>
+            setForm((prev) => ({ ...prev, start_time: next }))
+          }
+          title="시작 시간"
+        />
 
-        <BottomSheet
+        <TimePickerSheet
           open={endSheetOpen}
           onOpenChange={setEndSheetOpen}
-        >
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={endHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`end-drawer-hour-${hour}`}
-                  type="button"
-                  variant={endDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={endMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`end-drawer-min-${minute}`}
-                  type="button"
-                  variant={endDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setForm((prev) => ({
-                  ...prev,
-                  end_time: `${endDraft.hour}:${endDraft.minute}`,
-                }));
-                setEndSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+          value={form.end_time || `${getNowTime().hour}:${getNowTime().minute}`}
+          onConfirm={(next) =>
+            setForm((prev) => ({ ...prev, end_time: next }))
+          }
+          title="종료 시간"
+        />
 
         <BottomSheet
           open={locationSheetOpen}
