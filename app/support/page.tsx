@@ -101,7 +101,7 @@ export default function SupportPage() {
             문의하기
           </Button>
 
-          <p className="mt-3 text-center text-xs text-[#17171c]/50">
+          <p className="mt-2 text-xs text-[#17171c]/50">
             이메일 wookicompany@gmail.com으로도 문의할 수 있어요.
           </p>
         </div>
