@@ -92,18 +92,22 @@ export default function SupportPage() {
             />
           </section>
 
-          <Button
-            type="button"
-            className="h-12 w-full bg-[#17171c] text-white"
-            disabled={isDisabled}
-            onClick={handleSubmit}
-          >
-            문의하기
-          </Button>
+          {/* 버튼+이메일 안내를 한 묶음으로 감싸 space-y-6(24px)의 지배를 벗어나게 하고,
+              둘 사이 간격은 mt-1(4px)로 직접 제어한다. */}
+          <div>
+            <Button
+              type="button"
+              className="h-12 w-full bg-[#17171c] text-white"
+              disabled={isDisabled}
+              onClick={handleSubmit}
+            >
+              문의하기
+            </Button>
 
-          <p className="mt-1 text-xs text-[#17171c]/50">
-            이메일 wookicompany@gmail.com으로도 문의할 수 있어요.
-          </p>
+            <p className="mt-1 text-xs text-[#17171c]/50">
+              이메일 wookicompany@gmail.com으로도 문의할 수 있어요.
+            </p>
+          </div>
         </div>
       </main>
     </MobileContainer>
