@@ -115,6 +115,18 @@ export const POST = async (request: Request) => {
       // zero-matching-date case below, so callers only need to branch on `created.length`.
       return NextResponse.json({ created: [], skipped: [] });
     }
+    if (rpcErrorText.includes("RECURRING_TOO_MANY_OCCURRENCES")) {
+      // 개선③: 사용자 대면 상한은 없지만, 생성 후보가 1000건을 넘으면 RPC가 통째로 거부한다
+      // (부분 생성 없음). 클라는 사전 계산으로 이 상황을 미리 막지만, 경합 등에 대비해 서버
+      // 거부도 명확한 안내 메시지로 매핑한다.
+      return NextResponse.json(
+        {
+          message:
+            "기간이 너무 길어서 예정을 만들 수 없어요. 종료일을 조금 더 가깝게 선택해 다시 시도해 주세요.",
+        },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { message: "Failed to create record recurrences" },
       { status: 500 }
