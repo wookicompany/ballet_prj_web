@@ -531,7 +531,13 @@ function RecordNewContent() {
 
   // ② 시간 피커 재설계: 새 기록 작성 화면은 진입 시 시작 시간을 현재 KST 시각으로,
   // 종료 시간을 시작+1시간(23:59 캡)으로 자동 채운다. 클램프·반올림 없이 정확한 시각을 쓴다.
+  // 단, record_date가 오늘일 때만 — 과거/미래 날짜로 진입하면 그날과 무관한 "지금"을
+  // 넣지 않고 빈 값(시간 선택 placeholder)을 유지한다.
   useEffect(() => {
+    const dateParam = searchParams.get("date");
+    const resolvedDate =
+      dateParam && isValidDateKey(dateParam) ? dateParam : formatSeoulDateKey();
+    if (resolvedDate !== formatSeoulDateKey()) return;
     const { hour, minute } = getSeoulTimeParts();
     const startTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
     const startMinutesOfDay = hour * 60 + minute;
@@ -546,7 +552,7 @@ function RecordNewContent() {
           ).padStart(2, "0")}`
         : "";
     setForm((prev) => ({ ...prev, start_time: startTime, end_time: endTime }));
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!locationSheetOpen) return;
@@ -882,15 +888,20 @@ function RecordNewContent() {
     });
     const uploadResults = await Promise.all(
       uploads.map(async (upload) => {
-        const compressed = await compressImage(upload.file);
-        const { error } = await supabase.storage
-          .from(BUCKET)
-          .upload(upload.path, compressed);
-        if (error) return null;
-        const { data: urlData } = supabase.storage
-          .from(BUCKET)
-          .getPublicUrl(upload.path);
-        return { media_type: upload.media_type, url: urlData.publicUrl };
+        try {
+          const compressed = await compressImage(upload.file);
+          const { error } = await supabase.storage
+            .from(BUCKET)
+            .upload(upload.path, compressed);
+          if (error) return null;
+          const { data: urlData } = supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(upload.path);
+          return { media_type: upload.media_type, url: urlData.publicUrl };
+        } catch {
+          // 압축·업로드 예외는 해당 이미지만 실패 처리(아래 successItems 로직이 안내).
+          return null;
+        }
       })
     );
 
@@ -902,15 +913,20 @@ function RecordNewContent() {
     }
 
     if (successItems.length > 0) {
-      const mediaRes = await fetch(`/api/records/${recordId}/media`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ items: successItems }),
-      });
-      if (!mediaRes.ok) {
+      // 기록 자체는 이미 저장됨 — 미디어 저장 실패/예외는 안내만 하고 진행을 막지 않는다.
+      try {
+        const mediaRes = await fetch(`/api/records/${recordId}/media`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ items: successItems }),
+        });
+        if (!mediaRes.ok) {
+          toast("이미지를 저장하지 못했어요.");
+        }
+      } catch {
         toast("이미지를 저장하지 못했어요.");
       }
     }

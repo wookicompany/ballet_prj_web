@@ -816,7 +816,7 @@ export default function RecordEditPage() {
       return;
     }
     if (form.end_time <= form.start_time) {
-      toast("종료 시간이 시작 시간보다 빠를 수 없습니다.");
+      toast("종료 시간이 시작 시간보다 늦어야 해요.");
       return;
     }
 
@@ -915,16 +915,22 @@ export default function RecordEditPage() {
       });
     });
     if (removedMediaIds.length > 0) {
-      const deleteResponse = await fetch(`/api/records/${params.id}/media`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ mediaIds: removedMediaIds }),
-      });
-      if (!deleteResponse.ok) {
-        toast("미디어 삭제에 실패했습니다.");
+      try {
+        const deleteResponse = await fetch(`/api/records/${params.id}/media`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ mediaIds: removedMediaIds }),
+        });
+        if (!deleteResponse.ok) {
+          toast("미디어 삭제에 실패했습니다.");
+          setSaving(false);
+          return;
+        }
+      } catch {
+        toast("네트워크 연결을 확인하고 다시 시도해 주세요.");
         setSaving(false);
         return;
       }
@@ -932,15 +938,20 @@ export default function RecordEditPage() {
 
     const uploadResults = await Promise.all(
       uploads.map(async (upload) => {
-        const compressed = await compressImage(upload.file);
-        const { error } = await supabase.storage
-          .from(BUCKET)
-          .upload(upload.path, compressed);
-        if (error) return null;
-        const { data: urlData } = supabase.storage
-          .from(BUCKET)
-          .getPublicUrl(upload.path);
-        return { media_type: upload.media_type, url: urlData.publicUrl };
+        try {
+          const compressed = await compressImage(upload.file);
+          const { error } = await supabase.storage
+            .from(BUCKET)
+            .upload(upload.path, compressed);
+          if (error) return null;
+          const { data: urlData } = supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(upload.path);
+          return { media_type: upload.media_type, url: urlData.publicUrl };
+        } catch {
+          // 압축·업로드 예외는 해당 이미지만 실패 처리(아래 successItems 로직이 안내).
+          return null;
+        }
       })
     );
 
@@ -952,15 +963,20 @@ export default function RecordEditPage() {
     }
 
     if (successItems.length > 0) {
-      const mediaRes = await fetch(`/api/records/${params.id}/media`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ items: successItems }),
-      });
-      if (!mediaRes.ok) {
+      // 기록 수정 자체는 이미 저장됨 — 미디어 저장 실패/예외는 안내만 하고 진행을 막지 않는다.
+      try {
+        const mediaRes = await fetch(`/api/records/${params.id}/media`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ items: successItems }),
+        });
+        if (!mediaRes.ok) {
+          toast("이미지를 저장하지 못했어요.");
+        }
+      } catch {
         toast("이미지를 저장하지 못했어요.");
       }
     }

@@ -562,7 +562,7 @@ export default function RecordRecurringNewPage() {
       return;
     }
     if (endTime <= startTime) {
-      toast("종료 시간이 시작 시간보다 빠를 수 없어요.");
+      toast("종료 시간이 시작 시간보다 늦어야 해요.");
       return;
     }
     if (plannedCount === 0) {
