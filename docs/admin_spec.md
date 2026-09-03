@@ -112,7 +112,7 @@
 
 ### 회원 관리
 
-- **목록**: profiles (deleted_at IS NULL), nickname, created_at, (선택) 기록 수/리뷰 수.
+- **목록**: profiles (deleted_at IS NULL), nickname, created_at, (선택) 기록 수/리뷰 수. 기록 수는 **전체 기준(완료+예정 모두 포함, deleted_at 제외)** — 어드민 전 영역이 전체 기준으로 일관(2026-09-04, `get_activity_counts_by_user_ids` RPC에서 status 필터 제거).
 - **상세**: 프로필 정보 + 해당 사용자의 records/reviews/comments 건수. 활동 정지 기능 없음. 삭제(회원 탈퇴/소프트 삭제)는 별도 정책에 따라 구현 가능하며 1차는 조회 위주.
 
 ## 6. DB
