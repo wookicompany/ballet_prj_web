@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -18,13 +18,11 @@ export default function CalendarSettingsPage() {
   const { openLoginSheet } = useLoginSheet();
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setWeekStartMonday(false);
       setHighlightWeekend(false);
-      setSettingsLoaded(true);
       return;
     }
 
@@ -38,7 +36,6 @@ export default function CalendarSettingsPage() {
       if (error) {
         setWeekStartMonday(false);
         setHighlightWeekend(false);
-        setSettingsLoaded(true);
         return;
       }
 
@@ -54,46 +51,39 @@ export default function CalendarSettingsPage() {
           calendar_highlight_weekend: false,
         });
       }
-      setSettingsLoaded(true);
     };
 
     fetchSettings();
   }, [user]);
 
-  const isInitialSettingsLoad = useRef(true);
-  const previousSettingsRef = useRef({ weekStartMonday, highlightWeekend });
-  useEffect(() => {
-    if (!settingsLoaded || !user) return;
-    if (isInitialSettingsLoad.current) {
-      isInitialSettingsLoad.current = false;
-      previousSettingsRef.current = { weekStartMonday, highlightWeekend };
-      return;
+  // 스위치별 개별 핸들러 — 각자 자기 컬럼만 저장하고 실패 시 자기 값만 롤백한다.
+  // (두 스위치를 하나의 이펙트로 함께 저장하면, 동시 토글 시 한쪽 실패 롤백이 다른 쪽의
+  //  성공값까지 되돌려 화면과 DB가 어긋날 수 있어 필드별로 분리한다.)
+  const persistWeekStart = async (next: boolean) => {
+    if (!user) return;
+    const previous = weekStartMonday;
+    setWeekStartMonday(next);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, calendar_week_start_monday: next });
+    if (error) {
+      setWeekStartMonday(previous);
+      toast("캘린더 설정 저장에 실패했습니다.");
     }
-    const previous = previousSettingsRef.current;
-    const next = { weekStartMonday, highlightWeekend };
-    if (
-      next.weekStartMonday === previous.weekStartMonday &&
-      next.highlightWeekend === previous.highlightWeekend
-    ) {
-      return;
+  };
+
+  const persistHighlightWeekend = async (next: boolean) => {
+    if (!user) return;
+    const previous = highlightWeekend;
+    setHighlightWeekend(next);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, calendar_highlight_weekend: next });
+    if (error) {
+      setHighlightWeekend(previous);
+      toast("캘린더 설정 저장에 실패했습니다.");
     }
-    const persistSettings = async () => {
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        calendar_week_start_monday: next.weekStartMonday,
-        calendar_highlight_weekend: next.highlightWeekend,
-      });
-      if (error) {
-        // all-or-nothing: 저장 실패 시 이전 값으로 롤백
-        setWeekStartMonday(previous.weekStartMonday);
-        setHighlightWeekend(previous.highlightWeekend);
-        toast("캘린더 설정 저장에 실패했습니다.");
-        return;
-      }
-      previousSettingsRef.current = next;
-    };
-    void persistSettings();
-  }, [weekStartMonday, highlightWeekend, user, settingsLoaded]);
+  };
 
   if (loading) {
     return (
@@ -137,7 +127,7 @@ export default function CalendarSettingsPage() {
             <Switch
               size="lg"
               checked={weekStartMonday}
-              onCheckedChange={setWeekStartMonday}
+              onCheckedChange={persistWeekStart}
             />
           </div>
           <div className="flex items-center justify-between px-4 py-4">
@@ -145,7 +135,7 @@ export default function CalendarSettingsPage() {
             <Switch
               size="lg"
               checked={highlightWeekend}
-              onCheckedChange={setHighlightWeekend}
+              onCheckedChange={persistHighlightWeekend}
             />
           </div>
         </section>

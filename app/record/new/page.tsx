@@ -534,11 +534,17 @@ function RecordNewContent() {
   useEffect(() => {
     const { hour, minute } = getSeoulTimeParts();
     const startTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    const startMinutesOfDay = hour * 60 + minute;
     const maxMinutesOfDay = 23 * 60 + 59;
-    const endTotalMinutes = Math.min(hour * 60 + minute + 60, maxMinutesOfDay);
-    const endHour = Math.floor(endTotalMinutes / 60);
-    const endMinute = endTotalMinutes % 60;
-    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+    const endTotalMinutes = Math.min(startMinutesOfDay + 60, maxMinutesOfDay);
+    // 종료가 시작보다 뒤가 되지 못하는 극단(예: 시작 23:59)에는 종료를 비워
+    // 사용자가 직접 고르게 한다 — 시작=종료로 저장이 막히는 상태를 만들지 않는다.
+    const endTime =
+      endTotalMinutes > startMinutesOfDay
+        ? `${String(Math.floor(endTotalMinutes / 60)).padStart(2, "0")}:${String(
+            endTotalMinutes % 60
+          ).padStart(2, "0")}`
+        : "";
     setForm((prev) => ({ ...prev, start_time: startTime, end_time: endTime }));
   }, []);
 

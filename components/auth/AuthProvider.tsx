@@ -27,12 +27,18 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 /**
  * 진동 전역 게이트에 서버(profiles.haptic_enabled) 값을 주입.
  * 렌더를 막지 않는 fire-and-forget 호출 — 조회 실패/로그인 안 됨은 안전측 ON 유지.
+ * 같은 유저에 대한 중복 발화(TOKEN_REFRESHED 등)는 스킵해 재조회와, 진행 중인
+ * 낙관적 토글을 stale 값으로 덮어쓰는 레이스를 막는다.
  */
+let lastSyncedHapticUserId: string | null = null;
 function syncHapticEnabled(user: User | null) {
   if (!user) {
+    lastSyncedHapticUserId = null;
     setHapticEnabled(true);
     return;
   }
+  if (user.id === lastSyncedHapticUserId) return;
+  lastSyncedHapticUserId = user.id;
   void (async () => {
     try {
       const { data, error } = await supabase
@@ -40,10 +46,14 @@ function syncHapticEnabled(user: User | null) {
         .select("haptic_enabled")
         .eq("id", user.id)
         .maybeSingle();
-      if (error) return;
+      if (error) {
+        // 실패 시 캐시를 비워 다음 인증 이벤트에서 재시도할 수 있게 한다. 안전측 ON 유지.
+        lastSyncedHapticUserId = null;
+        return;
+      }
       setHapticEnabled(data?.haptic_enabled !== false);
     } catch {
-      // profiles 조회 실패는 앱 동작에 영향 주지 않음 — 안전측 ON 유지
+      lastSyncedHapticUserId = null;
     }
   })();
 }
