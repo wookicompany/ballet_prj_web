@@ -79,8 +79,11 @@ export const getSeoulTimeParts = (date: Date = new Date()) => {
     minute: "2-digit",
     hour12: false,
   });
+  // Intl "en-CA" + hour12:false는 자정을 "00"이 아니라 "24"로 반환한다(h24 cycle).
+  // 유효한 24시간 값(0~23)으로 정규화해 소비처가 "24:30" 같은 무효 시각을 만들지 않게 한다.
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
   return {
-    hour: Number(parts.find((part) => part.type === "hour")?.value ?? "0"),
+    hour: hour === 24 ? 0 : hour,
     minute: Number(parts.find((part) => part.type === "minute")?.value ?? "0"),
   };
 };
