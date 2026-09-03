@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
-import { format, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ko as dayPickerKo } from "react-day-picker/locale";
 import PageHeader from "@/components/layout/PageHeader";
@@ -20,7 +20,12 @@ import MobileContainer from "@/components/layout/MobileContainer";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin, getAccessToken } from "@/lib/authSession";
-import { getSeoulTimeParts, getSeoulTodayDate, parseDateKey } from "@/lib/kstDateTime";
+import {
+  formatKoreanTimeLabel,
+  getSeoulTimeParts,
+  getSeoulTodayDate,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,6 +35,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import BottomSheet from "@/components/sheets/BottomSheet";
+import TimePickerSheet from "@/components/sheets/TimePickerSheet";
 import { BAR_ORDER_TAGS, CENTER_ORDER_TAGS } from "@/lib/orderTags";
 import { getLocationsCache, setLocationsCache } from "@/lib/locationsCache";
 import {
@@ -57,7 +63,10 @@ import { toast } from "sonner";
 
 const LOCATION_DELIMITER = " | ";
 const ADDRESS_DELIMITER = " || ";
-const MAX_OCCURRENCES = 26;
+// 개선③(반복 종료일 자유화): 사용자 대면 상한은 없다 — 이 값은 create_record_recurrences RPC의
+// 보이지 않는 서버 안전 가드(생성 후보 1000건 초과 시 전체 거부)와 반드시 일치해야 하는
+// 클라 사전 체크 기준일 뿐이다.
+const MAX_OCCURRENCES = 1000;
 
 // 월~일 순서로 노출하되, 값은 Postgres EXTRACT(DOW)/JS Date.getDay()와 동일한
 // 0=일 ~ 6=토 규약을 그대로 사용한다(서버 create_record_recurrences RPC와 일치).
@@ -116,6 +125,8 @@ const formatDateKeyFromLocalDate = (date: Date) =>
 
 // fromDate는 이미 "오늘 이전 불가" 규칙(D5)이 적용된 값이어야 한다 — 서버 RPC의
 // v_starts_on = GREATEST(선택한 시작일, 오늘) 재계산과 동일한 값을 클라에서 미리 반영해 둔다.
+// 개선③: 3개월 상한은 더 이상 없다 — 종료일을 그대로 쓰고, MAX_OCCURRENCES(=서버 가드 1000)를
+// 넘는 순간 카운트를 멈춰 무제한 루프를 방지한다.
 const countPlannedOccurrences = (
   weekdaySet: Set<number>,
   fromDate: Date,
@@ -124,14 +135,11 @@ const countPlannedOccurrences = (
   if (weekdaySet.size === 0 || !untilDateKey) return 0;
   const untilDate = parseDateKey(untilDateKey);
   if (!untilDate) return 0;
-  const capDate = addMonths(fromDate, 3);
-  const cappedUntil =
-    untilDate.getTime() > capDate.getTime() ? capDate : untilDate;
-  if (cappedUntil.getTime() < fromDate.getTime()) return 0;
+  if (untilDate.getTime() < fromDate.getTime()) return 0;
 
   let count = 0;
   const cursor = new Date(fromDate.getTime());
-  while (cursor.getTime() <= cappedUntil.getTime() && count < MAX_OCCURRENCES) {
+  while (cursor.getTime() <= untilDate.getTime() && count <= MAX_OCCURRENCES) {
     if (weekdaySet.has(cursor.getDay())) count += 1;
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -172,7 +180,6 @@ type RecurrenceResponse = {
 type ResultSummary = {
   createdCount: number;
   skippedCount: number;
-  wasCapped: boolean;
 };
 
 export default function RecordRecurringNewPage() {
@@ -207,10 +214,6 @@ export default function RecordRecurringNewPage() {
     if (!parsed) return today;
     return parsed.getTime() < today.getTime() ? today : parsed;
   }, [startDate, today]);
-  const endDateCapDate = useMemo(
-    () => addMonths(effectiveStartDate, 3),
-    [effectiveStartDate]
-  );
 
   const [resultSheetOpen, setResultSheetOpen] = useState(false);
   const [resultSummary, setResultSummary] = useState<ResultSummary | null>(
@@ -262,31 +265,9 @@ export default function RecordRecurringNewPage() {
     string | null
   >(null);
 
-  const hours = useMemo(
-    () => Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
-  );
-  const minutes = useMemo(
-    () => Array.from({ length: 60 }, (_, idx) => String(idx).padStart(2, "0")),
-    []
-  );
-  const [startDraft, setStartDraft] = useState({ hour: "00", minute: "00" });
-  const [endDraft, setEndDraft] = useState({ hour: "00", minute: "00" });
-  const startHourListRef = useRef<HTMLDivElement>(null);
-  const startMinuteListRef = useRef<HTMLDivElement>(null);
-  const endHourListRef = useRef<HTMLDivElement>(null);
-  const endMinuteListRef = useRef<HTMLDivElement>(null);
-
-  const formatMeridiem = (hour: string) => (Number(hour) < 12 ? "오전" : "오후");
-  const formatHour12 = (hour: string) => {
-    const value = Number(hour);
-    const normalized = value % 12 === 0 ? 12 : value % 12;
-    return String(normalized);
-  };
-  const formatTimeDisplay = (hour: string, minute: string) =>
-    `${formatMeridiem(hour)} ${formatHour12(hour)}시 ${minute}분`;
-  // app/record/new/page.tsx의 getClampedNowTime과 동일한 로직 — 값이 없는 시간 피커를 열 때
-  // 00:00 대신 현재 KST 시각으로 드래프트를 채운다(이른 새벽엔 최소 6시로 클램프).
+  // 이 페이지는 반복 예정 특성상 값이 없는 시간 피커를 열 때 00:00 대신 현재 KST 시각으로
+  // 채우되, 이른 새벽엔 최소 6시로 클램프한다(기존 동작 유지 — ② 시간 피커 재설계에서
+  // record/new의 기본값 자동채움과는 별개로 이 페이지의 클램프 동작은 그대로 둔다).
   const getClampedNowTime = () => {
     const { hour, minute } = getSeoulTimeParts();
     const hourValue = Math.max(hour, 6);
@@ -295,30 +276,6 @@ export default function RecordRecurringNewPage() {
       minute: String(minute).padStart(2, "0"),
     };
   };
-
-  useEffect(() => {
-    if (!startSheetOpen) return;
-    requestAnimationFrame(() => {
-      startHourListRef.current
-        ?.querySelector(`[data-value="${startDraft.hour}"]`)
-        ?.scrollIntoView({ block: "center" });
-      startMinuteListRef.current
-        ?.querySelector(`[data-value="${startDraft.minute}"]`)
-        ?.scrollIntoView({ block: "center" });
-    });
-  }, [startSheetOpen, startDraft]);
-
-  useEffect(() => {
-    if (!endSheetOpen) return;
-    requestAnimationFrame(() => {
-      endHourListRef.current
-        ?.querySelector(`[data-value="${endDraft.hour}"]`)
-        ?.scrollIntoView({ block: "center" });
-      endMinuteListRef.current
-        ?.querySelector(`[data-value="${endDraft.minute}"]`)
-        ?.scrollIntoView({ block: "center" });
-    });
-  }, [endSheetOpen, endDraft]);
 
   useEffect(() => {
     if (loading) return;
@@ -339,20 +296,24 @@ export default function RecordRecurringNewPage() {
     () => countPlannedOccurrences(new Set(weekdays), effectiveStartDate, untilDate),
     [weekdays, effectiveStartDate, untilDate]
   );
+  // countPlannedOccurrences는 MAX_OCCURRENCES(=서버 가드 1000)를 넘는 순간 셈을 멈추고
+  // MAX_OCCURRENCES + 1을 돌려준다 — 실제 개수가 아니라 "가드 초과"를 뜻하는 신호값이다.
+  // 이 값을 그대로 "예정 N개" 안내에 쓰면 거짓 수치가 되므로 별도로 분기해야 한다.
+  const exceedsMaxOccurrences = plannedCount > MAX_OCCURRENCES;
 
-  // 시작일을 바꾸면 종료일의 하한(시작일)과 상한(시작일+3개월)이 즉시 바뀐다 — 이미 골라둔
-  // 종료일이 새 구간을 벗어나면 조용히 다른 날짜로 밀어 넣지 않고 선택을 비워 재선택을 유도한다.
+  // 개선③: 종료일 상한(시작일+3개월)이 사라지면서 "구간을 벗어나면 조용히 비운다" 리셋도
+  // 함께 제거한다. 시작일을 나중 날짜로 바꿔 기존에 골라둔 종료일이 시작일보다 앞서게 되는
+  // 경우는 plannedCount(=0)로 걸러져 등록 버튼이 비활성화되고 제출 시에도 차단되므로
+  // (§handleSubmit, disabled={plannedCount === 0}) 안전하다 — 사용자가 종료일을 다시 골라야
+  // 함을 캡션으로 안내한다.
   useEffect(() => {
     if (!untilDate) return;
     const parsed = parseDateKey(untilDate);
     if (!parsed) return;
-    if (
-      parsed.getTime() < effectiveStartDate.getTime() ||
-      parsed.getTime() > endDateCapDate.getTime()
-    ) {
+    if (parsed.getTime() < effectiveStartDate.getTime()) {
       setUntilDate("");
     }
-  }, [effectiveStartDate, endDateCapDate, untilDate]);
+  }, [effectiveStartDate, untilDate]);
 
   const addOrderTags = (
     rawValue: string,
@@ -601,11 +562,18 @@ export default function RecordRecurringNewPage() {
       return;
     }
     if (endTime <= startTime) {
-      toast("종료 시간이 시작 시간보다 빠를 수 없어요.");
+      toast("종료 시간이 시작 시간보다 늦어야 해요.");
       return;
     }
     if (plannedCount === 0) {
       toast("선택한 요일과 종료일로는 예정을 만들 수 없어요.");
+      return;
+    }
+    if (exceedsMaxOccurrences) {
+      // 버튼은 이미 disabled로 막혀 있지만, 서버 가드(1000)와 정합을 맞춘 이중 방어.
+      toast(
+        "기간이 너무 길어서 예정을 만들 수 없어요. 종료일을 조금 더 가깝게 선택해 다시 시도해 주세요."
+      );
       return;
     }
 
@@ -622,20 +590,6 @@ export default function RecordRecurringNewPage() {
       const resolvedLocation = showLocation
         ? buildLocationValue(locationName, locationBase, locationDetail)
         : "";
-
-      // §11.1 안전망: UI가 (시작일 기준) 3개월 상한 이후 날짜 선택을 막지만(§9.5), 페이지를
-      // 열어둔 채 자정을 넘기는 등의 경합에 대비해 제출 시점 기준으로도 다시 계산해 둔다.
-      const freshToday = getSeoulTodayDate();
-      const parsedStartDate = parseDateKey(startDate);
-      const freshEffectiveStart =
-        parsedStartDate && parsedStartDate.getTime() > freshToday.getTime()
-          ? parsedStartDate
-          : freshToday;
-      const freshCapDate = addMonths(freshEffectiveStart, 3);
-      const selectedUntilDate = parseDateKey(untilDate);
-      const wasCapped = !!(
-        selectedUntilDate && selectedUntilDate.getTime() > freshCapDate.getTime()
-      );
 
       let response: Response;
       try {
@@ -665,7 +619,13 @@ export default function RecordRecurringNewPage() {
       }
 
       if (!response.ok) {
-        toast("반복 수업 추가에 실패했어요.");
+        // 개선③: RECURRING_TOO_MANY_OCCURRENCES 등 서버가 구체적인 안내 메시지를 내려주면
+        // 그 문구를 그대로 보여준다(클라 사전 체크가 1000건 기준으로 이 분기를 대부분
+        // 막지만, 경합 등으로 서버 가드에 걸리는 경우를 대비한 방어).
+        const errorPayload = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+        toast(errorPayload?.message || "반복 수업 추가에 실패했어요.");
         return;
       }
 
@@ -689,7 +649,7 @@ export default function RecordRecurringNewPage() {
       invalidateProfileRecordsCache(user.id);
       markRecordDatesChanged(created);
 
-      if (skipped.length === 0 && !wasCapped) {
+      if (skipped.length === 0) {
         toast(`예정 ${created.length}개를 만들었어요.`);
         router.replace("/calendar");
         return;
@@ -698,7 +658,6 @@ export default function RecordRecurringNewPage() {
       setResultSummary({
         createdCount: created.length,
         skippedCount: skipped.length,
-        wasCapped,
       });
       setResultSheetOpen(true);
     } finally {
@@ -810,9 +769,15 @@ export default function RecordRecurringNewPage() {
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-[#17171c]/50">
-              시작일부터 최대 3개월까지 추가할 수 있어요.
-            </p>
+            {untilDate ? (
+              <p className="text-xs text-[#17171c]/50">
+                {exceedsMaxOccurrences
+                  ? "기간이 너무 길어서 예정을 만들 수 없어요. 종료일을 조금 더 가깝게 선택해 다시 시도해 주세요."
+                  : plannedCount > 0
+                    ? `예정 ${plannedCount}개를 만들 거예요.`
+                    : "선택한 요일과 종료일로는 예정을 만들 수 없어요."}
+              </p>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
@@ -823,18 +788,10 @@ export default function RecordRecurringNewPage() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    if (startTime) {
-                      const [hour, minute] = startTime.split(":");
-                      setStartDraft({ hour, minute });
-                    } else {
-                      setStartDraft(getClampedNowTime());
-                    }
-                    setStartSheetOpen(true);
-                  }}
+                  onClick={() => setStartSheetOpen(true)}
                 >
                   {startTime
-                    ? formatTimeDisplay(...(startTime.split(":") as [string, string]))
+                    ? formatKoreanTimeLabel(startTime)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -846,18 +803,10 @@ export default function RecordRecurringNewPage() {
                   type="button"
                   variant="outline"
                   className="mt-2 h-12 w-full justify-start text-left text-sm font-normal"
-                  onClick={() => {
-                    if (endTime) {
-                      const [hour, minute] = endTime.split(":");
-                      setEndDraft({ hour, minute });
-                    } else {
-                      setEndDraft(getClampedNowTime());
-                    }
-                    setEndSheetOpen(true);
-                  }}
+                  onClick={() => setEndSheetOpen(true)}
                 >
                   {endTime
-                    ? formatTimeDisplay(...(endTime.split(":") as [string, string]))
+                    ? formatKoreanTimeLabel(endTime)
                     : "시간 선택"}
                 </Button>
               </div>
@@ -1204,152 +1153,34 @@ export default function RecordRecurringNewPage() {
           <Button
             type="button"
             className="h-12 w-full"
-            disabled={saving || plannedCount === 0}
+            disabled={saving || plannedCount === 0 || exceedsMaxOccurrences}
             onClick={handleSubmit}
           >
             반복 수업 추가하기
           </Button>
         </div>
 
-        <BottomSheet open={startSheetOpen} onOpenChange={setStartSheetOpen}>
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(startDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={startHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`start-hour-${hour}`}
-                  type="button"
-                  variant={startDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={startMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`start-min-${minute}`}
-                  type="button"
-                  variant={startDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setStartDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setStartTime(`${startDraft.hour}:${startDraft.minute}`);
-                setStartSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+        <TimePickerSheet
+          open={startSheetOpen}
+          onOpenChange={setStartSheetOpen}
+          value={
+            startTime ||
+            `${getClampedNowTime().hour}:${getClampedNowTime().minute}`
+          }
+          onConfirm={(next) => setStartTime(next)}
+          title="시작 시간"
+        />
 
-        <BottomSheet open={endSheetOpen} onOpenChange={setEndSheetOpen}>
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            <div className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2">
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) < 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오전
-              </div>
-              <div
-                className={`flex h-10 items-center justify-center rounded-md text-sm ${
-                  Number(endDraft.hour) >= 12
-                    ? "bg-[#17171c]/5 text-[#17171c]"
-                    : "text-[#17171c]/40"
-                }`}
-              >
-                오후
-              </div>
-            </div>
-            <div
-              ref={endHourListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {hours.map((hour) => (
-                <Button
-                  key={`end-hour-${hour}`}
-                  type="button"
-                  variant={endDraft.hour === hour ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={hour}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, hour }))}
-                >
-                  {formatHour12(hour)}시
-                </Button>
-              ))}
-            </div>
-            <div
-              ref={endMinuteListRef}
-              className="no-scrollbar max-h-48 space-y-1 overflow-y-auto rounded-md border border-[#17171c]/5 p-2"
-            >
-              {minutes.map((minute) => (
-                <Button
-                  key={`end-min-${minute}`}
-                  type="button"
-                  variant={endDraft.minute === minute ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  data-value={minute}
-                  onClick={() => setEndDraft((prev) => ({ ...prev, minute }))}
-                >
-                  {minute}분
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                setEndTime(`${endDraft.hour}:${endDraft.minute}`);
-                setEndSheetOpen(false);
-              }}
-            >
-              적용하기
-            </Button>
-          </div>
-        </BottomSheet>
+        <TimePickerSheet
+          open={endSheetOpen}
+          onOpenChange={setEndSheetOpen}
+          value={
+            endTime ||
+            `${getClampedNowTime().hour}:${getClampedNowTime().minute}`
+          }
+          onConfirm={(next) => setEndTime(next)}
+          title="종료 시간"
+        />
 
         <BottomSheet open={startDateSheetOpen} onOpenChange={setStartDateSheetOpen}>
           <div className="flex justify-center">
@@ -1385,7 +1216,7 @@ export default function RecordRecurringNewPage() {
               selected={untilDraft}
               onSelect={setUntilDraft}
               defaultMonth={untilDraft ?? effectiveStartDate}
-              disabled={[{ before: effectiveStartDate }, { after: endDateCapDate }]}
+              disabled={[{ before: effectiveStartDate }]}
             />
           </div>
           <div className="mt-4">
@@ -1697,12 +1528,6 @@ export default function RecordRecurringNewPage() {
                 <div className="flex items-center gap-2">
                   <span className="size-1.5 shrink-0 rounded-full bg-[#17171c]/30" />
                   <span>겹치는 날짜 {resultSummary.skippedCount}일은 건너뛰었어요</span>
-                </div>
-              ) : null}
-              {resultSummary?.wasCapped ? (
-                <div className="flex items-center gap-2">
-                  <span className="size-1.5 shrink-0 rounded-full bg-[#17171c]/30" />
-                  <span>3개월까지만 추가할 수 있어요</span>
                 </div>
               ) : null}
             </div>

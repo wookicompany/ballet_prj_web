@@ -79,8 +79,11 @@ export const getSeoulTimeParts = (date: Date = new Date()) => {
     minute: "2-digit",
     hour12: false,
   });
+  // Intl "en-CA" + hour12:false는 자정을 "00"이 아니라 "24"로 반환한다(h24 cycle).
+  // 유효한 24시간 값(0~23)으로 정규화해 소비처가 "24:30" 같은 무효 시각을 만들지 않게 한다.
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
   return {
-    hour: Number(parts.find((part) => part.type === "hour")?.value ?? "0"),
+    hour: hour === 24 ? 0 : hour,
     minute: Number(parts.find((part) => part.type === "minute")?.value ?? "0"),
   };
 };
@@ -118,6 +121,31 @@ export const formatIsoToSeoulDate = (
   return new Intl.DateTimeFormat(locale, {
     timeZone: KST_TIME_ZONE,
   }).format(date);
+};
+
+/**
+ * 24시간 hour(0~23)를 "오전"/"오후"로 표기한다. 자정(0시)은 "오전", 정오(12시)는 "오후".
+ */
+export const getMeridiemLabel = (hour24: number): "오전" | "오후" =>
+  hour24 < 12 ? "오전" : "오후";
+
+/**
+ * 24시간 hour(0~23)를 12시간 표기용 시(1~12)로 변환한다. 0시·12시는 모두 12로 정규화된다.
+ */
+export const getHour12 = (hour24: number): number => {
+  const normalized = hour24 % 12;
+  return normalized === 0 ? 12 : normalized;
+};
+
+/**
+ * "HH:MM"(24시간) 문자열을 "오후 6시 30분" 형식(12시간, zero-pad 없음)으로 표기한다.
+ * 입력·상세 화면 등 12시간 표기가 필요한 곳에서 공통으로 사용한다.
+ */
+export const formatKoreanTimeLabel = (time: string): string => {
+  const [hourStr, minuteStr] = time.split(":");
+  const hourValue = Number(hourStr);
+  if (!minuteStr || Number.isNaN(hourValue)) return time;
+  return `${getMeridiemLabel(hourValue)} ${getHour12(hourValue)}시 ${minuteStr}분`;
 };
 
 export const formatCareerDuration = (

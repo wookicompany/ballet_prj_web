@@ -28,7 +28,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
-import { formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
+import { formatKoreanTimeLabel, formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
 import { supabase } from "@/lib/supabaseClient";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { invalidateProfileCache } from "@/lib/profileCache";
@@ -72,16 +72,7 @@ type MediaItem = {
   deleted_at: string | null;
 };
 
-const formatMeridiem = (hour: number) => (hour < 12 ? "오전" : "오후");
-const formatHour12 = (hour: number) => {
-  const normalized = hour % 12 === 0 ? 12 : hour % 12;
-  return String(normalized).padStart(2, "0");
-};
-const formatTimeLabel = (time: string) => {
-  const [hour, minute] = time.split(":");
-  const hourValue = Number(hour);
-  return `${formatMeridiem(hourValue)} ${formatHour12(hourValue)}시 ${minute}분`;
-};
+const formatTimeLabel = (time: string) => formatKoreanTimeLabel(time);
 
 const calculateDuration = (start: string, end: string) => {
   const [sh, sm] = start.split(":").map((value) => Number(value));

@@ -17,9 +17,26 @@ export function isInReactNativeWebView(): boolean {
   return typeof window.ReactNativeWebView?.postMessage === "function";
 }
 
-/** WebView일 때만 앱에 햅틱 요청 전송. 브라우저에서는 no-op */
+/**
+ * 진동(햅틱) 전역 온오프 게이트. 순수 메모리 변수만 사용 — 스토리지 접근 금지.
+ * 앱 로드 시 AuthProvider가 서버(profiles.haptic_enabled) 값을 주입한다.
+ */
+let hapticEnabled = true;
+
+/** 진동 전역 게이트 값 설정. false면 sendHapticToApp()이 즉시 no-op */
+export function setHapticEnabled(v: boolean): void {
+  hapticEnabled = v;
+}
+
+/** 진동 전역 게이트 현재 값 조회 */
+export function getHapticEnabled(): boolean {
+  return hapticEnabled;
+}
+
+/** WebView일 때만 앱에 햅틱 요청 전송. 브라우저에서는 no-op. 게이트 OFF면 no-op */
 export function sendHapticToApp(): void {
   if (typeof window === "undefined") return;
+  if (!hapticEnabled) return;
   window.ReactNativeWebView?.postMessage(
     JSON.stringify({ type: "haptic" })
   );

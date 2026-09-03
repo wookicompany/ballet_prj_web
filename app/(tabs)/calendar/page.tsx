@@ -749,14 +749,9 @@ export default function CalendarPage() {
                   <p className="flex items-center gap-1 text-sm text-[#17171c]">
                     <Clock className="h-3 w-3 shrink-0" />
                     {record.start_time.slice(0, 5)} ~ {record.end_time.slice(0, 5)}
-                    {isPlanned && (
-                      <Badge
-                        variant="outline"
-                        className="ml-1 border-[#17171c]/30 bg-background px-1.5 py-0 text-[10px] text-[#17171c]/70"
-                      >
-                        예정
-                      </Badge>
-                    )}
+                    {/* 예정은 왼쪽 점선 원(무드 자리)이 시각적으로 나타내므로 배지 텍스트는
+                        빼되, 점선 원이 aria-hidden이라 스크린리더용 상태 라벨만 남긴다. */}
+                    {isPlanned && <span className="sr-only">예정</span>}
                   </p>
                   {record.content && (
                     <p className="flex items-start gap-1 truncate text-xs text-[#17171c]">
