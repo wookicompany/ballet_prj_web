@@ -17,6 +17,9 @@ export const GET = async (request: Request) => {
   const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Number(searchParams.get("offset")) || 0;
   const q = searchParams.get("q")?.trim() || "";
+  const statusParam = searchParams.get("status");
+  const status =
+    statusParam === "done" || statusParam === "planned" ? statusParam : null;
 
   let matchingUserIds: string[] = [];
   if (q) {
@@ -37,12 +40,14 @@ export const GET = async (request: Request) => {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (q) query = query.or(buildOrStr());
+  if (status) query = query.eq("status", status);
 
   let countQuery = result.supabaseAdmin
     .from("records")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
   if (q) countQuery = countQuery.or(buildOrStr());
+  if (status) countQuery = countQuery.eq("status", status);
 
   const [{ data: rows, error }, { count }] = await Promise.all([
     query.range(offset, offset + limit - 1),

@@ -62,6 +62,9 @@ export default function AdminRecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "done" | "planned">(
+    "all"
+  );
 
   const prevSearchQuery = useRef("");
 
@@ -102,7 +105,12 @@ export default function AdminRecordsPage() {
     });
   }, []);
 
-  const fetchRecords = useCallback(async (pageOffset: number, q = "") => {
+  const fetchRecords = useCallback(
+    async (
+      pageOffset: number,
+      q = "",
+      status: "all" | "done" | "planned" = "all"
+    ) => {
     const token = await getAdminToken();
     if (!token) {
       setError("로그인이 필요합니다.");
@@ -113,8 +121,9 @@ export default function AdminRecordsPage() {
     setError(null);
     try {
       const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+      const statusParam = status !== "all" ? `&status=${status}` : "";
       const res = await fetch(
-        `/api/admin/records?limit=${LIMIT}&offset=${pageOffset}${qParam}`,
+        `/api/admin/records?limit=${LIMIT}&offset=${pageOffset}${qParam}${statusParam}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -134,16 +143,18 @@ export default function AdminRecordsPage() {
   }, []);
 
   useEffect(() => {
-    // 검색어 변경만 디바운스, 마운트 시엔 즉시 fetch
+    // 검색어 변경만 디바운스, 상태 필터 변경·마운트 시엔 즉시 fetch (offset 0으로 리셋)
     const queryChanged = prevSearchQuery.current !== searchQuery;
     prevSearchQuery.current = searchQuery;
     if (!queryChanged) {
-      fetchRecords(0, searchQuery);
+      fetchRecords(0, searchQuery, statusFilter);
       return;
     }
-    const timer = setTimeout(() => { fetchRecords(0, searchQuery); }, 300);
+    const timer = setTimeout(() => {
+      fetchRecords(0, searchQuery, statusFilter);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchRecords]);
+  }, [searchQuery, statusFilter, fetchRecords]);
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
   const currentPage = Math.floor(offset / LIMIT) + 1;
@@ -156,7 +167,7 @@ export default function AdminRecordsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchRecords(offset, searchQuery)}
+            onClick={() => fetchRecords(offset, searchQuery, statusFilter)}
             disabled={loading}
           >
             <RefreshCw className="mr-1.5 size-4" />
@@ -171,6 +182,25 @@ export default function AdminRecordsPage() {
             <p className="text-sm text-muted-foreground">
               현재 페이지 표시: {records.length.toLocaleString("ko-KR")}건
             </p>
+          </div>
+          <div className="flex gap-1.5">
+            {(
+              [
+                { value: "all", label: "전체" },
+                { value: "done", label: "완료" },
+                { value: "planned", label: "예정" },
+              ] as const
+            ).map((f) => (
+              <Button
+                key={f.value}
+                type="button"
+                variant={statusFilter === f.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
           </div>
           <div className="relative max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -228,7 +258,7 @@ export default function AdminRecordsPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => fetchRecords(offset, searchQuery)}
+                onClick={() => fetchRecords(offset, searchQuery, statusFilter)}
               >
                 다시 시도
               </Button>
@@ -349,7 +379,7 @@ export default function AdminRecordsPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) fetchRecords(offset - LIMIT, searchQuery);
+                          if (currentPage > 1) fetchRecords(offset - LIMIT, searchQuery, statusFilter);
                         }}
                         className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                       />
@@ -362,7 +392,7 @@ export default function AdminRecordsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              fetchRecords((p - 1) * LIMIT, searchQuery);
+                              fetchRecords((p - 1) * LIMIT, searchQuery, statusFilter);
                             }}
                             isActive={currentPage === p}
                           >
@@ -375,7 +405,7 @@ export default function AdminRecordsPage() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage < totalPages) fetchRecords(offset + LIMIT, searchQuery);
+                          if (currentPage < totalPages) fetchRecords(offset + LIMIT, searchQuery, statusFilter);
                         }}
                         className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />
