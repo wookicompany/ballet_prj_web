@@ -183,7 +183,16 @@ export default function AdminRecordsPage() {
               현재 페이지 표시: {records.length.toLocaleString("ko-KR")}건
             </p>
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative max-w-sm flex-1 min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="사용자/내용 검색"
+                className="pl-9"
+              />
+            </div>
             {(
               [
                 { value: "all", label: "전체" },
@@ -201,15 +210,6 @@ export default function AdminRecordsPage() {
                 {f.label}
               </Button>
             ))}
-          </div>
-          <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="사용자/내용 검색"
-              className="pl-9"
-            />
           </div>
         </CardHeader>
         <CardContent>
