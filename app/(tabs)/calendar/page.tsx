@@ -99,6 +99,11 @@ export default function CalendarPage() {
   const [plannedCounts, setPlannedCounts] = useState<Record<string, number>>(
     () => cachedMonthData?.plannedCounts ?? {}
   );
+  // 빈 날 탭 → 즉시 이동 가드용: doneCounts/plannedCounts가 실제로 "몇 년-몇 월" 기준으로
+  // 로드 완료됐는지 추적. 캐시로 즉시 복원되는 초기 진입 달도 곧바로 ready로 잡는다.
+  const [countsMonthKey, setCountsMonthKey] = useState<string | null>(
+    () => (cachedMonthData ? initialMonthKey : null)
+  );
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
     () => cachedMonthData?.moodAverages ?? {}
   );
@@ -122,10 +127,16 @@ export default function CalendarPage() {
   const swipeHandledRef = useRef(false);
   const swipeLockedRef = useRef(false);
   const swipeLockTimeoutRef = useRef<number | null>(null);
+  // 빈 날 탭 → /record/new 이동 더블탭 방지 (동의 확인 대기 중 재탭 차단)
+  const navigatingRef = useRef(false);
 
   const { start, end } = useMemo(
     () => getMonthBounds(currentDate),
     [currentDate]
+  );
+  const currentMonthKey = useMemo(
+    () => `${start.getFullYear()}-${start.getMonth() + 1}`,
+    [start]
   );
 
   // 내비게이션 상태 캐시 동기화
@@ -154,6 +165,7 @@ export default function CalendarPage() {
       setPlannedCounts(cachedMonthData.plannedCounts);
       setMoodAverages(cachedMonthData.moodAverages);
       setMonthSummary(cachedMonthData.monthSummary ?? null);
+      setCountsMonthKey(monthKey);
       return;
     }
 
@@ -190,6 +202,7 @@ export default function CalendarPage() {
       setPlannedCounts({});
       setMoodAverages({});
       setMonthSummary(null);
+      setCountsMonthKey(monthKey);
       return;
     }
 
@@ -235,6 +248,7 @@ export default function CalendarPage() {
     setPlannedCounts(plannedCountMap);
     setMoodAverages(averages);
     setMonthSummary(summary);
+    setCountsMonthKey(monthKey);
   }, [user, start, end]);
 
   const fetchSettings = useCallback(async () => {
@@ -620,6 +634,44 @@ export default function CalendarPage() {
 
             const isSelected = !!dateStr && dateStr === selectedDate;
 
+            // 상단(날짜)·하단(무드) 버튼 공용 탭 핸들러.
+            // 기록 없는 날(완료·예정 둘 다 0)은 그날짜 단건 기록 생성 화면으로 바로 이동하고,
+            // 기록 있는 날은 기존처럼 선택 토글(하단 리스트 표시)만 한다.
+            const handleDayTap = async () => {
+              if (!cell.date) return;
+              sendHapticToApp();
+
+              if (!user) {
+                // 로그아웃 상태에선 doneCounts/plannedCounts가 항상 {}라 모든 날이
+                // "빈 날"로 보인다 — 여기서 먼저 걸러 로그인 시트로 보낸다.
+                openLoginSheet();
+                return;
+              }
+
+              // 현재 보고 있는 달의 카운트가 아직 로드되지 않았으면(월 전환 직후 등)
+              // 빈 날 판정을 신뢰할 수 없으므로 선택 토글로 폴백한다(오탭 이동 방지).
+              const countsReady = countsMonthKey === currentMonthKey;
+              const isEmptyDay = doneCount === 0 && plannedCount === 0;
+
+              if (countsReady && isEmptyDay) {
+                if (navigatingRef.current) return;
+                navigatingRef.current = true;
+                try {
+                  const consentOk = await ensureConsent();
+                  if (!consentOk) {
+                    navigatingRef.current = false;
+                    return;
+                  }
+                  router.push(`/record/new?date=${dateStr}`);
+                } catch {
+                  navigatingRef.current = false;
+                }
+                return;
+              }
+
+              setSelectedDate((prev) => (dateStr === prev ? "" : dateStr));
+            };
+
             return (
               <div
                 key={`${index}-${dateStr}`}
@@ -633,10 +685,7 @@ export default function CalendarPage() {
                   disabled={isEmpty}
                   className="flex w-full items-start justify-center pt-1"
                   onClick={() => {
-                    if (!cell.date) return;
-                    sendHapticToApp();
-                    const next = dateStr === selectedDate ? "" : dateStr;
-                    setSelectedDate(next);
+                    void handleDayTap();
                   }}
                 >
                   <span
@@ -656,10 +705,7 @@ export default function CalendarPage() {
                   disabled={isEmpty}
                   className="flex h-[52px] w-full shrink-0 items-center justify-center overflow-visible pt-1"
                   onClick={() => {
-                    if (!cell.date) return;
-                    sendHapticToApp();
-                    const next = dateStr === selectedDate ? "" : dateStr;
-                    setSelectedDate(next);
+                    void handleDayTap();
                   }}
                 >
                   {moodValue ? (
