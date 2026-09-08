@@ -101,9 +101,9 @@ export default function CalendarPage() {
   );
   // 빈 날 탭 → 즉시 이동 가드용: doneCounts/plannedCounts가 실제로 "몇 년-몇 월" 기준으로
   // 로드 완료됐는지 추적. 캐시로 즉시 복원되는 초기 진입 달도 곧바로 ready로 잡는다.
-  const [countsMonthKey, setCountsMonthKey] = useState<string | null>(
-    () => (cachedMonthData ? initialMonthKey : null)
-  );
+  // 항상 null로 시작 — 카운트가 실제로 로드(캐시 복원 포함)될 때만 ready로 올린다.
+  // 캐시 기반으로 초기값을 ready로 두면 스테일 캐시에서 빈 날로 오판할 수 있어 방지.
+  const [countsMonthKey, setCountsMonthKey] = useState<string | null>(null);
   const [moodAverages, setMoodAverages] = useState<Record<string, number>>(
     () => cachedMonthData?.moodAverages ?? {}
   );
@@ -157,6 +157,11 @@ export default function CalendarPage() {
     }
 
     const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
+
+    // force 재조회(기록 변경 복귀·pageshow·새로고침)가 시작되면 이 달을 "미로드(null)"로 낮춘다.
+    // 재조회가 도는 동안 스테일 카운트로 빈 날을 오판해 생성 화면으로 잘못 이동하는 것을 막고
+    // 선택 폴백(직접 조회로 자가교정)으로 보낸다. 재조회 성공 시 아래에서 다시 monthKey로 올린다.
+    if (force) setCountsMonthKey(null);
 
     // 캐시 가드: force=true(record-changed 시그널)가 아니고 캐시 있으면 state 복원 후 생략
     const cachedMonthData = getCalendarMonthData(monthKey);
