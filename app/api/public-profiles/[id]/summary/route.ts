@@ -49,10 +49,13 @@ export const GET = async (_request: Request, { params }: Params) => {
           .eq("user_id", id)
           .eq("status", "done")
           .is("deleted_at", null),
+        // 공개 프로필의 리뷰 수는 공개 리뷰만 센다. service role이라 RLS를 우회하므로
+        // 이 필터가 유일한 방어선이다 — 빠뜨리면 타인이 남의 비공개 리뷰 개수를 알 수 있다.
         supabaseAdmin
           .from("performance_reviews")
           .select("id", { count: "exact", head: true })
           .eq("user_id", id)
+          .eq("is_public", true)
           .is("deleted_at", null),
       ]);
 
