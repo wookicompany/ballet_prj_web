@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronRight, Plus, Ticket } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Ticket } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -366,15 +366,30 @@ export default function TicketBookPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-0 pb-[140px]">
-        <PageHeader
-          title="티켓북"
-          right={
-            // 뒤로 버튼과 같은 size-10(40px)이라 좌우 폭이 같아지고, 그 결과
-            // justify-between 안에서 타이틀이 정확히 가운데에 온다.
+        {/* right를 비우면 PageHeader가 뒤로 버튼과 같은 폭의 스페이서를 넣어
+            타이틀이 정확히 가운데에 온다. 연월 이동은 아래 이동 바가 담당한다. */}
+        <PageHeader title="티켓북" />
+
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+        >
+          {/* 월 이동 바 — 양쪽 화살표로 한 달씩, 가운데를 탭하면 연도·월 선택 시트가
+              열려 먼 날짜로도 한 번에 갈 수 있다. 스와이프도 그대로 동작한다. */}
+          <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1">
             <Button
               variant="ghost"
               size="icon-lg"
               className="text-[#17171c]/70"
+              aria-label="이전 달"
+              onClick={() => changeMonthBy(-1)}
+            >
+              <ChevronLeft className="size-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-10 gap-1 px-3 text-base font-bold text-[#17171c]"
               aria-label="연월 선택"
               onClick={() => {
                 sendHapticToApp();
@@ -385,19 +400,19 @@ export default function TicketBookPage() {
                 setMonthSheetOpen(true);
               }}
             >
-              <CalendarDays className="size-6" />
+              {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+              <ChevronDown className="size-4 text-[#17171c]/50" />
             </Button>
-          }
-        />
-
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchCancel}
-        >
-          <p className="px-4 pt-4 text-sm font-bold text-[#17171c]">
-            {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-          </p>
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              aria-label="다음 달"
+              onClick={() => changeMonthBy(1)}
+            >
+              <ChevronRight className="size-6" />
+            </Button>
+          </div>
           <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-2 text-center text-sm text-[#17171c]/60">
             {weekLabels.map((label, index) => (
               <span
