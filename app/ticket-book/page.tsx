@@ -90,6 +90,8 @@ export default function TicketBookPage() {
     month: currentDate.getMonth() + 1,
   });
 
+  const yearButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const monthButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const navigatingRef = useRef(false);
   const swipeStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeHandledRef = useRef(false);
@@ -228,6 +230,17 @@ export default function TicketBookPage() {
       window.removeEventListener("popstate", handleRefresh);
     };
   }, [fetchTickets]);
+
+  useEffect(() => {
+    if (!monthSheetOpen) return;
+    const handleScroll = () => {
+      yearButtonRefs.current[monthDraft.year]?.scrollIntoView({ block: "center" });
+      monthButtonRefs.current[monthDraft.month]?.scrollIntoView({ block: "center" });
+    };
+    // 시트가 렌더된 뒤에 스크롤해야 ref가 채워져 있다.
+    const frame = window.setTimeout(handleScroll, 0);
+    return () => window.clearTimeout(frame);
+  }, [monthSheetOpen, monthDraft.year, monthDraft.month]);
 
   const changeMonthBy = useCallback((delta: number) => {
     sendHapticToApp();
@@ -547,6 +560,9 @@ export default function TicketBookPage() {
             {yearOptions.map((year) => (
               <Button
                 key={`ticket-year-${year}`}
+                ref={(node) => {
+                  yearButtonRefs.current[year] = node;
+                }}
                 type="button"
                 variant={monthDraft.year === year ? "default" : "ghost"}
                 className="w-full justify-start"
@@ -560,6 +576,9 @@ export default function TicketBookPage() {
             {monthOptions.map((month) => (
               <Button
                 key={`ticket-month-${month}`}
+                ref={(node) => {
+                  monthButtonRefs.current[month] = node;
+                }}
                 type="button"
                 variant={monthDraft.month === month ? "default" : "ghost"}
                 className="w-full justify-start"
