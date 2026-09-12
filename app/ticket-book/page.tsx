@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import { formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
+import { formatSeoulDateKey } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -28,14 +28,6 @@ import {
 import { toast } from "sonner";
 
 const SWIPE_THRESHOLD_PX = 48;
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
-function formatSelectedLabel(dateKey: string) {
-  const date = parseDateKey(dateKey);
-  if (!date) return dateKey;
-  return `${date.getMonth() + 1}월 ${date.getDate()}일(${WEEKDAYS[date.getDay()]})`;
-}
-
 function getMonthBounds(date: Date) {
   return {
     start: new Date(date.getFullYear(), date.getMonth(), 1),
@@ -341,6 +333,8 @@ export default function TicketBookPage() {
     // 이 달 데이터를 실제로 받아온 상태에서 빈 날일 때만 등록 화면으로 보낸다.
     // 아직 로딩 중이면 선택 토글로 폴백해 오탭 이동을 막는다.
     if (countsReady && isEmptyDay) {
+      // 다른 날짜를 탭한 것이므로 이전 선택을 먼저 푼다(캘린더와 동일).
+      setSelectedDate("");
       goToNew(dateStr);
       return;
     }
@@ -426,7 +420,7 @@ export default function TicketBookPage() {
           <div className="mt-1 grid grid-cols-7 gap-0 px-1">
             {cells.map((cell, index) => {
               if (!cell.date) {
-                return <div key={`ticket-empty-${index}`} className="h-[104px]" />;
+                return <div key={`ticket-empty-${index}`} className="h-[116px]" />;
               }
               const dateStr = formatSeoulDateKey(cell.date);
               const dayTickets = ticketsByDate[dateStr] ?? [];
@@ -439,7 +433,9 @@ export default function TicketBookPage() {
                   key={`ticket-cell-${dateStr}`}
                   type="button"
                   onClick={() => handleDayTap(cell.date as Date)}
-                  className="flex h-[104px] flex-col items-center justify-start gap-1.5 rounded-lg pt-1.5 active:bg-[#17171c]/5"
+                  className={`flex h-[116px] flex-col items-center justify-start gap-1.5 pt-1.5 active:bg-[#17171c]/5 ${
+                    isSelected ? "rounded-md bg-[#17171c]/5" : "rounded-lg"
+                  }`}
                 >
                   {/* 오늘 표기는 캘린더와 완전히 동일하게 — 검정 원 배경 + 흰 글씨 */}
                   <span
@@ -455,21 +451,21 @@ export default function TicketBookPage() {
                   </span>
                   {/* 배지 앵커는 셀 전체 폭이 아니라 포스터 실제 크기에 맞춘다 —
                       셀 폭으로 두면 좁은 포스터 오른쪽 허공에 배지가 뜬다. */}
-                  <div className="relative h-12 w-[34px]">
+                  <div className="relative h-[60px] w-[42px]">
                     {first ? (
                       <>
                         {first.thumbnailUrl ? (
                           <AnimatedImage
                             src={first.thumbnailUrl}
                             alt=""
-                            width={34}
-                            height={48}
-                            sizes="34px"
+                            width={42}
+                            height={60}
+                            sizes="42px"
                             loading="lazy"
-                            className="h-12 w-[34px] rounded-md object-cover"
+                            className="h-[60px] w-[42px] rounded-md object-cover"
                           />
                         ) : (
-                          <div className="h-12 w-[34px] rounded-md bg-[#17171c]/5" />
+                          <div className="h-[60px] w-[42px] rounded-md bg-[#17171c]/5" />
                         )}
                         {dayTickets.length > 1 && (
                           <Badge className="absolute -top-1 right-0.5 min-w-6 justify-center rounded-full bg-primary px-1.5 text-xs text-white">
@@ -493,7 +489,6 @@ export default function TicketBookPage() {
 
         {selectedTickets.length > 0 && (
           <section className="mt-2 px-4">
-            <p className="mb-2 text-sm font-bold">{formatSelectedLabel(selectedDate)}</p>
             <ul className="space-y-2">
               {selectedTickets.map((ticket) => (
                 <li key={ticket.id}>

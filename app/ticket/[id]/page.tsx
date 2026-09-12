@@ -356,15 +356,11 @@ export default function TicketDetailPage() {
               직접 입력한 공연은 개인 기록으로만 남길 수 있어요
             </p>
           ) : (
-            <Button
-              className="h-12 w-full"
-              onClick={() => {
-                sendHapticToApp();
-                router.push(`/ticket/${ticket.id}/review`);
-              }}
-            >
-              리뷰 쓰기
-            </Button>
+            // 리뷰 작성 진입은 수정 화면이 담당한다 — 상세는 보여주기만 하고,
+            // 모든 입력은 등록·수정 두 화면에서만 일어나게 해 규칙을 단순하게 유지한다.
+            <p className="px-1 text-center text-xs text-[#17171c]/50">
+              수정하기에서 이 공연의 리뷰를 남길 수 있어요
+            </p>
           )}
         </div>
       </main>

@@ -2,9 +2,12 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Star, X } from "lucide-react";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import { CalendarDays, Plus, Star, X } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import DatePickerSheet from "@/components/sheets/DatePickerSheet";
 import PageHeader from "@/components/layout/PageHeader";
 import AnimatedImage from "@/components/ui/animated-image";
 import { Button } from "@/components/ui/button";
@@ -19,7 +22,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { compressImage } from "@/lib/compressImage";
-import { formatSeoulDateKey, isValidDateKey } from "@/lib/kstDateTime";
+import { formatSeoulDateKey, getSeoulTodayDate, isValidDateKey, parseDateKey } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { markTicketChanged } from "@/lib/ticketBookCache";
@@ -68,6 +71,7 @@ function TicketDetailForm() {
   // 공연 리뷰 등록(선택). content가 비어 있으면 리뷰를 아예 만들지 않는다.
   const [reviewContent, setReviewContent] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -441,16 +445,23 @@ function TicketDetailForm() {
 
           {/* 관람 날짜 */}
           <div>
-            <Label htmlFor="ticket-date" className="text-sm text-[#17171c]/60">
+            <Label className="text-sm text-[#17171c]/60">
               관람 날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
             </Label>
-            <Input
-              id="ticket-date"
-              type="date"
-              value={watchedOn}
-              onChange={(event) => setWatchedOn(event.target.value)}
-              className="mt-2 h-12 text-base"
-            />
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
+              onClick={() => {
+                sendHapticToApp();
+                setDateSheetOpen(true);
+              }}
+            >
+              <CalendarDays className="h-4 w-4" />
+              {watchedOn
+                ? format(parseDateKey(watchedOn) ?? getSeoulTodayDate(), "yyyy년 MM월 dd일(EEE)", { locale: ko })
+                : "날짜를 선택해 주세요"}
+            </Button>
           </div>
 
           {/* 좌석 */}
@@ -520,7 +531,7 @@ function TicketDetailForm() {
 
               <div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">리뷰 본문</Label>
+                  <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">내용</Label>
                   <span className="text-xs text-[#17171c]/40">
                     {reviewContent.length}/{MAX_REVIEW_LEN}
                   </span>
@@ -562,6 +573,13 @@ function TicketDetailForm() {
         </Button>
         </div>
       </main>
+
+      <DatePickerSheet
+        open={dateSheetOpen}
+        onOpenChange={setDateSheetOpen}
+        value={watchedOn}
+        onConfirm={setWatchedOn}
+      />
 
       {saving && <LoadingOverlay />}
     </MobileContainer>
