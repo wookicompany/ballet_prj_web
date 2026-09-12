@@ -16,7 +16,7 @@ import {
 } from "@/lib/performanceHomeCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronRight, Search, Star } from "lucide-react";
+import { ChevronRight, Search, Star, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 type PerformanceItem = {
@@ -491,16 +491,28 @@ export default function PerformanceListPage() {
         <main className="px-4 pb-16">
           <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
             <h1 className="text-lg font-bold">공연</h1>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-lg"
-              className="text-[#17171c]/70"
-              onClick={() => router.push("/performance/search-input")}
-              aria-label="검색"
-            >
-              <Search className="size-6" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                className="text-[#17171c]/70"
+                onClick={() => router.push("/ticket-book")}
+                aria-label="티켓북"
+              >
+                <Ticket className="size-6" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                className="text-[#17171c]/70"
+                onClick={() => router.push("/performance/search-input")}
+                aria-label="검색"
+              >
+                <Search className="size-6" />
+              </Button>
+            </div>
           </header>
           <section className="mb-4">
             <AdBanner placement="performance_home" />
@@ -523,16 +535,28 @@ export default function PerformanceListPage() {
       <main className="px-4 pb-16">
         <header className="sticky top-0 z-20 bg-background -mx-4 px-4 h-12 mb-4 flex items-center justify-between">
           <h1 className="text-lg font-bold">공연</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.push("/performance/search-input")}
-            aria-label="검색"
-          >
-            <Search className="size-6" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => router.push("/ticket-book")}
+              aria-label="티켓북"
+            >
+              <Ticket className="size-6" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="text-[#17171c]/70"
+              onClick={() => router.push("/performance/search-input")}
+              aria-label="검색"
+            >
+              <Search className="size-6" />
+            </Button>
+          </div>
         </header>
         <section className="mb-4">
           <AdBanner placement="performance_home" />
