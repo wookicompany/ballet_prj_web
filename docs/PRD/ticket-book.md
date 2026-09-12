@@ -1204,6 +1204,7 @@ supabase.from("performance_tickets")
   .order("created_at", { ascending: true })
 ```
 - 근거: `performance_tickets.performance_id → kopis_performances(mt20id)`와 `performance_ticket_images.ticket_id → performance_tickets(id)` 둘 다 FK 경로가 유일해 임베드 모호성이 없다(동일 구조의 `performance_reviews_performance_id_fkey`가 이미 프로덕션에 존재). `kopis_performances_select` RLS는 `USING (true)`라 임베드 대상 조회를 막지 않는다. `@supabase/supabase-js ^2.94.0`은 중첩 임베드 지원 버전.
+- **✅ 스모크 테스트 통과(2026-09-12) — 채택 확정.** PostgREST에 위 select를 그대로 보내 `200 []`을 받았고, 대조군으로 존재하지 않는 관계(`ballet_brands`)를 임베드하면 `PGRST200 / 400 Could not find a relationship`이 나오는 것을 확인했다. 즉 200은 관계가 실제로 해석됐다는 뜻이다. 아래 폴백은 유지하되 1차 안을 그대로 구현한다.
 - **⚠️ 이 코드베이스에 임베디드 조인 선례가 0건이다.** `kopis_performances`를 참조하는 11개 파일이 전부 `.in("mt20id", ids)` 개별 조회 + 클라이언트 병합만 쓴다. 착수 시 **스모크 테스트 1회로 실제 응답 구조를 확인한 뒤 채택**하고, 실패·불안정하면 즉시 아래 폴백으로 전환할 수 있도록 조회 함수를 한 곳에 격리해 둔다.
 
 폴백(기존 관례, 왕복 2회):
