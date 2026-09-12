@@ -315,6 +315,7 @@ export default function PerformanceDetailPage() {
           .from("performance_reviews")
           .select("rating")
           .eq("performance_id", performanceId)
+          .eq("is_public", true) // 공개 리뷰만 집계(비공개는 본인만 봄)
           .is("deleted_at", null),
       ]);
 
@@ -486,6 +487,7 @@ export default function PerformanceDetailPage() {
         .from("performance_reviews")
         .select("id,created_at")
         .eq("performance_id", performanceId)
+        .eq("is_public", true) // 커뮤니티 리뷰 목록은 공개 리뷰만(RLS가 2차 방어선)
         .is("deleted_at", null);
 
       if (reviewError) {
@@ -583,6 +585,8 @@ export default function PerformanceDetailPage() {
         .from("performance_reviews")
         .select("id,rating,content,created_at,user_id")
         .in("id", pageReviewIds)
+        .eq("is_public", true) // 방어 심층화 — 위 목록 조회에서 이미 공개만 걸러졌고 RLS도 막지만,
+                               // 이 쿼리만 따로 복사돼 다른 화면에 쓰일 때를 대비해 명시한다
         .is("deleted_at", null);
 
       if (error) {
@@ -761,6 +765,7 @@ export default function PerformanceDetailPage() {
       .from("performance_reviews")
       .select("rating")
       .eq("performance_id", performanceId)
+      .eq("is_public", true) // 공개 리뷰만 집계(비공개는 본인만 봄)
       .is("deleted_at", null);
 
     if (ratings && ratings.length > 0) {

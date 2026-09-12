@@ -20,7 +20,7 @@ export const POST = async (
 
   const { data: review, error: reviewError } = await auth.supabaseAdmin
     .from("performance_reviews")
-    .select("id, user_id, performance_id")
+    .select("id, user_id, performance_id, is_public")
     .eq("id", reviewId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -33,7 +33,10 @@ export const POST = async (
     );
   }
 
-  if (!review) {
+  // 비공개 리뷰는 본인 외에는 존재 자체를 숨긴다(404). service role이라 RLS를 우회하므로
+  // 이 검사가 유일한 방어선이고, 좋아요 성공 시 작성자에게 푸시가 실제로 발송되기 때문에
+  // 빠뜨리면 낯선 사람이 비공개 리뷰에 좋아요를 눌러 알림까지 보낼 수 있다.
+  if (!review || (!review.is_public && review.user_id !== auth.user.id)) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

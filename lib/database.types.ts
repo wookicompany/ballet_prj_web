@@ -1091,6 +1091,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          is_public: boolean
           performance_id: string
           rating: number
           updated_at: string
@@ -1101,6 +1102,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_public?: boolean
           performance_id: string
           rating: number
           updated_at?: string
@@ -1111,6 +1113,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_public?: boolean
           performance_id?: string
           rating?: number
           updated_at?: string
@@ -1133,6 +1136,125 @@ export type Database = {
           },
           {
             foreignKeyName: "performance_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_ticket_images: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          ticket_id: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          ticket_id: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          ticket_id?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_ticket_images_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "performance_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_ticket_images_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth_providers"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      performance_tickets: {
+        Row: {
+          created_at: string
+          custom_title: string | null
+          custom_venue: string | null
+          deleted_at: string | null
+          id: string
+          memo: string | null
+          performance_id: string | null
+          rating: number | null
+          review_id: string | null
+          seat: string | null
+          updated_at: string
+          user_id: string
+          watched_on: string
+        }
+        Insert: {
+          created_at?: string
+          custom_title?: string | null
+          custom_venue?: string | null
+          deleted_at?: string | null
+          id?: string
+          memo?: string | null
+          performance_id?: string | null
+          rating?: number | null
+          review_id?: string | null
+          seat?: string | null
+          updated_at?: string
+          user_id: string
+          watched_on: string
+        }
+        Update: {
+          created_at?: string
+          custom_title?: string | null
+          custom_venue?: string | null
+          deleted_at?: string | null
+          id?: string
+          memo?: string | null
+          performance_id?: string | null
+          rating?: number | null
+          review_id?: string | null
+          seat?: string | null
+          updated_at?: string
+          user_id?: string
+          watched_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_tickets_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "kopis_performances"
+            referencedColumns: ["mt20id"]
+          },
+          {
+            foreignKeyName: "performance_tickets_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performance_engagement_summaries"
+            referencedColumns: ["performance_id"]
+          },
+          {
+            foreignKeyName: "performance_tickets_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "performance_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_auth_providers"
@@ -1769,6 +1891,25 @@ export type Database = {
       }
     }
     Functions: {
+      // 티켓북: 리뷰 생성 + 티켓 연결을 한 트랜잭션으로 묶는다(고아 리뷰 방지).
+      // service role 전용이라 auth.uid()를 쓰지 않고 p_user_id를 인자로 받는다.
+      create_ticket_review: {
+        Args: {
+          p_ticket_id: string
+          p_user_id: string
+          p_rating: number
+          p_content: string
+          p_is_public: boolean
+        }
+        Returns: { review_id: string; performance_id: string }[]
+      }
+      // 티켓북: 리뷰 소프트 삭제 + 티켓의 review_id 복원을 한 트랜잭션으로 묶는다.
+      // 복원을 빠뜨리면 그 티켓이 멱등 가드에 걸려 다시는 리뷰를 못 쓴다.
+      // p_user_id가 없으면 소유권 검사를 건너뛴다(어드민 삭제 경로).
+      soft_delete_review: {
+        Args: { p_review_id: string; p_user_id?: string | null }
+        Returns: undefined
+      }
       search_auth_users: {
         Args: { keyword?: string | null; p_limit?: number | null; p_offset?: number }
         Returns: { id: string; email: string | null; created_at: string; total_count: number }[]

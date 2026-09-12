@@ -220,6 +220,7 @@ export default function PerformanceSearchInputPage() {
           supabase
             .from("performance_reviews")
             .select("performance_id,rating")
+            .eq("is_public", true) // 공개 리뷰만 집계(비공개는 본인만 봄)
             .is("deleted_at", null)
             .in("performance_id", targetIds),
           supabase
