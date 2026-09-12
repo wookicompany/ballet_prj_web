@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronRight, Plus, Ticket } from "lucide-react";
+import { CalendarSearch, ChevronRight, Plus, Ticket } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -398,7 +398,7 @@ export default function TicketBookPage() {
                 setMonthSheetOpen(true);
               }}
             >
-              <CalendarDays className="size-6" />
+              <CalendarSearch className="size-6" />
             </Button>
           }
         />
