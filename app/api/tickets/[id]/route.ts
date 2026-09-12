@@ -39,7 +39,7 @@ export const GET = async (
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  const [performanceResult, imagesResult] = await Promise.all([
+  const [performanceResult, imagesResult, reviewResult] = await Promise.all([
     ticket.performance_id
       ? auth.supabaseAdmin
           .from("kopis_performances")
@@ -53,11 +53,39 @@ export const GET = async (
       .eq("ticket_id", id)
       .is("deleted_at", null)
       .order("created_at", { ascending: true }),
+    // 연결된 리뷰를 실제로 읽어온다. review_id가 있다는 사실만 믿으면 안 된다 — 리뷰가
+    // 다른 경로(공연 상세, 어드민)에서 삭제됐을 수 있고, 그러면 티켓이 죽은 리뷰를
+    // 가리킨 채 남는다.
+    ticket.review_id
+      ? auth.supabaseAdmin
+          .from("performance_reviews")
+          .select("id, rating, content, is_public, created_at")
+          .eq("id", ticket.review_id)
+          .is("deleted_at", null)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   if (imagesResult.error) {
     console.error("Failed to load ticket images", imagesResult.error);
     return NextResponse.json({ message: "Failed to load ticket" }, { status: 500 });
+  }
+
+  const review = reviewResult.data ?? null;
+
+  // 자가 복구: review_id는 있는데 리뷰가 사라졌다면 연결을 끊는다. 이 줄이 없으면
+  // 그 티켓은 멱등 가드에 걸려 영원히 새 리뷰를 쓸 수 없다. 삭제 라우트가 복원을
+  // 담당하지만, 그 경로를 타지 않고 지워진 과거 데이터까지 여기서 정리된다.
+  if (ticket.review_id && !review) {
+    const { error: healError } = await auth.supabaseAdmin
+      .from("performance_tickets")
+      .update({ review_id: null })
+      .eq("id", id);
+    if (healError) {
+      // 복구에 실패해도 조회 자체는 성공시킨다 — 아래에서 review를 null로 내려보내므로
+      // 화면은 "리뷰 없음"으로 올바르게 그려진다. 다음 조회에서 다시 시도된다.
+      console.error("Failed to clear stale review_id", healError);
+    }
   }
 
   return NextResponse.json({
@@ -70,10 +98,20 @@ export const GET = async (
       rating: ticket.rating,
       seat: ticket.seat,
       memo: ticket.memo,
-      reviewId: ticket.review_id,
+      // 살아 있는 리뷰가 있을 때만 id를 내려보낸다.
+      reviewId: review?.id ?? null,
     },
     performance: performanceResult.data ?? null,
     images: imagesResult.data ?? [],
+    review: review
+      ? {
+          id: review.id,
+          rating: review.rating,
+          content: review.content,
+          isPublic: review.is_public,
+          createdAt: review.created_at,
+        }
+      : null,
   });
 };
 

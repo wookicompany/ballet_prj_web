@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CalendarDays, Menu, NotebookPen, PenLine, Sofa, Star, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronRight, Lock, Menu, NotebookPen, PenLine, Sofa, Star, Trash2 } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -42,6 +42,14 @@ type TicketDetail = {
   reviewId: string | null;
 };
 
+type TicketReview = {
+  id: string;
+  rating: number;
+  content: string | null;
+  isPublic: boolean;
+  createdAt: string;
+};
+
 type PerformanceInfo = {
   mt20id: string;
   prfnm: string | null;
@@ -67,6 +75,7 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [performance, setPerformance] = useState<PerformanceInfo | null>(null);
   const [images, setImages] = useState<{ id: string; url: string }[]>([]);
+  const [review, setReview] = useState<TicketReview | null>(null);
   const [fetching, setFetching] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,6 +109,7 @@ export default function TicketDetailPage() {
       setTicket(json.ticket);
       setPerformance(json.performance);
       setImages(json.images ?? []);
+      setReview(json.review ?? null);
     } catch {
       toast("티켓 정보를 불러오지 못했어요.");
     } finally {
@@ -202,7 +212,7 @@ export default function TicketDetailPage() {
   return (
     <MobileContainer>
       {deleting ? <LoadingOverlay /> : null}
-      <main className="px-4 pb-28">
+      <main className="px-4 pb-12">
         <PageHeader
           title="티켓 상세"
           className="mb-6"
@@ -302,44 +312,64 @@ export default function TicketDetailPage() {
               </div>
             </div>
           ) : null}
+
+          {/* 내가 쓴 리뷰 — 버튼으로 감추지 않고 내용을 바로 보여준다.
+              탭하면 리뷰 상세로 이동해 좋아요·댓글을 볼 수 있다. */}
+          {review ? (
+            <button
+              type="button"
+              onClick={() => {
+                sendHapticToApp();
+                router.push(`/performance/${ticket.performanceId}/reviews/${review.id}`);
+              }}
+              className="w-full rounded-2xl border border-[#17171c]/5 bg-white p-5 text-left shadow-sm active:bg-[#17171c]/5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[#17171c]">내가 쓴 리뷰</p>
+                  {!review.isPublic ? (
+                    <span className="flex items-center gap-0.5 rounded-full bg-[#17171c]/5 px-2 py-0.5 text-xs text-[#17171c]/60">
+                      <Lock className="size-3" />
+                      비공개
+                    </span>
+                  ) : null}
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-[#17171c]/30" />
+              </div>
+              <div className="mt-3 flex items-center gap-1">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <Star
+                    key={index}
+                    className="h-4 w-4 text-brand"
+                    fill={review.rating >= (index + 1) * 2 ? "currentColor" : "none"}
+                  />
+                ))}
+              </div>
+              {review.content ? (
+                <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm text-[#17171c]/80">
+                  {review.content}
+                </p>
+              ) : null}
+            </button>
+          ) : isCustom ? (
+            <p className="px-1 text-center text-xs text-[#17171c]/50">
+              직접 입력한 공연은 개인 기록으로만 남길 수 있어요
+            </p>
+          ) : (
+            <Button
+              className="h-12 w-full"
+              onClick={() => {
+                sendHapticToApp();
+                router.push(`/ticket/${ticket.id}/review`);
+              }}
+            >
+              리뷰 쓰기
+            </Button>
+          )}
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 border-t border-[#17171c]/5 bg-background px-4 py-3">
-        {ticket.reviewId ? (
-          // 이미 리뷰를 쓴 티켓은 새로 만들지 않고 기존 리뷰로 보낸다 — 버튼을 비활성화하면
-          // 왜 못 쓰는지 알 수 없고, 그대로 두면 폼을 다 채운 뒤에야 409로 튕긴다.
-          <Button
-            variant="outline"
-            className="h-12 w-full"
-            onClick={() => {
-              sendHapticToApp();
-              router.push(`/performance/${ticket.performanceId}/reviews/${ticket.reviewId}`);
-            }}
-          >
-            작성한 리뷰 보기
-          </Button>
-        ) : isCustom ? (
-          <div>
-            <Button className="h-12 w-full" disabled>
-              리뷰 쓰기
-            </Button>
-            <p className="mt-2 text-center text-xs text-[#17171c]/50">
-              직접 입력한 공연은 개인 기록으로만 남길 수 있어요
-            </p>
-          </div>
-        ) : (
-          <Button
-            className="h-12 w-full"
-            onClick={() => {
-              sendHapticToApp();
-              router.push(`/ticket/${ticket.id}/review`);
-            }}
-          >
-            리뷰 쓰기
-          </Button>
-        )}
-      </div>
+
 
       <BottomSheet open={menuOpen} onOpenChange={setMenuOpen}>
         <div className="space-y-1">
