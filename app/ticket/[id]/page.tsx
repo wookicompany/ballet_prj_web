@@ -260,7 +260,6 @@ export default function TicketDetailPage() {
                       fill={(ticket.rating ?? 0) >= (index + 1) * 2 ? "currentColor" : "none"}
                     />
                   ))}
-                  <span className="ml-1">{ticket.rating / 2}</span>
                 </span>
               </div>
             ) : null}

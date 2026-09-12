@@ -331,9 +331,11 @@ function TicketDetailForm() {
 
   return (
     <MobileContainer>
-      <main className="px-4 pb-28">
+      <main className="px-4 pb-12">
         <PageHeader title="티켓 등록" className="mb-6" />
 
+        {/* 기록 생성과 같은 리듬 — 바깥을 space-y-8로 묶고 각 섹션이 자체 간격을 갖는다 */}
+        <div className="space-y-8">
         <section className="space-y-4">
           {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
               추가 버튼이 맨 앞에 오고 가로 스크롤이며, 개수는 라벨이 아니라
@@ -392,25 +394,25 @@ function TicketDetailForm() {
           {isCustom ? (
             <>
               <div>
-                <Label htmlFor="ticket-title">공연명</Label>
+                <Label htmlFor="ticket-title" className="text-sm text-[#17171c]/60">공연명</Label>
                 <Input
                   id="ticket-title"
                   value={customTitle}
                   maxLength={MAX_TEXT_LEN}
                   onChange={(event) => setCustomTitle(event.target.value)}
                   placeholder="공연명을 입력해 주세요"
-                  className="mt-1.5 h-12 text-base placeholder:text-sm"
+                  className="mt-2 h-12 text-base placeholder:text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="ticket-venue">장소</Label>
+                <Label htmlFor="ticket-venue" className="text-sm text-[#17171c]/60">장소</Label>
                 <Input
                   id="ticket-venue"
                   value={customVenue}
                   maxLength={MAX_TEXT_LEN}
                   onChange={(event) => setCustomVenue(event.target.value)}
                   placeholder="공연장을 입력해 주세요"
-                  className="mt-1.5 h-12 text-base placeholder:text-sm"
+                  className="mt-2 h-12 text-base placeholder:text-sm"
                 />
               </div>
             </>
@@ -439,37 +441,39 @@ function TicketDetailForm() {
 
           {/* 관람 날짜 */}
           <div>
-            <Label htmlFor="ticket-date">관람 날짜</Label>
+            <Label htmlFor="ticket-date" className="text-sm text-[#17171c]/60">
+              관람 날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
+            </Label>
             <Input
               id="ticket-date"
               type="date"
               value={watchedOn}
               onChange={(event) => setWatchedOn(event.target.value)}
-              className="mt-1.5 h-12 text-base"
+              className="mt-2 h-12 text-base"
             />
           </div>
 
           {/* 좌석 */}
           <div>
-            <Label htmlFor="ticket-seat">좌석</Label>
+            <Label htmlFor="ticket-seat" className="text-sm text-[#17171c]/60">좌석</Label>
             <Input
               id="ticket-seat"
               value={seat}
               onChange={(event) => setSeat(event.target.value)}
               placeholder="예) 1층 R석 15열 3번"
-              className="mt-1.5 h-12 text-base placeholder:text-sm"
+              className="mt-2 h-12 text-base placeholder:text-sm"
             />
           </div>
 
           {/* 메모 */}
           <div>
-            <Label htmlFor="ticket-memo">메모</Label>
+            <Label htmlFor="ticket-memo" className="text-sm text-[#17171c]/60">메모</Label>
             <Textarea
               id="ticket-memo"
               value={memo}
               onChange={(event) => setMemo(event.target.value)}
               placeholder="기억하고 싶은 순간을 남겨보세요"
-              className="mt-1.5 min-h-[120px] text-base placeholder:text-sm"
+              className="mt-2 min-h-[120px] text-base placeholder:text-sm"
             />
           </div>
         </section>
@@ -478,15 +482,15 @@ function TicketDetailForm() {
             구분선만 덩그러니 남는다. */}
         {isCustom ? null : (
           <>
-            <Separator className="my-6" />
+            <Separator />
             <section className="space-y-4">
               <h2 className="text-base font-semibold">
                 공연 리뷰 등록 <span className="text-sm font-normal text-[#17171c]/50">(선택)</span>
               </h2>
 
               <div>
-                <Label>별점</Label>
-                <div className="mt-1.5 flex items-center gap-1">
+                <Label className="text-sm text-[#17171c]/60">별점</Label>
+                <div className="mt-2 flex items-center gap-1">
                   {Array.from({ length: 5 }, (_, index) => {
                     const starIndex = index + 1;
                     return (
@@ -516,7 +520,7 @@ function TicketDetailForm() {
 
               <div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="ticket-review">리뷰 본문</Label>
+                  <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">리뷰 본문</Label>
                   <span className="text-xs text-[#17171c]/40">
                     {reviewContent.length}/{MAX_REVIEW_LEN}
                   </span>
@@ -527,7 +531,7 @@ function TicketDetailForm() {
                   maxLength={MAX_REVIEW_LEN}
                   onChange={(event) => setReviewContent(event.target.value)}
                   placeholder="관람 소감을 자유롭게 남겨보세요"
-                  className="mt-1.5 min-h-[120px] text-base placeholder:text-sm"
+                  className="mt-2 min-h-[120px] text-base placeholder:text-sm"
                 />
               </div>
 
@@ -547,13 +551,17 @@ function TicketDetailForm() {
             </section>
           </>
         )}
-      </main>
 
-      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 border-t border-[#17171c]/5 bg-background px-4 py-3">
-        <Button className="h-12 w-full" disabled={saving} onClick={() => void handleSubmit()}>
+        <Button
+          type="button"
+          className="h-12 w-full"
+          disabled={saving}
+          onClick={() => void handleSubmit()}
+        >
           등록하기
         </Button>
-      </div>
+        </div>
+      </main>
 
       {saving && <LoadingOverlay />}
     </MobileContainer>

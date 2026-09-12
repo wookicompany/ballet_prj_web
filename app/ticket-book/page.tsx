@@ -426,7 +426,7 @@ export default function TicketBookPage() {
           <div className="mt-1 grid grid-cols-7 gap-0 px-1">
             {cells.map((cell, index) => {
               if (!cell.date) {
-                return <div key={`ticket-empty-${index}`} className="h-[84px]" />;
+                return <div key={`ticket-empty-${index}`} className="h-[104px]" />;
               }
               const dateStr = formatSeoulDateKey(cell.date);
               const dayTickets = ticketsByDate[dateStr] ?? [];
@@ -439,7 +439,7 @@ export default function TicketBookPage() {
                   key={`ticket-cell-${dateStr}`}
                   type="button"
                   onClick={() => handleDayTap(cell.date as Date)}
-                  className="flex h-[84px] flex-col items-center justify-start rounded-lg pt-1 active:bg-[#17171c]/5"
+                  className="flex h-[104px] flex-col items-center justify-start gap-1.5 rounded-lg pt-1.5 active:bg-[#17171c]/5"
                 >
                   {/* 오늘 표기는 캘린더와 완전히 동일하게 — 검정 원 배경 + 흰 글씨 */}
                   <span
