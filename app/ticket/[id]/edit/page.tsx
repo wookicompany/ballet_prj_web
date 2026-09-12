@@ -513,9 +513,7 @@ export default function TicketEditPage() {
             <>
               <Separator />
               <section className="space-y-4">
-                <h2 className="text-base font-semibold">
-                  공연 리뷰 등록 <span className="text-sm font-normal text-[#17171c]/50">(선택)</span>
-                </h2>
+                <h2 className="text-base font-semibold">공연 리뷰 등록</h2>
 
                 <div>
                   <Label className="text-sm text-[#17171c]/60">별점</Label>
