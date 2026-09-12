@@ -1,13 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
 import AnimatedImage from "@/components/ui/animated-image";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { isValidDateKey } from "@/lib/kstDateTime";
@@ -47,12 +46,23 @@ function TicketSearchContent() {
 
   const dateQuery = useMemo(() => (dateParam ? `&date=${dateParam}` : ""), [dateParam]);
 
-  const runSearch = useCallback(async () => {
-    const trimmed = keyword.trim();
-    if (!trimmed) return;
-    sendHapticToApp();
+  // 입력 중 여러 요청이 동시에 떠 있을 수 있다. 순번을 매겨 "마지막 요청의 응답"만
+  // 반영한다 — 없으면 "백조"를 치는 도중 먼저 보낸 "백"의 결과가 늦게 도착해 덮어쓴다.
+  const requestSeqRef = useRef(0);
+
+  const runSearch = useCallback(async (raw: string) => {
+    const trimmed = raw.trim();
+    const seq = requestSeqRef.current + 1;
+    requestSeqRef.current = seq;
+
+    if (!trimmed) {
+      setItems([]);
+      setSearched(false);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    setSearched(true);
     try {
       // 원격 KOPIS API가 아니라 kopis_performances 테이블 직접 조회다
       // (search-input/page.tsx와 동일) — 레이트리밋·API 키를 고려할 필요가 없다.
@@ -65,17 +75,30 @@ function TicketSearchContent() {
         .order("prfpdfrom", { ascending: false })
         .limit(PAGE_SIZE);
 
+      if (seq !== requestSeqRef.current) return; // 더 최신 요청이 있다 — 이 응답은 버린다
+
       if (error) {
         toast("공연 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setLoading(false);
         return;
       }
       setItems(data ?? []);
+      setSearched(true);
+      setLoading(false);
     } catch {
+      if (seq !== requestSeqRef.current) return;
       toast("공연 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-    } finally {
       setLoading(false);
     }
-  }, [keyword]);
+  }, []);
+
+  // 입력이 멈추면 자동 조회. 어드민 공지 검색과 같은 300ms를 쓴다.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void runSearch(keyword);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword, runSearch]);
 
   // 검색 결과 객체를 통째로 들고 가지 않고 id만 넘긴다 — S4가 마운트될 때 다시 조회하므로
   // 새로고침·뒤로가기 후 재진입·WebView 재활성화 어느 경로로 들어와도 상태가 복원된다.
@@ -94,22 +117,16 @@ function TicketSearchContent() {
       <main className="flex min-h-screen flex-col pb-24">
         <PageHeader title="공연 선택" />
 
-        <div className="flex items-center gap-2 px-4 pt-2">
-          <div className="relative flex-1">
+        <div className="px-4 pt-2">
+          <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#17171c]/40" />
             <Input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") void runSearch();
-              }}
               placeholder="공연명을 검색해 보세요"
               className="h-12 pl-9 text-base placeholder:text-sm"
             />
           </div>
-          <Button className="h-12 shrink-0 px-4" onClick={() => void runSearch()}>
-            검색
-          </Button>
         </div>
 
         {/* 직접 입력 진입은 검색 전·결과 없음·결과 있음 모든 상태에서 보이도록
@@ -124,7 +141,10 @@ function TicketSearchContent() {
           </button>
         </div>
 
-        {loading ? (
+        {/* 타이핑 중에는 이전 결과를 그대로 두고 스피너로 가리지 않는다 — 한 글자마다
+            목록이 스피너로 바뀌면 화면이 심하게 깜빡인다. 보여줄 결과가 아직 없을 때만
+            스피너를 띄운다. */}
+        {loading && items.length === 0 ? (
           <div className="flex justify-center py-10">
             <Spinner size="lg" />
           </div>
@@ -165,7 +185,7 @@ function TicketSearchContent() {
                 </button>
               </li>
             ))}
-            {searched && items.length === 0 && (
+            {searched && !loading && items.length === 0 && (
               <li className="py-10 text-center text-sm text-[#17171c]/50">
                 조회된 공연이 없어요.
               </li>

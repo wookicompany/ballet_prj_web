@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Plus, Ticket } from "lucide-react";
+import { CalendarDays, ChevronRight, Plus, Ticket } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -369,10 +369,12 @@ export default function TicketBookPage() {
         <PageHeader
           title="티켓북"
           right={
+            // 뒤로 버튼과 같은 size-10(40px)이라 좌우 폭이 같아지고, 그 결과
+            // justify-between 안에서 타이틀이 정확히 가운데에 온다.
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 gap-0.5 px-2 text-xs text-[#17171c]/60"
+              size="icon-lg"
+              className="text-[#17171c]/70"
               aria-label="연월 선택"
               onClick={() => {
                 sendHapticToApp();
@@ -383,8 +385,7 @@ export default function TicketBookPage() {
                 setMonthSheetOpen(true);
               }}
             >
-              {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-              <ChevronDown className="size-3.5" />
+              <CalendarDays className="size-6" />
             </Button>
           }
         />
@@ -394,7 +395,10 @@ export default function TicketBookPage() {
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchCancel}
         >
-          <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-4 text-center text-sm text-[#17171c]/60">
+          <p className="px-4 pt-4 text-sm font-bold text-[#17171c]">
+            {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+          </p>
+          <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-2 text-center text-sm text-[#17171c]/60">
             {weekLabels.map((label, index) => (
               <span
                 key={`ticket-week-${label}`}
