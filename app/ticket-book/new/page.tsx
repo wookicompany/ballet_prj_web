@@ -2,9 +2,10 @@
 
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import AnimatedImage from "@/components/ui/animated-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,18 +92,7 @@ function TicketSearchContent() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col pb-24">
-        <header className="sticky top-0 z-20 flex h-12 items-center gap-1 bg-background px-1">
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <p className="text-lg font-bold">공연 선택</p>
-        </header>
+        <PageHeader title="공연 선택" />
 
         <div className="flex items-center gap-2 px-4 pt-2">
           <div className="relative flex-1">
@@ -128,7 +118,7 @@ function TicketSearchContent() {
           <button
             type="button"
             onClick={goCustom}
-            className="text-sm text-[#17171c]/60 underline underline-offset-4"
+            className="flex min-h-11 items-center text-sm text-[#17171c]/60 underline underline-offset-4"
           >
             찾는 공연이 없어요
           </button>

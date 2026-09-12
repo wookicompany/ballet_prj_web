@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Ticket } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
+import PageHeader from "@/components/layout/PageHeader";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import AnimatedImage from "@/components/ui/animated-image";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
-import { formatSeoulDateKey } from "@/lib/kstDateTime";
+import { formatSeoulDateKey, parseDateKey } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -27,6 +28,13 @@ import {
 import { toast } from "sonner";
 
 const SWIPE_THRESHOLD_PX = 48;
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+function formatSelectedLabel(dateKey: string) {
+  const date = parseDateKey(dateKey);
+  if (!date) return dateKey;
+  return `${date.getMonth() + 1}월 ${date.getDate()}일(${WEEKDAYS[date.getDay()]})`;
+}
 
 function getMonthBounds(date: Date) {
   return {
@@ -40,7 +48,7 @@ function getWeekdayClass(index: number, weekStartMonday: boolean, highlight: boo
   // 인덱스는 화면상의 열 번호라, 월요일 시작이면 5=토 6=일이고 일요일 시작이면 0=일 6=토다.
   const isSaturday = weekStartMonday ? index === 5 : index === 6;
   const isSunday = weekStartMonday ? index === 6 : index === 0;
-  if (isSaturday) return "text-blue-500";
+  if (isSaturday) return "text-blue-600";
   if (isSunday) return "text-red-500";
   return "";
 }
@@ -76,10 +84,6 @@ export default function TicketBookPage() {
   const [fetching, setFetching] = useState(true);
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
-  // 빈 상태 안내는 "티켓이 하나도 없는 유저"에게만 보여준다. 이번 달만 비어 있는 경우는
-  // 기록 캘린더처럼 빈 그리드로 두고 배너를 띄우지 않는다 — 안 그러면 빈 달로 스와이프할
-  // 때마다 큰 안내가 튀어나온다. null = 아직 확인 전(그동안은 배너를 띄우지 않음).
-  const [hasAnyTicketEver, setHasAnyTicketEver] = useState<boolean | null>(null);
   const [monthSheetOpen, setMonthSheetOpen] = useState(false);
   const [monthDraft, setMonthDraft] = useState({
     year: currentDate.getFullYear(),
@@ -187,18 +191,6 @@ export default function TicketBookPage() {
     setHighlightWeekend(Boolean(data.calendar_highlight_weekend));
   }, [user]);
 
-  const fetchHasAnyTicket = useCallback(async () => {
-    if (!user) return;
-    const { count, error } = await supabase
-      .from("performance_tickets")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .is("deleted_at", null);
-    // 실패하면 null로 둔다 — 티켓이 있는데 "담아보세요" 안내를 잘못 띄우는 쪽이 더 나쁘다.
-    if (error) return;
-    setHasAnyTicketEver((count ?? 0) > 0);
-  }, [user]);
-
   const prevUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (loading) return;
@@ -214,20 +206,20 @@ export default function TicketBookPage() {
 
     const userChanged = prevUserIdRef.current !== user.id;
     prevUserIdRef.current = user.id;
-    if (userChanged || force) {
-      // 설정·전체 보유 여부는 월 조회와 병렬로 — 직렬 대기를 늘리지 않는다.
-      void Promise.all([fetchTickets(force), fetchSettings(), fetchHasAnyTicket()]);
+    if (userChanged) {
+      // 설정은 월 조회와 병렬로 — 직렬 대기를 늘리지 않는다.
+      void Promise.all([fetchTickets(force), fetchSettings()]);
     } else {
       void fetchTickets(force);
     }
-  }, [user, loading, start, end, fetchTickets, fetchSettings, fetchHasAnyTicket]);
+  }, [user, loading, start, end, fetchTickets, fetchSettings]);
 
   // 티켓 생성·수정·삭제 후 돌아왔을 때(bfcache 복귀 포함) 캐시를 비우고 재조회한다.
   useEffect(() => {
     const handleRefresh = () => {
       if (!consumeTicketChanged()) return;
       invalidateTicketBookCache();
-      void Promise.all([fetchTickets(true), fetchHasAnyTicket()]);
+      void fetchTickets(true);
     };
     window.addEventListener("pageshow", handleRefresh);
     window.addEventListener("popstate", handleRefresh);
@@ -235,7 +227,7 @@ export default function TicketBookPage() {
       window.removeEventListener("pageshow", handleRefresh);
       window.removeEventListener("popstate", handleRefresh);
     };
-  }, [fetchTickets, fetchHasAnyTicket]);
+  }, [fetchTickets]);
 
   const changeMonthBy = useCallback((delta: number) => {
     sendHapticToApp();
@@ -356,18 +348,7 @@ export default function TicketBookPage() {
     return (
       <MobileContainer>
         <main className="flex min-h-screen flex-col">
-          <header className="flex h-12 items-center gap-2 px-1">
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              className="text-[#17171c]/70"
-              onClick={() => router.back()}
-              aria-label="뒤로"
-            >
-              <ChevronLeft className="size-6" />
-            </Button>
-            <p className="text-lg font-bold">티켓북</p>
-          </header>
+          <PageHeader title="티켓북" />
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 pb-24">
             <Ticket className="size-10 text-[#17171c]/20" />
             <p className="text-center text-sm text-[#17171c]/60">
@@ -385,24 +366,13 @@ export default function TicketBookPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-0 pb-[140px]">
-        <header className="sticky top-0 z-20 flex h-12 items-center gap-0 bg-background px-1">
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="text-[#17171c]/70"
-            onClick={() => router.back()}
-            aria-label="뒤로"
-          >
-            <ChevronLeft className="size-6" />
-          </Button>
-          <div className="flex items-center gap-0">
-            <p className="text-lg font-bold">
-              {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-            </p>
+        <PageHeader
+          title="티켓북"
+          right={
             <Button
               variant="ghost"
-              size="icon-lg"
-              className="text-[#17171c]/70"
+              size="sm"
+              className="h-8 gap-0.5 px-2 text-xs text-[#17171c]/60"
               aria-label="연월 선택"
               onClick={() => {
                 sendHapticToApp();
@@ -413,31 +383,33 @@ export default function TicketBookPage() {
                 setMonthSheetOpen(true);
               }}
             >
-              <ChevronDown className="size-6" strokeWidth={2.5} />
+              {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+              <ChevronDown className="size-3.5" />
             </Button>
-          </div>
-        </header>
+          }
+        />
 
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchCancel}
         >
-          <div className="grid grid-cols-7 px-2 pt-1">
+          <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-4 text-center text-sm text-[#17171c]/60">
             {weekLabels.map((label, index) => (
-              <div
+              <span
                 key={`ticket-week-${label}`}
-                className={`py-2 text-center text-xs font-medium text-[#17171c]/50 ${getWeekdayClass(index, weekStartMonday, highlightWeekend)}`}
+                className={`flex items-center justify-center py-1 ${getWeekdayClass(index, weekStartMonday, highlightWeekend)}`}
               >
                 {label}
-              </div>
+              </span>
             ))}
-          </div>
+          </section>
+          <div className="mx-1 h-px bg-[#17171c]/5" />
 
-          <div className="grid grid-cols-7 px-2">
+          <div className="mt-1 grid grid-cols-7 gap-0 px-1">
             {cells.map((cell, index) => {
               if (!cell.date) {
-                return <div key={`ticket-empty-${index}`} className="h-[76px]" />;
+                return <div key={`ticket-empty-${index}`} className="h-[84px]" />;
               }
               const dateStr = formatSeoulDateKey(cell.date);
               const dayTickets = ticketsByDate[dateStr] ?? [];
@@ -450,10 +422,17 @@ export default function TicketBookPage() {
                   key={`ticket-cell-${dateStr}`}
                   type="button"
                   onClick={() => handleDayTap(cell.date as Date)}
-                  className="flex h-[76px] flex-col items-center gap-1 rounded-lg pt-1 active:bg-[#17171c]/5"
+                  className="flex h-[84px] flex-col items-center justify-start rounded-lg pt-1 active:bg-[#17171c]/5"
                 >
+                  {/* 오늘 표기는 캘린더와 완전히 동일하게 — 검정 원 배경 + 흰 글씨 */}
                   <span
-                    className={`text-xs ${isToday ? "font-bold text-brand" : isSelected ? "font-bold" : "text-[#17171c]/70"} ${getWeekdayClass(index % 7, weekStartMonday, highlightWeekend)}`}
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm ${
+                      isToday
+                        ? "bg-[#17171c] text-white"
+                        : isSelected
+                          ? "font-bold text-[#17171c]"
+                          : getWeekdayClass(index % 7, weekStartMonday, highlightWeekend) || "text-[#17171c]"
+                    }`}
                   >
                     {cell.day}
                   </span>
@@ -495,23 +474,9 @@ export default function TicketBookPage() {
           </div>
         )}
 
-        {!fetching && hasAnyTicketEver === false && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
-            <Ticket className="size-10 text-[#17171c]/20" />
-            <p className="text-center text-sm text-[#17171c]/60">
-              본 공연을 티켓북에 담아보세요
-            </p>
-            <Button className="h-12 w-full max-w-[240px]" onClick={() => goToNew()}>
-              티켓 등록하기
-            </Button>
-          </div>
-        )}
-
         {selectedTickets.length > 0 && (
           <section className="mt-2 px-4">
-            <p className="mb-2 text-sm font-bold">
-              {Number(selectedDate.slice(5, 7))}월 {Number(selectedDate.slice(8, 10))}일
-            </p>
+            <p className="mb-2 text-sm font-bold">{formatSelectedLabel(selectedDate)}</p>
             <ul className="space-y-2">
               {selectedTickets.map((ticket) => (
                 <li key={ticket.id}>
@@ -556,12 +521,12 @@ export default function TicketBookPage() {
         )}
       </main>
 
-      {/* 430px 컨테이너 기준 우측 정렬 — 뷰포트에 right-4를 직접 걸면 넓은 화면에서
-          버튼이 모바일 콘텐츠 밖으로 나간다(FloatingButton.tsx와 동일 방식). */}
-      <div className="pointer-events-none fixed bottom-[72px] left-1/2 z-30 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-4">
+      {/* 티켓북은 (tabs) 밖의 독립 화면이라 탭바가 렌더링되지 않는다. 탭바용
+          FloatingButton(bottom-[72px])이 아니라 day/[date] 화면과 같은 규격을 쓴다. */}
+      <div className="pointer-events-none fixed bottom-12 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-6">
         <Button
           size="icon"
-          className="pointer-events-auto size-12 rounded-full bg-primary text-white shadow-lg"
+          className="pointer-events-auto h-12 w-12 rounded-2xl bg-primary text-white shadow-lg"
           aria-label="티켓 등록하기"
           onClick={() => {
             sendHapticToApp();

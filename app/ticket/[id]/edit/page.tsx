@@ -358,6 +358,8 @@ export default function TicketEditPage() {
                     onClick={() => {
                       sendHapticToApp();
                       // 선택된 최상위 별을 다시 탭하면 해제된다(별점은 선택 항목).
+                      // 이 값은 티켓의 별점이고, 연결된 리뷰가 있으면 서버가 리뷰 별점도
+                      // 같은 값으로 맞춘다(PATCH /api/tickets/[id] 참고).
                       setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
                     }}
                   >

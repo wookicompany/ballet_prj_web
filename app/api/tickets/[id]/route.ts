@@ -89,7 +89,7 @@ export const PATCH = async (
 
   const { data: ticket, error: loadError } = await auth.supabaseAdmin
     .from("performance_tickets")
-    .select("id, user_id, deleted_at")
+    .select("id, user_id, deleted_at, review_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -143,6 +143,29 @@ export const PATCH = async (
   if (updateError) {
     console.error("Failed to update ticket", updateError);
     return NextResponse.json({ message: "Failed to update ticket" }, { status: 500 });
+  }
+
+  // 연결된 리뷰가 있으면 별점을 함께 맞춘다(PM 확정). 등록 화면에서 하나의 별점을 티켓과
+  // 리뷰 양쪽에 쓰는 구조라, 수정할 때만 티켓 쪽만 바뀌면 같은 공연에 별점이 두 개가 된다.
+  //
+  // 티켓의 별점을 해제(null)한 경우에는 리뷰를 건드리지 않는다 —
+  // performance_reviews.rating은 NOT NULL이라 null로 만들 수 없고, 이미 커뮤니티에 올라간
+  // 리뷰의 별점을 임의의 값으로 바꾸는 것도 맞지 않다.
+  if (ticket.review_id && rating !== null) {
+    const { error: reviewError } = await auth.supabaseAdmin
+      .from("performance_reviews")
+      .update({ rating })
+      .eq("id", ticket.review_id)
+      .is("deleted_at", null);
+    if (reviewError) {
+      // 티켓 수정은 이미 반영됐다. 여기서 실패해도 저장 자체를 되돌리지는 않되,
+      // 조용히 넘기지 않도록 로그를 남기고 부분 실패를 알린다.
+      console.error("Failed to sync review rating", reviewError);
+      return NextResponse.json(
+        { message: "Ticket updated but review rating sync failed" },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });
