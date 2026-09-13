@@ -1824,8 +1824,17 @@ export default function RecordEditPage() {
             <Button
               className="w-full bg-[#17171c] text-white"
               onClick={() => {
+                // 월을 바꿔도 이미 고른 '일'은 그대로 남는다. 1월 31일을 고른 뒤 2월로 옮기면
+                // "2026-02-31" 같은 없는 날짜가 만들어져 저장이 거부되므로 말일로 줄인다
+                // (components/sheets/DatePickerSheet.tsx와 같은 처리).
+                const daysInMonth = new Date(
+                  dateDraft.year,
+                  dateDraft.month,
+                  0
+                ).getDate();
+                const safeDay = Math.min(dateDraft.day, daysInMonth);
                 const paddedMonth = String(dateDraft.month).padStart(2, "0");
-                const paddedDay = String(dateDraft.day).padStart(2, "0");
+                const paddedDay = String(safeDay).padStart(2, "0");
                 setForm((prev) => ({
                   ...prev,
                   record_date: `${dateDraft.year}-${paddedMonth}-${paddedDay}`,
