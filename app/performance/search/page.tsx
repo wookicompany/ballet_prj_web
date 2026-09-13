@@ -14,6 +14,10 @@ import {
   getSeoulTodayDate,
   parseDateKey,
 } from "@/lib/kstDateTime";
+import {
+  PERFORMANCE_STATE_ORDER,
+  getPerformanceState,
+} from "@/lib/performanceState";
 import { getSearchCache, setSearchCache } from "@/lib/performanceSearchCache";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
@@ -46,7 +50,6 @@ type EngagementSummary = {
 
 type SectionConfig = {
   title: string;
-  prfstate?: string;
   detailFlag?: string;
 };
 
@@ -68,14 +71,15 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
   },
   scheduled: {
     title: "곧 만날 수 있는 공연을 모아봤어요",
-    prfstate: "공연예정",
   },
   awards: {
     title: "수상작 공연을 모아봤어요",
   },
+  ongoing: {
+    title: "지금 관람할 수 있는 공연을 모아봤어요",
+  },
   completed: {
     title: "막을 내린 공연을 모아봤어요",
-    prfstate: "공연완료",
   },
   visit: {
     title: "해외 팀이 참여한 공연을 모아봤어요",
@@ -322,6 +326,7 @@ function PerformanceSearchContent() {
         "mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster,genrenm,prfstate,area";
       const rangeStart = pageToFetch * PAGE_SIZE;
       const rangeEnd = rangeStart + PAGE_SIZE - 1;
+      const todayDateKey = formatSeoulDateKey();
       let query = supabase
         .from("kopis_performances")
         .select(baseSelect)
@@ -345,18 +350,18 @@ function PerformanceSearchContent() {
         sliceIds = (orderedIds ?? []).slice(rangeStart, rangeStart + PAGE_SIZE);
         useOrderedSlice = true;
       } else if (sectionKey === "scheduled") {
-        const todayDateKey = formatSeoulDateKey();
+        // 섹션 분류는 prfstate가 아니라 공연 기간으로 한다(lib/performanceState.ts 주석 참고).
         query = query
-          .eq("prfstate", "공연예정")
-          .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
+          .gt("prfpdfrom", todayDateKey)
           .order("prfpdfrom", { ascending: true });
       } else if (sectionKey === "ongoing") {
         query = query
-          .eq("prfstate", "공연중")
+          .lte("prfpdfrom", todayDateKey)
+          .gte("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: true });
       } else if (sectionKey === "completed") {
         query = query
-          .eq("prfstate", "공연완료")
+          .lt("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: false });
       } else if (isDancerSection) {
         if (!orderedIds || orderedIds.length === 0) {
@@ -367,8 +372,6 @@ function PerformanceSearchContent() {
           return;
         }
         query = query.in("mt20id", orderedIds).order("prfpdfrom", { ascending: false });
-      } else if (sectionConfig?.prfstate) {
-        query = query.eq("prfstate", sectionConfig.prfstate);
       } else {
         query = query.order("prfpdfrom", { ascending: true });
       }
@@ -409,11 +412,14 @@ function PerformanceSearchContent() {
       }
 
       const fetched = (data as PerformanceItem[]) ?? [];
-      const STATE_ORDER: Record<string, number> = { "공연중": 0, "공연예정": 1, "공연완료": 2 };
+      const visitStateOrder = (item: PerformanceItem) =>
+        PERFORMANCE_STATE_ORDER[
+          getPerformanceState(item.prfpdfrom, item.prfpdto, todayDateKey)
+        ];
       const ordered = useOrderedSlice && sliceIds
         ? sectionKey === "visit"
           ? fetched.sort((a, b) => {
-              const stateDiff = (STATE_ORDER[a.prfstate ?? ""] ?? 3) - (STATE_ORDER[b.prfstate ?? ""] ?? 3);
+              const stateDiff = visitStateOrder(a) - visitStateOrder(b);
               if (stateDiff !== 0) return stateDiff;
               return (a.prfpdfrom ?? "").localeCompare(b.prfpdfrom ?? "");
             })

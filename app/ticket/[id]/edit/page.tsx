@@ -394,36 +394,9 @@ export default function TicketEditPage() {
         {/* 등록 화면과 같은 리듬 — 바깥을 space-y-8로 묶는다 */}
         <div className="space-y-8">
           <section className="space-y-6">
-            {/* 공연 정보 — 직접 입력 티켓은 고칠 수 있고, KOPIS 공연은 읽기 전용이다.
-                (KOPIS 공연을 다른 공연으로 바꾸는 "공연 재선택"은 지원하지 않는다.) */}
-            {isCustom ? (
-              <>
-                <div>
-                  <Label htmlFor="ticket-title" className="text-sm text-[#17171c]/60">
-                    공연명<span className="-ml-[1px] text-[#17171c]/50">*</span>
-                  </Label>
-                  <Input
-                    id="ticket-title"
-                    value={customTitle}
-                    maxLength={MAX_TEXT_LEN}
-                    onChange={(event) => setCustomTitle(event.target.value)}
-                    placeholder="공연명을 입력해 주세요"
-                    className="mt-2 h-12 text-base placeholder:text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ticket-venue" className="text-sm text-[#17171c]/60">장소</Label>
-                  <Input
-                    id="ticket-venue"
-                    value={customVenue}
-                    maxLength={MAX_TEXT_LEN}
-                    onChange={(event) => setCustomVenue(event.target.value)}
-                    placeholder="공연장을 입력해 주세요"
-                    className="mt-2 h-12 text-base placeholder:text-sm"
-                  />
-                </div>
-              </>
-            ) : (
+            {/* 공연 정보 — 선택된 공연은 먼저 확인시킨다. KOPIS 공연은 읽기 전용이며
+                공연 재선택은 지원하지 않는다. */}
+            {isCustom ? null : (
               <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
                 {poster ? (
                   <AnimatedImage
@@ -553,6 +526,38 @@ export default function TicketEditPage() {
             </div>
 
           </section>
+
+            {/* 공연명 / 장소 — 직접 입력 티켓만 고칠 수 있다. 확인할 공연 정보가
+                없으므로 미디어 다음에 둔다(등록 화면과 같은 순서). */}
+            {isCustom ? (
+              <>
+                <div>
+                  <Label htmlFor="ticket-title" className="text-sm text-[#17171c]/60">
+                    공연명<span className="-ml-[1px] text-[#17171c]/50">*</span>
+                  </Label>
+                  <Input
+                    id="ticket-title"
+                    value={customTitle}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomTitle(event.target.value)}
+                    placeholder="공연명을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ticket-venue" className="text-sm text-[#17171c]/60">장소</Label>
+                  <Input
+                    id="ticket-venue"
+                    value={customVenue}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomVenue(event.target.value)}
+                    placeholder="공연장을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+              </>
+            ) : null}
+
 
           {/* 리뷰 — 직접 입력 공연은 커뮤니티 리뷰를 만들 수 없고, 이미 리뷰가 있으면
               리뷰 상세에서 수정하므로 여기서는 "아직 리뷰가 없는 KOPIS 공연"만 다룬다.

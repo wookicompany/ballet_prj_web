@@ -394,7 +394,7 @@ export default function TicketBookPage() {
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 pb-24">
             <Ticket className="size-10 text-[#17171c]/20" />
             <p className="text-center text-sm text-[#17171c]/60">
-              로그인하면 본 공연을 티켓북에 담을 수 있어요
+              로그인하면 관람한 공연을 티켓북에 담을 수 있어요
             </p>
             <Button className="h-12 w-full max-w-[240px]" onClick={() => openLoginSheet()}>
               로그인하기

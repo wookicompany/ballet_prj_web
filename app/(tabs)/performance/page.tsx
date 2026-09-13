@@ -11,6 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
+  PERFORMANCE_STATE_ORDER,
+  getPerformanceState,
+} from "@/lib/performanceState";
+import {
   getPerformanceHomeCache,
   setPerformanceHomeCache,
 } from "@/lib/performanceHomeCache";
@@ -46,6 +50,7 @@ type EngagementSummary = {
 type SectionBuckets = {
   popular: PerformanceItem[];
   scheduled: PerformanceItem[];
+  ongoing: PerformanceItem[];
   awards: PerformanceItem[];
   completed: PerformanceItem[];
   visit: PerformanceItem[];
@@ -62,6 +67,7 @@ type DancerSection = { name: string; items: PerformanceItem[] };
 const EMPTY_SECTIONS: SectionBuckets = {
   popular: [],
   scheduled: [],
+  ongoing: [],
   awards: [],
   completed: [],
   visit: [],
@@ -161,14 +167,24 @@ export default function PerformanceListPage() {
 
         const todayDateKey = formatSeoulDateKey();
 
+        // 섹션 분류는 prfstate가 아니라 공연 기간으로 한다(lib/performanceState.ts 주석 참고).
         const scheduledQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .eq("prfstate", "공연예정")
-          .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
+          .gt("prfpdfrom", todayDateKey)
           .order("prfpdfrom", { ascending: true })
+          .limit(12);
+
+        const ongoingQuery = supabase
+          .from("kopis_performances")
+          .select(baseSelect)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .lte("prfpdfrom", todayDateKey)
+          .gte("prfpdto", todayDateKey)
+          .order("prfpdto", { ascending: true })
           .limit(12);
 
         const completedQuery = supabase
@@ -176,7 +192,7 @@ export default function PerformanceListPage() {
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .eq("prfstate", "공연완료")
+          .lt("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: false })
           .limit(12);
 
@@ -225,10 +241,11 @@ export default function PerformanceListPage() {
               .in("mt20id", awardIds)
           : null;
 
-        const [popularRes, scheduledRes, completedRes, awardsRes, visitRes] =
+        const [popularRes, scheduledRes, ongoingRes, completedRes, awardsRes, visitRes] =
           await Promise.all([
             popularQuery ?? Promise.resolve({ data: [], error: null }),
             scheduledQuery,
+            ongoingQuery,
             completedQuery,
             awardsQuery ?? Promise.resolve({ data: [] }),
             visitQuery ?? Promise.resolve({ data: [] }),
@@ -237,6 +254,7 @@ export default function PerformanceListPage() {
         if (
           popularRes.error ||
           scheduledRes.error ||
+          ongoingRes.error ||
           completedRes.error ||
           awardIdsRes.error ||
           visitIdsRes.error ||
@@ -254,9 +272,12 @@ export default function PerformanceListPage() {
           : popularData;
         const visitData = ((visitRes as { data?: PerformanceItem[] }).data ??
           []) as PerformanceItem[];
-        const VISIT_STATE_ORDER: Record<string, number> = { "공연중": 0, "공연예정": 1, "공연완료": 2 };
+        const visitStateOrder = (item: PerformanceItem) =>
+          PERFORMANCE_STATE_ORDER[
+            getPerformanceState(item.prfpdfrom, item.prfpdto, todayDateKey)
+          ];
         const orderedVisit = visitData.sort((a, b) => {
-          const stateDiff = (VISIT_STATE_ORDER[a.prfstate ?? ""] ?? 3) - (VISIT_STATE_ORDER[b.prfstate ?? ""] ?? 3);
+          const stateDiff = visitStateOrder(a) - visitStateOrder(b);
           if (stateDiff !== 0) return stateDiff;
           return (a.prfpdfrom ?? "").localeCompare(b.prfpdfrom ?? "");
         });
@@ -273,6 +294,7 @@ export default function PerformanceListPage() {
           sections: {
             popular: orderedPopular,
             scheduled: (scheduledRes.data ?? []) as PerformanceItem[],
+            ongoing: (ongoingRes.data ?? []) as PerformanceItem[],
             awards: orderedAwards,
             completed: (completedRes.data ?? []) as PerformanceItem[],
             visit: orderedVisit,
@@ -447,6 +469,11 @@ export default function PerformanceListPage() {
     [sections.scheduled, ratingMap, renderCard]
   );
 
+  const ongoingCards = useMemo(
+    () => sections.ongoing.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
+    [sections.ongoing, ratingMap, renderCard]
+  );
+
   const completedCards = useMemo(
     () => sections.completed.map((item) => renderCard(item, { rating: ratingMap[item.mt20id] })),
     [sections.completed, ratingMap, renderCard]
@@ -520,6 +547,7 @@ export default function PerformanceListPage() {
 
           <div className="space-y-7">
             {renderSectionSkeleton("popular")}
+            {renderSectionSkeleton("ongoing")}
             {renderSectionSkeleton("scheduled")}
             {renderSectionSkeleton("completed")}
             {renderSectionSkeleton("visit")}
@@ -584,6 +612,31 @@ export default function PerformanceListPage() {
                 </div>
                 <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
                   {popularCards}
+                </div>
+              </section>
+            )}
+
+            {ongoingCards.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">
+                      지금 관람할 수 있는 공연을 모아봤어요
+                    </h2>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#17171c]/50"
+                    onClick={() => router.push("/performance/search?section=ongoing")}
+                    aria-label="공연중 더보기"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scroll-px-4 snap-x snap-mandatory">
+                  {ongoingCards}
                 </div>
               </section>
             )}
