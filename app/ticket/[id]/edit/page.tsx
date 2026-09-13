@@ -535,7 +535,11 @@ export default function TicketEditPage() {
                           }}
                         >
                           <Star
-                            className="h-6 w-6 text-brand"
+                            // 비활성 별까지 브랜드색이면 5개가 다 켜진 것처럼 보인다.
+                            // 고른 개수가 한눈에 드러나도록 비활성은 연한 회색 외곽선으로 둔다.
+                            className={
+                              rating >= starIndex * 2 ? "h-6 w-6 text-brand" : "h-6 w-6 text-[#17171c]/20"
+                            }
                             fill={rating >= starIndex * 2 ? "currentColor" : "none"}
                           />
                         </button>
@@ -599,7 +603,11 @@ export default function TicketEditPage() {
                         }}
                       >
                         <Star
-                          className="h-6 w-6 text-brand"
+                          // 비활성 별까지 브랜드색이면 5개가 다 켜진 것처럼 보인다.
+                          // 고른 개수가 한눈에 드러나도록 비활성은 연한 회색 외곽선으로 둔다.
+                          className={
+                            rating >= starIndex * 2 ? "h-6 w-6 text-brand" : "h-6 w-6 text-[#17171c]/20"
+                          }
                           fill={rating >= starIndex * 2 ? "currentColor" : "none"}
                         />
                       </button>
