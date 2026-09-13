@@ -29,10 +29,12 @@ export const DELETE = async (
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  const { error: updateError } = await result.supabaseAdmin
-    .from("performance_reviews")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+  // 유저 삭제 경로와 동일하게 티켓의 review_id도 함께 복원한다 — 어드민이 지운 경우에도
+  // 티켓이 죽은 리뷰를 가리킨 채 남으면 안 된다. p_user_id를 넘기지 않으면 소유권 검사를
+  // 건너뛴다(어드민 경로).
+  const { error: updateError } = await result.supabaseAdmin.rpc("soft_delete_review", {
+    p_review_id: id,
+  });
 
   if (updateError) {
     console.error("admin review delete", updateError);

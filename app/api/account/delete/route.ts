@@ -11,6 +11,9 @@ const USER_SOFT_DELETE_TARGETS = [
   { table: "performance_review_likes", userColumn: "user_id" },
   { table: "performance_review_comment_likes", userColumn: "user_id" },
   { table: "performance_review_images", userColumn: "user_id" },
+  // 티켓북 — 빠뜨리면 탈퇴 후에도 티켓과 첨부 사진이 그대로 남는다.
+  { table: "performance_tickets", userColumn: "user_id" },
+  { table: "performance_ticket_images", userColumn: "user_id" },
   { table: "performance_review_reports", userColumn: "reporter_user_id" },
   {
     table: "performance_review_comment_reports",

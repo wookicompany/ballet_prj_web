@@ -309,6 +309,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     const handleRefresh = () => {
+      // 이동이 끝나 이 화면으로 돌아왔으므로 더블탭 가드를 푼다(티켓북과 동일 규칙).
+      navigatingRef.current = false;
       const changedKeys = Object.keys(sessionStorage).filter(k =>
         k.startsWith("record-changed:")
       );
@@ -659,6 +661,10 @@ export default function CalendarPage() {
               const isEmptyDay = doneCount === 0 && plannedCount === 0;
 
               if (countsReady && isEmptyDay) {
+                // 다른 날짜를 탭한 것이므로 이전 선택은 먼저 푼다. 이걸 빼면 빈 날을
+                // 눌렀는데 엉뚱한 날짜가 계속 회색으로 남는다(이동이 막히거나
+                // 뒤로 돌아왔을 때 그대로 보인다).
+                setSelectedDate("");
                 if (navigatingRef.current) return;
                 navigatingRef.current = true;
                 try {
