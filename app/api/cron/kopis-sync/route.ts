@@ -33,6 +33,13 @@ const getDateKey = (value: Date) =>
 const getDefaultDateRange = () => {
   const now = new Date();
   const start = new Date(now);
+  // 오늘이 아니라 30일 전부터 받는다(docs/app_spec.md의 원래 스펙).
+  //
+  // KOPIS 목록 API는 이 구간에 기간이 걸치는 공연만 돌려주므로, 오늘부터 받으면 공연이
+  // 끝나는 순간 응답에서 빠지고 그 행은 마지막으로 받은 값에서 영영 갱신되지 않는다.
+  // prfstate뿐 아니라 포스터와 공연명, 출연진 같은 사후 수정도 반영되지 않는다. 30일 창을
+  // 두면 끝난 뒤에도 한 달간 재수집되어 종료 상태와 막판 수정이 반영된다.
+  start.setDate(start.getDate() - 30);
   const end = new Date(now);
   end.setDate(end.getDate() + 365);
   return {
