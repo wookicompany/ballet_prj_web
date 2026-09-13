@@ -24,14 +24,24 @@ type DatePickerSheetProps = {
  * 티켓북도 같은 시트를 쓰게 해서 날짜 입력 경험을 하나로 맞춘다.
  * (네이티브 <input type="date">는 OS마다 모양이 달라 앱 안에서 이질적이다.)
  */
-export default function DatePickerSheet({
-  open,
+export default function DatePickerSheet({ open, onOpenChange, ...rest }: DatePickerSheetProps) {
+  // 본문을 열려 있을 때만 마운트한다. 그러면 draft를 useState 초기값으로 한 번만 잡으면
+  // 되고, "열릴 때마다 현재 값으로 되돌리는" effect가 필요 없다(effect 안에서 동기적으로
+  // setState하면 연쇄 렌더를 유발한다).
+  return (
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      {open ? <DatePickerBody onOpenChange={onOpenChange} {...rest} /> : null}
+    </BottomSheet>
+  );
+}
+
+function DatePickerBody({
   onOpenChange,
   value,
   onConfirm,
   yearsBefore = 2,
   yearsAfter = 3,
-}: DatePickerSheetProps) {
+}: Omit<DatePickerSheetProps, "open">) {
   const yearListRef = useRef<HTMLDivElement>(null);
   const monthListRef = useRef<HTMLDivElement>(null);
   const dayListRef = useRef<HTMLDivElement>(null);
@@ -50,18 +60,9 @@ export default function DatePickerSheet({
     return { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() };
   });
 
-  // 시트를 열 때마다 현재 값으로 초기화한다 — 취소하고 다시 열었을 때 이전에 만지던
-  // 값이 남아 있으면 안 된다.
-  useEffect(() => {
-    if (!open) return;
-    const base = (value ? parseDateKey(value) : null) ?? getSeoulTodayDate();
-    setDraft({ year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() });
-  }, [open, value]);
-
   // 선택된 항목을 각 열의 가운데로 스크롤한다. 없으면 목록이 맨 위에 머물러
   // 지금 값이 선택돼 있는데도 화면 밖이라 보이지 않는다.
   useEffect(() => {
-    if (!open) return;
     const scrollToCenter = (container: HTMLDivElement | null, target: string) => {
       if (!container) return;
       const node = container.querySelector<HTMLButtonElement>(`button[data-value="${target}"]`);
@@ -73,12 +74,12 @@ export default function DatePickerSheet({
       scrollToCenter(dayListRef.current, String(draft.day).padStart(2, "0"));
     });
     return () => cancelAnimationFrame(frame);
-  }, [open, draft.year, draft.month, draft.day]);
+  }, [draft.year, draft.month, draft.day]);
 
   const daysInMonth = new Date(draft.year, draft.month, 0).getDate();
 
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange}>
+    <>
       <div className="grid grid-cols-3 gap-3">
         <div
           ref={yearListRef}
@@ -155,6 +156,6 @@ export default function DatePickerSheet({
           적용하기
         </Button>
       </div>
-    </BottomSheet>
+    </>
   );
 }
