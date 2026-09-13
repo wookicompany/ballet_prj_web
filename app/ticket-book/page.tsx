@@ -399,7 +399,6 @@ export default function TicketBookPage() {
                 className="text-[#17171c]/70"
                 aria-label="연월 선택"
                 onClick={() => {
-                  sendHapticToApp();
                   setMonthDraft({
                     year: currentDate.getFullYear(),
                     month: currentDate.getMonth() + 1,
@@ -417,7 +416,6 @@ export default function TicketBookPage() {
               className="h-10 w-10 rounded-xl bg-primary text-primary-foreground"
               aria-label="티켓 등록하기"
               onClick={() => {
-                sendHapticToApp();
                 goToNew();
               }}
             >

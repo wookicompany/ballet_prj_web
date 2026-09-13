@@ -172,7 +172,6 @@ function TicketDetailForm() {
     }
 
     setSaving(true);
-    sendHapticToApp();
 
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) {
@@ -219,6 +218,34 @@ function TicketDetailForm() {
         }
         ticketId = json.id as string;
         createdTicketIdRef.current = ticketId;
+      } else {
+        // 재시도 경로 — 티켓은 이미 만들어져 있다. 여기서 현재 폼 값을 다시 보내지
+        // 않으면, 1차 시도가 뒤 단계(이미지·리뷰)에서 실패한 뒤 사용자가 별점이나
+        // 좌석·날짜를 고쳐서 재시도해도 1차 값이 그대로 굳는다. 리뷰는 새 값으로
+        // 만들어지므로 등록 직후부터 티켓과 리뷰의 별점이 어긋난다.
+        let syncOk = false;
+        try {
+          const syncRes = await fetch(`/api/tickets/${ticketId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              watched_on: watchedOn,
+              rating: rating > 0 ? rating : null,
+              seat,
+            }),
+          });
+          syncOk = syncRes.ok;
+        } catch {
+          syncOk = false;
+        }
+        if (!syncOk) {
+          setSaving(false);
+          toast("티켓을 저장하지 못했어요. 다시 시도해 주세요.");
+          return;
+        }
       }
 
       // 2) 이미지 업로드 + 링크 — 하나라도 실패하면 전부 붙이지 않는다(all-or-nothing).
@@ -368,7 +395,7 @@ function TicketDetailForm() {
                     htmlFor="ticket-title"
                     className="text-sm text-[#17171c]/60"
                   >
-                    공연명
+                    공연명<span className="-ml-[1px] text-[#17171c]/50">*</span>
                   </Label>
                   <Input
                     id="ticket-title"
@@ -485,7 +512,6 @@ function TicketDetailForm() {
                 variant="outline"
                 className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
-                  sendHapticToApp();
                   setDateSheetOpen(true);
                 }}
               >

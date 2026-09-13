@@ -31,6 +31,7 @@ const MAX_IMAGES = 3;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const BUCKET = "record-media";
 const MAX_REVIEW_LEN = 300;
+const MAX_TEXT_LEN = 50;
 
 type PreviewItem = { file: File; url: string };
 type ExistingImage = { id: string; url: string };
@@ -49,6 +50,10 @@ export default function TicketEditPage() {
 
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState<string | null>(null);
+  // 직접 입력 티켓은 공연명·장소를 고칠 수 있어야 한다 — 오타 하나 때문에 티켓을
+  // 지우고 사진까지 다시 올리게 할 수는 없다. KOPIS 공연은 읽기 전용이다.
+  const [customTitle, setCustomTitle] = useState("");
+  const [customVenue, setCustomVenue] = useState("");
   const [poster, setPoster] = useState<string | null>(null);
   const [watchedOn, setWatchedOn] = useState("");
   const [rating, setRating] = useState(0);
@@ -122,6 +127,8 @@ export default function TicketEditPage() {
         if (cancelled) return;
         setTitle(json.performance?.prfnm || json.ticket.customTitle || "제목 없음");
         setVenue(json.performance?.fcltynm || json.ticket.customVenue || null);
+        setCustomTitle(json.ticket.customTitle ?? "");
+        setCustomVenue(json.ticket.customVenue ?? "");
         setPoster(json.performance?.poster ? json.performance.poster : null);
         setWatchedOn(json.ticket.watchedOn);
         setRating(json.ticket.rating ?? 0);
@@ -169,6 +176,10 @@ export default function TicketEditPage() {
       toast("관람 날짜를 확인해 주세요.");
       return;
     }
+    if (isCustom && !customTitle.trim()) {
+      toast("공연명을 입력해 주세요.");
+      return;
+    }
     // 리뷰가 없는 KOPIS 공연 티켓에 한해 이 화면에서 리뷰를 새로 쓸 수 있다.
     const wantsReview = !isCustom && !hasReview && reviewContent.trim().length > 0;
     if (wantsReview && rating === 0) {
@@ -176,7 +187,6 @@ export default function TicketEditPage() {
       return;
     }
     setSaving(true);
-    sendHapticToApp();
 
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) {
@@ -198,6 +208,10 @@ export default function TicketEditPage() {
             watched_on: watchedOn,
             rating: rating > 0 ? rating : null,
             seat,
+            // 직접 입력 티켓만 공연명·장소를 함께 보낸다. KOPIS 공연은 서버가
+            // 이 필드를 무시하도록 null로 둔다.
+            custom_title: isCustom ? customTitle : null,
+            custom_venue: isCustom ? customVenue : null,
           }),
         });
         patchOk = res.ok;
@@ -324,8 +338,8 @@ export default function TicketEditPage() {
       toast("티켓을 저장하지 못했어요. 다시 시도해 주세요.");
     }
   }, [
-    saving, ticketId, watchedOn, rating, seat,
-    removedImageIds, mediaItems, isCustom, hasReview, reviewContent, isPublic,
+    saving, ticketId, watchedOn, rating, seat, isCustom, customTitle, customVenue,
+    removedImageIds, mediaItems, hasReview, reviewContent, isPublic,
     openLoginSheet, router,
   ]);
 
@@ -334,6 +348,25 @@ export default function TicketEditPage() {
       <MobileContainer>
         <main className="flex min-h-screen items-center justify-center">
           <Spinner size="lg" />
+        </main>
+      </MobileContainer>
+    );
+  }
+
+  if (!user) {
+    return (
+      <MobileContainer>
+        <main className="px-4 pb-10">
+          <PageHeader title="티켓 수정" className="mb-6" />
+          <p className="mt-20 text-center text-sm text-[#17171c]/60">
+            로그인하면 티켓을 수정할 수 있어요
+          </p>
+          <Button
+            className="mx-auto mt-4 flex h-12 w-full max-w-[240px]"
+            onClick={() => openLoginSheet()}
+          >
+            로그인하기
+          </Button>
         </main>
       </MobileContainer>
     );
@@ -361,25 +394,55 @@ export default function TicketEditPage() {
         {/* 등록 화면과 같은 리듬 — 바깥을 space-y-8로 묶는다 */}
         <div className="space-y-8">
           <section className="space-y-6">
-            {/* 공연 정보는 읽기 전용 — 공연 재선택은 지원하지 않는다. */}
-            <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
-              {poster ? (
-                <AnimatedImage
-                  src={poster}
-                  alt=""
-                  width={45}
-                  height={64}
-                  sizes="45px"
-                  className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
-                />
-              ) : (
-                <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{title}</p>
-                {venue ? <p className="truncate text-xs text-[#17171c]/60">{venue}</p> : null}
+            {/* 공연 정보 — 직접 입력 티켓은 고칠 수 있고, KOPIS 공연은 읽기 전용이다.
+                (KOPIS 공연을 다른 공연으로 바꾸는 "공연 재선택"은 지원하지 않는다.) */}
+            {isCustom ? (
+              <>
+                <div>
+                  <Label htmlFor="ticket-title" className="text-sm text-[#17171c]/60">
+                    공연명<span className="-ml-[1px] text-[#17171c]/50">*</span>
+                  </Label>
+                  <Input
+                    id="ticket-title"
+                    value={customTitle}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomTitle(event.target.value)}
+                    placeholder="공연명을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ticket-venue" className="text-sm text-[#17171c]/60">장소</Label>
+                  <Input
+                    id="ticket-venue"
+                    value={customVenue}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomVenue(event.target.value)}
+                    placeholder="공연장을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
+                {poster ? (
+                  <AnimatedImage
+                    src={poster}
+                    alt=""
+                    width={45}
+                    height={64}
+                    sizes="45px"
+                    className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
+                  />
+                ) : (
+                  <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{title}</p>
+                  {venue ? <p className="truncate text-xs text-[#17171c]/60">{venue}</p> : null}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 미디어 — 기록 수정과 동일한 구조(추가 버튼이 맨 앞, 가로 스크롤) */}
             <div className="space-y-3">
@@ -468,7 +531,6 @@ export default function TicketEditPage() {
                 variant="outline"
                 className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
-                  sendHapticToApp();
                   setDateSheetOpen(true);
                 }}
               >

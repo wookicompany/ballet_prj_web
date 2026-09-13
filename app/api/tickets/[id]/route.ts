@@ -126,7 +126,7 @@ export const PATCH = async (
 
   const { data: ticket, error: loadError } = await auth.supabaseAdmin
     .from("performance_tickets")
-    .select("id, user_id, deleted_at, review_id")
+    .select("id, user_id, deleted_at, review_id, performance_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -166,12 +166,24 @@ export const PATCH = async (
     rating = parsed === 0 ? null : parsed;
   }
 
+  // 직접 입력 티켓만 공연명·장소를 고칠 수 있다. KOPIS 공연은 조인으로 정보를 읽으므로
+  // custom_* 를 건드리지 않는다(클라이언트가 보내도 서버에서 무시한다).
+  const isCustom = !ticket.performance_id;
+  const customTitle = toNullableText(body?.custom_title);
+  if (isCustom && !customTitle) {
+    // 직접 입력 티켓은 공연명이 비면 performance_tickets_source_check를 위반한다.
+    return NextResponse.json({ message: "Bad request" }, { status: 400 });
+  }
+
   const { error: updateError } = await auth.supabaseAdmin
     .from("performance_tickets")
     .update({
       watched_on: watchedOn,
       rating,
       seat: toNullableText(body?.seat),
+      ...(isCustom
+        ? { custom_title: customTitle, custom_venue: toNullableText(body?.custom_venue) }
+        : {}),
       // updated_at은 performance_tickets_set_updated_at 트리거가 갱신한다.
     })
     .eq("id", id);

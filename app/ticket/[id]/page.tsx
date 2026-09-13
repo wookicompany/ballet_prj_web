@@ -139,7 +139,6 @@ export default function TicketDetailPage() {
   const handleDelete = async () => {
     if (deleting || !ticketId) return;
     setDeleting(true);
-    sendHapticToApp();
     const session = await ensureSessionOrLogin(openLoginSheet);
     if (!session) {
       setDeleting(false);
@@ -312,6 +311,7 @@ export default function TicketDetailPage() {
             <button
               type="button"
               onClick={() => {
+                // 네이티브 <button>이라 햅틱을 직접 호출한다(Button 컴포넌트가 아님).
                 sendHapticToApp();
                 router.push(`/performance/${ticket.performanceId}/reviews/${review.id}`);
               }}
