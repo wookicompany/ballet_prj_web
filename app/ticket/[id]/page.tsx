@@ -357,25 +357,29 @@ export default function TicketDetailPage() {
       <BottomSheet open={menuOpen} onOpenChange={setMenuOpen}>
         <div className="space-y-1">
           <Button
-            variant="ghost"
-            className="h-12 w-full justify-start gap-3"
+            type="button"
+            variant="outline"
+            className="h-12 w-full justify-start text-sm"
             onClick={() => {
               setMenuOpen(false);
               router.push(`/ticket/${ticket.id}/edit`);
             }}
           >
-            <PenLine className="size-5" />
+            <PenLine className="mr-2 h-4 w-4" />
             수정하기
           </Button>
+          {/* 파괴적 액션은 text-red-500 — #FF154A는 --alert(알림 신호색) 토큰 값이라
+              삭제에 쓰면 안 된다. */}
           <Button
-            variant="ghost"
-            className="h-12 w-full justify-start gap-3 text-[#FF154A]"
+            type="button"
+            variant="outline"
+            className="h-12 w-full justify-start text-sm text-red-500"
             onClick={() => {
               setMenuOpen(false);
               setDeleteOpen(true);
             }}
           >
-            <Trash2 className="size-5" />
+            <Trash2 className="mr-2 h-4 w-4" />
             삭제하기
           </Button>
         </div>
@@ -389,9 +393,17 @@ export default function TicketDetailPage() {
               삭제하면 되돌릴 수 없어요. 이미 작성한 리뷰는 그대로 남아요.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleDelete()}>삭제</AlertDialogAction>
+          {/* AlertDialogFooter 기본 클래스가 flex-col-reverse라 그대로 두면 모바일에서
+              버튼이 세로로 쌓이고 "삭제"가 위로 올라간다. 기록 상세와 같은 가로 배치로. */}
+          <AlertDialogFooter className="flex flex-row gap-2">
+            <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+            <AlertDialogAction
+              variant="outline"
+              className="flex-1 text-red-500"
+              onClick={() => void handleDelete()}
+            >
+              삭제할게요
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -100,6 +100,10 @@ export default function TicketBookPage() {
     });
   }, [currentDate, selectedDate]);
 
+  // 월을 빠르게 넘기면 이전 달 요청의 응답이 나중에 도착해 지금 보는 달을 덮어쓴다.
+  // 요청마다 순번을 매겨 마지막 요청의 응답만 화면에 반영한다(검색 화면과 같은 방식).
+  const monthSeqRef = useRef(0);
+
   const fetchTickets = useCallback(
     async (force = false) => {
       if (!user) {
@@ -110,6 +114,8 @@ export default function TicketBookPage() {
       }
 
       const monthKey = `${start.getFullYear()}-${start.getMonth() + 1}`;
+      const seq = monthSeqRef.current + 1;
+      monthSeqRef.current = seq;
 
       // 재조회가 도는 동안에는 "미로드"로 낮춘다. 스테일 데이터로 빈 날을 오판해
       // 등록 화면으로 잘못 이동하는 것을 막고, 그동안의 탭은 선택 토글로 폴백시킨다.
@@ -135,6 +141,8 @@ export default function TicketBookPage() {
         .gte("watched_on", formatSeoulDateKey(start))
         .lte("watched_on", formatSeoulDateKey(end))
         .order("created_at", { ascending: true });
+
+      if (seq !== monthSeqRef.current) return; // 더 최신 요청이 있다 — 이 응답은 버린다
 
       if (error || !data) {
         toast("티켓 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -211,6 +219,9 @@ export default function TicketBookPage() {
   // 티켓 생성·수정·삭제 후 돌아왔을 때(bfcache 복귀 포함) 캐시를 비우고 재조회한다.
   useEffect(() => {
     const handleRefresh = () => {
+      // 이동이 끝나 이 화면으로 돌아왔으므로 더블탭 가드를 푼다. 이걸 안 풀면
+      // 라우터가 컴포넌트를 재사용하는 경우 등록 버튼과 빈 날 탭이 영구히 막힌다.
+      navigatingRef.current = false;
       if (!consumeTicketChanged()) return;
       invalidateTicketBookCache();
       void fetchTickets(true);
@@ -386,7 +397,10 @@ export default function TicketBookPage() {
         >
           {/* 두 번째 줄 — 캘린더 탭 헤더(app/(tabs)/calendar/page.tsx:559-588)와 같은
               규격. 좌측은 연월(탭하면 선택 시트), 우측은 티켓 등록 버튼. */}
-          <div className="flex h-12 items-center justify-between px-4">
+          {/* PageHeader(h-12)가 sticky top-0이므로 그 아래에 이어 붙도록 top-12로 고정한다.
+              셀이 116px라 5~6주 달이면 스크롤이 생기는데, 플로팅 버튼을 없앤 뒤로는
+              이 줄의 + 버튼이 등록의 유일한 진입점이라 화면에서 사라지면 안 된다. */}
+          <div className="sticky top-12 z-20 flex h-12 items-center justify-between bg-background px-4">
             <div className="flex items-center gap-0">
               {/* 헤더 타이틀("티켓북")이 text-base라, 연월이 그보다 커지면 위계가
                   뒤집힌다. 같은 크기까지만 쓴다. */}

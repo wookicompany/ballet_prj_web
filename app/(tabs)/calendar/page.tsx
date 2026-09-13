@@ -309,6 +309,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     const handleRefresh = () => {
+      // 이동이 끝나 이 화면으로 돌아왔으므로 더블탭 가드를 푼다(티켓북과 동일 규칙).
+      navigatingRef.current = false;
       const changedKeys = Object.keys(sessionStorage).filter(k =>
         k.startsWith("record-changed:")
       );
