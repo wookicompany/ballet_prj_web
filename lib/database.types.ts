@@ -1192,7 +1192,6 @@ export type Database = {
           custom_venue: string | null
           deleted_at: string | null
           id: string
-          memo: string | null
           performance_id: string | null
           rating: number | null
           review_id: string | null
@@ -1207,7 +1206,6 @@ export type Database = {
           custom_venue?: string | null
           deleted_at?: string | null
           id?: string
-          memo?: string | null
           performance_id?: string | null
           rating?: number | null
           review_id?: string | null
@@ -1222,7 +1220,6 @@ export type Database = {
           custom_venue?: string | null
           deleted_at?: string | null
           id?: string
-          memo?: string | null
           performance_id?: string | null
           rating?: number | null
           review_id?: string | null

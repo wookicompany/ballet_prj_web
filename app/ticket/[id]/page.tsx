@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CalendarDays, ChevronRight, Lock, Menu, NotebookPen, PenLine, Sofa, Star, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronRight, Lock, Menu, PenLine, Sofa, Star, Trash2 } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -38,7 +38,6 @@ type TicketDetail = {
   watchedOn: string;
   rating: number | null;
   seat: string | null;
-  memo: string | null;
   reviewId: string | null;
 };
 
@@ -277,12 +276,6 @@ export default function TicketDetailPage() {
               <div className="flex items-start gap-3">
                 <Sofa className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
                 <span className="text-sm text-[#17171c]">{ticket.seat}</span>
-              </div>
-            ) : null}
-            {ticket.memo ? (
-              <div className="flex items-start gap-3">
-                <NotebookPen className="mt-0.5 h-4 w-4 shrink-0 text-[#17171c]/40" />
-                <span className="whitespace-pre-line text-sm text-[#17171c]">{ticket.memo}</span>
               </div>
             ) : null}
           </div>

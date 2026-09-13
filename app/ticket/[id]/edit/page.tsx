@@ -54,7 +54,6 @@ export default function TicketEditPage() {
   const [watchedOn, setWatchedOn] = useState("");
   const [rating, setRating] = useState(0);
   const [seat, setSeat] = useState("");
-  const [memo, setMemo] = useState("");
   // 리뷰가 없는 티켓에 한해 이 화면에서 리뷰를 쓸 수 있다. 이미 있는 리뷰의 수정은
   // 티켓 상세의 리뷰 카드 → 리뷰 상세 → 수정 경로가 따로 있으므로 여기서 중복하지 않는다.
   const [isCustom, setIsCustom] = useState(false);
@@ -128,7 +127,6 @@ export default function TicketEditPage() {
         setWatchedOn(json.ticket.watchedOn);
         setRating(json.ticket.rating ?? 0);
         setSeat(json.ticket.seat ?? "");
-        setMemo(json.ticket.memo ?? "");
         setExistingImages(json.images ?? []);
         setIsCustom(!json.ticket.performanceId);
         setHasReview(Boolean(json.review));
@@ -201,7 +199,6 @@ export default function TicketEditPage() {
             watched_on: watchedOn,
             rating: rating > 0 ? rating : null,
             seat,
-            memo,
           }),
         });
         patchOk = res.ok;
@@ -328,7 +325,7 @@ export default function TicketEditPage() {
       toast("티켓을 저장하지 못했어요. 다시 시도해 주세요.");
     }
   }, [
-    saving, ticketId, watchedOn, rating, seat, memo,
+    saving, ticketId, watchedOn, rating, seat,
     removedImageIds, mediaItems, isCustom, hasReview, reviewContent, isPublic,
     openLoginSheet, router,
   ]);
@@ -364,7 +361,7 @@ export default function TicketEditPage() {
 
         {/* 등록 화면과 같은 리듬 — 바깥을 space-y-8로 묶는다 */}
         <div className="space-y-8">
-          <section className="space-y-4">
+          <section className="space-y-6">
             {/* 미디어 — 기록 수정과 동일한 구조(추가 버튼이 맨 앞, 가로 스크롤) */}
             <div className="space-y-3">
               <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
@@ -494,16 +491,6 @@ export default function TicketEditPage() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="ticket-memo" className="text-sm text-[#17171c]/60">메모</Label>
-              <Textarea
-                id="ticket-memo"
-                value={memo}
-                onChange={(event) => setMemo(event.target.value)}
-                placeholder="기억하고 싶은 순간을 남겨보세요"
-                className="mt-2 min-h-[120px] text-base placeholder:text-sm"
-              />
-            </div>
           </section>
 
           {/* 리뷰 — 직접 입력 공연은 커뮤니티 리뷰를 만들 수 없고, 이미 리뷰가 있으면
@@ -512,12 +499,12 @@ export default function TicketEditPage() {
           {isCustom || hasReview ? null : (
             <>
               <Separator />
-              <section className="space-y-4">
+              <section className="space-y-6">
                 <h2 className="text-base font-semibold">공연 리뷰 등록</h2>
 
                 <div>
                   <Label className="text-sm text-[#17171c]/60">별점</Label>
-                  <div className="flex items-center gap-2">
+                  <div className="mt-3 flex items-center gap-2">
                     {Array.from({ length: 5 }, (_, index) => {
                       const starIndex = index + 1;
                       const filled = rating >= starIndex * 2;
@@ -584,10 +571,10 @@ export default function TicketEditPage() {
           {/* 별점은 리뷰 섹션 안에만 있으므로, 리뷰를 이미 쓴 티켓이나 직접 입력 티켓에도
               별점을 고칠 수 있도록 별도 섹션을 둔다. */}
           {isCustom || hasReview ? (
-            <section className="space-y-4">
+            <section className="space-y-6">
               <div>
                 <Label className="text-sm text-[#17171c]/60">별점</Label>
-                <div className="flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                   {Array.from({ length: 5 }, (_, index) => {
                     const starIndex = index + 1;
                     const filled = rating >= starIndex * 2;

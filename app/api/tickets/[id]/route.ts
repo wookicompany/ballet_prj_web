@@ -23,7 +23,7 @@ export const GET = async (
   const { data: ticket, error } = await auth.supabaseAdmin
     .from("performance_tickets")
     .select(
-      "id, user_id, performance_id, custom_title, custom_venue, watched_on, rating, seat, memo, review_id, deleted_at"
+      "id, user_id, performance_id, custom_title, custom_venue, watched_on, rating, seat, review_id, deleted_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -97,7 +97,6 @@ export const GET = async (
       watchedOn: ticket.watched_on,
       rating: ticket.rating,
       seat: ticket.seat,
-      memo: ticket.memo,
       // 살아 있는 리뷰가 있을 때만 id를 내려보낸다.
       reviewId: review?.id ?? null,
     },
@@ -173,7 +172,6 @@ export const PATCH = async (
       watched_on: watchedOn,
       rating,
       seat: toNullableText(body?.seat),
-      memo: toNullableText(body?.memo),
       // updated_at은 performance_tickets_set_updated_at 트리거가 갱신한다.
     })
     .eq("id", id);

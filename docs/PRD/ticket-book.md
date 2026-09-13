@@ -30,7 +30,6 @@
 | | 입력 항목 | 관람 날짜 | **필수** |
 | | 입력 항목 | 별점 | 선택 |
 | | 입력 항목 | 좌석 | 선택 |
-| | 입력 항목 | 메모 | 선택 |
 | | 입력 항목 | 이미지 | 선택, **최대 3장** |
 | **이미지** | 첨부 | 장수 제한 | 최대 3장 |
 | | 첨부 | 처리 방식 | 기존 기록 미디어와 동일한 **압축·스토리지 패턴 재사용** |
@@ -103,6 +102,11 @@
 
 ## 4. 데이터 모델
 
+> **변경 이력**: 메모(`memo`)는 v1에서 제거했다(마이그레이션 `ticket_book_drop_memo`).
+> 리뷰에 공개/비공개 토글이 있어 "나만 보는 감상"은 비공개 리뷰가 담당하므로, 자유 텍스트
+> 입력란이 둘이면 더 위에 있고 부담 없는 메모에 쓰게 되어 리뷰가 비게 된다. 티켓북의 기획
+> 의도(개인 기록에서 리뷰가 커뮤니티로 흘러가게 한다)와 정면으로 충돌한다.
+
 ### 신규 `performance_tickets`
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -111,7 +115,7 @@
 | custom_title / custom_venue | text, nullable | 직접 입력용 공연명·장소 |
 | watched_on | date | 관람 날짜(KST, 필수) |
 | rating | smallint, nullable | **2~10 짝수**(기존 리뷰와 동일 스케일, 별 1개 탭 = 2점). `performance_reviews.rating`과 동일한 CHECK(`rating IS NULL OR (rating BETWEEN 0 AND 10 AND rating % 2 = 0)`) 적용 — 변환 로직 없이 그대로 리뷰에 복사해 연결한다 |
-| seat / memo | text, nullable | 좌석 / 메모 |
+| seat | text, nullable | 좌석 |
 | review_id | uuid, nullable | 연결된 리뷰(`performance_reviews.id`) |
 | created_at / updated_at / deleted_at | timestamptz | 소프트 삭제 |
 

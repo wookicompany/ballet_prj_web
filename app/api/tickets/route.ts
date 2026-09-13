@@ -21,7 +21,6 @@ export const POST = async (request: Request) => {
   const customVenue = toNullableText(body?.custom_venue);
   const watchedOn = typeof body?.watched_on === "string" ? body.watched_on : "";
   const seat = toNullableText(body?.seat);
-  const memo = toNullableText(body?.memo);
 
   if (!isValidDateKey(watchedOn)) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
@@ -60,7 +59,6 @@ export const POST = async (request: Request) => {
       watched_on: watchedOn,
       rating,
       seat,
-      memo,
     })
     .select("id")
     .single();

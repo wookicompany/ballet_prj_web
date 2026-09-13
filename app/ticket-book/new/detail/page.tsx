@@ -66,7 +66,6 @@ function TicketDetailForm() {
   // 별점은 선택 항목이라 0이 "선택 안 함"이다. 저장 시 null로 보낸다.
   const [rating, setRating] = useState(0);
   const [seat, setSeat] = useState("");
-  const [memo, setMemo] = useState("");
   const [mediaItems, setMediaItems] = useState<PreviewItem[]>([]);
   // 공연 리뷰 등록(선택). content가 비어 있으면 리뷰를 아예 만들지 않는다.
   const [reviewContent, setReviewContent] = useState("");
@@ -196,7 +195,6 @@ function TicketDetailForm() {
               watched_on: watchedOn,
               rating: rating > 0 ? rating : null,
               seat,
-              memo,
             }),
           });
         } catch {
@@ -318,7 +316,7 @@ function TicketDetailForm() {
     }
   }, [
     saving, watchedOn, isCustom, customTitle, customVenue, performanceId,
-    rating, seat, memo, mediaItems, reviewContent, isPublic, openLoginSheet, router,
+    rating, seat, mediaItems, reviewContent, isPublic, openLoginSheet, router,
   ]);
 
   if (loading || fetching) {
@@ -340,7 +338,7 @@ function TicketDetailForm() {
 
         {/* 기록 생성과 같은 리듬 — 바깥을 space-y-8로 묶고 각 섹션이 자체 간격을 갖는다 */}
         <div className="space-y-8">
-        <section className="space-y-4">
+        <section className="space-y-6">
           {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
               추가 버튼이 맨 앞에 오고 가로 스크롤이며, 개수는 라벨이 아니라
               하단 안내 문구로 알린다. */}
@@ -476,17 +474,6 @@ function TicketDetailForm() {
             />
           </div>
 
-          {/* 메모 */}
-          <div>
-            <Label htmlFor="ticket-memo" className="text-sm text-[#17171c]/60">메모</Label>
-            <Textarea
-              id="ticket-memo"
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-              placeholder="기억하고 싶은 순간을 남겨보세요"
-              className="mt-2 min-h-[120px] text-base placeholder:text-sm"
-            />
-          </div>
         </section>
 
         {/* 구분선과 리뷰 섹션은 같은 조건으로 묶는다 — 따로 두면 직접 입력일 때
@@ -494,12 +481,12 @@ function TicketDetailForm() {
         {isCustom ? null : (
           <>
             <Separator />
-            <section className="space-y-4">
+            <section className="space-y-6">
               <h2 className="text-base font-semibold">공연 리뷰 등록</h2>
 
               <div>
                 <Label className="text-sm text-[#17171c]/60">별점</Label>
-                <div className="flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                   {Array.from({ length: 5 }, (_, index) => {
                     const starIndex = index + 1;
                     const filled = rating >= starIndex * 2;
