@@ -388,7 +388,9 @@ export default function TicketBookPage() {
               규격. 좌측은 연월(탭하면 선택 시트), 우측은 티켓 등록 버튼. */}
           <div className="flex h-12 items-center justify-between px-4">
             <div className="flex items-center gap-0">
-              <p className="text-lg font-bold">
+              {/* 헤더 타이틀("티켓북")이 text-base라, 연월이 그보다 커지면 위계가
+                  뒤집힌다. 같은 크기까지만 쓴다. */}
+              <p className="text-base font-semibold">
                 {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
               </p>
               <Button
