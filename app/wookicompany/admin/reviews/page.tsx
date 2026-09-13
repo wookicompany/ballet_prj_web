@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight, RefreshCw, Search } from "lucide-react";
+import { ChevronRight, Lock, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -36,6 +36,7 @@ type ReviewRow = {
   user_id: string;
   rating: number;
   content: string | null;
+  is_public: boolean;
   created_at: string;
   prfnm: string;
   nickname: string | null;
@@ -59,6 +60,8 @@ export default function AdminReviewsPage() {
   const [activeTab, setActiveTab] = useState<"reviews" | "comments">("reviews");
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "reported">("all");
+  // 공개 여부는 서버에서 거른다(API 주석 참고). 리뷰에만 있는 개념이라 댓글 탭에선 숨긴다.
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">("all");
 
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [reviewsTotal, setReviewsTotal] = useState(0);
@@ -74,7 +77,11 @@ export default function AdminReviewsPage() {
 
   const prevSearchQuery = useRef("");
 
-  const fetchReviews = useCallback(async (offset: number, q = "") => {
+  const fetchReviews = useCallback(async (
+    offset: number,
+    q = "",
+    visibility: "all" | "public" | "private" = "all"
+  ) => {
     const token = await getAdminToken();
     if (!token) {
       setReviewsError("로그인이 필요합니다.");
@@ -85,9 +92,11 @@ export default function AdminReviewsPage() {
     setReviewsError(null);
     try {
       const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
-      const res = await fetch(`/api/admin/reviews?limit=${LIMIT}&offset=${offset}${qParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const visibilityParam = visibility === "all" ? "" : `&visibility=${visibility}`;
+      const res = await fetch(
+        `/api/admin/reviews?limit=${LIMIT}&offset=${offset}${qParam}${visibilityParam}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (!res.ok) {
         setReviewsError("리뷰 목록을 불러오지 못했습니다.");
         return;
@@ -137,16 +146,16 @@ export default function AdminReviewsPage() {
     const queryChanged = prevSearchQuery.current !== searchQuery;
     prevSearchQuery.current = searchQuery;
     if (!queryChanged) {
-      fetchReviews(0, searchQuery);
+      fetchReviews(0, searchQuery, visibilityFilter);
       fetchComments(0, searchQuery);
       return;
     }
     const timer = setTimeout(() => {
-      fetchReviews(0, searchQuery);
+      fetchReviews(0, searchQuery, visibilityFilter);
       fetchComments(0, searchQuery);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchReviews, fetchComments]);
+  }, [searchQuery, visibilityFilter, fetchReviews, fetchComments]);
 
   const reviewsPages = Math.ceil(reviewsTotal / LIMIT) || 1;
   const reviewsPage = Math.floor(reviewsOffset / LIMIT) + 1;
@@ -173,7 +182,7 @@ export default function AdminReviewsPage() {
             size="sm"
             onClick={() => {
               if (activeTab === "reviews") {
-                fetchReviews(reviewsOffset, searchQuery);
+                fetchReviews(reviewsOffset, searchQuery, visibilityFilter);
               } else {
                 fetchComments(commentsOffset, searchQuery);
               }
@@ -210,6 +219,27 @@ export default function AdminReviewsPage() {
             >
               신고 있음
             </Button>
+            {activeTab === "reviews" ? (
+              <>
+                <span className="mx-1 h-5 w-px bg-border" />
+                {(
+                  [
+                    { value: "all", label: "전체" },
+                    { value: "public", label: "공개" },
+                    { value: "private", label: "비공개" },
+                  ] as const
+                ).map((f) => (
+                  <Button
+                    key={f.value}
+                    variant={visibilityFilter === f.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setVisibilityFilter(f.value)}
+                  >
+                    {f.label}
+                  </Button>
+                ))}
+              </>
+            ) : null}
           </div>
         </div>
         <div className="relative max-w-sm">
@@ -244,7 +274,7 @@ export default function AdminReviewsPage() {
                     variant="outline"
                     size="sm"
                     className="mt-3"
-                    onClick={() => fetchReviews(reviewsOffset, searchQuery)}
+                    onClick={() => fetchReviews(reviewsOffset, searchQuery, visibilityFilter)}
                   >
                     다시 시도
                   </Button>
@@ -268,7 +298,9 @@ export default function AdminReviewsPage() {
                       {filteredReviews.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                            {searchQuery.trim() || reportFilter === "reported"
+                            {searchQuery.trim() ||
+                            reportFilter === "reported" ||
+                            visibilityFilter !== "all"
                               ? "검색/필터 결과가 없습니다."
                               : "등록된 리뷰가 없습니다."}
                           </TableCell>
@@ -276,7 +308,20 @@ export default function AdminReviewsPage() {
                       ) : (
                         filteredReviews.map((r) => (
                           <TableRow key={r.id} className="h-14 cursor-pointer hover:bg-muted/40" onClick={() => router.push(`/wookicompany/admin/reviews/${r.id}`)}>
-                            <TableCell className="font-medium">{r.prfnm}</TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate" title={r.prfnm}>
+                                  {r.prfnm}
+                                </span>
+                                {/* 티켓북에서 비공개로 남긴 리뷰는 공개 목록엔 안 보이고 여기에만 뜬다. */}
+                                {!r.is_public ? (
+                                  <Badge variant="secondary" className="shrink-0 gap-1">
+                                    <Lock className="size-3" />
+                                    비공개
+                                  </Badge>
+                                ) : null}
+                              </div>
+                            </TableCell>
                             <TableCell>{r.nickname ?? "-"}</TableCell>
                             <TableCell>{r.rating}</TableCell>
                             <TableCell
@@ -327,7 +372,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT, searchQuery);
+                              if (reviewsPage > 1) fetchReviews(reviewsOffset - LIMIT, searchQuery, visibilityFilter);
                             }}
                             className={reviewsPage <= 1 ? "pointer-events-none opacity-50" : ""}
                           />
@@ -348,7 +393,7 @@ export default function AdminReviewsPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT, searchQuery);
+                              if (reviewsPage < reviewsPages) fetchReviews(reviewsOffset + LIMIT, searchQuery, visibilityFilter);
                             }}
                             className={reviewsPage >= reviewsPages ? "pointer-events-none opacity-50" : ""}
                           />

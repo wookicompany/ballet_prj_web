@@ -18,6 +18,13 @@ export const GET = async (request: Request) => {
   const offset = Number(searchParams.get("offset")) || 0;
   const q = searchParams.get("q")?.trim() || "";
 
+  // 공개 여부 필터. 신고 필터(reportFilter)는 현재 페이지 안에서만 거르는 클라이언트
+  // 필터지만, 비공개 리뷰는 전체 대비 소수라 같은 방식으로 두면 거의 항상 빈 결과가
+  // 나온다. 그래서 이것만 서버에서 거른다.
+  const visibilityParam = searchParams.get("visibility");
+  const visibility =
+    visibilityParam === "public" || visibilityParam === "private" ? visibilityParam : null;
+
   let matchingUserIds: string[] = [];
   if (q) {
     const { data: matched } = await result.supabaseAdmin
@@ -33,16 +40,18 @@ export const GET = async (request: Request) => {
 
   let query = result.supabaseAdmin
     .from("performance_reviews")
-    .select("id, performance_id, user_id, rating, content, created_at")
+    .select("id, performance_id, user_id, rating, content, is_public, created_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (q) query = query.or(buildOrStr());
+  if (visibility) query = query.eq("is_public", visibility === "public");
 
   let countQuery = result.supabaseAdmin
     .from("performance_reviews")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
   if (q) countQuery = countQuery.or(buildOrStr());
+  if (visibility) countQuery = countQuery.eq("is_public", visibility === "public");
 
   const [{ data: rows, error }, { count }] = await Promise.all([
     query.range(offset, offset + limit - 1),

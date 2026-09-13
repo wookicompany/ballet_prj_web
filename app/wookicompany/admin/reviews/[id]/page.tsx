@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Lock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { REPORT_REASON_OPTIONS } from "@/lib/reports";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -37,7 +37,7 @@ export default function AdminReviewDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [review, setReview] = useState<{ id: string; performance_id: string; prfnm: string; user_id: string; nickname: string | null; rating: number; content: string | null; created_at: string; [k: string]: unknown } | null>(null);
+  const [review, setReview] = useState<{ id: string; performance_id: string; prfnm: string; user_id: string; nickname: string | null; rating: number; content: string | null; is_public: boolean; created_at: string; [k: string]: unknown } | null>(null);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -151,7 +151,16 @@ export default function AdminReviewDetailPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <CardTitle>리뷰 전체 정보</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>리뷰 전체 정보</CardTitle>
+            {/* 어드민은 공개 여부와 무관하게 리뷰를 보지만, 비공개인지는 알아야 한다. */}
+            {!review.is_public ? (
+              <Badge variant="secondary" className="gap-1">
+                <Lock className="size-3" />
+                비공개
+              </Badge>
+            ) : null}
+          </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" disabled={deleting}>
