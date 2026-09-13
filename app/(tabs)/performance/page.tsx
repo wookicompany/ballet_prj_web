@@ -179,6 +179,11 @@ export default function PerformanceListPage() {
           .is("deleted_at", null)
           .eq("is_active", true)
           .eq("prfstate", "공연중")
+          // prfstate만 믿으면 안 된다 — KOPIS가 내려주는 상태가 실제 기간과 어긋나는
+          // 행이 있어서(종료일이 3주 지났는데 '공연중'으로 남은 공연 확인됨), 정렬이
+          // prfpdto 오름차순이라 그런 공연이 섹션 맨 앞에 뜬다. 기간으로 한 번 더 거른다.
+          .lte("prfpdfrom", todayDateKey)
+          .gte("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: true })
           .limit(12);
 
@@ -613,7 +618,7 @@ export default function PerformanceListPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-semibold">
-                      지금 바로 관람할 수 있는 공연을 모아봤어요
+                      지금 관람할 수 있는 공연을 모아봤어요
                     </h2>
                   </div>
                   <Button

@@ -74,7 +74,7 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     title: "수상작 공연을 모아봤어요",
   },
   ongoing: {
-    title: "지금 바로 관람할 수 있는 공연을 모아봤어요",
+    title: "지금 관람할 수 있는 공연을 모아봤어요",
     prfstate: "공연중",
   },
   completed: {
@@ -355,8 +355,12 @@ function PerformanceSearchContent() {
           .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
           .order("prfpdfrom", { ascending: true });
       } else if (sectionKey === "ongoing") {
+        // 홈과 동일하게 prfstate + 실제 기간을 함께 본다(공연 탭 홈 주석 참고).
+        const todayDateKey = formatSeoulDateKey();
         query = query
           .eq("prfstate", "공연중")
+          .lte("prfpdfrom", todayDateKey)
+          .gte("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: true });
       } else if (sectionKey === "completed") {
         query = query
