@@ -64,16 +64,14 @@ function TicketSearchContent() {
 
     setLoading(true);
     try {
-      // 원격 KOPIS API가 아니라 kopis_performances 테이블 직접 조회다
-      // (search-input/page.tsx와 동일) — 레이트리밋·API 키를 고려할 필요가 없다.
-      const { data, error } = await supabase
-        .from("kopis_performances")
-        .select("mt20id,prfnm,prfpdfrom,prfpdto,fcltynm,poster")
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .ilike("prfnm", `%${trimmed}%`)
-        .order("prfpdfrom", { ascending: false })
-        .limit(PAGE_SIZE);
+      // 원격 KOPIS API가 아니라 kopis_performances 테이블 조회다 — 레이트리밋·API 키를
+      // 고려할 필요가 없다. 다만 "오늘과 가까운 순" 정렬은 PostgREST의 order가 컬럼만
+      // 받아서 표현할 수 없으므로 RPC로 감쌌다(클라이언트 정렬은 일부만 받아와 정렬하게
+      // 되어 상위 N개가 틀린다).
+      const { data, error } = await supabase.rpc("search_kopis_performances_by_date", {
+        p_keyword: trimmed,
+        p_limit: PAGE_SIZE,
+      });
 
       if (seq !== requestSeqRef.current) return; // 더 최신 요청이 있다 — 이 응답은 버린다
 

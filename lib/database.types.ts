@@ -1888,6 +1888,18 @@ export type Database = {
       }
     }
     Functions: {
+      // 티켓북 공연 검색 — 오늘과 가까운 공연부터. PostgREST order가 계산식을 못 받아 RPC.
+      search_kopis_performances_by_date: {
+        Args: { p_keyword: string; p_limit?: number }
+        Returns: {
+          mt20id: string
+          prfnm: string | null
+          prfpdfrom: string | null
+          prfpdto: string | null
+          fcltynm: string | null
+          poster: string | null
+        }[]
+      }
       // 티켓북: 리뷰 생성 + 티켓 연결을 한 트랜잭션으로 묶는다(고아 리뷰 방지).
       // service role 전용이라 auth.uid()를 쓰지 않고 p_user_id를 인자로 받는다.
       create_ticket_review: {
