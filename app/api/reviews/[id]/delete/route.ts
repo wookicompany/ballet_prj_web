@@ -44,10 +44,21 @@ export const DELETE = async (
   });
 
   if (updateError) {
-    console.error("Failed to delete review", updateError);
+    // RPC가 던지는 코드를 상태로 옮긴다. 위에서 이미 존재·소유권을 검사했으므로
+    // 정상 경로에서는 나지 않지만, 더블탭으로 두 삭제 요청이 겹치는 좁은 창에서는
+    // 여기로 들어온다 — 그때 500 대신 404를 주는 편이 정확하다.
+    const message = updateError.message ?? "";
+    const status = message.includes("RVW404")
+      ? 404
+      : message.includes("RVW403")
+        ? 403
+        : 500;
+    if (status === 500) {
+      console.error("Failed to delete review", updateError);
+    }
     return NextResponse.json(
       { message: "Failed to delete review" },
-      { status: 500 }
+      { status }
     );
   }
 

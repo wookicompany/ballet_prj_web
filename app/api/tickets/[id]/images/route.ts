@@ -137,17 +137,24 @@ export const DELETE = async (
     return NextResponse.json({ message: "Failed to load images" }, { status: 500 });
   }
 
+  // 403은 "타인 소유"일 때만 낸다. 조회되지 않은 id는 이미 지워진 것으로 본다 —
+  // 삭제가 하드 삭제라, 서버는 성공했는데 응답만 유실된 경우(WKWebView) 클라이언트가
+  // 같은 id로 재시도하면 행이 없어 403이 반복되고, 그 세션에서는 이후 업로드·리뷰
+  // 단계까지 도달하지 못해 저장 자체가 영구히 막힌다.
   const unauthorized = (rows ?? []).some(
     (row) => row.user_id !== auth.user.id || row.ticket_id !== id
   );
-  if (unauthorized || (rows ?? []).length !== cleanedIds.length) {
+  if (unauthorized) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+  if ((rows ?? []).length === 0) {
+    return NextResponse.json({ ok: true });
   }
 
   const { error: deleteError } = await auth.supabaseAdmin
     .from("performance_ticket_images")
     .delete()
-    .in("id", cleanedIds);
+    .in("id", (rows ?? []).map((row) => row.id));
 
   if (deleteError) {
     console.error("Failed to delete ticket images", deleteError);

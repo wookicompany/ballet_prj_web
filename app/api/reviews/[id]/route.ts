@@ -57,6 +57,22 @@ export const PATCH = async (
     .eq("id", id)
     .is("deleted_at", null);
 
+  // 이 리뷰를 가리키는 티켓이 있으면 별점을 함께 맞춘다. 티켓북에서 하나의 별점을
+  // 티켓과 리뷰 양쪽에 쓰기 때문에, 여기서 리뷰만 바꾸면 같은 공연에 별점이 두 개가
+  // 되어 티켓 상세와 리뷰 카드가 서로 다른 점수를 보여준다.
+  // (티켓 PATCH의 역방향이다 — app/api/tickets/[id]/route.ts 참고)
+  if (!updateError) {
+    const { error: ticketSyncError } = await auth.supabaseAdmin
+      .from("performance_tickets")
+      .update({ rating })
+      .eq("review_id", id)
+      .is("deleted_at", null);
+    if (ticketSyncError) {
+      // 리뷰 수정은 이미 반영됐다. 되돌리지는 않되 조용히 넘기지 않는다.
+      console.error("Failed to sync ticket rating", ticketSyncError);
+    }
+  }
+
   if (updateError) {
     console.error("Failed to update review", updateError);
     return NextResponse.json(
