@@ -499,33 +499,31 @@ function TicketDetailForm() {
 
               <div>
                 <Label className="text-sm text-[#17171c]/60">별점</Label>
-                <div className="mt-2 flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   {Array.from({ length: 5 }, (_, index) => {
                     const starIndex = index + 1;
+                    const filled = rating >= starIndex * 2;
                     return (
-                      <button
-                        key={starIndex}
-                        type="button"
-                        className="flex h-7 w-7 items-center justify-center"
-                        aria-label={`${starIndex}점`}
-                        onClick={() => {
-                          sendHapticToApp();
-                          // 이미 선택된 최상위 별을 다시 탭하면 해제(선택 안 함)된다.
-                          // 이 값은 티켓의 별점이자 리뷰의 별점으로 함께 쓰인다 —
-                          // 리뷰를 쓰지 않아도 티켓에는 저장되므로 POST /api/tickets의
-                          // rating 필드에서 빼면 안 된다.
-                          setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
-                        }}
-                      >
-                        <Star
-                          // 비활성 별까지 브랜드색이면 5개가 다 켜진 것처럼 보인다.
-                          // 고른 개수가 한눈에 드러나도록 비활성은 연한 회색 외곽선으로 둔다.
-                          className={
-                            rating >= starIndex * 2 ? "h-6 w-6 text-brand" : "h-6 w-6 text-[#17171c]/20"
-                          }
-                          fill={rating >= starIndex * 2 ? "currentColor" : "none"}
+                      <div key={starIndex} className="relative h-7 w-7">
+                        <Star className="h-6 w-6 text-brand" fill="none" />
+                        <div
+                          className="absolute inset-0 overflow-hidden"
+                          style={{ width: filled ? "100%" : "0%" }}
+                        >
+                          <Star className="h-6 w-6 text-brand" fill="currentColor" />
+                        </div>
+                        <button
+                          type="button"
+                          className="absolute inset-0"
+                          aria-label={`${starIndex * 2}점`}
+                          onClick={() => {
+                            sendHapticToApp();
+                            // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된 최상위
+                            // 별을 다시 탭하면 해제된다. 이 값은 티켓의 별점이자 리뷰의 별점이다.
+                            setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
+                          }}
                         />
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -534,7 +532,7 @@ function TicketDetailForm() {
               <div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">내용</Label>
-                  <span className="text-xs text-[#17171c]/40">
+                  <span className="text-xs text-[#17171c]/50">
                     {reviewContent.length}/{MAX_REVIEW_LEN}
                   </span>
                 </div>
@@ -544,7 +542,7 @@ function TicketDetailForm() {
                   maxLength={MAX_REVIEW_LEN}
                   onChange={(event) => setReviewContent(event.target.value)}
                   placeholder="관람 소감을 자유롭게 남겨보세요"
-                  className="mt-2 min-h-[120px] text-base placeholder:text-sm"
+                  className="mt-2 min-h-[200px] border-[#17171c]/5 bg-[#fafafa] text-base placeholder:text-sm"
                 />
               </div>
 
