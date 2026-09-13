@@ -384,24 +384,44 @@ export default function TicketBookPage() {
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchCancel}
         >
-          {/* 라벨이 곧 연월 선택 진입점이다. 화살표가 없으면 탭할 수 있다는 것이
-              드러나지 않으므로 ChevronDown을 함께 둔다(프로필 연도 선택과 동일 패턴). */}
-          <button
-            type="button"
-            aria-label="연월 선택"
-            onClick={() => {
-              sendHapticToApp();
-              setMonthDraft({
-                year: currentDate.getFullYear(),
-                month: currentDate.getMonth() + 1,
-              });
-              setMonthSheetOpen(true);
-            }}
-            className="flex items-center gap-0.5 px-4 pt-4 text-base font-bold text-[#17171c] active:opacity-70"
-          >
-            {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-            <ChevronDown className="size-4 text-[#17171c]/50" strokeWidth={2.5} />
-          </button>
+          {/* 두 번째 줄 — 캘린더 탭 헤더(app/(tabs)/calendar/page.tsx:559-588)와 같은
+              규격. 좌측은 연월(탭하면 선택 시트), 우측은 티켓 등록 버튼. */}
+          <div className="flex h-12 items-center justify-between px-4">
+            <div className="flex items-center gap-0">
+              <p className="text-lg font-bold">
+                {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+              </p>
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                className="text-[#17171c]/70"
+                aria-label="연월 선택"
+                onClick={() => {
+                  sendHapticToApp();
+                  setMonthDraft({
+                    year: currentDate.getFullYear(),
+                    month: currentDate.getMonth() + 1,
+                  });
+                  setMonthSheetOpen(true);
+                }}
+              >
+                <ChevronDown className="size-6" strokeWidth={2.5} />
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="default"
+              size="icon-lg"
+              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground"
+              aria-label="티켓 등록하기"
+              onClick={() => {
+                sendHapticToApp();
+                goToNew();
+              }}
+            >
+              <Plus className="size-5" strokeWidth={2.8} />
+            </Button>
+          </div>
           <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-2 text-center text-sm text-[#17171c]/60">
             {weekLabels.map((label, index) => (
               <span
@@ -529,22 +549,6 @@ export default function TicketBookPage() {
           </section>
         )}
       </main>
-
-      {/* 티켓북은 (tabs) 밖의 독립 화면이라 탭바가 렌더링되지 않는다. 탭바용
-          FloatingButton(bottom-[72px])이 아니라 day/[date] 화면과 같은 규격을 쓴다. */}
-      <div className="pointer-events-none fixed bottom-12 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-end px-6">
-        <Button
-          size="icon"
-          className="pointer-events-auto h-12 w-12 rounded-2xl bg-primary text-white shadow-lg"
-          aria-label="티켓 등록하기"
-          onClick={() => {
-            sendHapticToApp();
-            goToNew();
-          }}
-        >
-          <Plus className="size-6" />
-        </Button>
-      </div>
 
       <BottomSheet open={monthSheetOpen} onOpenChange={setMonthSheetOpen}>
         <div className="grid grid-cols-2 gap-3">
