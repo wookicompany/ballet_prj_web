@@ -16,6 +16,7 @@ type Stats = {
   calendar_users: number;
   total_reviews: number;
   total_comments: number;
+  total_tickets: number;
   performance_users: number;
   total_brand_likes: number;
   brand_users: number;
@@ -180,6 +181,7 @@ export default function AdminDashboardPage() {
           title="공연"
           items={[
             { label: "공연 사용자 수", value: stats.performance_users },
+            { label: "티켓 등록 건 수", value: stats.total_tickets },
             { label: "리뷰 등록 건 수", value: stats.total_reviews },
             { label: "댓글 등록 건 수", value: stats.total_comments },
           ]}
