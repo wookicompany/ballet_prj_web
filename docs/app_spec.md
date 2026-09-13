@@ -214,9 +214,7 @@
 - 공연 동기화: `POST /api/cron/kopis-sync`
   - 쿼리: `stdate=YYYYMMDD`, `eddate=YYYYMMDD`, `afterdate=YYYYMMDD` (선택)
   - 헤더: `x-cron-secret`에 `CRON_SECRET` 값 전달 (설정된 경우)
-  - 기본값: `stdate`는 30일 전, `eddate`는 365일 후, `afterdate`는 없음(전체 재수집)
-  - **`stdate`를 오늘로 두면 안 된다.** KOPIS 목록 API는 이 구간에 기간이 걸치는 공연만 돌려주므로, 오늘부터 받으면 공연이 끝나는 순간 응답에서 빠지고 그 행은 마지막으로 받은 값에서 영영 갱신되지 않는다. 30일 창이 끝난 공연의 종료 상태와 막판 수정을 반영하는 유일한 통로다. (2026-09-13: 실제로 이 한 줄이 누락돼 종료 후 3주가 지난 공연이 `prfstate='공연중'`으로 남아 있었다.)
-  - **`prfstate`는 판단 근거로 쓰지 않는다.** KOPIS 응답값을 그대로 저장하는 컬럼이라 위 이유로 실제 기간과 어긋날 수 있다. 공연의 진행 상태가 필요하면 `lib/performanceState.ts`의 `getPerformanceState(prfpdfrom, prfpdto, todayDateKey)`로 조회 시점에 날짜로 판정한다. 공연 탭의 공연중/공연예정/공연완료 섹션과 "내가 본 공연" 정렬이 전부 이 방식을 쓴다.
+  - 기본값: `stdate`는 30일 전, `eddate`는 365일 후, `afterdate`는 3일 전
 - 공연 시설 동기화: `POST /api/cron/kopis-sync-facilities` (공연 목록/상세와 분리된 크론 라우트)
   - 저장 테이블: `kopis_facilities`(목록), `kopis_facility_details`(상세)
   - 쿼리 `afterdate`로 증분 동기화 가능
