@@ -21,17 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Bell,
-  CalendarDays,
-  Inbox,
-  LayoutDashboard,
-  LogOut,
-  Megaphone,
-  MessageSquare,
-  Tag,
-  Users,
-} from "lucide-react";
+import { Bell, CalendarDays, Inbox, LayoutDashboard, LogOut, Megaphone, MessageSquare, Tag, Ticket, Users } from "lucide-react";
 
 const NAV_GROUPS = [
   {
@@ -42,6 +32,7 @@ const NAV_GROUPS = [
     label: "운영 관리",
     items: [
       { href: "/wookicompany/admin/records", label: "캘린더 기록 관리", icon: CalendarDays },
+      { href: "/wookicompany/admin/tickets", label: "티켓북 관리", icon: Ticket },
       { href: "/wookicompany/admin/reviews", label: "공연 리뷰/댓글 관리", icon: MessageSquare },
       { href: "/wookicompany/admin/brands", label: "브랜드 관리", icon: Tag },
       { href: "/wookicompany/admin/notices", label: "공지사항 관리", icon: Bell },
