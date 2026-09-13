@@ -27,7 +27,9 @@ import {
 } from "@/lib/ticketBookCache";
 import { toast } from "sonner";
 
-const SWIPE_THRESHOLD_PX = 48;
+// 기록 캘린더와 같은 값 — 두 달력의 손감이 달라지면 안 된다.
+const SWIPE_THRESHOLD_PX = 40;
+const SWIPE_TRANSITION_LOCK_MS = 240;
 function getMonthBounds(date: Date) {
   return {
     start: new Date(date.getFullYear(), date.getMonth(), 1),
@@ -87,6 +89,9 @@ export default function TicketBookPage() {
   const navigatingRef = useRef(false);
   const swipeStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeHandledRef = useRef(false);
+  // 월 전환 직후 짧게 잠근다. 없으면 빠르게 여러 번 밀 때 월이 두세 칸씩 건너뛴다.
+  const swipeLockedRef = useRef(false);
+  const swipeLockTimeoutRef = useRef<number | null>(null);
 
   const { start, end } = useMemo(() => getMonthBounds(currentDate), [currentDate]);
   const currentMonthKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
@@ -246,12 +251,31 @@ export default function TicketBookPage() {
   }, [monthSheetOpen, monthDraft.year, monthDraft.month]);
 
   const changeMonthBy = useCallback((delta: number) => {
+    if (swipeLockedRef.current) return;
+    swipeLockedRef.current = true;
     sendHapticToApp();
     setSelectedDate("");
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    if (swipeLockTimeoutRef.current) {
+      window.clearTimeout(swipeLockTimeoutRef.current);
+    }
+    swipeLockTimeoutRef.current = window.setTimeout(() => {
+      swipeLockedRef.current = false;
+      swipeLockTimeoutRef.current = null;
+    }, SWIPE_TRANSITION_LOCK_MS);
+  }, []);
+
+  // 언마운트 시 잠금 타이머를 정리한다.
+  useEffect(() => {
+    return () => {
+      if (swipeLockTimeoutRef.current) {
+        window.clearTimeout(swipeLockTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (swipeLockedRef.current) return;
     const point = event.touches[0];
     if (!point) return;
     swipeStartPointRef.current = { x: point.clientX, y: point.clientY };
@@ -260,7 +284,7 @@ export default function TicketBookPage() {
 
   const handleTouchEnd = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
-      if (swipeHandledRef.current) {
+      if (swipeLockedRef.current || swipeHandledRef.current) {
         swipeStartPointRef.current = null;
         return;
       }
