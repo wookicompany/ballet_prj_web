@@ -11,6 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { formatSeoulDateKey, getDateKeyDiffDays } from "@/lib/kstDateTime";
 import {
+  PERFORMANCE_STATE_ORDER,
+  getPerformanceState,
+} from "@/lib/performanceState";
+import {
   getPerformanceHomeCache,
   setPerformanceHomeCache,
 } from "@/lib/performanceHomeCache";
@@ -163,13 +167,13 @@ export default function PerformanceListPage() {
 
         const todayDateKey = formatSeoulDateKey();
 
+        // 섹션 분류는 prfstate가 아니라 공연 기간으로 한다(lib/performanceState.ts 주석 참고).
         const scheduledQuery = supabase
           .from("kopis_performances")
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .eq("prfstate", "공연예정")
-          .or(`prfpdto.gte.${todayDateKey},prfpdto.is.null`)
+          .gt("prfpdfrom", todayDateKey)
           .order("prfpdfrom", { ascending: true })
           .limit(12);
 
@@ -178,10 +182,6 @@ export default function PerformanceListPage() {
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .eq("prfstate", "공연중")
-          // prfstate만 믿으면 안 된다 — KOPIS가 내려주는 상태가 실제 기간과 어긋나는
-          // 행이 있어서(종료일이 3주 지났는데 '공연중'으로 남은 공연 확인됨), 정렬이
-          // prfpdto 오름차순이라 그런 공연이 섹션 맨 앞에 뜬다. 기간으로 한 번 더 거른다.
           .lte("prfpdfrom", todayDateKey)
           .gte("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: true })
@@ -192,7 +192,7 @@ export default function PerformanceListPage() {
           .select(baseSelect)
           .is("deleted_at", null)
           .eq("is_active", true)
-          .eq("prfstate", "공연완료")
+          .lt("prfpdto", todayDateKey)
           .order("prfpdto", { ascending: false })
           .limit(12);
 
@@ -272,9 +272,12 @@ export default function PerformanceListPage() {
           : popularData;
         const visitData = ((visitRes as { data?: PerformanceItem[] }).data ??
           []) as PerformanceItem[];
-        const VISIT_STATE_ORDER: Record<string, number> = { "공연중": 0, "공연예정": 1, "공연완료": 2 };
+        const visitStateOrder = (item: PerformanceItem) =>
+          PERFORMANCE_STATE_ORDER[
+            getPerformanceState(item.prfpdfrom, item.prfpdto, todayDateKey)
+          ];
         const orderedVisit = visitData.sort((a, b) => {
-          const stateDiff = (VISIT_STATE_ORDER[a.prfstate ?? ""] ?? 3) - (VISIT_STATE_ORDER[b.prfstate ?? ""] ?? 3);
+          const stateDiff = visitStateOrder(a) - visitStateOrder(b);
           if (stateDiff !== 0) return stateDiff;
           return (a.prfpdfrom ?? "").localeCompare(b.prfpdfrom ?? "");
         });
