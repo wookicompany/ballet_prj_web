@@ -15,14 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import { ensureSessionOrLogin } from "@/lib/authSession";
 import { compressImage } from "@/lib/compressImage";
-import { formatSeoulDateKey, getSeoulTodayDate, isValidDateKey, parseDateKey } from "@/lib/kstDateTime";
+import {
+  formatSeoulDateKey,
+  getSeoulTodayDate,
+  isValidDateKey,
+  parseDateKey,
+} from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
 import { markTicketChanged } from "@/lib/ticketBookCache";
@@ -61,7 +65,7 @@ function TicketDetailForm() {
   const [customTitle, setCustomTitle] = useState("");
   const [customVenue, setCustomVenue] = useState("");
   const [watchedOn, setWatchedOn] = useState(() =>
-    dateParam && isValidDateKey(dateParam) ? dateParam : formatSeoulDateKey()
+    dateParam && isValidDateKey(dateParam) ? dateParam : formatSeoulDateKey(),
   );
   // 별점은 선택 항목이라 0이 "선택 안 함"이다. 저장 시 null로 보낸다.
   const [rating, setRating] = useState(0);
@@ -133,7 +137,7 @@ function TicketDetailForm() {
     // 선택이 바뀌면 이전 업로드 결과는 더 이상 유효하지 않다.
     uploadedUrlsRef.current = null;
     setMediaItems((prev) =>
-      [...prev, { file, url: URL.createObjectURL(file) }].slice(0, MAX_IMAGES)
+      [...prev, { file, url: URL.createObjectURL(file) }].slice(0, MAX_IMAGES),
     );
     event.target.value = "";
   };
@@ -231,14 +235,18 @@ function TicketDetailForm() {
                   .from(BUCKET)
                   .upload(path, compressed);
                 if (uploadError) return null;
-                const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+                const { data: urlData } = supabase.storage
+                  .from(BUCKET)
+                  .getPublicUrl(path);
                 return urlData.publicUrl;
               } catch {
                 return null;
               }
-            })
+            }),
           );
-          const succeeded = results.filter((url): url is string => Boolean(url));
+          const succeeded = results.filter((url): url is string =>
+            Boolean(url),
+          );
           if (succeeded.length !== mediaItems.length) {
             setSaving(false);
             toast("사진을 첨부하지 못했어요. 다시 시도해 주세요.");
@@ -315,8 +323,19 @@ function TicketDetailForm() {
       toast("티켓을 저장하지 못했어요. 다시 시도해 주세요.");
     }
   }, [
-    saving, watchedOn, isCustom, customTitle, customVenue, performanceId,
-    rating, seat, mediaItems, reviewContent, isPublic, openLoginSheet, router,
+    saving,
+    watchedOn,
+    isCustom,
+    customTitle,
+    customVenue,
+    performanceId,
+    rating,
+    seat,
+    mediaItems,
+    reviewContent,
+    isPublic,
+    openLoginSheet,
+    router,
   ]);
 
   if (loading || fetching) {
@@ -329,7 +348,9 @@ function TicketDetailForm() {
     );
   }
 
-  const title = isCustom ? customTitle || "직접 입력" : (perf?.prfnm ?? "제목 없음");
+  const title = isCustom
+    ? customTitle || "직접 입력"
+    : (perf?.prfnm ?? "제목 없음");
 
   return (
     <MobileContainer>
@@ -338,226 +359,264 @@ function TicketDetailForm() {
 
         {/* 기록 생성과 같은 리듬 — 바깥을 space-y-8로 묶고 각 섹션이 자체 간격을 갖는다 */}
         <div className="space-y-8">
-        <section className="space-y-6">
-          {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
+          <section className="space-y-6">
+            {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
               추가 버튼이 맨 앞에 오고 가로 스크롤이며, 개수는 라벨이 아니라
               하단 안내 문구로 알린다. */}
-          <section className="space-y-3">
-            <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
-              <button
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
+                <button
+                  type="button"
+                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                  onClick={() => {
+                    sendHapticToApp();
+                    fileInputRef.current?.click();
+                  }}
+                  aria-label="사진 추가"
+                >
+                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
+                </button>
+                {mediaItems.map((item, index) => (
+                  <div
+                    key={item.url}
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+                  >
+                    {/* blob URL이라 next/image 최적화 대상이 아니다 — 미리보기는 img로 충분하다 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.url}
+                      alt="업로드 사진"
+                      draggable={false}
+                      className="h-full w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                      onClick={() => handleRemoveImage(index)}
+                      aria-label="업로드 사진 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleSelectFiles}
+              />
+              <p className="text-xs text-[#17171c]/50">
+                사진은 최대 {MAX_IMAGES}장까지 업로드할 수 있어요.
+              </p>
+            </section>
+
+            {/* 공연명 / 장소 — KOPIS 선택이면 읽기 전용, 직접 입력이면 입력 필드 */}
+            {isCustom ? (
+              <>
+                <div>
+                  <Label
+                    htmlFor="ticket-title"
+                    className="text-sm text-[#17171c]/60"
+                  >
+                    공연명
+                  </Label>
+                  <Input
+                    id="ticket-title"
+                    value={customTitle}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomTitle(event.target.value)}
+                    placeholder="공연명을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="ticket-venue"
+                    className="text-sm text-[#17171c]/60"
+                  >
+                    장소
+                  </Label>
+                  <Input
+                    id="ticket-venue"
+                    value={customVenue}
+                    maxLength={MAX_TEXT_LEN}
+                    onChange={(event) => setCustomVenue(event.target.value)}
+                    placeholder="공연장을 입력해 주세요"
+                    className="mt-2 h-12 text-base placeholder:text-sm"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
+                {perf?.poster ? (
+                  <AnimatedImage
+                    src={perf.poster}
+                    alt=""
+                    width={45}
+                    height={64}
+                    sizes="45px"
+                    className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
+                  />
+                ) : (
+                  <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{title}</p>
+                  {perf?.fcltynm && (
+                    <p className="truncate text-xs text-[#17171c]/60">
+                      {perf.fcltynm}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 관람 날짜 */}
+            <div>
+              <Label className="text-sm text-[#17171c]/60">
+                관람 날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
+              </Label>
+              <Button
                 type="button"
-                className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                variant="outline"
+                className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
                 onClick={() => {
                   sendHapticToApp();
-                  fileInputRef.current?.click();
+                  setDateSheetOpen(true);
                 }}
-                aria-label="사진 추가"
               >
-                <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
-              </button>
-              {mediaItems.map((item, index) => (
-                <div
-                  key={item.url}
-                  className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
-                >
-                  {/* blob URL이라 next/image 최적화 대상이 아니다 — 미리보기는 img로 충분하다 */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.url}
-                    alt="업로드 사진"
-                    draggable={false}
-                    className="h-full w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                    onClick={() => handleRemoveImage(index)}
-                    aria-label="업로드 사진 삭제"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+                <CalendarDays className="h-4 w-4" />
+                {watchedOn
+                  ? format(
+                      parseDateKey(watchedOn) ?? getSeoulTodayDate(),
+                      "yyyy년 MM월 dd일(EEE)",
+                      { locale: ko },
+                    )
+                  : "날짜를 선택해 주세요"}
+              </Button>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleSelectFiles}
-            />
-            <p className="text-xs text-[#17171c]/50">
-              사진은 최대 {MAX_IMAGES}장까지 업로드할 수 있어요.
-            </p>
+
+            {/* 좌석 */}
+            <div>
+              <Label
+                htmlFor="ticket-seat"
+                className="text-sm text-[#17171c]/60"
+              >
+                좌석
+              </Label>
+              <Input
+                id="ticket-seat"
+                value={seat}
+                onChange={(event) => setSeat(event.target.value)}
+                placeholder="예) 1층 R석 15열 3번"
+                className="mt-2 h-12 text-base placeholder:text-sm"
+              />
+            </div>
           </section>
 
-          {/* 공연명 / 장소 — KOPIS 선택이면 읽기 전용, 직접 입력이면 입력 필드 */}
-          {isCustom ? (
-            <>
-              <div>
-                <Label htmlFor="ticket-title" className="text-sm text-[#17171c]/60">공연명</Label>
-                <Input
-                  id="ticket-title"
-                  value={customTitle}
-                  maxLength={MAX_TEXT_LEN}
-                  onChange={(event) => setCustomTitle(event.target.value)}
-                  placeholder="공연명을 입력해 주세요"
-                  className="mt-2 h-12 text-base placeholder:text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="ticket-venue" className="text-sm text-[#17171c]/60">장소</Label>
-                <Input
-                  id="ticket-venue"
-                  value={customVenue}
-                  maxLength={MAX_TEXT_LEN}
-                  onChange={(event) => setCustomVenue(event.target.value)}
-                  placeholder="공연장을 입력해 주세요"
-                  className="mt-2 h-12 text-base placeholder:text-sm"
-                />
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
-              {perf?.poster ? (
-                <AnimatedImage
-                  src={perf.poster}
-                  alt=""
-                  width={45}
-                  height={64}
-                  sizes="45px"
-                  className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
-                />
-              ) : (
-                <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{title}</p>
-                {perf?.fcltynm && (
-                  <p className="truncate text-xs text-[#17171c]/60">{perf.fcltynm}</p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* 섹션 제목과 구분선을 두지 않는다 — "여기서부터 별개의 무거운 작업"이라는
+            신호가 되어 리뷰 작성의 심리적 문턱을 만든다. 공개 여부의 경계는 기본값이
+            OFF인 공개 토글과 그 아래 설명이 대신한다.
 
-          {/* 관람 날짜 */}
-          <div>
-            <Label className="text-sm text-[#17171c]/60">
-              관람 날짜<span className="-ml-[1px] text-[#17171c]/50">*</span>
-            </Label>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-2 h-12 w-full justify-start gap-2 text-left text-sm font-normal"
-              onClick={() => {
-                sendHapticToApp();
-                setDateSheetOpen(true);
-              }}
-            >
-              <CalendarDays className="h-4 w-4" />
-              {watchedOn
-                ? format(parseDateKey(watchedOn) ?? getSeoulTodayDate(), "yyyy년 MM월 dd일(EEE)", { locale: ko })
-                : "날짜를 선택해 주세요"}
-            </Button>
-          </div>
-
-          {/* 좌석 */}
-          <div>
-            <Label htmlFor="ticket-seat" className="text-sm text-[#17171c]/60">좌석</Label>
-            <Input
-              id="ticket-seat"
-              value={seat}
-              onChange={(event) => setSeat(event.target.value)}
-              placeholder="예) 1층 R석 15열 3번"
-              className="mt-2 h-12 text-base placeholder:text-sm"
-            />
-          </div>
-
-        </section>
-
-        {/* 구분선과 리뷰 섹션은 같은 조건으로 묶는다 — 따로 두면 직접 입력일 때
-            구분선만 덩그러니 남는다. */}
-        {isCustom ? null : (
-          <>
-            <Separator />
-            <section className="space-y-6">
-              <h2 className="text-base font-semibold">공연 리뷰 등록</h2>
-
-              <div>
-                <Label className="text-sm text-[#17171c]/60">별점</Label>
-                <div className="mt-3 flex items-center gap-2">
-                  {Array.from({ length: 5 }, (_, index) => {
-                    const starIndex = index + 1;
-                    const filled = rating >= starIndex * 2;
-                    return (
-                      <div key={starIndex} className="relative h-7 w-7">
-                        <Star className="h-6 w-6 text-brand" fill="none" />
-                        <div
-                          className="absolute inset-0 overflow-hidden"
-                          style={{ width: filled ? "100%" : "0%" }}
-                        >
-                          <Star className="h-6 w-6 text-brand" fill="currentColor" />
-                        </div>
-                        <button
-                          type="button"
-                          className="absolute inset-0"
-                          aria-label={`${starIndex * 2}점`}
-                          onClick={() => {
-                            sendHapticToApp();
-                            // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된 최상위
-                            // 별을 다시 탭하면 해제된다. 이 값은 티켓의 별점이자 리뷰의 별점이다.
-                            setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
-                          }}
+            별점은 리뷰가 아니라 티켓의 값이므로(리뷰를 안 써도 캘린더와 상세에 뜬다)
+            직접 입력 공연에서도 매길 수 있어야 한다. 리뷰를 만들 수 없는 것은
+            내용과 공개 토글뿐이다. */}
+          <section className="space-y-6">
+            <div>
+              <Label className="text-sm text-[#17171c]/60">별점</Label>
+              <div className="mt-3 flex items-center gap-2">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const starIndex = index + 1;
+                  const filled = rating >= starIndex * 2;
+                  return (
+                    <div key={starIndex} className="relative h-7 w-7">
+                      <Star className="h-6 w-6 text-brand" fill="none" />
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ width: filled ? "100%" : "0%" }}
+                      >
+                        <Star
+                          className="h-6 w-6 text-brand"
+                          fill="currentColor"
                         />
                       </div>
-                    );
-                  })}
-                </div>
+                      <button
+                        type="button"
+                        className="absolute inset-0"
+                        aria-label={`${starIndex * 2}점`}
+                        onClick={() => {
+                          sendHapticToApp();
+                          // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된 최상위
+                          // 별을 다시 탭하면 해제된다. 이 값은 티켓의 별점이자 리뷰의 별점이다.
+                          setRating((prev) =>
+                            prev === starIndex * 2 ? 0 : starIndex * 2,
+                          );
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">내용</Label>
-                  <span className="text-xs text-[#17171c]/50">
-                    {reviewContent.length}/{MAX_REVIEW_LEN}
-                  </span>
-                </div>
-                <Textarea
-                  id="ticket-review"
-                  value={reviewContent}
-                  maxLength={MAX_REVIEW_LEN}
-                  onChange={(event) => setReviewContent(event.target.value)}
-                  placeholder="관람 소감을 자유롭게 남겨보세요"
-                  className="mt-2 min-h-[200px] border-[#17171c]/5 bg-[#fafafa] text-base placeholder:text-sm"
-                />
-              </div>
-
-              <div>
-                <section className="rounded-xl border border-[#17171c]/5 bg-white">
-                  <div className="flex items-center justify-between px-4 py-4">
-                    <p className="text-sm font-medium text-[#17171c]">리뷰 공개</p>
-                    <Switch size="lg" checked={isPublic} onCheckedChange={setIsPublic} />
+            {isCustom ? null : (
+              <>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="ticket-review"
+                      className="text-sm text-[#17171c]/60"
+                    >
+                      내용
+                    </Label>
+                    <span className="text-xs text-[#17171c]/50">
+                      {reviewContent.length}/{MAX_REVIEW_LEN}
+                    </span>
                   </div>
-                </section>
-                <p className="mt-2 px-1 text-xs text-[#17171c]/50">
-                  {isPublic
-                    ? "누구나 볼 수 있는 공개 리뷰예요. 공연 상세의 리뷰 목록에 나타나요."
-                    : "나만 볼 수 있는 비공개 리뷰예요."}
-                </p>
-              </div>
-            </section>
-          </>
-        )}
+                  <Textarea
+                    id="ticket-review"
+                    value={reviewContent}
+                    maxLength={MAX_REVIEW_LEN}
+                    onChange={(event) => setReviewContent(event.target.value)}
+                    placeholder="관람 소감을 자유롭게 남겨보세요"
+                    className="mt-2 min-h-[200px] border-[#17171c]/5 bg-[#fafafa] text-base placeholder:text-sm"
+                  />
+                </div>
 
-        <Button
-          type="button"
-          className="h-12 w-full"
-          disabled={saving}
-          onClick={() => void handleSubmit()}
-        >
-          등록하기
-        </Button>
+                <div>
+                  <section className="rounded-xl border border-[#17171c]/5 bg-white">
+                    <div className="flex items-center justify-between px-4 py-4">
+                      <p className="text-sm font-medium text-[#17171c]">
+                        리뷰 공개
+                      </p>
+                      <Switch
+                        size="lg"
+                        checked={isPublic}
+                        onCheckedChange={setIsPublic}
+                      />
+                    </div>
+                  </section>
+                  <p className="mt-2 px-1 text-xs text-[#17171c]/50">
+                    {isPublic
+                      ? "누구나 볼 수 있는 공개 리뷰예요. 공연 상세의 리뷰 목록에 나타나요."
+                      : "나만 볼 수 있는 비공개 리뷰예요."}
+                  </p>
+                </div>
+              </>
+            )}
+          </section>
+
+          <Button
+            type="button"
+            className="h-12 w-full"
+            disabled={saving}
+            onClick={() => void handleSubmit()}
+          >
+            등록하기
+          </Button>
         </div>
       </main>
 

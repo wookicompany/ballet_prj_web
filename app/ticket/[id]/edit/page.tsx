@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Spinner } from "@/components/ui/spinner";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -496,44 +495,53 @@ export default function TicketEditPage() {
           {/* 리뷰 — 직접 입력 공연은 커뮤니티 리뷰를 만들 수 없고, 이미 리뷰가 있으면
               리뷰 상세에서 수정하므로 여기서는 "아직 리뷰가 없는 KOPIS 공연"만 다룬다.
               구분선과 섹션을 같은 조건으로 묶어야 구분선만 남는 일이 없다. */}
-          {isCustom || hasReview ? null : (
-            <>
-              <Separator />
-              <section className="space-y-6">
-                <h2 className="text-base font-semibold">공연 리뷰 등록</h2>
+          {/* 섹션 제목과 구분선을 두지 않는다 — "여기서부터 별개의 무거운 작업"이라는
+              신호가 되어 리뷰 작성의 심리적 문턱을 만든다. 공개 여부의 경계는 기본값이
+              OFF인 공개 토글과 그 아래 설명이 대신한다. */}
+          <section className="space-y-6">
+            {/* 별점은 리뷰가 아니라 티켓의 값이라 항상 노출한다 — 직접 입력 공연이나
+                이미 리뷰를 쓴 티켓도 별점은 고칠 수 있어야 한다. */}
+            <div>
+              <Label className="text-sm text-[#17171c]/60">별점</Label>
+              <div className="mt-3 flex items-center gap-2">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const starIndex = index + 1;
+                  const filled = rating >= starIndex * 2;
+                  return (
+                    <div key={starIndex} className="relative h-7 w-7">
+                      <Star className="h-6 w-6 text-brand" fill="none" />
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ width: filled ? "100%" : "0%" }}
+                      >
+                        <Star className="h-6 w-6 text-brand" fill="currentColor" />
+                      </div>
+                      <button
+                        type="button"
+                        className="absolute inset-0"
+                        aria-label={`${starIndex * 2}점`}
+                        onClick={() => {
+                          sendHapticToApp();
+                          // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된
+                          // 최상위 별을 다시 탭하면 해제된다.
+                          setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {hasReview ? (
+                <p className="mt-2 px-1 text-xs text-[#17171c]/50">
+                  별점을 바꾸면 작성한 리뷰의 별점도 함께 바뀌어요.
+                </p>
+              ) : null}
+            </div>
 
-                <div>
-                  <Label className="text-sm text-[#17171c]/60">별점</Label>
-                  <div className="mt-3 flex items-center gap-2">
-                    {Array.from({ length: 5 }, (_, index) => {
-                      const starIndex = index + 1;
-                      const filled = rating >= starIndex * 2;
-                      return (
-                        <div key={starIndex} className="relative h-7 w-7">
-                          <Star className="h-6 w-6 text-brand" fill="none" />
-                          <div
-                            className="absolute inset-0 overflow-hidden"
-                            style={{ width: filled ? "100%" : "0%" }}
-                          >
-                            <Star className="h-6 w-6 text-brand" fill="currentColor" />
-                          </div>
-                          <button
-                            type="button"
-                            className="absolute inset-0"
-                            aria-label={`${starIndex * 2}점`}
-                            onClick={() => {
-                              sendHapticToApp();
-                              // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된 최상위
-                              // 별을 다시 탭하면 해제된다. 이 값은 티켓의 별점이자 리뷰의 별점이다.
-                              setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
+            {/* 리뷰 내용과 공개 설정은 아직 리뷰가 없는 KOPIS 공연에서만 쓸 수 있다.
+                이미 리뷰가 있으면 리뷰 상세에서 수정하는 경로가 따로 있다. */}
+            {isCustom || hasReview ? null : (
+              <>
                 <div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="ticket-review" className="text-sm text-[#17171c]/60">내용</Label>
@@ -564,52 +572,9 @@ export default function TicketEditPage() {
                       : "나만 볼 수 있는 비공개 리뷰예요."}
                   </p>
                 </div>
-              </section>
-            </>
-          )}
-
-          {/* 별점은 리뷰 섹션 안에만 있으므로, 리뷰를 이미 쓴 티켓이나 직접 입력 티켓에도
-              별점을 고칠 수 있도록 별도 섹션을 둔다. */}
-          {isCustom || hasReview ? (
-            <section className="space-y-6">
-              <div>
-                <Label className="text-sm text-[#17171c]/60">별점</Label>
-                <div className="mt-3 flex items-center gap-2">
-                  {Array.from({ length: 5 }, (_, index) => {
-                    const starIndex = index + 1;
-                    const filled = rating >= starIndex * 2;
-                    return (
-                      <div key={starIndex} className="relative h-7 w-7">
-                        <Star className="h-6 w-6 text-brand" fill="none" />
-                        <div
-                          className="absolute inset-0 overflow-hidden"
-                          style={{ width: filled ? "100%" : "0%" }}
-                        >
-                          <Star className="h-6 w-6 text-brand" fill="currentColor" />
-                        </div>
-                        <button
-                          type="button"
-                          className="absolute inset-0"
-                          aria-label={`${starIndex * 2}점`}
-                          onClick={() => {
-                            sendHapticToApp();
-                            // 별점은 선택 항목이라 되돌릴 방법이 필요하다 — 이미 선택된 최상위
-                            // 별을 다시 탭하면 해제된다. 이 값은 티켓의 별점이자 리뷰의 별점이다.
-                            setRating((prev) => (prev === starIndex * 2 ? 0 : starIndex * 2));
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                {hasReview ? (
-                  <p className="mt-2 px-1 text-xs text-[#17171c]/50">
-                    별점을 바꾸면 작성한 리뷰의 별점도 함께 바뀌어요.
-                  </p>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
+              </>
+            )}
+          </section>
 
           <Button
             type="button"
