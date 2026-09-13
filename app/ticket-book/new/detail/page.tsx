@@ -360,59 +360,6 @@ function TicketDetailForm() {
         {/* 기록 생성과 같은 리듬 — 바깥을 space-y-8로 묶고 각 섹션이 자체 간격을 갖는다 */}
         <div className="space-y-8">
           <section className="space-y-6">
-            {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
-              추가 버튼이 맨 앞에 오고 가로 스크롤이며, 개수는 라벨이 아니라
-              하단 안내 문구로 알린다. */}
-            <section className="space-y-3">
-              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
-              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
-                <button
-                  type="button"
-                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
-                  onClick={() => {
-                    sendHapticToApp();
-                    fileInputRef.current?.click();
-                  }}
-                  aria-label="사진 추가"
-                >
-                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
-                </button>
-                {mediaItems.map((item, index) => (
-                  <div
-                    key={item.url}
-                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
-                  >
-                    {/* blob URL이라 next/image 최적화 대상이 아니다 — 미리보기는 img로 충분하다 */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.url}
-                      alt="업로드 사진"
-                      draggable={false}
-                      className="h-full w-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
-                      onClick={() => handleRemoveImage(index)}
-                      aria-label="업로드 사진 삭제"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleSelectFiles}
-              />
-              <p className="text-xs text-[#17171c]/50">
-                사진은 최대 {MAX_IMAGES}장까지 업로드할 수 있어요.
-              </p>
-            </section>
-
             {/* 공연명 / 장소 — KOPIS 선택이면 읽기 전용, 직접 입력이면 입력 필드 */}
             {isCustom ? (
               <>
@@ -473,6 +420,60 @@ function TicketDetailForm() {
                 </div>
               </div>
             )}
+
+
+            {/* 미디어 — 기록 생성(app/record/new/page.tsx:971-1016)과 동일한 구조.
+              추가 버튼이 맨 앞에 오고 가로 스크롤이며, 개수는 라벨이 아니라
+              하단 안내 문구로 알린다. */}
+            <section className="space-y-3">
+              <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pr-2">
+                <button
+                  type="button"
+                  className="relative aspect-square w-20 shrink-0 rounded-lg border border-dashed border-[#17171c]/10 bg-transparent"
+                  onClick={() => {
+                    sendHapticToApp();
+                    fileInputRef.current?.click();
+                  }}
+                  aria-label="사진 추가"
+                >
+                  <Plus className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[#17171c]/40" />
+                </button>
+                {mediaItems.map((item, index) => (
+                  <div
+                    key={item.url}
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white"
+                  >
+                    {/* blob URL이라 next/image 최적화 대상이 아니다 — 미리보기는 img로 충분하다 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.url}
+                      alt="업로드 사진"
+                      draggable={false}
+                      className="h-full w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#17171c] shadow-sm"
+                      onClick={() => handleRemoveImage(index)}
+                      aria-label="업로드 사진 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleSelectFiles}
+              />
+              <p className="text-xs text-[#17171c]/50">
+                사진은 최대 {MAX_IMAGES}장까지 업로드할 수 있어요.
+              </p>
+            </section>
 
             {/* 관람 날짜 */}
             <div>

@@ -361,6 +361,26 @@ export default function TicketEditPage() {
         {/* 등록 화면과 같은 리듬 — 바깥을 space-y-8로 묶는다 */}
         <div className="space-y-8">
           <section className="space-y-6">
+            {/* 공연 정보는 읽기 전용 — 공연 재선택은 지원하지 않는다. */}
+            <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
+              {poster ? (
+                <AnimatedImage
+                  src={poster}
+                  alt=""
+                  width={45}
+                  height={64}
+                  sizes="45px"
+                  className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
+                />
+              ) : (
+                <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{title}</p>
+                {venue ? <p className="truncate text-xs text-[#17171c]/60">{venue}</p> : null}
+              </div>
+            </div>
+
             {/* 미디어 — 기록 수정과 동일한 구조(추가 버튼이 맨 앞, 가로 스크롤) */}
             <div className="space-y-3">
               <Label className="text-sm text-[#17171c]/60">미디어 업로드</Label>
@@ -437,26 +457,6 @@ export default function TicketEditPage() {
               <p className="text-xs text-[#17171c]/50">
                 사진은 최대 {MAX_IMAGES}장까지 업로드할 수 있어요.
               </p>
-            </div>
-
-            {/* 공연 정보는 읽기 전용 — 공연 재선택은 지원하지 않는다. */}
-            <div className="flex items-center gap-3 rounded-2xl border border-[#17171c]/5 bg-white p-3 shadow-sm">
-              {poster ? (
-                <AnimatedImage
-                  src={poster}
-                  alt=""
-                  width={45}
-                  height={64}
-                  sizes="45px"
-                  className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5 object-cover"
-                />
-              ) : (
-                <div className="h-16 w-[45px] shrink-0 rounded-md bg-[#17171c]/5" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{title}</p>
-                {venue ? <p className="truncate text-xs text-[#17171c]/60">{venue}</p> : null}
-              </div>
             </div>
 
             <div>
