@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarSearch, ChevronRight, Plus, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Ticket } from "lucide-react";
 
 import MobileContainer from "@/components/layout/MobileContainer";
 import PageHeader from "@/components/layout/PageHeader";
@@ -373,38 +373,35 @@ export default function TicketBookPage() {
   return (
     <MobileContainer>
       <main className="flex min-h-screen flex-col px-0 pb-[140px]">
-        <PageHeader
-          title="티켓북"
-          right={
-            // 뒤로 버튼과 같은 size-10(40px)이라 좌우 폭이 같아지고, 그 결과
-            // justify-between 안에서 타이틀이 정확히 가운데에 온다.
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              className="text-[#17171c]/70"
-              aria-label="연월 선택"
-              onClick={() => {
-                sendHapticToApp();
-                setMonthDraft({
-                  year: currentDate.getFullYear(),
-                  month: currentDate.getMonth() + 1,
-                });
-                setMonthSheetOpen(true);
-              }}
-            >
-              <CalendarSearch className="size-6" />
-            </Button>
-          }
-        />
+        {/* 티켓북은 1depth가 아니라 뒤로가기로 들어오는 화면이라, 헤더에 화면 이름이
+            있어야 여기가 어디인지 알 수 있다. 연월 선택은 아래 라벨이 겸하므로 우측
+            슬롯은 비운다 — 비우면 뒤로 버튼과 같은 폭의 스페이서가 들어가 타이틀이
+            정확히 가운데에 온다. */}
+        <PageHeader title="티켓북" />
 
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchCancel}
         >
-          <p className="px-4 pt-4 text-sm font-bold text-[#17171c]">
+          {/* 라벨이 곧 연월 선택 진입점이다. 화살표가 없으면 탭할 수 있다는 것이
+              드러나지 않으므로 ChevronDown을 함께 둔다(프로필 연도 선택과 동일 패턴). */}
+          <button
+            type="button"
+            aria-label="연월 선택"
+            onClick={() => {
+              sendHapticToApp();
+              setMonthDraft({
+                year: currentDate.getFullYear(),
+                month: currentDate.getMonth() + 1,
+              });
+              setMonthSheetOpen(true);
+            }}
+            className="flex items-center gap-0.5 px-4 pt-4 text-base font-bold text-[#17171c] active:opacity-70"
+          >
             {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-          </p>
+            <ChevronDown className="size-4 text-[#17171c]/50" strokeWidth={2.5} />
+          </button>
           <section className="grid grid-cols-7 gap-0 px-1 pb-2 pt-2 text-center text-sm text-[#17171c]/60">
             {weekLabels.map((label, index) => (
               <span
