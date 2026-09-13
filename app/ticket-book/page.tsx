@@ -95,7 +95,19 @@ export default function TicketBookPage() {
 
   const { start, end } = useMemo(() => getMonthBounds(currentDate), [currentDate]);
   const currentMonthKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
-  const todayStr = formatSeoulDateKey();
+  const [todayStr, setTodayStr] = useState(() => formatSeoulDateKey());
+
+  // 앱을 열어둔 채 자정을 넘기면 '오늘' 배지가 어제 칸에 남는다. 화면이 다시 보일 때
+  // 다시 계산한다. 캘린더 탭과 달리 보고 있던 달과 선택 날짜는 건드리지 않는다 —
+  // 티켓북은 지난 달을 되돌아보는 화면이라 복귀할 때마다 이번 달로 튕기면 안 된다.
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState !== "visible") return;
+      setTodayStr(formatSeoulDateKey());
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
 
   useEffect(() => {
     setTicketBookNavState({
