@@ -55,53 +55,96 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { user, loading: authLoading, signOut } = useAuth();
   const { openLoginSheet } = useLoginSheet();
-  const [adminChecked, setAdminChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // "확인 중 / 통과 / 권한 없음 / 확인 실패"를 구분한다. 예전에는 통과 여부만 boolean으로
+  // 두어, Supabase Auth가 잠깐 흔들려 401이나 5xx가 오면 권한 없음과 똑같이 취급해
+  // 어드민을 캘린더로 쫓아냈다(2026-09-14 실제 발생).
+  const [gate, setGate] = useState<"checking" | "allowed" | "denied" | "error">(
+    "checking"
+  );
+  const [retrying, setRetrying] = useState(false);
 
+  // 이 함수 안에서 동기적으로 setState하지 않는다 — effect가 호출하는 함수가 곧바로
+  // setState하면 린트(react-hooks/set-state-in-effect)에 걸린다. 첫 동작은 항상 await다.
   const checkAdmin = useCallback(async () => {
     const token = await getAdminToken();
     if (!token) {
-      setAdminChecked(true);
-      setIsAdmin(false);
+      setGate("denied");
       return;
     }
     try {
       const res = await fetch("/api/admin/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setIsAdmin(res.ok);
+      if (res.ok) {
+        setGate("allowed");
+        return;
+      }
+      // 403만이 확실한 "권한 없음"이다. 401과 5xx는 인증 서버가 흔들린 것일 수 있어
+      // 권한 없음으로 단정하지 않는다(서버는 프로필 조회 실패를 503으로 따로 내려준다).
+      setGate(res.status === 403 ? "denied" : "error");
     } catch {
-      setIsAdmin(false);
-    } finally {
-      setAdminChecked(true);
+      setGate("error");
     }
   }, []);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setAdminChecked(true);
-      setIsAdmin(false);
-      return;
-    }
+    if (authLoading || !user) return;
+    // checkAdmin의 setState는 전부 await 뒤에서 일어나므로 cascading render가 나지 않는다.
+    // 린트는 async 함수 안까지 추적하되 await 경계를 구분하지 못해 이 호출을 잡는다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAdmin();
   }, [user, authLoading, checkAdmin]);
 
+  // 로그인하지 않은 상태는 상태값이 아니라 파생이다.
+  const resolvedGate = authLoading ? "checking" : user ? gate : "denied";
+
   useEffect(() => {
-    if (!adminChecked || isAdmin) return;
+    // 확인 실패(error)는 리다이렉트하지 않는다 — 화면에 남겨 재시도할 수 있게 한다.
+    if (resolvedGate !== "denied") return;
     if (!user) {
       openLoginSheet();
       return;
     }
     router.replace("/calendar");
-  }, [adminChecked, isAdmin, user, openLoginSheet, router]);
+  }, [resolvedGate, user, openLoginSheet, router]);
 
   const handleLogout = useCallback(async () => {
     await signOut();
     router.replace("/calendar");
   }, [signOut, router]);
 
-  if (!adminChecked || !isAdmin) {
+  // 확인에 실패한 경우는 쫓아내지 않고 상황을 알리고 다시 시도할 수 있게 한다.
+  if (resolvedGate === "error") {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background p-6">
+        <div className="flex max-w-sm flex-col gap-3 text-center">
+          <h1 className="text-lg font-semibold">잠시 연결이 불안정해요</h1>
+          <p className="text-sm text-muted-foreground">
+            권한을 확인하지 못했어요. 로그인 상태에는 문제가 없으니 잠시 후 다시
+            시도해 주세요.
+          </p>
+          <div className="mt-2 flex justify-center gap-2">
+            <Button
+              onClick={async () => {
+                setRetrying(true);
+                setGate("checking");
+                await checkAdmin();
+                setRetrying(false);
+              }}
+              disabled={retrying}
+            >
+              {retrying ? "확인하는 중" : "다시 시도"}
+            </Button>
+            <Button variant="outline" onClick={() => router.replace("/calendar")}>
+              캘린더로
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (resolvedGate !== "allowed") {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="flex flex-col gap-4 p-6">
