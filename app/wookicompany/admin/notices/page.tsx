@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
+import { ChevronRight, Eye, Plus, RefreshCw, Search } from "lucide-react";
 
 const LIMIT = 20;
 
@@ -36,6 +36,7 @@ type NoticeRow = {
   is_published: boolean;
   published_at: string | null;
   created_at: string;
+  read_count: number;
 };
 
 export default function AdminNoticesPage() {
@@ -197,6 +198,7 @@ export default function AdminNoticesPage() {
                   <TableRow>
                     <TableHead>제목</TableHead>
                     <TableHead>게시여부</TableHead>
+                    <TableHead>읽음</TableHead>
                     <TableHead>게시일</TableHead>
                     <TableHead>생성일</TableHead>
                     <TableHead className="w-10" />
@@ -205,7 +207,7 @@ export default function AdminNoticesPage() {
                 <TableBody>
                   {filteredNotices.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         {searchQuery.trim() || statusFilter !== "all"
                           ? "검색/필터 결과가 없습니다."
                           : "등록된 공지가 없습니다."}
@@ -224,6 +226,16 @@ export default function AdminNoticesPage() {
                           <Badge variant={n.is_published ? "default" : "secondary"}>
                             {n.is_published ? "게시됨" : "미게시"}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {n.read_count > 0 ? (
+                            <span className="flex items-center gap-1">
+                              <Eye className="size-3.5 text-muted-foreground" />
+                              {n.read_count.toLocaleString("ko-KR")}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatAdminDateTime(n.published_at)}

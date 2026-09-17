@@ -1919,6 +1919,11 @@ export type Database = {
         Args: { p_review_id: string; p_user_id?: string | null }
         Returns: undefined
       }
+      soft_delete_ticket: {
+        // p_user_id는 선택이 아니다 — NULL이면 함수가 TKT403을 던진다(소유권 검사 우회 방지).
+        Args: { p_ticket_id: string; p_user_id: string }
+        Returns: undefined
+      }
       search_auth_users: {
         Args: { keyword?: string | null; p_limit?: number | null; p_offset?: number }
         Returns: { id: string; email: string | null; created_at: string; total_count: number }[]
