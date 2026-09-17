@@ -42,6 +42,7 @@ import {
 import {
   Flag,
   Heart,
+  Lock,
   MessageCircle,
   MoreHorizontal,
   PenLine,
@@ -55,6 +56,7 @@ type ReviewDetail = {
   performance_id: string;
   rating: number;
   content: string | null;
+  is_public: boolean;
   created_at: string;
   user_id: string;
   report_count?: number;
@@ -195,7 +197,7 @@ export default function PerformanceReviewDetailPage() {
       setLoading(true);
       const { data: reviewData, error: reviewError } = await supabase
         .from("performance_reviews")
-        .select("id,performance_id,rating,content,created_at,user_id")
+        .select("id,performance_id,rating,content,is_public,created_at,user_id")
         .eq("id", reviewId)
         .eq("performance_id", performanceId)
         .is("deleted_at", null)
@@ -921,24 +923,33 @@ export default function PerformanceReviewDetailPage() {
                 <span>· {formatDate(review.created_at)}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }, (_, index) => {
-                const ratio = getStarFillRatio(review.rating, index + 1);
-                return (
-                  <div key={`review-star-${index}`} className="relative h-4 w-4">
-                    <Star className="h-4 w-4 text-brand" fill="none" />
-                    <div
-                      className="absolute inset-0 overflow-hidden"
-                      style={{ width: `${ratio * 100}%` }}
-                    >
-                      <Star
-                        className="h-4 w-4 text-brand"
-                        fill="currentColor"
-                      />
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const ratio = getStarFillRatio(review.rating, index + 1);
+                  return (
+                    <div key={`review-star-${index}`} className="relative h-4 w-4">
+                      <Star className="h-4 w-4 text-brand" fill="none" />
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ width: `${ratio * 100}%` }}
+                      >
+                        <Star
+                          className="h-4 w-4 text-brand"
+                          fill="currentColor"
+                        />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              {/* 비공개 리뷰는 RLS로 본인만 열 수 있으니, 이 배지는 작성자에게만 보인다. */}
+              {!review.is_public ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#17171c]/5 px-2 py-0.5 text-[11px] text-[#17171c]/60">
+                  <Lock className="h-3 w-3" />
+                  비공개
+                </span>
+              ) : null}
             </div>
             {isReviewHidden ? (
               <p className="whitespace-pre-line text-base text-[#17171c]">

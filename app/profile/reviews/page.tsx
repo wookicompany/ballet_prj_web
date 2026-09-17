@@ -14,7 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatIsoToSeoulDate } from "@/lib/kstDateTime";
 import { sendHapticToApp } from "@/lib/reactNativeWebView";
 import { supabase } from "@/lib/supabaseClient";
-import { Heart, MessageCircle, Star } from "lucide-react";
+import { Heart, Lock, MessageCircle, Star } from "lucide-react";
 
 type ReviewSummary = {
   id: string;
@@ -23,6 +23,7 @@ type ReviewSummary = {
   performancePoster: string | null;
   content: string | null;
   rating: number;
+  isPublic: boolean;
   createdAt: string;
 };
 
@@ -84,7 +85,7 @@ export default function ProfileReviewsPage() {
 
         const { data: reviewRows, error } = await supabase
           .from("performance_reviews")
-          .select("id,performance_id,rating,content,created_at")
+          .select("id,performance_id,rating,content,is_public,created_at")
           .eq("user_id", user.id)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
@@ -123,6 +124,7 @@ export default function ProfileReviewsPage() {
           performancePoster: performanceMap.get(row.performance_id)?.poster ?? null,
           rating: row.rating,
           content: row.content,
+          isPublic: row.is_public,
           createdAt: row.created_at,
         }));
 
@@ -229,21 +231,31 @@ export default function ProfileReviewsPage() {
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }, (_, index) => {
-                        const ratio = getStarFillRatio(review.rating, index + 1);
-                        return (
-                          <div key={`${review.id}-star-${index}`} className="relative h-4 w-4">
-                            <Star className="h-4 w-4 text-brand" fill="none" />
-                            <div
-                              className="absolute inset-0 overflow-hidden"
-                              style={{ width: `${ratio * 100}%` }}
-                            >
-                              <Star className="h-4 w-4 text-brand" fill="currentColor" />
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const ratio = getStarFillRatio(review.rating, index + 1);
+                          return (
+                            <div key={`${review.id}-star-${index}`} className="relative h-4 w-4">
+                              <Star className="h-4 w-4 text-brand" fill="none" />
+                              <div
+                                className="absolute inset-0 overflow-hidden"
+                                style={{ width: `${ratio * 100}%` }}
+                              >
+                                <Star className="h-4 w-4 text-brand" fill="currentColor" />
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
+                      {/* 비공개 리뷰는 공개 목록에 안 뜨지만 내 목록에는 보인다.
+                          표시가 없으면 남들에게 보이는 글인지 알 수 없다. */}
+                      {!review.isPublic ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#17171c]/5 px-2 py-0.5 text-[11px] text-[#17171c]/60">
+                          <Lock className="h-3 w-3" />
+                          비공개
+                        </span>
+                      ) : null}
                     </div>
                     {review.content ? (
                       <p className="mt-2 line-clamp-1 text-sm text-[#17171c]/70">{review.content}</p>
