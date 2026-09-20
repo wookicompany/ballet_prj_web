@@ -29,7 +29,7 @@ type LikedBrandJoinRow = Omit<LikedBrand, "brand_id"> & { id: string };
 const PAGE_SIZE = 12;
 
 export default function ProfileBrandsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const { openLoginSheet } = useLoginSheet();
 
   const [brands, setBrands] = useState<LikedBrand[]>([]);
@@ -144,7 +144,7 @@ export default function ProfileBrandsPage() {
                   onClick={() => {
                     const first = getFirstAvailableLink(brand);
                     if (!first) return;
-                    openBrandLink(brand.brand_id, brand.name_ko, first.url, first.item.linkType);
+                    openBrandLink(brand.brand_id, brand.name_ko, first.url, first.item.linkType, session?.access_token);
                   }}
                 >
                   <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">

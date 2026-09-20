@@ -41,7 +41,7 @@ const PAGE_SIZE = 12;
 
 export default function BrandPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { openLoginSheet } = useLoginSheet();
   const cached = getBrandHomeCache<CachePayload>();
 
@@ -222,8 +222,8 @@ export default function BrandPage() {
   const openBrandHomepage = useCallback((brand: Brand) => {
     const first = getFirstAvailableLink(brand);
     if (!first) return;
-    openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType);
-  }, []);
+    openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType, session?.access_token);
+  }, [session?.access_token]);
 
   const popularCards = useMemo(
     () =>
@@ -320,7 +320,8 @@ export default function BrandPage() {
                         brand.id,
                         brand.name_ko,
                         brand[item.key] as string,
-                        item.linkType
+                        item.linkType,
+                        session?.access_token
                       )
                     }
                     className="flex aspect-square w-full items-center justify-center rounded-lg bg-[#f5f5f7] transition-opacity active:opacity-70"
@@ -334,7 +335,7 @@ export default function BrandPage() {
           </li>
         );
       }),
-    [brands, likedIds, handleLike, openBrandHomepage]
+    [brands, likedIds, handleLike, openBrandHomepage, session?.access_token]
   );
 
   useEffect(() => {
