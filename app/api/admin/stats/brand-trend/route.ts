@@ -15,25 +15,27 @@ export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const days = Math.min(Math.max(Number(searchParams.get("days")) || 7, 1), 30);
 
-  const { data, error } = await result.supabaseAdmin.rpc("get_calendar_daily_stats", { days });
+  const { data, error } = await result.supabaseAdmin.rpc(
+    "get_brand_daily_stats",
+    { days }
+  );
 
   if (error) {
-    console.error("admin calendar-trend", error);
-    return NextResponse.json({ message: "Failed to fetch calendar trend" }, { status: 500 });
+    console.error("admin brand-trend", error);
+    return NextResponse.json(
+      { message: "Failed to fetch brand trend" },
+      { status: 500 }
+    );
   }
 
-  // 단건과 반복을 나눠 받는다. 반복 등록은 하루에 수십 건이 한꺼번에 생겨
-  // 하나로 합치면 그 하루가 나머지 추세를 눌러버린다.
-  const resultMap = new Map<
-    string,
-    { single: number; recurring: number; users: number }
-  >(
+  // 찜은 그날 누른 횟수를 센다(취소분 포함). 나중에 취소했다고 과거 추세가 바뀌면
+  // 그래프를 읽을 수 없기 때문이다. 카드의 "찜 건수"는 반대로 현재 유효한 것만 센다.
+  const resultMap = new Map<string, { clicks: number; likes: number }>(
     (data ?? []).map((row) => [
       row.stat_date,
       {
-        single: Number(row.single_record_count),
-        recurring: Number(row.recurring_record_count),
-        users: Number(row.unique_users),
+        clicks: Number(row.link_click_count),
+        likes: Number(row.like_count),
       },
     ])
   );
@@ -44,9 +46,8 @@ export const GET = async (request: Request) => {
     const row = resultMap.get(date);
     return {
       date,
-      single_record_count: row?.single ?? 0,
-      recurring_record_count: row?.recurring ?? 0,
-      unique_users: row?.users ?? 0,
+      link_click_count: row?.clicks ?? 0,
+      like_count: row?.likes ?? 0,
     };
   });
 

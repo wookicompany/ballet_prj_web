@@ -15,38 +15,38 @@ export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const days = Math.min(Math.max(Number(searchParams.get("days")) || 7, 1), 30);
 
-  const { data, error } = await result.supabaseAdmin.rpc("get_calendar_daily_stats", { days });
+  const { data, error } = await result.supabaseAdmin.rpc(
+    "get_performance_daily_stats",
+    { days }
+  );
 
   if (error) {
-    console.error("admin calendar-trend", error);
-    return NextResponse.json({ message: "Failed to fetch calendar trend" }, { status: 500 });
+    console.error("admin performance-trend", error);
+    return NextResponse.json(
+      { message: "Failed to fetch performance trend" },
+      { status: 500 }
+    );
   }
 
-  // 단건과 반복을 나눠 받는다. 반복 등록은 하루에 수십 건이 한꺼번에 생겨
-  // 하나로 합치면 그 하루가 나머지 추세를 눌러버린다.
-  const resultMap = new Map<
-    string,
-    { single: number; recurring: number; users: number }
-  >(
+  const resultMap = new Map<string, { views: number; bookings: number }>(
     (data ?? []).map((row) => [
       row.stat_date,
       {
-        single: Number(row.single_record_count),
-        recurring: Number(row.recurring_record_count),
-        users: Number(row.unique_users),
+        views: Number(row.view_count),
+        bookings: Number(row.booking_click_count),
       },
     ])
   );
 
+  // 값이 없는 날은 0으로 채운다 — 빠진 날짜가 있으면 차트가 끊겨 보인다.
   const today = parseISO(formatSeoulDateKey());
   const trend = Array.from({ length: days }, (_, i) => {
     const date = format(subDays(today, days - 1 - i), "yyyy-MM-dd");
     const row = resultMap.get(date);
     return {
       date,
-      single_record_count: row?.single ?? 0,
-      recurring_record_count: row?.recurring ?? 0,
-      unique_users: row?.users ?? 0,
+      view_count: row?.views ?? 0,
+      booking_click_count: row?.bookings ?? 0,
     };
   });
 

@@ -1956,7 +1956,33 @@ export type Database = {
       get_total_auth_users_count: { Args: never; Returns: number }
       get_calendar_daily_stats: {
         Args: { days?: number }
-        Returns: { stat_date: string; record_count: number; unique_users: number }[]
+        Returns: {
+          stat_date: string
+          single_record_count: number
+          recurring_record_count: number
+          unique_users: number
+        }[]
+      }
+      // 대시보드 카드의 DAU/WAU/MAU. 유저를 식별할 수 있는 모든 행동을 UNION해 센다.
+      get_active_user_stats: {
+        Args: Record<string, never>
+        Returns: { dau: number; wau: number; mau: number }[]
+      }
+      get_performance_daily_stats: {
+        Args: { days?: number }
+        Returns: {
+          stat_date: string
+          view_count: number
+          booking_click_count: number
+        }[]
+      }
+      get_brand_daily_stats: {
+        Args: { days?: number }
+        Returns: {
+          stat_date: string
+          link_click_count: number
+          like_count: number
+        }[]
       }
       get_daily_signup_stats: {
         Args: { days?: number }
