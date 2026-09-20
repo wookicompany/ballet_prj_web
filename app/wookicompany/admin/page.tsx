@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import BrandTrendChart from "@/components/admin/BrandTrendChart";
 import CalendarTrendChart from "@/components/admin/CalendarTrendChart";
+import PerformanceTrendChart from "@/components/admin/PerformanceTrendChart";
 import SignupTrendChart from "@/components/admin/SignupTrendChart";
 import { RefreshCw } from "lucide-react";
 
@@ -198,6 +200,12 @@ export default function AdminDashboardPage() {
         </div>
         <div className="md:col-span-2">
           <CalendarTrendChart />
+        </div>
+        <div className="md:col-span-2">
+          <PerformanceTrendChart />
+        </div>
+        <div className="md:col-span-2">
+          <BrandTrendChart />
         </div>
       </div>
     </div>

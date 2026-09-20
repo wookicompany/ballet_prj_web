@@ -16,22 +16,17 @@ import {
 
 type TrendRow = {
   date: string;
-  single_record_count: number;
-  recurring_record_count: number;
-  unique_users: number;
+  view_count: number;
+  booking_click_count: number;
 };
 
-// 반복 등록은 하루에 수십 건이 한꺼번에 생겨(2026-09-04에 90건) 단건과 합치면
-// 그 하루가 나머지 추세를 눌러버린다. 그래서 선을 나눈다.
-// 유저 수는 건수와 단위가 달라 점선으로 한 번 더 구분한다 — 투명도만 3단으로
-// 나누면 낮은 두 단계가 육안으로 구분되지 않는다.
+// 볼륨이 큰 쪽을 진하게 둔다(누적 조회 131 대 예매 75).
 const chartConfig = {
-  single_record_count: { label: "단건 기록", color: "#17171c" },
-  recurring_record_count: { label: "반복 등록", color: "#17171c73" },
-  unique_users: { label: "유저 수", color: "#17171cb3" },
+  view_count: { label: "공연 조회", color: "#17171c" },
+  booking_click_count: { label: "예매 클릭", color: "#17171c73" },
 } satisfies ChartConfig;
 
-export default function CalendarTrendChart() {
+export default function PerformanceTrendChart() {
   const [period, setPeriod] = useState<"7" | "30">("7");
   const [data, setData] = useState<TrendRow[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +36,7 @@ export default function CalendarTrendChart() {
     const token = await getAdminToken();
     if (!token) { setLoading(false); return; }
     try {
-      const res = await fetch(`/api/admin/stats/calendar-trend?days=${days}`, {
+      const res = await fetch(`/api/admin/stats/performance-trend?days=${days}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { setLoading(false); return; }
@@ -65,7 +60,7 @@ export default function CalendarTrendChart() {
     <Card className="w-full">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-foreground">캘린더 현황</CardTitle>
+          <CardTitle className="text-sm font-semibold text-foreground">공연 현황</CardTitle>
           <Tabs value={period} onValueChange={(v) => setPeriod(v as "7" | "30")}>
             <TabsList className="h-7">
               <TabsTrigger value="7" className="text-xs px-2 h-5">7일</TabsTrigger>
@@ -99,7 +94,7 @@ export default function CalendarTrendChart() {
               />
               <Line
                 type="monotone"
-                dataKey="single_record_count"
+                dataKey="view_count"
                 stroke="#17171c"
                 strokeWidth={2}
                 dot={false}
@@ -107,44 +102,24 @@ export default function CalendarTrendChart() {
               />
               <Line
                 type="monotone"
-                dataKey="recurring_record_count"
+                dataKey="booking_click_count"
                 stroke="#17171c"
                 strokeWidth={2}
                 strokeOpacity={0.45}
                 dot={false}
                 activeDot={{ r: 3 }}
               />
-              <Line
-                type="monotone"
-                dataKey="unique_users"
-                stroke="#17171c"
-                strokeWidth={2}
-                strokeOpacity={0.7}
-                strokeDasharray="4 3"
-                dot={false}
-                activeDot={{ r: 3 }}
-              />
             </LineChart>
           </ChartContainer>
         )}
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <span className="inline-block h-0.5 w-4 bg-[#17171c]" />
-            단건 기록
+            공연 조회
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-0.5 w-4 bg-[#17171c] opacity-45" />
-            반복 등록
-          </span>
-          <span className="flex items-center gap-1">
-            <span
-              className="inline-block h-0.5 w-4 opacity-70"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(to right, #17171c 0 4px, transparent 4px 7px)",
-              }}
-            />
-            유저 수
+            예매 클릭
           </span>
         </div>
       </CardContent>
