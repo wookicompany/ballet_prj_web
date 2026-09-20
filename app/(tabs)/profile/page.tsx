@@ -125,7 +125,7 @@ const getStarFillRatio = (rating10: number, starIndex: number) => {
 export default function ProfilePage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const { openLoginSheet } = useLoginSheet();
 
   const profileCached = user && !loading ? getProfileCache<ProfileCachePayload>(user.id) : null;
@@ -1211,7 +1211,7 @@ export default function ProfilePage() {
                   onClick={() => {
                     const first = getFirstAvailableLink(brand);
                     if (!first) return;
-                    openBrandLink(brand.brand_id, brand.name_ko, first.url, first.item.linkType);
+                    openBrandLink(brand.brand_id, brand.name_ko, first.url, first.item.linkType, session?.access_token);
                   }}
                 >
                   <div className="size-10 shrink-0 overflow-hidden rounded-xl bg-[#f5f5f7]">

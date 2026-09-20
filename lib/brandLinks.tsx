@@ -112,16 +112,23 @@ export const getFirstAvailableLink = (
   return null;
 };
 
+// accessToken은 호출부가 useAuth()의 session에서 꺼내 넘긴다. 여기서 직접 getSession()을
+// await하면 사용자 제스처 컨텍스트가 끊겨 아래 window.open이 팝업 차단에 걸리고,
+// 세션 복원 전이라 토큰을 못 받는 경우도 생긴다. 없으면 익명으로 기록된다.
 export const openBrandLink = (
   brandId: string,
   brandName: string,
   url: string,
-  linkType: string
+  linkType: string,
+  accessToken?: string | null
 ) => {
   sendHapticToApp();
   void fetch(`/api/brands/${brandId}/link-click`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({ link_type: linkType }),
     keepalive: true,
   }).catch(() => {

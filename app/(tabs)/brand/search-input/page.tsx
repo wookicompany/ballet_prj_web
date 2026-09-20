@@ -14,6 +14,7 @@ import {
   type BrandLinkFields,
 } from "@/lib/brandLinks";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type Brand = BrandLinkFields & {
   id: string;
@@ -27,6 +28,8 @@ const PAGE_SIZE = 12;
 
 export default function BrandSearchInputPage() {
   const router = useRouter();
+  // 링크 클릭 추적에 누가 눌렀는지 남기기 위해서만 쓴다(비로그인도 그대로 동작).
+  const { session } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
@@ -151,7 +154,7 @@ export default function BrandSearchInputPage() {
                       onClick={() => {
                         const first = getFirstAvailableLink(brand);
                         if (!first) return;
-                        openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType);
+                        openBrandLink(brand.id, brand.name_ko, first.url, first.item.linkType, session?.access_token);
                       }}
                       className="flex w-full items-center gap-3 py-3 transition-opacity duration-200 active:opacity-70"
                     >

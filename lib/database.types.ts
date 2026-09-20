@@ -216,18 +216,21 @@ export type Database = {
           created_at: string
           id: string
           link_type: string
+          user_id: string | null
         }
         Insert: {
           brand_id: string
           created_at?: string
           id?: string
           link_type: string
+          user_id?: string | null
         }
         Update: {
           brand_id?: string
           created_at?: string
           id?: string
           link_type?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -804,6 +807,7 @@ export type Database = {
           performance_id: string
           relatenm: string | null
           relateurl: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -811,6 +815,7 @@ export type Database = {
           performance_id: string
           relatenm?: string | null
           relateurl?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -818,6 +823,7 @@ export type Database = {
           performance_id?: string
           relatenm?: string | null
           relateurl?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1264,16 +1270,19 @@ export type Database = {
           created_at: string
           id: string
           performance_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           performance_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           performance_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

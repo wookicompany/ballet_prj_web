@@ -226,7 +226,7 @@ export default function PerformanceDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const performanceId = params.id;
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { openLoginSheet } = useLoginSheet();
 
   const detailCached = getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "");
@@ -400,12 +400,21 @@ export default function PerformanceDetailPage() {
 
   useEffect(() => {
     if (!performanceId) return;
+    // 세션 복원이 끝나기 전에 기록하면 로그인 사용자인데도 user_id가 비어버린다.
+    // loading 동안은 기다렸다가, 확정된 뒤 한 번만 보낸다.
+    if (authLoading) return;
+    // ref는 fetch 이전 동기 구간에서 잠근다 — await 뒤로 옮기면 Strict Mode에서 두 번 기록된다.
     if (viewTrackedRef.current === performanceId) return;
     viewTrackedRef.current = performanceId;
-    fetch(`/api/performances/${performanceId}/view`, { method: "POST" }).catch(
-      () => {}
-    );
-  }, [performanceId]);
+    fetch(`/api/performances/${performanceId}/view`, {
+      method: "POST",
+      // 토큰이 있으면 누가 봤는지 남는다. 없으면 익명으로 집계된다.
+      headers: session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined,
+      keepalive: true,
+    }).catch(() => {});
+  }, [performanceId, authLoading, session?.access_token]);
 
   useEffect(() => {
     if (getDetailCache<PerformanceDetailCachePayload>(performanceId, user?.id ?? "")) return;
@@ -1281,10 +1290,19 @@ export default function PerformanceDetailPage() {
                                           type="button"
                                           onClick={() => {
                                             sendHapticToApp();
+                                            // await를 넣으면 사용자 제스처 컨텍스트가 끊겨
+                                            // 아래 window.open이 팝업 차단에 걸린다.
+                                            // 이미 확보된 세션 토큰만 동기적으로 쓴다.
                                             fetch(`/api/performances/${performanceId}/booking-click`, {
                                               method: "POST",
-                                              headers: { "Content-Type": "application/json" },
+                                              headers: {
+                                                "Content-Type": "application/json",
+                                                ...(session?.access_token
+                                                  ? { Authorization: `Bearer ${session.access_token}` }
+                                                  : {}),
+                                              },
                                               body: JSON.stringify({ relatenm: r.relatenm, relateurl: r.relateurl }),
+                                              keepalive: true,
                                             }).catch(() => {});
                                             const opened = openUrlInApp(r.relateurl!, detail.prfnm ?? undefined);
                                             if (!opened) window.open(r.relateurl!, "_blank", "noopener,noreferrer");

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getOptionalUserFromRequest } from "@/lib/apiAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const VALID_LINK_TYPES = [
@@ -36,10 +37,12 @@ export const POST = async (
   }
 
   try {
+    // 누가 브랜드 링크로 넘어갔는지 남긴다. 비로그인 클릭도 집계해야 해서 없으면 null이다.
+    const { user } = await getOptionalUserFromRequest(request);
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("brand_link_clicks")
-      .insert({ brand_id: brandId, link_type: linkType });
+      .insert({ brand_id: brandId, link_type: linkType, user_id: user?.id ?? null });
 
     if (error) {
       console.error("Failed to track brand link click", error);

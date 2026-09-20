@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getOptionalUserFromRequest } from "@/lib/apiAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (
@@ -23,10 +24,13 @@ export const POST = async (
   }
 
   try {
+    // 로그인 상태면 누가 봤는지 남긴다. 비로그인 조회도 그대로 집계해야 하므로
+    // 토큰이 없거나 검증에 실패하면 user_id만 비우고 진행한다.
+    const { user } = await getOptionalUserFromRequest(request);
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("performance_views")
-      .insert({ performance_id: performanceId });
+      .insert({ performance_id: performanceId, user_id: user?.id ?? null });
 
     if (error) {
       console.error("Failed to track performance view", error);

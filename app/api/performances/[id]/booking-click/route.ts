@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getOptionalUserFromRequest } from "@/lib/apiAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const POST = async (
@@ -34,10 +35,12 @@ export const POST = async (
   }
 
   try {
+    // 누가 예매처로 넘어갔는지 남긴다. 비로그인 클릭도 집계해야 해서 없으면 null이다.
+    const { user } = await getOptionalUserFromRequest(request);
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("performance_booking_clicks")
-      .insert({ performance_id: performanceId, relatenm, relateurl });
+      .insert({ performance_id: performanceId, relatenm, relateurl, user_id: user?.id ?? null });
 
     if (error) {
       console.error("Failed to track booking click", error);

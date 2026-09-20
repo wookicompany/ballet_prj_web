@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
+// 조회·클릭 추적처럼 "로그인했으면 누군지 남기고, 아니어도 그냥 진행"해야 하는 곳에서 쓴다.
+// getUserFromRequest는 토큰이 없으면 401을 돌려주므로 여기 쓰면 비로그인 방문자의 조회가
+// 통째로 막힌다. 토큰이 없거나 검증에 실패하면 user를 null로 두고 호출부가 계속 진행한다.
+export const getOptionalUserFromRequest = async (
+  request: Request
+): Promise<{ user: { id: string } | null }> => {
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : null;
+  if (!token) return { user: null };
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) return { user: null };
+    return { user: { id: data.user.id } };
+  } catch {
+    // 인증 서버가 흔들려도 추적 자체는 계속돼야 한다 — 익명으로 기록한다.
+    return { user: null };
+  }
+};
+
 export const getUserFromRequest = async (request: Request) => {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ")
