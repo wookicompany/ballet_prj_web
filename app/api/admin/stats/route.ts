@@ -22,7 +22,6 @@ export const GET = async (request: Request) => {
     { data: calendarUsersData },
     { data: performanceUsersData },
     { data: brandUsersData },
-    { count: profileMembers },
     { count: completedLessons },
     { count: plannedLessons },
     { count: totalPerformanceViews },
@@ -39,9 +38,6 @@ export const GET = async (request: Request) => {
     supabaseAdmin.rpc("get_calendar_users_count"),
     supabaseAdmin.rpc("get_performance_users_count"),
     supabaseAdmin.rpc("get_brand_users_count"),
-    // profiles 행은 가입 시점이 아니라 프로필 탭 최초 진입 때 만들어진다. 그래서
-    // auth.users(44)보다 적다(40) — 탈퇴자가 아니라 프로필을 아직 안 만든 사람들이다.
-    supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "done"),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "planned"),
     // 조회와 클릭은 익명 행이 섞여 있어 건수로만 센다.
@@ -64,7 +60,6 @@ export const GET = async (request: Request) => {
     performance_users: Number(performanceUsersData ?? 0),
     total_brand_likes: totalBrandLikes ?? 0,
     brand_users: Number(brandUsersData ?? 0),
-    profile_members: profileMembers ?? 0,
     dau: Number(activity?.dau ?? 0),
     wau: Number(activity?.wau ?? 0),
     mau: Number(activity?.mau ?? 0),
