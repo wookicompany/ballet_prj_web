@@ -22,7 +22,6 @@ type Stats = {
   performance_users: number;
   total_brand_likes: number;
   brand_users: number;
-  profile_members: number;
   dau: number;
   wau: number;
   mau: number;
@@ -127,7 +126,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-6">
         <AdminPageHeader title="대시보드" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <SectionCardSkeleton rows={5} />
+          <SectionCardSkeleton rows={4} />
           <SectionCardSkeleton rows={4} />
           <SectionCardSkeleton rows={6} />
           <SectionCardSkeleton rows={3} />
@@ -179,19 +178,17 @@ export default function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2" role="region" aria-label="대시보드 지표">
-        {/* 매일 보는 활동 지표를 먼저 둔다. 활동 판정은 유저를 식별할 수 있는 모든
-            행동(기록, 티켓, 찜, 조회, 클릭, 공지 읽기 등)을 합친 값이라, 앱에 들어와
-            아무것도 안 하고 나간 사람은 잡히지 않는다 — 진입 자체를 남기는 테이블이 없다.
-            "프로필 생성 회원"이 총 가입자보다 적은 건 탈퇴가 아니라 프로필 탭을 아직
-            안 열어본 사람이 있기 때문이다(profiles 행이 그때 만들어진다). */}
+        {/* 활동 판정은 유저를 식별할 수 있는 모든 행동(기록, 티켓, 찜, 조회, 클릭,
+            공지 읽기 등)을 합친 값이다. 앱에 들어와 아무것도 안 하고 나간 사람은
+            잡히지 않는다 — 진입 자체를 남기는 테이블이 없기 때문이다.
+            DAU는 오늘(KST), WAU는 최근 7일, MAU는 최근 30일 롤링이다. */}
         <SectionCard
           title="사용자"
           items={[
-            { label: "DAU (오늘 활동)", value: stats.dau },
-            { label: "WAU (최근 7일)", value: stats.wau },
-            { label: "MAU (최근 30일)", value: stats.mau },
             { label: "총 가입자 수", value: stats.total_users },
-            { label: "프로필 생성 회원", value: stats.profile_members },
+            { label: "DAU", value: stats.dau },
+            { label: "WAU", value: stats.wau },
+            { label: "MAU", value: stats.mau },
           ]}
         />
         <SectionCard
