@@ -29,19 +29,12 @@ type Stats = {
   planned_lessons: number;
 };
 
-type SectionItem = {
-  label: string;
-  value: number;
-  /** 주값을 쪼갠 내역. 합이 주값과 맞는 값만 넣는다. */
-  breakdown?: { label: string; value: number }[];
-};
-
 function SectionCard({
   title,
   items,
 }: {
   title: string;
-  items: SectionItem[];
+  items: { label: string; value: number }[];
 }) {
   return (
     <Card className="w-full">
@@ -53,28 +46,15 @@ function SectionCard({
       <CardContent className="pb-4 pt-0">
         <div className="divide-y">
           {items.map((item) => (
-            <div key={item.label} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+            <div key={item.label} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
               <span className="text-sm text-muted-foreground">{item.label}</span>
-              <div className="flex items-baseline gap-3">
-                {/* 내역을 주값 앞에 둔다 — 주값이 어느 행이든 카드 오른쪽 끝에
-                    서야 세로로 훑어 읽는 숫자 열이 깨지지 않는다. */}
-                {item.breakdown && (
-                  <span className="flex items-baseline gap-3 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                    {item.breakdown.map((part) => (
-                      <span key={part.label}>
-                        {part.label} {part.value.toLocaleString("ko-KR")}
-                      </span>
-                    ))}
-                  </span>
-                )}
-                <span
-                  className={`text-xl font-bold tabular-nums tracking-tight ${
-                    item.value === 0 ? "text-muted-foreground" : "text-foreground"
-                  }`}
-                >
-                  {item.value.toLocaleString("ko-KR")}
-                </span>
-              </div>
+              <span
+                className={`text-xl font-bold tabular-nums tracking-tight ${
+                  item.value === 0 ? "text-muted-foreground" : "text-foreground"
+                }`}
+              >
+                {item.value.toLocaleString("ko-KR")}
+              </span>
             </div>
           ))}
         </div>
@@ -144,7 +124,7 @@ export default function AdminDashboardPage() {
         <AdminPageHeader title="대시보드" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SectionCardSkeleton rows={4} />
-          <SectionCardSkeleton rows={2} />
+          <SectionCardSkeleton rows={4} />
           <SectionCardSkeleton rows={4} />
           <SectionCardSkeleton rows={2} />
         </div>
@@ -208,19 +188,14 @@ export default function AdminDashboardPage() {
             { label: "MAU", value: stats.mau },
           ]}
         />
-        {/* records.status는 done과 planned 둘뿐이라 완료 + 예정 = 전체가 항상 성립한다. */}
+        {/* records.status는 done과 planned 둘뿐이라 완료된 수업 + 예정된 수업 = 기록 등록 건수다. */}
         <SectionCard
           title="캘린더"
           items={[
             { label: "캘린더 사용자 수", value: stats.calendar_users },
-            {
-              label: "기록 등록 건수",
-              value: stats.total_records,
-              breakdown: [
-                { label: "예정", value: stats.planned_lessons },
-                { label: "완료", value: stats.completed_lessons },
-              ],
-            },
+            { label: "기록 등록 건수", value: stats.total_records },
+            { label: "완료된 수업", value: stats.completed_lessons },
+            { label: "예정된 수업", value: stats.planned_lessons },
           ]}
         />
         {/* 공연 조회 수와 예매 클릭은 카드에서 뺐다 — 추세는 아래 공연 현황 차트에서 본다. */}
