@@ -217,8 +217,8 @@ export default function AdminDashboardPage() {
               label: "기록 등록 건수",
               value: stats.total_records,
               breakdown: [
-                { label: "완료", value: stats.completed_lessons },
                 { label: "예정", value: stats.planned_lessons },
+                { label: "완료", value: stats.completed_lessons },
               ],
             },
           ]}
