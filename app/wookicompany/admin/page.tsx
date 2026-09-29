@@ -27,9 +27,13 @@ type Stats = {
   mau: number;
   completed_lessons: number;
   planned_lessons: number;
-  total_performance_views: number;
-  total_booking_clicks: number;
-  total_brand_link_clicks: number;
+};
+
+type SectionItem = {
+  label: string;
+  value: number;
+  /** 주값을 쪼갠 내역. 합이 주값과 맞는 값만 넣는다. */
+  breakdown?: { label: string; value: number }[];
 };
 
 function SectionCard({
@@ -37,7 +41,7 @@ function SectionCard({
   items,
 }: {
   title: string;
-  items: { label: string; value: number }[];
+  items: SectionItem[];
 }) {
   return (
     <Card className="w-full">
@@ -49,15 +53,28 @@ function SectionCard({
       <CardContent className="pb-4 pt-0">
         <div className="divide-y">
           {items.map((item) => (
-            <div key={item.label} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+            <div key={item.label} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
               <span className="text-sm text-muted-foreground">{item.label}</span>
-              <span
-                className={`text-xl font-bold tabular-nums tracking-tight ${
-                  item.value === 0 ? "text-muted-foreground" : "text-foreground"
-                }`}
-              >
-                {item.value.toLocaleString("ko-KR")}
-              </span>
+              <div className="flex items-baseline gap-3">
+                {/* 내역을 주값 앞에 둔다 — 주값이 어느 행이든 카드 오른쪽 끝에
+                    서야 세로로 훑어 읽는 숫자 열이 깨지지 않는다. */}
+                {item.breakdown && (
+                  <span className="flex items-baseline gap-3 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                    {item.breakdown.map((part) => (
+                      <span key={part.label}>
+                        {part.label} {part.value.toLocaleString("ko-KR")}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                <span
+                  className={`text-xl font-bold tabular-nums tracking-tight ${
+                    item.value === 0 ? "text-muted-foreground" : "text-foreground"
+                  }`}
+                >
+                  {item.value.toLocaleString("ko-KR")}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -127,9 +144,9 @@ export default function AdminDashboardPage() {
         <AdminPageHeader title="대시보드" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SectionCardSkeleton rows={4} />
+          <SectionCardSkeleton rows={2} />
           <SectionCardSkeleton rows={4} />
-          <SectionCardSkeleton rows={6} />
-          <SectionCardSkeleton rows={3} />
+          <SectionCardSkeleton rows={2} />
         </div>
       </div>
     );
@@ -191,15 +208,22 @@ export default function AdminDashboardPage() {
             { label: "MAU", value: stats.mau },
           ]}
         />
+        {/* records.status는 done과 planned 둘뿐이라 완료 + 예정 = 전체가 항상 성립한다. */}
         <SectionCard
           title="캘린더"
           items={[
             { label: "캘린더 사용자 수", value: stats.calendar_users },
-            { label: "기록 등록 건수", value: stats.total_records },
-            { label: "완료된 수업", value: stats.completed_lessons },
-            { label: "예정된 수업", value: stats.planned_lessons },
+            {
+              label: "기록 등록 건수",
+              value: stats.total_records,
+              breakdown: [
+                { label: "예정", value: stats.planned_lessons },
+                { label: "완료", value: stats.completed_lessons },
+              ],
+            },
           ]}
         />
+        {/* 공연 조회 수와 예매 클릭은 카드에서 뺐다 — 추세는 아래 공연 현황 차트에서 본다. */}
         <SectionCard
           title="공연"
           items={[
@@ -207,18 +231,16 @@ export default function AdminDashboardPage() {
             { label: "티켓 등록 건수", value: stats.total_tickets },
             { label: "리뷰 등록 건수", value: stats.total_reviews },
             { label: "댓글 등록 건수", value: stats.total_comments },
-            { label: "공연 조회 수", value: stats.total_performance_views },
-            { label: "예매 클릭", value: stats.total_booking_clicks },
           ]}
         />
         {/* 브랜드 조회 수는 넣지 않는다 — brand_views는 링크 클릭 시 함께 기록되는
-            인기 랭킹 점수라(lib/brandLinks.tsx) 조회수로 쓰면 오해를 부른다. */}
+            인기 랭킹 점수라(lib/brandLinks.tsx) 조회수로 쓰면 오해를 부른다.
+            외부 링크 클릭도 카드에서 뺐다 — 추세는 아래 브랜드 현황 차트에서 본다. */}
         <SectionCard
           title="브랜드"
           items={[
             { label: "브랜드 사용자 수", value: stats.brand_users },
             { label: "찜 건수", value: stats.total_brand_likes },
-            { label: "외부 링크 클릭", value: stats.total_brand_link_clicks },
           ]}
         />
         <div className="md:col-span-2">

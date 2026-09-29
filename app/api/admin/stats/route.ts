@@ -24,9 +24,6 @@ export const GET = async (request: Request) => {
     { data: brandUsersData },
     { count: completedLessons },
     { count: plannedLessons },
-    { count: totalPerformanceViews },
-    { count: totalBookingClicks },
-    { count: totalBrandLinkClicks },
     { data: activeUserStats },
   ] = await Promise.all([
     supabaseAdmin.rpc("get_total_auth_users_count"),
@@ -40,10 +37,8 @@ export const GET = async (request: Request) => {
     supabaseAdmin.rpc("get_brand_users_count"),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "done"),
     supabaseAdmin.from("records").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "planned"),
-    // 조회와 클릭은 익명 행이 섞여 있어 건수로만 센다.
-    supabaseAdmin.from("performance_views").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("performance_booking_clicks").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("brand_link_clicks").select("id", { count: "exact", head: true }),
+    // 공연 조회, 예매 클릭, 브랜드 링크 클릭 누적치는 대시보드 카드에서 뺐다.
+    // 추세는 performance-trend와 brand-trend 차트가 별도로 집계한다.
     supabaseAdmin.rpc("get_active_user_stats"),
   ]);
 
@@ -65,8 +60,5 @@ export const GET = async (request: Request) => {
     mau: Number(activity?.mau ?? 0),
     completed_lessons: completedLessons ?? 0,
     planned_lessons: plannedLessons ?? 0,
-    total_performance_views: totalPerformanceViews ?? 0,
-    total_booking_clicks: totalBookingClicks ?? 0,
-    total_brand_link_clicks: totalBrandLinkClicks ?? 0,
   });
 };
