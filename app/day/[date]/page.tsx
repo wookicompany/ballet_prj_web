@@ -7,8 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
+import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import MobileContainer from "@/components/layout/MobileContainer";
-import AddRecordEntrySheet from "@/components/records/AddRecordEntrySheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,12 +47,12 @@ export default function DayPage() {
   const params = useParams<{ date: string }>();
   const { user } = useAuth();
   const { openLoginSheet } = useLoginSheet();
+  const { ensureConsent } = useConsentSheet();
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [mediaByRecord, setMediaByRecord] = useState<
     Record<string, { url: string | null; count: number }>
   >({});
   const [datesWithRecords, setDatesWithRecords] = useState<Set<string>>(new Set());
-  const [addRecordSheetOpen, setAddRecordSheetOpen] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const dateStr = params.date;
@@ -347,23 +347,21 @@ export default function DayPage() {
           size="icon-lg"
           className="h-12 w-12 rounded-2xl bg-[#17171c] text-white shadow-lg"
           aria-label="기록 등록"
-          onClick={() => {
+          onClick={async () => {
             if (!user) {
               openLoginSheet();
               return;
             }
-            setAddRecordSheetOpen(true);
+            // 캘린더 +와 동일하게 동의 게이트를 거친다 — 선택지 시트를 쓰던 시절
+            // 이 경로만 ensureConsent를 빠뜨리고 있었다.
+            const consentOk = await ensureConsent();
+            if (!consentOk) return;
+            router.push(`/record/new?date=${dateStr}`);
           }}
         >
           <Plus className="size-6" strokeWidth={2.8} />
         </Button>
       </div>
-      <AddRecordEntrySheet
-        open={addRecordSheetOpen}
-        onOpenChange={setAddRecordSheetOpen}
-        onSelectToday={() => router.push(`/record/new?date=${dateStr}`)}
-        onSelectRecurring={() => router.push("/record/recurring/new")}
-      />
     </main>
     </MobileContainer>
   );
