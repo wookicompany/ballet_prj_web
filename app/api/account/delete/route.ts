@@ -19,6 +19,9 @@ const USER_SOFT_DELETE_TARGETS = [
     table: "performance_review_comment_reports",
     userColumn: "reporter_user_id",
   },
+  // 반복 수업 — 빠뜨리면 탈퇴 후에도 요일, 시간, 장소, 선생님이 담긴 시간표가 남는다.
+  // 자식 기록은 위 records 항목이 지우지만 부모 그룹은 별도로 지워야 한다.
+  { table: "record_recurrences", userColumn: "user_id" },
   { table: "saved_locations", userColumn: "user_id" },
   { table: "saved_instructor_levels", userColumn: "user_id" },
   { table: "saved_center_orders", userColumn: "user_id" },

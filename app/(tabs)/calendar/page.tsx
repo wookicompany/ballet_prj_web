@@ -10,7 +10,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useConsentSheet } from "@/components/auth/ConsentSheetProvider";
 import { useLoginSheet } from "@/components/auth/LoginSheetProvider";
 import CalendarPopupAd from "@/components/ads/CalendarPopupAd";
-import AddRecordEntrySheet from "@/components/records/AddRecordEntrySheet";
 import BottomSheet from "@/components/sheets/BottomSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -122,7 +121,6 @@ export default function CalendarPage() {
   const [weekStartMonday, setWeekStartMonday] = useState(false);
   const [highlightWeekend, setHighlightWeekend] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [addRecordSheetOpen, setAddRecordSheetOpen] = useState(false);
   const swipeStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeHandledRef = useRef(false);
   const swipeLockedRef = useRef(false);
@@ -480,25 +478,18 @@ export default function CalendarPage() {
     swipeHandledRef.current = false;
   }, []);
 
-  const handleAddRecord = useCallback(() => {
+  // +는 단건 기록 작성으로 바로 보낸다. 선택지 시트를 거치던 구조에서는 기록 431건을
+  // 만드는 동안 반복 설정은 8번뿐이라(실유저 기준) 98.2%가 쓰지 않을 갈림길에 탭을
+  // 하나씩 더 썼다. 반복 진입점은 설정 > 데이터 관리 > 캘린더로 옮겼다.
+  const handleAddRecord = useCallback(async () => {
     if (!user) {
       openLoginSheet();
       return;
     }
-    setAddRecordSheetOpen(true);
-  }, [user, openLoginSheet]);
-
-  const handleSelectTodayRecord = useCallback(async () => {
     const consentOk = await ensureConsent();
     if (!consentOk) return;
     router.push(selectedDate ? `/record/new?date=${selectedDate}` : "/record/new");
-  }, [ensureConsent, router, selectedDate]);
-
-  const handleSelectRecurringRecord = useCallback(async () => {
-    const consentOk = await ensureConsent();
-    if (!consentOk) return;
-    router.push("/record/recurring/new");
-  }, [ensureConsent, router]);
+  }, [user, openLoginSheet, ensureConsent, router, selectedDate]);
 
   useEffect(() => {
     if (!monthSheetOpen) return;
@@ -904,12 +895,6 @@ export default function CalendarPage() {
           </Button>
         </div>
         </BottomSheet>
-        <AddRecordEntrySheet
-          open={addRecordSheetOpen}
-          onOpenChange={setAddRecordSheetOpen}
-          onSelectToday={handleSelectTodayRecord}
-          onSelectRecurring={handleSelectRecurringRecord}
-        />
       </main>
       <CalendarPopupAd />
     </>

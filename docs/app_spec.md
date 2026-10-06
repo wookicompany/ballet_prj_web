@@ -20,6 +20,7 @@
   - `/calendar`: 월 캘린더 탭
   - `/day/[date]`: 일별 타임라인
   - `/record/new`: 기록 작성
+  - `/record/recurring/new`: 반복 수업 추가 (진입은 `/profile/data-management`)
   - `/record/[id]`: 기록 상세
   - `/record/[id]/edit`: 기록 수정
   - `/profile`: 프로필 탭
@@ -64,7 +65,8 @@
   - `/u/[id]`: 공개 유저 프로필 (SNS 공유용, OG 태그 포함)
 - 네비게이션
   - 하단 탭: `캘린더` / `공연` / `브랜드` / `프로필`
-  - 플로팅 버튼: 기록 생성(`/record/new`)
+  - 기록 생성 버튼: 캘린더 헤더 우측 `+`와 일별 타임라인 우하단 `+` 두 곳. 둘 다 `/record/new`로 직행
+    - `components/navigation/FloatingButton.tsx`는 `(tabs)` 레이아웃에만 붙는데 자체 조건(`/calendar` 하위에서만 표시, 단 `/calendar` 홈 제외)이 그 레이아웃이 닿는 네 경로를 전부 걸러내 **어디서도 렌더되지 않는다**. 동작에 영향은 없고 정리는 별도 건으로 남겨둠(2026-10-07 확인)
   - 상세 화면은 탭 없이 단일 페이지로 진입
 
 ### 모바일 퍼스트 UI
@@ -148,7 +150,8 @@
 
 ### 기록 CRUD 동작
 
-- 생성 진입: 플로팅 버튼(`/record/new`) 또는 일별 타임라인 플로팅 버튼
+- 생성 진입: 캘린더 헤더 `+`, 캘린더의 빈 날짜 탭, 일별 타임라인 `+` — 셋 다 선택지 없이 바로 `/record/new`로 이동하며 모두 `ensureConsent()`를 먼저 거친다
+- 반복 수업 생성 진입: `/profile/data-management` > 캘린더 > 반복 수업 추가 (상세 스펙은 `docs/PRD/recurring-planned-records.md`)
 - 저장 후 이동: `/calendar`로 이동
 - 수정 진입: 상세 화면의 수정 아이콘 버튼 클릭
 - 삭제: 확인 모달 표시 후 삭제, 삭제된 기록은 통계/기록 수에서 제외
@@ -375,7 +378,7 @@
 - 가입일: 표시하지 않음
 - 통계: 총 기록 개수, 누적 발레 시간(시간/분)
 - 회원탈퇴: 설정 화면에 포함
-- 데이터 관리: `/profile/data-management`에서 안내
+- 데이터 관리: `/profile/data-management`에서 안내. 캘린더 섹션 맨 위에 **반복 수업 추가**(`/record/recurring/new`)가 있다 — 캘린더 `+`의 선택지 시트에서 옮겨온 유일한 진입점이다(2026-10-07)
 - 캘린더 설정: 캘린더 설정 진입 후 바 주문/센터 주문/강사 레벨/장소 목록 관리 (각각 CRUD API: `saved-bar-orders`, `saved-center-orders`, `saved-instructor-levels`, `saved-locations`)
 - 캘린더 표시 설정(주 시작 요일, 주말 강조): `PATCH /api/profile/calendar-settings` API로 저장 (`calendar_week_start_monday`, `calendar_highlight_weekend` 필드, `Authorization: Bearer <token>` 인증 필수)
 - 공지사항: 더보기(`/profile/menu`)에서 공지사항(`/notice`)으로 진입

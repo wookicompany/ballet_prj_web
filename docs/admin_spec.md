@@ -28,7 +28,7 @@
 
 ## 3. 대시보드 지표
 
-카드 17개와 일별 추이 차트 4개로 구성(2026-09-20 개편).
+카드 14개와 일별 추이 차트 4개로 구성(2026-09-20 개편, 2026-10-07 정리).
 
 ### 사용자
 
@@ -62,8 +62,6 @@
 |---|---|
 | 공연 사용자 수 | `get_performance_users_count()` — 리뷰, 댓글, 티켓, 조회, 예매 클릭의 `user_id` UNION DISTINCT |
 | 티켓·리뷰·댓글 등록 건수 | 각 테이블 `deleted_at IS NULL` 행 수 |
-| 공연 조회 수 | `performance_views` 전체 행 수(익명 포함) |
-| 예매 클릭 | `performance_booking_clicks` 전체 행 수(익명 포함) |
 
 ### 브랜드
 
@@ -71,7 +69,8 @@
 |---|---|
 | 브랜드 사용자 수 | `get_brand_users_count()` — 찜과 링크 클릭의 `user_id` UNION DISTINCT |
 | 찜 건수 | `brand_likes` 중 `deleted_at IS NULL` |
-| 외부 링크 클릭 | `brand_link_clicks` 전체 행 수(익명 포함) |
+
+> **공연 조회 수, 예매 클릭, 외부 링크 클릭은 카드에서 뺐다(2026-10-07).** 누적 총량은 한 번 보면 그만이고, 실제로 궁금한 건 추세다. 셋 다 아래 공연 현황/브랜드 현황 차트가 일별로 보여준다. 카드에서 빼면서 `/api/admin/stats`의 전수 `COUNT(*)` 3건도 제거해 대시보드 첫 로딩이 그만큼 가벼워졌다.
 
 > **브랜드 조회 수(`brand_views`)는 카드에 넣지 않는다.** `lib/brandLinks.tsx`의 `openBrandLink()`가 홈페이지 링크 클릭 시 `link-click`과 함께 기록하는 값이라, 페이지 조회수가 아니라 인기 랭킹 점수(`view수 + 찜수×10`)에 가깝다. 조회수로 보여주면 전환율을 오독하게 된다.
 
@@ -95,7 +94,7 @@
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/admin/me` | 현재 사용자 어드민 여부 확인 (id, email, is_admin) |
-| GET | `/api/admin/stats` | 대시보드 지표 17개 |
+| GET | `/api/admin/stats` | 대시보드 지표 14개 |
 | GET | `/api/admin/stats/signup-trend` | 가입자 일별 추이 (days=1~30) |
 | GET | `/api/admin/stats/calendar-trend` | 캘린더 일별 추이 (단건/반복/유저) |
 | GET | `/api/admin/stats/performance-trend` | 공연 일별 추이 (조회/예매 클릭) |
